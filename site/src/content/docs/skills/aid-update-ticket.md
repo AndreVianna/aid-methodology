@@ -35,14 +35,16 @@ flowchart TB
   n6(["WRITE"])
   n1 --> n2
   n2 --> n3
-  n3 --> n4
+  n3 -. "otherwise" .- n3
+  n3 -->|"A missing file is asked in the step first; the step carries once it is answered"| n4
   n4 --> n5
-  n5 --> n6
+  n5 -. "goes back to , and ends the run with" .-> n4
+  n5 -->|"on"| n6
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidStep
+  class n3 aidLoopBack
   class n4 aidStep
-  class n5 aidStep
+  class n5 aidLoopBack
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -65,40 +67,40 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L77" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L79" wrap
 ### State 2 — RESOLVE-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L77)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L79)
 
-<a id="fragment-n3"></a>**3 · `LOAD-CONTEXT`** · _step_
+<a id="fragment-n3"></a>**3 · `LOAD-CONTEXT`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L87" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L91" wrap
 ### State 3 — LOAD-CONTEXT
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L87)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L91)
 
 <a id="fragment-n4"></a>**4 · `COMPOSE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L107" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L113" wrap
 ### State 4 — COMPOSE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L107)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L113)
 
-<a id="fragment-n5"></a>**5 · `CONFIRM`** · _step_
+<a id="fragment-n5"></a>**5 · `CONFIRM`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L166" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L174" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L166)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L174`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L174)
 
-<a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L195" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L205" wrap
 ### State 6 — WRITE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L195)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L205`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L205)

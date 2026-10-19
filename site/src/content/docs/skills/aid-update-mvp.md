@@ -37,7 +37,7 @@ flowchart TB
   n4 -.-> n3
   n4 --> n5
   n5 --> n6
-  class n1 aidEntry
+  class n1 aidExit
   class n2 aidStep
   class n3 aidStep
   class n4 aidLoopBack
@@ -54,7 +54,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L55-L72" wrap
 ## State: INTAKE
@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.
 3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to
    `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
+   Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
 4. **Read the seed** at `.aid/design/mvp.md` if one exists. Note its presence or absence;
    do not require it.
 5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
@@ -88,11 +88,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 found in INTAKE.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L78-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L78-L90)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L78-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L78-L89)
 
 <a id="fragment-n3"></a>**3 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L94-L102" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L93-L101" wrap
 ## State: UPDATE
 
 Dispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.
@@ -104,11 +104,11 @@ outside that range **byte-identical** -- no reformatting, no whitespace change, 
 re-ordering of any other region.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L94-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L94-L102) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L94-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L94-L133)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L93-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L93-L101) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L93-L132`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L93-L132)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L137-L141" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L136-L140" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -116,25 +116,25 @@ defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escal
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L137-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L137-L141) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L137-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L137-L143)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L136-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L136-L140) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L136-L142`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L136-L142)
 
 <a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L147-L150" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L146-L149" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revised `## MVP` section clearly.
+Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revised `## MVP` section clearly.
 Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L147-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L147-L150) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L147-L163`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L147-L163)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L146-L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L146-L149) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L146-L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L146-L162)
 
-<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L167-L169" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L166-L168" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L167-L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L167-L169) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L167-L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L167-L169)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L166-L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L166-L168) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L166-L170`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L166-L170)

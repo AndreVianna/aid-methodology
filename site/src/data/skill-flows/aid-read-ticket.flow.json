@@ -26,8 +26,11 @@
       "order": 2,
       "name": "RESOLVE-CONNECTOR",
       "label": "RESOLVE-CONNECTOR",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "on the unknown-stem or notify branches above"
+      },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
         "startLine": 71,
@@ -42,7 +45,7 @@
       "order": 3,
       "name": "PICK-CONNECTOR",
       "label": "PICK-CONNECTOR",
-      "kind": "step",
+      "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
@@ -58,8 +61,11 @@
       "order": 4,
       "name": "FETCH",
       "label": "FETCH",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "on failure per the policy above"
+      },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
         "startLine": 104,
@@ -98,10 +104,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 62,
-        "endLine": 62,
+        "startLine": 69,
+        "endLine": 69,
         "sourceKind": "skill",
-        "excerpt": "### State 1 — PARSE-ARGS"
+        "excerpt": "**Advance:** CHAIN → [State: RESOLVE-CONNECTOR]."
       }
     },
     {
@@ -112,38 +118,66 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 71,
-        "endLine": 71,
+        "startLine": 92,
+        "endLine": 94,
         "sourceKind": "skill",
-        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+        "excerpt": "**Advance:** **CHAIN** → [State: FETCH] once a connector resolves without asking (explicit stem,\nsingle match, or host MCP); **CHAIN** → [State: PICK-CONNECTOR] on the two-or-more branch;\n**HALT** on the unknown-stem or notify branches above."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "once a connector resolves without asking",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 92,
+        "endLine": 94,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **CHAIN** → [State: FETCH] once a connector resolves without asking (explicit stem,\nsingle match, or host MCP); **CHAIN** → [State: PICK-CONNECTOR] on the two-or-more branch;\n**HALT** on the unknown-stem or notify branches above."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": "otherwise",
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 102,
+        "endLine": 102,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **ASK** → [State: FETCH] once the user has picked the connector."
       }
     },
     {
       "from": "n3",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "CHAIN",
+      "kind": "branch",
+      "condition": "once the user has picked the connector",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 96,
-        "endLine": 96,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "### State 2a — PICK-CONNECTOR"
+        "excerpt": "**Advance:** **ASK** → [State: FETCH] once the user has picked the connector."
       }
     },
     {
       "from": "n4",
       "to": "n5",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "on success",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 104,
-        "endLine": 104,
+        "startLine": 116,
+        "endLine": 116,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — FETCH"
+        "excerpt": "**Advance:** CHAIN → [State: DISPLAY] on success; HALT on failure per the policy above."
       }
     }
   ],
@@ -151,6 +185,8 @@
     "n1"
   ],
   "exits": [
+    "n2",
+    "n4",
     "n5"
   ],
   "sources": [

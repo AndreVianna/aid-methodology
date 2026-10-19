@@ -28,17 +28,18 @@ flowchart TB
   n1(["PREFLIGHT<br/>PREFLIGHT is the synchronous gate that verifies all…"])
   n2(["KB-DELTA<br/>KB-DELTA is a lightweight, drift-focused re-discovery: you…"])
   n3(["SUMMARY-DELTA<br/>SUMMARY-DELTA checks whether kb.html needs to be…"])
-  n4(["CLEANUP<br/>CLEANUP is the terminal gated stage of /aid-housekeep."])
+  n4["CLEANUP<br/>CLEANUP is the terminal gated stage of /aid-housekeep."]
   n5(["DONE<br/>DONE is the terminal state."])
   n1 --> n2
   n1 --> n4
   n2 --> n3
   n3 --> n4
+  n4 -. "otherwise" .- n4
   n4 --> n5
   class n1 aidEntry
   class n2 aidExit
   class n3 aidExit
-  class n4 aidExit
+  class n4 aidLoopBack
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -58,10 +59,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-housekeep/SKILL.md#L236`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L236) · [full step: `canonical/skills/aid-housekeep/references/state-preflight.md#L1-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-preflight.md#L1-L118)
 
-<a id="fragment-n2"></a>**2 · `KB-DELTA`** — KB-DELTA is a lightweight, drift-focused re-discovery: you… · _exit_ · HALT
+<a id="fragment-n2"></a>**2 · `KB-DELTA`** — KB-DELTA is a lightweight, drift-focused re-discovery: you… · _exit_ · WAIT
 
 ~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L237" wrap
-| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | ASK (scope confirm, Step 3) · CHAIN → SUMMARY-DELTA / WAIT if stalled |
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled (the scope question is asked inside the step) |
 ~~~~
 
 [Source: `canonical/skills/aid-housekeep/SKILL.md#L237`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L237) · [full step: `canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L889`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L889)
@@ -74,10 +75,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-housekeep/SKILL.md#L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L238) · [full step: `canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L357`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L357)
 
-<a id="fragment-n4"></a>**4 · `CLEANUP`** — CLEANUP is the terminal gated stage of /aid-housekeep. · _exit_ · ASK
+<a id="fragment-n4"></a>**4 · `CLEANUP`** — CLEANUP is the terminal gated stage of /aid-housekeep. · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L239" wrap
-| CLEANUP | `references/state-cleanup.md` | inline | ASK (checklist and teardown offers) · CHAIN → DONE |
+| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE (the checklist and teardown offers are asked inside the step) |
 ~~~~
 
 [Source: `canonical/skills/aid-housekeep/SKILL.md#L239`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L239) · [full step: `canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L540`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L540)

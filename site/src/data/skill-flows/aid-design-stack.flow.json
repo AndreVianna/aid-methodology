@@ -24,7 +24,7 @@
         "startLine": 41,
         "endLine": 57,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What technology\n   stack do you want to design -- its languages, runtimes, frameworks, and tooling?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-stack`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/stack.md` if a prior\n   seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** DESIGN."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What technology\n   stack do you want to design -- its languages, runtimes, frameworks, and tooling?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-stack`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/stack.md` if a prior\n   seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -68,7 +68,7 @@
         "startLine": 85,
         "endLine": 90,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -125,13 +125,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-stack/SKILL.md",
         "startLine": 57,
         "endLine": 57,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DESIGN."
+        "excerpt": "**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -167,13 +167,13 @@
       "to": "n4",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-stack/SKILL.md",
         "startLine": 90,
         "endLine": 90,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** PRESENT."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {

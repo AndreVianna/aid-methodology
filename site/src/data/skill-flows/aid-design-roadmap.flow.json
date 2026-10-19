@@ -24,7 +24,7 @@
         "startLine": 41,
         "endLine": 61,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   direction do you want to develop -- what's committed, what's merely wanted, and why?\")\n   and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-roadmap`, `active_skill:\n   aid-design-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/roadmap.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** DESIGN."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   direction do you want to develop -- what's committed, what's merely wanted, and why?\")\n   and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-roadmap`, `active_skill:\n   aid-design-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/roadmap.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -46,7 +46,7 @@
         "startLine": 65,
         "endLine": 77,
         "sourceKind": "skill",
-        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **direction and its *why*; what is committed vs. merely wanted;\nsequencing rationale; the alternatives being rejected and why.**\n\nWrites `.aid/design/roadmap.md` **only**, in `design-seed.md`'s shape --\n`## Current direction` rewritten to the latest proposal, `## Options considered`\naccumulating rather than being replaced. **Never writes `.aid/knowledge/`; never writes\nproduction code** -- the `design` invariant, binding without exception.\n\n**Advance:** VERIFY."
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **direction and its *why*; what is committed vs. merely wanted;\nsequencing rationale; the alternatives being rejected and why.**\n\nWrites `.aid/design/roadmap.md` **only**, in `design-seed.md`'s shape --\n`## Current direction` rewritten to the latest proposal, `## Options considered`\naccumulating rather than being replaced. **Never writes `.aid/knowledge/`; never writes\nproduction code** -- the `design` invariant, binding without exception.\n\n**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -68,7 +68,7 @@
         "startLine": 81,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -125,13 +125,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-roadmap/SKILL.md",
         "startLine": 61,
         "endLine": 61,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DESIGN."
+        "excerpt": "**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -139,13 +139,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-roadmap/SKILL.md",
         "startLine": 77,
         "endLine": 77,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -167,13 +167,13 @@
       "to": "n4",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-roadmap/SKILL.md",
         "startLine": 87,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** PRESENT."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {

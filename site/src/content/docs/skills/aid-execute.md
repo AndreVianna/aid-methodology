@@ -35,15 +35,14 @@ flowchart TB
   n2 -. "otherwise" .- n2
   n2 -->|"after triage, findings write, and the terminal State write above"| n4
   n3 --> n2
-  n5 --> n2
-  n5 -->|"depending on the user's decision"| n4
-  n6 -->|"grade &lt; min"| n3
-  n6 -. "otherwise" .- n6
+  n5 -->|"once the user has confirmed the reopen"| n2
+  n5 -. "otherwise" .- n5
+  n6 -->|"when the user approves the CODE fixes"| n3
   class n1 aidEntry
   class n2 aidLoopBack
   class n3 aidStep
   class n4 aidExit
-  class n5 aidEntry
+  class n5 aidExit
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -88,18 +87,18 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-execute/SKILL.md#L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L225)
 
-<a id="fragment-n5"></a>**5 · `RE-RUN`** — The task is already Done and the user has re-invoked… · _entry_
+<a id="fragment-n5"></a>**5 · `RE-RUN`** — The task is already Done and the user has re-invoked… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L226" wrap
-| RE-RUN | `references/state-re-run.md` | `inline` | ASK → REVIEW or DONE |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L226) · [full step: `canonical/skills/aid-execute/references/state-re-run.md#L1-L23`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-re-run.md#L1-L23)
+[Source: `canonical/skills/aid-execute/SKILL.md#L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L226) · [full step: `canonical/skills/aid-execute/references/state-re-run.md#L1-L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-re-run.md#L1-L24)
 
-<a id="fragment-n6"></a>**6 · `DELIVERY-GATE`** — Per-delivery quality gate — runs once per delivery as the… · _exit_ · CHAIN
+<a id="fragment-n6"></a>**6 · `DELIVERY-GATE`** — Per-delivery quality gate — runs once per delivery as the… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L227" wrap
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / ASK → FIX (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min); CHAIN → FIX when the user approves the CODE fixes; ASK then HALT for upstream (non-CODE) issues |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L520`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L520)
+[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L523`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L523)

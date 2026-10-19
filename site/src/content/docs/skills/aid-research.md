@@ -32,13 +32,12 @@ flowchart TB
   n5["PROPOSE-SPIKE<br/>only when a spike is proposed; the user decides"]
   n6["VERIFY<br/>who reviews the researcher"]
   n7["PRESENT<br/>always a hard stop -- the user resolves"]
-  n8(["HANDOFF<br/>optional; printed suggestions only"])
+  n8["HANDOFF<br/>optional; printed suggestions only"]
   n9(["DONE"])
-  n1 -->|"when the argument is empty, the path is Guided"| n2
-  n1 -->|"works exist; otherwise"| n3
+  n1 -->|"when any of these holds: the argument is empty, the path is Guided, works exist"| n2
+  n1 -->|"otherwise"| n3
   n2 --> n3
-  n3 -. "otherwise" .- n3
-  n3 -->|"on a new work; a continuation follows the gate's § 3b instead"| n4
+  n3 --> n4
   n4 -->|"when the researcher returned a spike proposal, instead"| n5
   n4 --> n6
   n5 --> n6
@@ -48,12 +47,12 @@ flowchart TB
   n8 --> n9
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidStep
   class n4 aidStep
   class n5 aidStep
   class n6 aidLoopBack
   class n7 aidStep
-  class n8 aidExit
+  class n8 aidStep
   class n9 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -71,46 +70,34 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L36-L50" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L36-L38" wrap
 ## State: INTAKE
 
-1. **Check the question.** Note whether the argument is empty. Do not ask here.
-2. **Pick the path (question scope):**
-   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria
-     ("Is lib X compatible with our Node 24 build?", "Postgres vs SQLite for use-case Y
-     against criteria A/B/C") -> investigate immediately.
-   - **Guided path** -- vague / broad / underspecified ("research our DB options") -> narrow
-     it first in INTAKE-ASK (2-3 scoping questions), then investigate.
-3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,
-   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad
-   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.
-   Verifier tier is always >= producer tier.
-4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Note whether any exist. Do not prompt here.
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L36-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L50) · [full step: `canonical/skills/aid-research/SKILL.md#L36-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L53)
+[Source: `canonical/skills/aid-research/SKILL.md#L36-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L38) · [full step: `canonical/skills/aid-research/SKILL.md#L36-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L54)
 
 <a id="fragment-n2"></a>**2 · `INTAKE-ASK`** — only when a question must be put · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L57-L59" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L58-L60" wrap
 ## State: INTAKE-ASK  (only when a question must be put)
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L57-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L57-L59) · [full step: `canonical/skills/aid-research/SKILL.md#L57-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L57-L66)
+[Source: `canonical/skills/aid-research/SKILL.md#L58-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L58-L60) · [full step: `canonical/skills/aid-research/SKILL.md#L58-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L58-L67)
 
-<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L70-L73" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L71-L74" wrap
 ## State: ALLOCATE
 
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L70-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L70-L73) · [full step: `canonical/skills/aid-research/SKILL.md#L70-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L70-L86)
+[Source: `canonical/skills/aid-research/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-research/SKILL.md#L71-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L71-L86)
 
 <a id="fragment-n4"></a>**4 · `INVESTIGATE`** · _step_
 
@@ -172,7 +159,7 @@ gaps are first-class, never buried under positives.
 
 [Source: `canonical/skills/aid-research/SKILL.md#L145-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L145-L150) · [full step: `canonical/skills/aid-research/SKILL.md#L145-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L145-L152)
 
-<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
+<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _step_
 
 ~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L156-L163" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

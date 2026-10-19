@@ -26,20 +26,20 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
-  n2["GUARD"]
+  n2{"GUARD"}
   n3(["REALIZE"])
   n4["VERIFY"]
   n5["PRESENT<br/>hard stop -- the user decides"]
   n6(["DONE"])
   n1 --> n2
-  n2 --> n3
+  n2 -->|"the override is supplied. On a refusal: . Say that the user must resolve the…"| n3
+  n2 -->|"when no question is unresolved"| n3
   n3 -->|"creation path"| n4
-  n3 -->|"Route path"| n6
   n4 -.-> n3
   n4 --> n5
   n5 --> n6
   class n1 aidEntry
-  class n2 aidStep
+  class n2 aidDecision
   class n3 aidExit
   class n4 aidLoopBack
   class n5 aidStep
@@ -69,7 +69,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    driven.
 3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and
    ask whether to proceed without one (slice entered interactively) or to run
-   `/aid-design-mvp` first; do not proceed silently.
+   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its
    state: absent | present-MVP-absent | present-MVP-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
@@ -78,7 +78,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-mvp/SKILL.md#L55-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L70) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L55-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L72)
 
-<a id="fragment-n2"></a>**2 · `GUARD`** · _step_
+<a id="fragment-n2"></a>**2 · `GUARD`** · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L76-L79" wrap
 ## State: GUARD

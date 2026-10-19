@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 239,
-        "endLine": 239,
+        "startLine": 241,
+        "endLine": 241,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | CHAIN → CONTINUE |"
       },
       "detail": {
         "file": "canonical/skills/aid-describe/references/state-first-run.md",
         "startLine": 1,
-        "endLine": 84,
+        "endLine": 76,
         "sourceKind": "worker",
-        "excerpt": "# State: FIRST-RUN\n\nThis state runs only when STATE.yml (with its `interview` key) does not exist in the work folder; it creates the scaffolding before the conversational interview begins.\n\n### 1a. Read KB (if it exists)\n\nCheck for `.aid/knowledge/INDEX.md`. If it exists, read it to understand what's\nalready known about the project. This context prevents asking questions the KB already answers.\n\nIf no KB exists, that's fine — this is a greenfield project.\n\n### 1b. Work record (created by the gate)\n\nThe gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) creates `.aid/works/{work}/STATE.yml`\nbefore this state runs. Do not copy the template and do not write the record's keys by hand; set any\nother key through the writer.\n\n### 1b-ii. Seed the record through the writer\n\nThe gate's `§ 3a` writes the opening record in one locked write, with the writer's create mode and\nthis skill as the caller, its first step and the Definition phase:\n\n```bash\nbash .aid/runtime/scripts/execute/writeback-state.sh --create \\\n  --work-dir .aid/works/{work} --reading {type} --request '{the user's words}' \\\n  --skill aid-describe --step FIRST-RUN --phase Definition --depth full \\\n  --minimum-grade \"{resolved value of: bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A}\"\n```\n\nThe record then holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase\n`Definition`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`.\n`pipeline.path` is `full`: `aid-describe` is the FULL-pipeline starting skill, never a flattened Lite\nshortcut. This write is silent (no user-visible output, no gate, no prompt). CONTINUE begins\nimmediately after it.\n\n**Idempotency:** `--create` refuses a work that already has a `STATE.yml` (exit 8), so this write\nhappens once. On a resume, the record decides the step; do not write it again.\n\n### 1c. Create REQUIREMENTS.md scaffold\n\nCopy the template from `../../../aid/templates/requirements.md` to\n`.aid/works/{work}/REQUIREMENTS.md`.\n\n**Identity header seeding:** the template already carries the identity block between\n`# Requirements` and `## 1. Objective`:\n\n```\n- **Name:** *(pending)*\n- **Description:** *(pending)*\n```\n\nThese placeholder lines are written as part of the template copy. Do not remove or\noverwrite them here — they are replaced with confirmed values at COMPLETION (see\n`state-completion.md` Step 3). No additional write is required in this step.\n\n### 1d. Monitor-routed finding seed (optional)\n\nIf this work was opened from a plain request that the skill guide routed here after a\n`CHANGE REQUEST` finding — originating in `aid-monitor/references/state-route.md` Step 5 — seed\nREQUIREMENTS.md with the desired new/changed behavior and its evidence; the full-path\ninterview then continues over the remaining gaps as usual.\n\nIf there is no Monitor-originated finding (the normal case — a human-initiated interview),\nskip this step. The seed only pre-fills answers; it never overrides the deterministic\ninterview flow. (A `BUG` finding no longer routes here at all — `aid-monitor` hands bugs\ndirectly to `/aid-fix`; see `aid-monitor/references/state-route.md` Step 5.)\n\n**Note:** Sections are empty — no placeholder markers. `interview.sections[].state`\n(STATE.yml) tracks which sections have been filled.\n\n### 1e. Connector awareness — add a source ticket to the work's `sources:` (optional)\n\nIf this interview's originating context names, or clearly traces to, an already-filed ticket in a\ncatalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the\nrequester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`\n— the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is\nre-implemented here — and add a `sources:` entry (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied) to this work's `STATE.yml`, on the list seeded at Step 1b-ii. Skip silently when no such ticket\nis named or no matching connector is catalogued — purely additive; never blocks or alters the interview flow;\nthe delegated read is non-destructive, so no extra confirm is added.\n\n---\n\n**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview.\n"
+        "excerpt": "# State: FIRST-RUN\n\nThis state runs only when STATE.yml (with its `interview` key) does not exist in the work folder; it creates the scaffolding before the conversational interview begins.\n\n### 1a. Read KB (if it exists)\n\nCheck for `.aid/knowledge/INDEX.md`. If it exists, read it to understand what's\nalready known about the project. This context prevents asking questions the KB already answers.\n\nIf no KB exists, that's fine — this is a greenfield project.\n\n### 1b. Work record (created by the gate)\n\nThe gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) creates `.aid/works/{work}/STATE.yml`\nbefore this state runs. Do not copy the template and do not write the record's keys by hand; set any\nother key through the writer.\n\n### 1b-ii. The opening record is already written\n\nThe gate's `§ 3a` wrote the opening record in one locked write, with the writer's create mode and\nthis skill as the caller (`--skill aid-describe`), the step `FIRST-RUN`, the phase `--phase Definition`,\n`--depth full`, `--path full` and the resolved minimum grade, all given when this skill started the work.\nThe record holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase\n`Definition`, `pipeline.path: full`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`. `aid-describe` is the FULL-pipeline starting skill,\nnever a flattened Lite shortcut.\n\nDo not write the record again from this state. `--create` is run only by the gate, and it refuses a\nwork that already has a `STATE.yml` (exit 8). CONTINUE begins immediately after this check. On a\nresume, the record decides the step.\n\n### 1c. Create REQUIREMENTS.md scaffold\n\nCopy the template from `../../../aid/templates/requirements.md` to\n`.aid/works/{work}/REQUIREMENTS.md`.\n\n**Identity header seeding:** the template already carries the identity block between\n`# Requirements` and `## 1. Objective`:\n\n```\n- **Name:** *(pending)*\n- **Description:** *(pending)*\n```\n\nThese placeholder lines are written as part of the template copy. Do not remove or\noverwrite them here — they are replaced with confirmed values at COMPLETION (see\n`state-completion.md` Step 3). No additional write is required in this step.\n\n### 1d. Monitor-routed finding seed (optional)\n\nIf this work was opened from a plain request that the skill guide routed here after a\n`CHANGE REQUEST` finding — originating in `aid-monitor/references/state-route.md` Step 5 — seed\nREQUIREMENTS.md with the desired new/changed behavior and its evidence; the full-path\ninterview then continues over the remaining gaps as usual.\n\nIf there is no Monitor-originated finding (the normal case — a human-initiated interview),\nskip this step. The seed only pre-fills answers; it never overrides the deterministic\ninterview flow. (A `BUG` finding no longer routes here at all — `aid-monitor` hands bugs\ndirectly to `/aid-fix`; see `aid-monitor/references/state-route.md` Step 5.)\n\n**Note:** Sections are empty — no placeholder markers. `interview.sections[].state`\n(STATE.yml) tracks which sections have been filled.\n\n### 1e. Connector awareness — add a source ticket to the work's `sources:` (optional)\n\nIf this interview's originating context names, or clearly traces to, an already-filed ticket in a\ncatalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the\nrequester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`\n— the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is\nre-implemented here — and add a `sources:` entry (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied) to this work's `STATE.yml`, on the list seeded at Step 1b-ii. Skip silently when no such ticket\nis named or no matching connector is catalogued — purely additive; never blocks or alters the interview flow;\nthe delegated read is non-destructive, so no extra confirm is added.\n\n---\n\n**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview.\n"
       }
     },
     {
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 240,
-        "endLine": 240,
+        "startLine": 242,
+        "endLine": 242,
         "sourceKind": "skill",
         "excerpt": "| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 241,
-        "endLine": 241,
+        "startLine": 243,
+        "endLine": 243,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / CHAIN → COMPLETION (brownfield or seed already complete) |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 242,
-        "endLine": 242,
+        "startLine": 244,
+        "endLine": 244,
         "sourceKind": "skill",
         "excerpt": "| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |"
       },
@@ -105,8 +105,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 243,
-        "endLine": 243,
+        "startLine": 245,
+        "endLine": 245,
         "sourceKind": "skill",
         "excerpt": "| COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK then HALT, naming `/aid-define {work}` |"
       },
@@ -128,8 +128,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-describe/references/state-first-run.md",
-        "startLine": 83,
-        "endLine": 83,
+        "startLine": 75,
+        "endLine": 75,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/references/state-first-run.md",
-        "startLine": 83,
-        "endLine": 83,
+        "startLine": 75,
+        "endLine": 75,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview."
       }
@@ -212,8 +212,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 254,
-        "endLine": 254,
+        "startLine": 256,
+        "endLine": 256,
         "sourceKind": "skill",
         "excerpt": "## Targeted Interview (Loopback Re-entry)"
       }

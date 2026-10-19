@@ -17,14 +17,14 @@
         "startLine": 55,
         "endLine": 70,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and where does the line fall -- or run\n   `/aid-design-mvp` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the\n   Work Initiation Gate, then `initiator: aid-create-mvp`, `active_skill:\n   aid-create-mvp`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (slice entered interactively) or to run\n   `/aid-design-mvp` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its\n   state: absent | present-MVP-absent | present-MVP-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and where does the line fall -- or run\n   `/aid-design-mvp` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the\n   Work Initiation Gate, then `initiator: aid-create-mvp`, `active_skill:\n   aid-create-mvp`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (slice entered interactively) or to run\n   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its\n   state: absent | present-MVP-absent | present-MVP-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 55,
         "endLine": 72,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and where does the line fall -- or run\n   `/aid-design-mvp` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the\n   Work Initiation Gate, then `initiator: aid-create-mvp`, `active_skill:\n   aid-create-mvp`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (slice entered interactively) or to run\n   `/aid-design-mvp` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its\n   state: absent | present-MVP-absent | present-MVP-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** CHAIN -> [State: GUARD]."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and where does the line fall -- or run\n   `/aid-design-mvp` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the\n   Work Initiation Gate, then `initiator: aid-create-mvp`, `active_skill:\n   aid-create-mvp`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (slice entered interactively) or to run\n   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its\n   state: absent | present-MVP-absent | present-MVP-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** CHAIN -> [State: GUARD]."
       }
     },
     {
@@ -32,7 +32,7 @@
       "order": 2,
       "name": "GUARD",
       "label": "GUARD",
-      "kind": "step",
+      "kind": "decision",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
@@ -46,7 +46,7 @@
         "startLine": 76,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a\nnon-empty `## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved\n  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write\n  nothing; leave seed and destination byte-identical. Set `lifecycle:\n  Paused-Awaiting-Input`.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE]."
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a\nnon-empty `## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved\n  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write\n  nothing; leave seed and destination byte-identical. Set `lifecycle:\n  Paused-Awaiting-Input`.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done."
       }
     },
     {
@@ -57,7 +57,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "ASK",
-        "handoff": "naming the skill the route names"
+        "handoff": "On the route path: then , naming the skill the route names"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
@@ -71,7 +71,7 @@
         "startLine": 91,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling VERIFY. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling VERIFY. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] (creation path). On the route path: **ASK then HALT**, naming the skill the route names."
       }
     },
     {
@@ -162,15 +162,29 @@
     {
       "from": "n2",
       "to": "n3",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "the override is supplied. On a refusal: . Say that the user must resolve the…",
+      "advanceType": "WAIT",
+      "provenance": {
+        "file": "canonical/skills/aid-create-mvp/SKILL.md",
+        "startLine": 87,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "branch",
+      "condition": "when no question is unresolved",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 87,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: REALIZE]."
+        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done."
       }
     },
     {
@@ -184,21 +198,7 @@
         "startLine": 130,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
-      }
-    },
-    {
-      "from": "n3",
-      "to": "n6",
-      "kind": "branch",
-      "condition": "Route path",
-      "advanceType": "ASK",
-      "provenance": {
-        "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). On the route path: **ASK then HALT**, naming the skill the route names."
       }
     },
     {

@@ -76,21 +76,21 @@
       "order": 4,
       "name": "PRESENT",
       "label": "hard stop -- the user decides",
-      "kind": "decision",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
         "startLine": 93,
         "endLine": 96,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it."
+        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nPresent `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
         "startLine": 93,
-        "endLine": 98,
+        "endLine": 100,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it.\n\n**Advance:** ASK -> HANDOFF (optional) then DONE."
+        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nPresent `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it.\n\nThe user's decision is a blocking question: this step pauses on it until the user answers.\n\n**Advance:** ASK -> HANDOFF."
       }
     },
     {
@@ -102,15 +102,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 102,
-        "endLine": 105,
+        "startLine": 104,
+        "endLine": 107,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or\ncapture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 102,
-        "endLine": 107,
+        "startLine": 104,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or\ncapture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.\n\n**Advance:** CHAIN -> DONE."
       }
@@ -127,15 +127,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 111,
-        "endLine": 114,
+        "startLine": 113,
+        "endLine": 116,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 111,
-        "endLine": 114,
+        "startLine": 113,
+        "endLine": 116,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       }
@@ -201,29 +201,15 @@
     {
       "from": "n4",
       "to": "n5",
-      "kind": "branch",
-      "condition": "optional",
+      "kind": "sequence",
+      "condition": null,
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 100,
+        "endLine": 100,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> HANDOFF (optional) then DONE."
-      }
-    },
-    {
-      "from": "n4",
-      "to": "n6",
-      "kind": "branch",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> HANDOFF (optional) then DONE."
+        "excerpt": "**Advance:** ASK -> HANDOFF."
       }
     },
     {
@@ -234,8 +220,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
+        "startLine": 109,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> DONE."
       }

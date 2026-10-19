@@ -10,8 +10,11 @@
       "order": 1,
       "name": "INTAKE",
       "label": "INTAKE",
-      "kind": "entry",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "ASK",
+        "handoff": "A route to the create skill is then instead, after the allocated work, if any, is closed as Canceled through the writer"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 53,
@@ -24,7 +27,7 @@
         "startLine": 53,
         "endLine": 76,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What should\n   change in the delivery-pipeline record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-cicd`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/cicd.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &\n   operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern\n   rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the\n   C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the\n   resolution with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to\n   `/aid-create-cicd` and write nothing.\n6. **Ask whether the user also wants production config this run.** Touching a workflow file is\n   **opt-in per run and never the default**; the KB record is what this skill revises unless\n   the user asks in this run.\n7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What should\n   change in the delivery-pipeline record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-cicd`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/cicd.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &\n   operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern\n   rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the\n   C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the\n   resolution with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to\n   `/aid-create-cicd` and write nothing.\n6. **Ask whether the user also wants production config this run.** Touching a workflow file is\n   **opt-in per run and never the default**; the KB record is what this skill revises unless\n   the user asks in this run.\n7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
       }
     },
     {
@@ -44,9 +47,9 @@
       "detail": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 80,
-        "endLine": 92,
+        "endLine": 94,
         "sourceKind": "skill",
-        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C8 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C8 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\nThe step ends with the derived-outputs question of step 2, asked on every run.\n\n**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -58,15 +61,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 96,
-        "endLine": 99,
+        "startLine": 98,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 96,
-        "endLine": 101,
+        "startLine": 98,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -76,24 +79,46 @@
       "order": 4,
       "name": "PRESENT",
       "label": "hard stop -- the user decides",
-      "kind": "exit",
-      "terminal": {
-        "advanceType": "ASK",
-        "handoff": "State: DONE"
-      },
+      "kind": "step",
+      "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 105,
-        "endLine": 109,
+        "startLine": 107,
+        "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone."
       },
       "detail": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 105,
-        "endLine": 111,
+        "startLine": 107,
+        "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone.\n\n**Advance:** ASK -> [State: DONE]."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-update-cicd/SKILL.md",
+        "startLine": 117,
+        "endLine": 119,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-cicd/SKILL.md",
+        "startLine": 117,
+        "endLine": 121,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
       }
     }
   ],
@@ -103,13 +128,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 76,
         "endLine": 76,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
       }
     },
     {
@@ -117,13 +142,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 92,
-        "endLine": 92,
+        "startLine": 94,
+        "endLine": 94,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -134,8 +159,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 100,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
       }
@@ -148,10 +173,24 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 103,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-update-cicd/SKILL.md",
+        "startLine": 113,
+        "endLine": 113,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],
@@ -159,7 +198,8 @@
     "n1"
   ],
   "exits": [
-    "n4"
+    "n1",
+    "n5"
   ],
   "sources": [
     "canonical/skills/aid-update-cicd/SKILL.md"

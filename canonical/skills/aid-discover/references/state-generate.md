@@ -236,7 +236,7 @@ Domain classification
 **This is a genuine ASK.** Stop here after presenting. The user's choice
 (not the source signals alone) is the authoritative domain; an override is recorded as such.
 
-**Advance:** **CHAIN** → Step 0d (inside this state), once the user has answered; the question pauses this step until then.
+**Next, inside this step:** Step 0d (inside this state), once the user has answered; the question pauses this step until then.
 
 #### On confirm (resume path) -- write the record
 
@@ -427,7 +427,7 @@ Then ask the user to confirm or edit:
 
 **This is a genuine ASK.** Stop here after presenting the proposal.
 
-**Advance:** **CHAIN** → Step 0e (inside this state), once the user has answered; the question pauses this step
+**Next, inside this step:** Step 0e (inside this state), once the user has answered; the question pauses this step
 until then (contracted checkpoint per SPEC feature-004 §3.1 and `.aid/runtime/templates/skill-steps.md`).
 
 #### On confirm (resume path)
@@ -585,7 +585,7 @@ confirmed, never auto-decided -- FR-20). Stop here after presenting. The human's
 static `project.type`) is authoritative; an override is recorded as such. Escalation/uncertainty
 defaults to the proposed path on a bare confirm, exactly like Step 0d's conservative default.
 
-**Advance:** **CHAIN** → Step 1 (inside this state) on a brownfield path, once the user has answered; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
+**Next, inside this step:** Step 1 (inside this state) on a brownfield path, once the user has answered; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
 
 #### On confirm (resume path) -- write the decision
 
@@ -982,7 +982,7 @@ never add an unconfirmed term). The DETECT step reads this list on every future 
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
 `[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
-**Advance:** **CHAIN** → Step 6 (inside this state), once the user has replied and the confirmed terms are written.
+**Next, inside this step:** Step 6 (inside this state), once the user has replied and the confirmed terms are written.
 
 ### Step 6: Generate README.md and INDEX.md
 

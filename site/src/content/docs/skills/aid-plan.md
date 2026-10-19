@@ -26,17 +26,16 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["FIRST-RUN<br/>No PLAN.md found; begin dependency mapping and deliverable…"])
-  n2(["CONFIRM<br/>PLAN.md exists and was previously completed; re-review…"])
-  n3(["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"])
+  n2(["CONFIRM"])
+  n3["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"]
   n4(["DONE"])
-  n1 -. "otherwise" .- n1
-  n1 -->|"once the user has approved the sequence, PLAN.md is written, delivery folders…"| n3
-  n2 -. "otherwise" .- n2
-  n2 -->|"A confirmation continues to the review; a specific concern the user gives is…"| n3
-  n3 --> n4
+  n1 --> n3
+  n2 --> n3
+  n3 -. "otherwise" .- n3
+  n3 -->|"when the grade meets minimum and all delivery folders are created"| n4
   class n1 aidEntry
   class n2 aidEntry
-  class n3 aidExit
+  class n3 aidLoopBack
   class n4 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -53,23 +52,23 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L157) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L233)
+[Source: `canonical/skills/aid-plan/SKILL.md#L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L157) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L234)
 
-<a id="fragment-n2"></a>**2 · `CONFIRM`** — PLAN.md exists and was previously completed; re-review… · _entry_
+<a id="fragment-n2"></a>**2 · `CONFIRM`** · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L158" wrap
-| CONFIRM | `references/review-deliverables.md` | `inline` | ASK → REVIEW |
+| CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L158) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L84)
+[Source: `canonical/skills/aid-plan/SKILL.md#L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L158) · [full step: `canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13)
 
-<a id="fragment-n3"></a>**3 · `REVIEW`** — PLAN.md exists and was previously completed; re-review… · _exit_ · ASK
+<a id="fragment-n3"></a>**3 · `REVIEW`** — PLAN.md exists and was previously completed; re-review… · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L159" wrap
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L159) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L84)
+[Source: `canonical/skills/aid-plan/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L159) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L72)
 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 

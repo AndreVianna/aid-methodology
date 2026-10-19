@@ -28,20 +28,19 @@ flowchart TB
   n1(["INTAKE"])
   n2["DESIGN"]
   n3["VERIFY<br/>full -- a kept design drives a build"]
-  n4{"PRESENT"}
+  n4["PRESENT<br/>hard stop -- the user decides"]
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
-  n4 -->|"optional"| n5
-  n4 --> n6
+  n4 --> n5
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
   class n3 aidLoopBack
-  class n4 aidDecision
+  class n4 aidStep
   class n5 aidStep
   class n6 aidExit
   class n1 aidNode
@@ -97,35 +96,35 @@ kept record).
 
 [Source: `canonical/skills/aid-design/SKILL.md#L79-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L79-L87) · [full step: `canonical/skills/aid-design/SKILL.md#L79-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L79-L89)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _decision_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
 ~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L93-L96" wrap
 ## State: PRESENT  (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --
+Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 ~~~~
 
-[Source: `canonical/skills/aid-design/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-design/SKILL.md#L93-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L93-L98)
+[Source: `canonical/skills/aid-design/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-design/SKILL.md#L93-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L93-L100)
 
 <a id="fragment-n5"></a>**5 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L102-L105" wrap
+~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L104-L107" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-design/SKILL.md#L102-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L102-L105) · [full step: `canonical/skills/aid-design/SKILL.md#L102-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L102-L107)
+[Source: `canonical/skills/aid-design/SKILL.md#L104-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L104-L107) · [full step: `canonical/skills/aid-design/SKILL.md#L104-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L104-L109)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L111-L114" wrap
+~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L113-L116" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep
 `DESIGN.md` in the work folder as the kept design record.
 ~~~~
 
-[Source: `canonical/skills/aid-design/SKILL.md#L111-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L111-L114) · [full step: `canonical/skills/aid-design/SKILL.md#L111-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L111-L114)
+[Source: `canonical/skills/aid-design/SKILL.md#L113-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L113-L116) · [full step: `canonical/skills/aid-design/SKILL.md#L113-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L113-L116)

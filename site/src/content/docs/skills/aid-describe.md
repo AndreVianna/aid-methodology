@@ -54,40 +54,40 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FIRST-RUN`** — This state runs only when STATE.yml (with its interview… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L239" wrap
+~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L241" wrap
 | FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | CHAIN → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L239`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L239) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L84)
+[Source: `canonical/skills/aid-describe/SKILL.md#L241`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L241) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L76)
 
 <a id="fragment-n2"></a>**2 · `Q-AND-A`** — STATE.md ## Cross-phase Q&amp;A has entries with Status… · _step_
 
-~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L240" wrap
+~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L242" wrap
 | Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L240`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L240) · [full step: `canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65)
+[Source: `canonical/skills/aid-describe/SKILL.md#L242`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L242) · [full step: `canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65)
 
 <a id="fragment-n3"></a>**3 · `CONTINUE`** — Resume the conversational interview; STATE.yml's… · _step_
 
-~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L241" wrap
+~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L243" wrap
 | CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / CHAIN → COMPLETION (brownfield or seed already complete) |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L241`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L241) · [full step: `canonical/skills/aid-describe/references/state-continue.md#L1-L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-continue.md#L1-L44)
+[Source: `canonical/skills/aid-describe/SKILL.md#L243`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L243) · [full step: `canonical/skills/aid-describe/references/state-continue.md#L1-L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-continue.md#L1-L44)
 
 <a id="fragment-n4"></a>**4 · `DESCRIBE-SEED`** — The seed-authoring step of aid-describe (the aid-describe… · _step_
 
-~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L242" wrap
+~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L244" wrap
 | DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L242`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L242) · [full step: `canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527)
+[Source: `canonical/skills/aid-describe/SKILL.md#L244`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L244) · [full step: `canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527)
 
 <a id="fragment-n5"></a>**5 · `COMPLETION`** — All sections are Complete or N/A in STATE.md ## Interview… · _exit_ · ASK
 
-~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L243" wrap
+~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L245" wrap
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK then HALT, naming `/aid-define {work}` |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L243`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L243) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L152)
+[Source: `canonical/skills/aid-describe/SKILL.md#L245`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L245) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L152)

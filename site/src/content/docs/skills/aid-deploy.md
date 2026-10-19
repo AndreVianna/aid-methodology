@@ -37,13 +37,11 @@ flowchart TB
   n2 -->|"once the user has chosen the deliveries, given the version and package name…"| n3
   n3 -->|"when any check fails"| n4
   n3 -->|"when every check passes"| n6
-  n4 -. "otherwise" .- n4
-  n4 -->|"when the user chooses to fix here, once answered"| n5
+  n4 -->|"when the user chooses to fix here"| n5
   n5 -->|"otherwise"| n4
   n5 -->|"when every check passes"| n6
   n6 --> n7
   n8 -->|"on [1] New release"| n1
-  n8 -. "otherwise" .- n8
   class n1 aidStep
   class n2 aidExit
   class n3 aidDecision
@@ -73,13 +71,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L188) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L34)
 
-<a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · ASK
+<a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L189" wrap
-| SELECTING | `references/state-selecting.md` | `aid-operator` | ASK → VERIFYING; ASK then HALT on cancel |
+| SELECTING | `references/state-selecting.md` | `aid-operator` | CHAIN → VERIFYING; HALT on cancel |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L43)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L46)
 
 <a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _decision_
 
@@ -89,13 +87,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L190) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L47)
 
-<a id="fragment-n4"></a>**4 · `FIX-DECISION`** — The checks failed in VERIFYING. · _exit_ · ASK
+<a id="fragment-n4"></a>**4 · `FIX-DECISION`** — The checks failed in VERIFYING. · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L191" wrap
-| FIX-DECISION | `references/state-fix-decision.md` | `inline` | ASK → RE-VERIFY; ASK then HALT on loop back |
+| FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L191) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L15`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L15)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L191) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L19)
 
 <a id="fragment-n5"></a>**5 · `RE-VERIFY`** — The user chose to fix the failed checks here. · _decision_
 
@@ -121,10 +119,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L194) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
 
-<a id="fragment-n8"></a>**8 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · ASK
+<a id="fragment-n8"></a>**8 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L195" wrap
-| RE-RUN | `references/state-re-run.md` | `inline` | ASK → IDLE; ASK then HALT on review |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L195) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L19)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L195) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L21)

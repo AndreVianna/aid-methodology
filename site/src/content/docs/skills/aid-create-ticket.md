@@ -28,26 +28,29 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PARSE-ARGS"])
-  n2["RESOLVE-CONNECTOR"]
+  n2(["RESOLVE-CONNECTOR"])
   n3["PICK-CONNECTOR"]
-  n4["COMPOSE"]
+  n4(["COMPOSE"])
   n5["LEVEL-RESOLVE"]
-  n6["CONFIRM"]
+  n6(["CONFIRM"])
   n7["FILE"]
   n8(["RETURN-REF"])
   n1 --> n2
   n2 --> n3
-  n3 --> n4
+  n2 -->|"when the connector resolves silently"| n4
+  n3 -. "otherwise" .- n3
+  n3 -->|"once the user has picked the connector"| n4
   n4 --> n5
   n5 --> n6
-  n6 --> n7
+  n6 -. "On the flow goes back to , with the user's requested change folded into the…" .-> n4
+  n6 -->|"once the user has chosen"| n7
   n7 --> n8
   class n1 aidEntry
-  class n2 aidStep
-  class n3 aidStep
-  class n4 aidStep
+  class n2 aidExit
+  class n3 aidLoopBack
+  class n4 aidExit
   class n5 aidStep
-  class n6 aidStep
+  class n6 aidExit
   class n7 aidStep
   class n8 aidExit
   class n1 aidNode
@@ -65,64 +68,64 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L67" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L69" wrap
 ### State 1 — PARSE-ARGS
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L67)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L69)
 
-<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
+<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L102" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L104" wrap
 ### State 2 — RESOLVE-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L102)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L104)
 
-<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _step_
+<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L118" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L120" wrap
 ### State 2a — PICK-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L118)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L120`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L120)
 
-<a id="fragment-n4"></a>**4 · `COMPOSE`** · _step_
+<a id="fragment-n4"></a>**4 · `COMPOSE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L127" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L131" wrap
 ### State 3 — COMPOSE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L127)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L131)
 
 <a id="fragment-n5"></a>**5 · `LEVEL-RESOLVE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L155" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L159" wrap
 ### State 4 — LEVEL-RESOLVE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L155)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L159)
 
-<a id="fragment-n6"></a>**6 · `CONFIRM`** · _step_
+<a id="fragment-n6"></a>**6 · `CONFIRM`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L181" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L185" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L181)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L185`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L185)
 
 <a id="fragment-n7"></a>**7 · `FILE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L210" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L216" wrap
 ### State 6 — FILE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L210`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L210)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L216`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L216)
 
-<a id="fragment-n8"></a>**8 · `RETURN-REF`** · _exit_ · UNSPECIFIED
+<a id="fragment-n8"></a>**8 · `RETURN-REF`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L227" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L233" wrap
 ### State 7 — RETURN-REF
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L227)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L233)

@@ -33,8 +33,8 @@ each reference when its step comes up. No work is created before FIND-OR-CREATE.
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
    `/aid-test`, `/aid-prototype`) goes to that skill with the block as an `intent:` line (see
    `.aid/runtime/templates/work-state-template.yml`); its START creates the work. Any other reading goes on
-   to FIND-OR-CREATE. **Advance:** **ASK** then **HALT** when the reading matches an action skill: ask the user to
-   confirm the hand-over, then start that skill; this skill is done. Otherwise **CHAIN** → FIND-OR-CREATE.
+   to FIND-OR-CREATE. **Advance:** **CHAIN** → FIND-OR-CREATE when the reading matches no action skill;
+   otherwise **ASK** then **HALT**: the user confirms the hand-over, and that skill starts.
 6. **Find or create the work** (`FIND-OR-CREATE`). `references/start-or-resume.md` section 3. A matching work is
    continued from its resume point and keeps its reading; otherwise the gate creates the work,
    the flow's first write. **Advance:** **CHAIN** → RECORD-INTENT, or ASK-FIRST when several works plausibly match.
@@ -63,19 +63,8 @@ each reference when its step comes up. No work is created before FIND-OR-CREATE.
   `sources:`, `write_backs:`, `lifecycle:`, `phase:` and `active_skill:`.
 - Check every decision against the Knowledge Base. A conflict with it is raised with the
   user, never settled alone.
-- The question rule (FR-17), in full:
-  - One topic and one question at a time, short, with a short reason for asking.
-  - Pitch it at the user's technical level: never a technical question to a non-technical
-    user; give deeper technical detail only when the user asks.
-  - Always give a recommendation or proposed answer, with its reasoning.
-  - Offer only valid options. One valid option makes it a confirmation; several equally good
-    options are all shown, with the best one named. Skip obvious questions. Always let the
-    user answer in free text or ask for clarification.
-  - Group questions by subject, 3 to 5 per group, the most important first. Offer a break
-    after each group and whenever the subject changes.
-  - Ask a follow-up right after the question that raised it. Skip a question that an earlier
-    answer settles or makes trivial.
-  - Record every question and answer. A skipped question stays open and is resumed later.
+- Ask only as `.aid/runtime/templates/question-protocol.md` says (FR-17): one topic at a time,
+  with a reason and a recommendation; every question and answer is recorded.
 - The user always decides how a work is persisted. When a tool cannot hold what must be
   written, stop, say so, and offer the workable options under the same question rule.
 - State Detection (`skill-steps.md`): detection shapes the entry step and validates a saved

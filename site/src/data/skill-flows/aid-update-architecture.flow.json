@@ -10,21 +10,24 @@
       "order": 1,
       "name": "INTAKE",
       "label": "INTAKE",
-      "kind": "entry",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "ASK",
+        "handoff": "The questions of steps 1 and 4 are asked in this step. The route of step 5 is then instead"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
         "startLine": 50,
         "endLine": 70,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the architecture record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-architecture`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).\n   Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently. C1's default set holds both\n   `project-structure.md` and `architecture.md`; this skill targets the document describing\n   the system's shape, never `project-structure.md`.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-architecture` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the architecture record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-architecture`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).\n   Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently. C1's default set holds both\n   `project-structure.md` and `architecture.md`; this skill targets the document describing\n   the system's shape, never `project-structure.md`.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> close the\n   allocated work as `Canceled` through the writer, route to `/aid-create-architecture`, and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
         "startLine": 50,
-        "endLine": 72,
+        "endLine": 73,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the architecture record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-architecture`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).\n   Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently. C1's default set holds both\n   `project-structure.md` and `architecture.md`; this skill targets the document describing\n   the system's shape, never `project-structure.md`.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-architecture` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the architecture record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-architecture`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).\n   Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently. C1's default set holds both\n   `project-structure.md` and `architecture.md`; this skill targets the document describing\n   the system's shape, never `project-structure.md`.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> close the\n   allocated work as `Canceled` through the writer, route to `/aid-create-architecture`, and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** ASK -> [State: UPDATE]. The questions of steps 1 and 4 are asked in this step. The route of step 5\nis ASK then HALT instead."
       }
     },
     {
@@ -36,17 +39,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 76,
-        "endLine": 86,
+        "startLine": 77,
+        "endLine": 87,
         "sourceKind": "skill",
         "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C1 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content."
       },
       "detail": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 76,
-        "endLine": 88,
+        "startLine": 77,
+        "endLine": 91,
         "sourceKind": "skill",
-        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C1 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C1 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\nThe step ends with the question of step 2, asked on every run.\n\n**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -58,15 +61,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 92,
-        "endLine": 95,
+        "startLine": 95,
+        "endLine": 98,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 92,
-        "endLine": 97,
+        "startLine": 95,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -80,17 +83,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 101,
-        "endLine": 104,
+        "startLine": 104,
+        "endLine": 107,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, and\nassert that a consumed seed is gone."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer, with its pause reason. Present the\nrevision, name every output touched, and assert that a consumed seed is gone."
       },
       "detail": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 101,
-        "endLine": 106,
+        "startLine": 104,
+        "endLine": 109,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, and\nassert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer, with its pause reason. Present the\nrevision, name every output touched, and assert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -100,22 +103,22 @@
       "label": "DONE",
       "kind": "exit",
       "terminal": {
-        "advanceType": "UNSPECIFIED",
+        "advanceType": "HALT",
         "handoff": null
       },
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 110,
-        "endLine": 112,
+        "startLine": 113,
+        "endLine": 115,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
       },
       "detail": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 110,
-        "endLine": 112,
+        "startLine": 113,
+        "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
       }
     }
   ],
@@ -125,13 +128,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
         "startLine": 72,
-        "endLine": 72,
+        "endLine": 73,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "**Advance:** ASK -> [State: UPDATE]. The questions of steps 1 and 4 are asked in this step. The route of step 5\nis ASK then HALT instead."
       }
     },
     {
@@ -139,13 +142,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
+        "startLine": 91,
+        "endLine": 91,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -156,8 +159,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
       }
@@ -170,8 +173,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 97,
-        "endLine": 97,
+        "startLine": 100,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -184,8 +187,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
-        "startLine": 106,
-        "endLine": 106,
+        "startLine": 109,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
@@ -195,6 +198,7 @@
     "n1"
   ],
   "exits": [
+    "n1",
     "n5"
   ],
   "sources": [

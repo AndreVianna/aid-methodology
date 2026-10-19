@@ -63,10 +63,10 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `ANALYZE`** — ANALYZE maps the user's instruction onto concrete KB… · _exit_ · WAIT
+<a id="fragment-n1"></a>**1 · `ANALYZE`** — ANALYZE maps the user's instruction onto concrete KB… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L447" wrap
-| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or WAIT if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or ASK if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L447`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L447) · [full step: `canonical/skills/aid-update-kb/references/state-analyze.md#L1-L276`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-analyze.md#L1-L276)
@@ -82,10 +82,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n3"></a>**3 · `CONFIRM`** — CONFIRM is the new pre-apply human gate -- the root fix… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L449" wrap
-| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` ASK -> APPLY; `[2]` WAIT -> SCOPE/ANALYZE; `[3]` HALT |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` ASK -> APPLY; `[2]` CHAIN -> SCOPE/ANALYZE; `[3]` HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-update-kb/SKILL.md#L449`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L449) · [full step: `canonical/skills/aid-update-kb/references/state-confirm.md#L1-L156`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-confirm.md#L1-L156)
+[Source: `canonical/skills/aid-update-kb/SKILL.md#L449`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L449) · [full step: `canonical/skills/aid-update-kb/references/state-confirm.md#L1-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-confirm.md#L1-L155)
 
 <a id="fragment-n4"></a>**4 · `APPLY`** — APPLY makes targeted summary+pointer edits to the KB docs… · _step_
 
@@ -106,10 +106,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n6"></a>**6 · `APPROVAL`** — APPROVAL is the explicit human gate before the KB change is… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L452" wrap
-| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> ASK -> DONE; `[2] Additional consideration` -> WAIT -> re-scope (CONFIRM/SCOPE) |
+| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> ASK -> DONE; `[2] Additional consideration` -> CHAIN -> re-scope (CONFIRM/SCOPE) |
 ~~~~
 
-[Source: `canonical/skills/aid-update-kb/SKILL.md#L452`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L452) · [full step: `canonical/skills/aid-update-kb/references/state-approval.md#L1-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-approval.md#L1-L155)
+[Source: `canonical/skills/aid-update-kb/SKILL.md#L452`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L452) · [full step: `canonical/skills/aid-update-kb/references/state-approval.md#L1-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-approval.md#L1-L154)
 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE commits the approved KB changes and closes the run. · _exit_ · HALT
 

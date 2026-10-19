@@ -31,13 +31,12 @@ flowchart TB
   n4["BUILD"]
   n5["VERIFY<br/>LIGHT -- do not polish-grade a rough model"]
   n6["PRESENT<br/>hard stop -- the user decides"]
-  n7(["HANDOFF<br/>optional; printed suggestions only"])
+  n7["HANDOFF<br/>optional; printed suggestions only"]
   n8(["DONE"])
-  n1 -->|"when the argument is empty, the path is Guided"| n2
-  n1 -->|"works exist; otherwise"| n3
+  n1 -->|"when any of these holds: the argument is empty, the path is Guided, works exist"| n2
+  n1 -->|"otherwise"| n3
   n2 --> n3
-  n3 -. "otherwise" .- n3
-  n3 -->|"on a new work; a continuation follows the gate's § 3b instead"| n4
+  n3 --> n4
   n4 --> n5
   n5 -.-> n4
   n5 --> n6
@@ -45,11 +44,11 @@ flowchart TB
   n7 --> n8
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidStep
   class n4 aidStep
   class n5 aidLoopBack
   class n6 aidStep
-  class n7 aidExit
+  class n7 aidStep
   class n8 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -66,44 +65,34 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L31-L43" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L31-L33" wrap
 ## State: INTAKE
 
-1. **Check the direction.** Note whether the argument is empty. Do not ask here.
-2. **Capture (thin):** direction/hypothesis; fidelity (`paper` | `low-fi` | `runnable
-   spike`, default `low-fi`); the success signal that would validate it; the scope
-   boundary (what it does NOT attempt -- keeps it throwaway).
-3. **Pick the path:** **Fast** -- a clear direction + success signal -> build now.
-   **Guided** -- vague ("prototype something for onboarding") -> scope direction / success
-   signal / fidelity first, in INTAKE-ASK.
-4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
-   medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
-5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Note whether any exist. Do not prompt here.
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L31-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L43) · [full step: `canonical/skills/aid-prototype/SKILL.md#L31-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L46)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L31-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L33) · [full step: `canonical/skills/aid-prototype/SKILL.md#L31-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L47)
 
 <a id="fragment-n2"></a>**2 · `INTAKE-ASK`** — only when a question must be put · _step_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L50-L52" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L51-L53" wrap
 ## State: INTAKE-ASK  (only when a question must be put)
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L50-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L50-L52) · [full step: `canonical/skills/aid-prototype/SKILL.md#L50-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L50-L60)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L51-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L51-L53) · [full step: `canonical/skills/aid-prototype/SKILL.md#L51-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L51-L61)
 
-<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L64-L67" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L65-L68" wrap
 ## State: ALLOCATE
 
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L64-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L64-L67) · [full step: `canonical/skills/aid-prototype/SKILL.md#L64-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L64-L82)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L65-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L65-L68) · [full step: `canonical/skills/aid-prototype/SKILL.md#L65-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L65-L82)
 
 <a id="fragment-n4"></a>**4 · `BUILD`** · _step_
 
@@ -147,7 +136,7 @@ What we learned · viable? (a conclusion, not a resolution).** Assert no resolut
 
 [Source: `canonical/skills/aid-prototype/SKILL.md#L112-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L112-L116) · [full step: `canonical/skills/aid-prototype/SKILL.md#L112-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L112-L118)
 
-<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
+<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _step_
 
 ~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L122-L127" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

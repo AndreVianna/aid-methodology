@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 67,
-        "endLine": 67,
+        "startLine": 69,
+        "endLine": 69,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -26,12 +26,15 @@
       "order": 2,
       "name": "RESOLVE-CONNECTOR",
       "label": "RESOLVE-CONNECTOR",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "more match. An unknown stem or the notify exit above ends the run here ("
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 102,
-        "endLine": 102,
+        "startLine": 104,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -42,12 +45,12 @@
       "order": 3,
       "name": "PICK-CONNECTOR",
       "label": "PICK-CONNECTOR",
-      "kind": "step",
+      "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 120,
+        "endLine": 120,
         "sourceKind": "skill",
         "excerpt": "### State 2a — PICK-CONNECTOR"
       },
@@ -58,12 +61,15 @@
       "order": 4,
       "name": "COMPOSE",
       "label": "COMPOSE",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "The cross-tracker stop above ends the run here ("
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 131,
+        "endLine": 131,
         "sourceKind": "skill",
         "excerpt": "### State 3 — COMPOSE"
       },
@@ -78,8 +84,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 155,
-        "endLine": 155,
+        "startLine": 159,
+        "endLine": 159,
         "sourceKind": "skill",
         "excerpt": "### State 4 — LEVEL-RESOLVE"
       },
@@ -90,12 +96,15 @@
       "order": 6,
       "name": "CONFIRM",
       "label": "CONFIRM",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "On [3] Cancel nothing is sent or filed, and the run ends here ("
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 181,
-        "endLine": 181,
+        "startLine": 185,
+        "endLine": 185,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -110,8 +119,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 210,
-        "endLine": 210,
+        "startLine": 216,
+        "endLine": 216,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       },
@@ -124,13 +133,13 @@
       "label": "RETURN-REF",
       "kind": "exit",
       "terminal": {
-        "advanceType": "UNSPECIFIED",
+        "advanceType": "HALT",
         "handoff": null
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 227,
-        "endLine": 227,
+        "startLine": 233,
+        "endLine": 233,
         "sourceKind": "skill",
         "excerpt": "### State 7 — RETURN-REF"
       },
@@ -146,10 +155,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 67,
-        "endLine": 67,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "### State 1 — PARSE-ARGS"
+        "excerpt": "**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR (continue inline)."
       }
     },
     {
@@ -160,24 +169,52 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 102,
-        "endLine": 102,
+        "startLine": 116,
+        "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole\nmatch, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match. An unknown stem or the\nnotify exit above ends the run here (HALT)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "when the connector resolves silently",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-create-ticket/SKILL.md",
+        "startLine": 116,
+        "endLine": 118,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole\nmatch, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match. An unknown stem or the\nnotify exit above ends the run here (HALT)."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": "otherwise",
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-ticket/SKILL.md",
+        "startLine": 129,
+        "endLine": 129,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline)."
       }
     },
     {
       "from": "n3",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "once the user has picked the connector",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 129,
+        "endLine": 129,
         "sourceKind": "skill",
-        "excerpt": "### State 2a — PICK-CONNECTOR"
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline)."
       }
     },
     {
@@ -188,10 +225,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 157,
+        "endLine": 157,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — COMPOSE"
+        "excerpt": "**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline). The cross-tracker stop above ends the run here (HALT)."
       }
     },
     {
@@ -202,24 +239,38 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 155,
-        "endLine": 155,
+        "startLine": 183,
+        "endLine": 183,
         "sourceKind": "skill",
-        "excerpt": "### State 4 — LEVEL-RESOLVE"
+        "excerpt": "**Advance:** **CHAIN** → State: CONFIRM (continue inline)."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n4",
+      "kind": "loop-back",
+      "condition": "On the flow goes back to , with the user's requested change folded into the…",
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-ticket/SKILL.md",
+        "startLine": 212,
+        "endLine": 214,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`. On `[2] Edit` the flow goes back\nto State: COMPOSE (continue inline), with the user's requested change folded into the payload. On `[3] Cancel`\nnothing is sent or filed, and the run ends here (HALT)."
       }
     },
     {
       "from": "n6",
       "to": "n7",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "once the user has chosen",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 181,
-        "endLine": 181,
+        "startLine": 212,
+        "endLine": 214,
         "sourceKind": "skill",
-        "excerpt": "### State 5 — CONFIRM"
+        "excerpt": "**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`. On `[2] Edit` the flow goes back\nto State: COMPOSE (continue inline), with the user's requested change folded into the payload. On `[3] Cancel`\nnothing is sent or filed, and the run ends here (HALT)."
       }
     },
     {
@@ -230,10 +281,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 210,
-        "endLine": 210,
+        "startLine": 231,
+        "endLine": 231,
         "sourceKind": "skill",
-        "excerpt": "### State 6 — FILE"
+        "excerpt": "**Advance:** **CHAIN** → State: RETURN-REF (continue inline)."
       }
     }
   ],
@@ -241,6 +292,9 @@
     "n1"
   ],
   "exits": [
+    "n2",
+    "n4",
+    "n6",
     "n8"
   ],
   "sources": [

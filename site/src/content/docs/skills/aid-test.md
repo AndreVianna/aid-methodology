@@ -31,13 +31,12 @@ flowchart TB
   n4["RUN"]
   n5["VERIFY"]
   n6["PRESENT<br/>hard stop -- human"]
-  n7(["HANDOFF<br/>optional; printed suggestions only"])
+  n7["HANDOFF<br/>optional; printed suggestions only"]
   n8(["DONE"])
-  n1 -->|"when the argument is empty, the path is Guided"| n2
-  n1 -->|"works exist; otherwise"| n3
+  n1 -->|"when any of these holds: the argument is empty, the path is Guided, works exist"| n2
+  n1 -->|"otherwise"| n3
   n2 --> n3
-  n3 -. "otherwise" .- n3
-  n3 -->|"on a new work; a continuation follows the gate's § 3b instead"| n4
+  n3 --> n4
   n4 --> n5
   n5 -.-> n4
   n5 --> n6
@@ -45,11 +44,11 @@ flowchart TB
   n7 --> n8
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidStep
   class n4 aidStep
   class n5 aidLoopBack
   class n6 aidStep
-  class n7 aidExit
+  class n7 aidStep
   class n8 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -66,50 +65,38 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L35-L49" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L35-L37" wrap
 ## State: INTAKE
 
-1. **Check the target.** Note whether the argument is empty. Do not ask here.
-2. **Determine the verification kind** from the request (or the kind a sibling bound):
-   functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),
-   **performance** (workload/threshold/environment), **data-quality** (schema/freshness/
-   completeness/uniqueness), or **model-eval** (run the eval harness, assert metric vs
-   threshold). The framework is inferred from the KB (`test-landscape.md`).
-3. **Pick the path:** **Fast** -- a clear target + kind ("run the security scan on the auth
-   module", "benchmark the /orders endpoint vs the p99 SLO") -> run now. **Guided** -- vague
-   -> scope target / kind / threshold first, in INTAKE-ASK.
-4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /
-   medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.
-5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Note whether any exist. Do not prompt here.
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L35-L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L35-L49) · [full step: `canonical/skills/aid-test/SKILL.md#L35-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L35-L52)
+[Source: `canonical/skills/aid-test/SKILL.md#L35-L37`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L35-L37) · [full step: `canonical/skills/aid-test/SKILL.md#L35-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L35-L53)
 
 <a id="fragment-n2"></a>**2 · `INTAKE-ASK`** — only when a question must be put · _step_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L56-L58" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L57-L59" wrap
 ## State: INTAKE-ASK  (only when a question must be put)
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L56-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L56-L58) · [full step: `canonical/skills/aid-test/SKILL.md#L56-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L56-L65)
+[Source: `canonical/skills/aid-test/SKILL.md#L57-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L57-L59) · [full step: `canonical/skills/aid-test/SKILL.md#L57-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L57-L66)
 
-<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `ALLOCATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L69-L72" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L70-L73" wrap
 ## State: ALLOCATE
 
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L69-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L69-L72) · [full step: `canonical/skills/aid-test/SKILL.md#L69-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L69-L84)
+[Source: `canonical/skills/aid-test/SKILL.md#L70-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L70-L73) · [full step: `canonical/skills/aid-test/SKILL.md#L70-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L70-L86)
 
 <a id="fragment-n4"></a>**4 · `RUN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L88-L98" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L90-L100" wrap
 ## State: RUN
 
 Execute the verification **read-only** (Bash: the test runner, scanner, benchmark, or
@@ -123,11 +110,11 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
 (the run output + a `file:line` where applicable).
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L88-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L88-L98) · [full step: `canonical/skills/aid-test/SKILL.md#L88-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L88-L100)
+[Source: `canonical/skills/aid-test/SKILL.md#L90-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L90-L100) · [full step: `canonical/skills/aid-test/SKILL.md#L90-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L90-L102)
 
 <a id="fragment-n5"></a>**5 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L104-L113" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L106-L115" wrap
 ## State: VERIFY
 
 1. **Mechanical grounding check** (no dispatch): every finding cites run output / a
@@ -140,11 +127,11 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L104-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L104-L113) · [full step: `canonical/skills/aid-test/SKILL.md#L104-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L104-L115)
+[Source: `canonical/skills/aid-test/SKILL.md#L106-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L106-L115) · [full step: `canonical/skills/aid-test/SKILL.md#L106-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L106-L117)
 
 <a id="fragment-n6"></a>**6 · `PRESENT`** — hard stop -- human · _step_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L119-L123" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L121-L125" wrap
 ## State: PRESENT  (hard stop -- human)
 
 The hard stop follows the ASK step of `skill-steps.md`. Present the consolidated findings, severity-ranked,
@@ -152,11 +139,11 @@ each with its evidence; state pass/fail against any threshold; and a printed sug
 "N issues found -- run `/aid-fix` to address them." Assert no resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L119-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L119-L123) · [full step: `canonical/skills/aid-test/SKILL.md#L119-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L119-L125)
+[Source: `canonical/skills/aid-test/SKILL.md#L121-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L121-L125) · [full step: `canonical/skills/aid-test/SKILL.md#L121-L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L121-L127)
 
-<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
+<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L129-L133" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L131-L135" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests
@@ -164,14 +151,14 @@ for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked
 if any, the user takes; a picked one is named in one plain line.
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L129-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L129-L133) · [full step: `canonical/skills/aid-test/SKILL.md#L129-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L129-L135)
+[Source: `canonical/skills/aid-test/SKILL.md#L131-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L131-L135) · [full step: `canonical/skills/aid-test/SKILL.md#L131-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L131-L137)
 
 <a id="fragment-n8"></a>**8 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L139-L141" wrap
+~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L141-L143" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-test/SKILL.md#L139-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L139-L141) · [full step: `canonical/skills/aid-test/SKILL.md#L139-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L139-L143)
+[Source: `canonical/skills/aid-test/SKILL.md#L141-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L141-L143) · [full step: `canonical/skills/aid-test/SKILL.md#L141-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L141-L145)

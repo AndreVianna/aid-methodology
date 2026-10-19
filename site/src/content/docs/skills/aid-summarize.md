@@ -41,11 +41,11 @@ flowchart TB
   n4 --> n5
   n5 -->|"if Machine Grade &gt;= minimum"| n6
   n5 -->|"otherwise"| n7
-  n6 -->|"otherwise"| n7
-  n6 -->|"if Overall Grade ≥ minimum"| n8
+  n6 -->|"otherwise, once every question is answered"| n7
+  n6 -->|"when Overall Grade ≥ minimum"| n8
   n7 --> n5
-  n8 --> n7
-  n8 -->|"if the user approved"| n9
+  n8 -->|"changes needed"| n7
+  n8 -->|"approved"| n9
   n9 --> n10
   class n1 aidEntry
   class n2 aidExit

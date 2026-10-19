@@ -73,44 +73,44 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L61-L67" wrap
 ## State: DESIGN
 
-Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
+Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
 `.aid/design/cicd.md` in the seed shape the contract fixes (`design-seed.md`;
 feature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read
 in INTAKE. What this artifact's seed must settle: **the pipeline stages, triggers,
 environments, and promotion and release flow**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-cicd/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L61-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L61-L81)
+[Source: `canonical/skills/aid-design-cicd/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L61-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L61-L83)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L85-L88" wrap
+~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L87-L90" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-cicd/SKILL.md#L85-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L85-L88) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L85-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L85-L90)
+[Source: `canonical/skills/aid-design-cicd/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L87-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L87-L92)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L94-L97" wrap
+~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L96-L99" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-cicd/SKILL.md#L94-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L94-L97) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L94-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L94-L99)
+[Source: `canonical/skills/aid-design-cicd/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L96-L101)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L103-L106" wrap
+~~~~plaintext title="canonical/skills/aid-design-cicd/SKILL.md#L105-L108" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/cicd.md`; consumption happens at `/aid-create-cicd`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-cicd/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L103-L106) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L103-L106)
+[Source: `canonical/skills/aid-design-cicd/SKILL.md#L105-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L105-L108) · [full step: `canonical/skills/aid-design-cicd/SKILL.md#L105-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cicd/SKILL.md#L105-L108)

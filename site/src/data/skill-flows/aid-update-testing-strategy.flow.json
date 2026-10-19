@@ -10,8 +10,11 @@
       "order": 1,
       "name": "INTAKE",
       "label": "INTAKE",
-      "kind": "entry",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "ASK",
+        "handoff": "A route to the create skill is then instead, after the allocated work, if any, is closed as Canceled through the writer"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
         "startLine": 50,
@@ -24,7 +27,7 @@
         "startLine": 50,
         "endLine": 72,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What should\n   change in the testing strategy or the gate policy?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-testing-strategy`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/testing-strategy.md`, carrying its `## Current direction` into the\n   destinations and deleting it once realized.\n4. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &\n   testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;\n   otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`\n   `knowledge.doc_set`, falling back to the C6 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read both destinations** whole, and note each one's `source:` field. An absent\n   destination -> route to `/aid-create-testing-strategy` for that document and write nothing\n   there.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What should\n   change in the testing strategy or the gate policy?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-testing-strategy`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/testing-strategy.md`, carrying its `## Current direction` into the\n   destinations and deleting it once realized.\n4. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &\n   testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;\n   otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`\n   `knowledge.doc_set`, falling back to the C6 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read both destinations** whole, and note each one's `source:` field. An absent\n   destination -> route to `/aid-create-testing-strategy` for that document and write nothing\n   there.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
       }
     },
     {
@@ -44,9 +47,9 @@
       "detail": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
         "startLine": 76,
-        "endLine": 88,
+        "endLine": 90,
         "sourceKind": "skill",
-        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C6 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C6 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\nThe step ends with the derived-outputs question of step 2, asked on every run.\n\n**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -58,15 +61,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 92,
-        "endLine": 95,
+        "startLine": 94,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 92,
-        "endLine": 97,
+        "startLine": 94,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -76,24 +79,46 @@
       "order": 4,
       "name": "PRESENT",
       "label": "hard stop -- the user decides",
-      "kind": "exit",
-      "terminal": {
-        "advanceType": "ASK",
-        "handoff": "State: DONE"
-      },
+      "kind": "step",
+      "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 101,
-        "endLine": 104,
+        "startLine": 103,
+        "endLine": 106,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say which C6 half each change\nwent to, name every output touched, and assert that a consumed seed is gone."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say which C6 half each change\nwent to, name every output touched, and assert that a consumed seed is gone."
       },
       "detail": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 101,
-        "endLine": 106,
+        "startLine": 103,
+        "endLine": 108,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say which C6 half each change\nwent to, name every output touched, and assert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say which C6 half each change\nwent to, name every output touched, and assert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
+        "startLine": 112,
+        "endLine": 114,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
+        "startLine": 112,
+        "endLine": 116,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
       }
     }
   ],
@@ -103,13 +128,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
         "startLine": 72,
         "endLine": 72,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: UPDATE]."
+        "excerpt": "**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
       }
     },
     {
@@ -117,13 +142,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
+        "startLine": 90,
+        "endLine": 90,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -134,8 +159,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 96,
+        "endLine": 96,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
       }
@@ -148,10 +173,24 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
-        "startLine": 97,
-        "endLine": 97,
+        "startLine": 99,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-update-testing-strategy/SKILL.md",
+        "startLine": 108,
+        "endLine": 108,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],
@@ -159,7 +198,8 @@
     "n1"
   ],
   "exits": [
-    "n4"
+    "n1",
+    "n5"
   ],
   "sources": [
     "canonical/skills/aid-update-testing-strategy/SKILL.md"

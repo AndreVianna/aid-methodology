@@ -26,22 +26,22 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
-  n2["GUARD"]
+  n2{"GUARD"}
   n3(["REALIZE"])
   n4["REGISTER"]
   n5["VERIFY"]
   n6["PRESENT<br/>hard stop -- the user decides"]
   n7(["DONE"])
   n1 --> n2
-  n2 --> n3
+  n2 -->|"the override is supplied. On a refusal: . Say that the user must resolve the…"| n3
+  n2 -->|"when no question is unresolved"| n3
   n3 -->|"creation"| n4
-  n3 --> n7
   n4 --> n5
   n5 -.-> n3
   n5 --> n6
   n6 --> n7
   class n1 aidEntry
-  class n2 aidStep
+  class n2 aidDecision
   class n3 aidExit
   class n4 aidStep
   class n5 aidLoopBack
@@ -72,7 +72,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    driven.
 3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and
    ask whether to proceed without one (direction entered interactively) or to run
-   `/aid-design-roadmap` first; do not proceed silently.
+   `/aid-design-roadmap` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its state:
    absent | present-horizon-empty | present-horizon-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
@@ -81,7 +81,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-roadmap/SKILL.md#L50-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L50-L64) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L50-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L50-L66)
 
-<a id="fragment-n2"></a>**2 · `GUARD`** · _step_
+<a id="fragment-n2"></a>**2 · `GUARD`** · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L70-L73" wrap
 ## State: GUARD

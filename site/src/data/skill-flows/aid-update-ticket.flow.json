@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -42,12 +42,12 @@
       "order": 3,
       "name": "LOAD-CONTEXT",
       "label": "LOAD-CONTEXT",
-      "kind": "step",
+      "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 91,
+        "endLine": 91,
         "sourceKind": "skill",
         "excerpt": "### State 3 — LOAD-CONTEXT"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
+        "startLine": 113,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "### State 4 — COMPOSE"
       },
@@ -74,12 +74,12 @@
       "order": 5,
       "name": "CONFIRM",
       "label": "CONFIRM",
-      "kind": "step",
+      "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 166,
-        "endLine": 166,
+        "startLine": 174,
+        "endLine": 174,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -92,13 +92,13 @@
       "label": "WRITE",
       "kind": "exit",
       "terminal": {
-        "advanceType": "UNSPECIFIED",
-        "handoff": null
+        "advanceType": "HALT",
+        "handoff": "after the one mutation call (or its failure) is reported"
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 195,
-        "endLine": 195,
+        "startLine": 205,
+        "endLine": 205,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -114,10 +114,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 64,
-        "endLine": 64,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
-        "excerpt": "### State 1 — PARSE-ARGS"
+        "excerpt": "**Advance:** **CHAIN** → RESOLVE-CONNECTOR."
       }
     },
     {
@@ -128,24 +128,38 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 89,
+        "endLine": 89,
         "sourceKind": "skill",
-        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+        "excerpt": "**Advance:** **CHAIN** → LOAD-CONTEXT."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": "otherwise",
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 111,
+        "endLine": 111,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered."
       }
     },
     {
       "from": "n3",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "A missing file is asked in the step first; the step carries once it is answered",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 111,
+        "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — LOAD-CONTEXT"
+        "excerpt": "**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered."
       }
     },
     {
@@ -156,24 +170,38 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
+        "startLine": 172,
+        "endLine": 172,
         "sourceKind": "skill",
-        "excerpt": "### State 4 — COMPOSE"
+        "excerpt": "**Advance:** **CHAIN** → CONFIRM."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n4",
+      "kind": "loop-back",
+      "condition": "goes back to , and ends the run with",
+      "advanceType": "HALT",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 203,
+        "endLine": 203,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**."
       }
     },
     {
       "from": "n5",
       "to": "n6",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "CHAIN",
+      "kind": "branch",
+      "condition": "on",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 166,
-        "endLine": 166,
+        "startLine": 203,
+        "endLine": 203,
         "sourceKind": "skill",
-        "excerpt": "### State 5 — CONFIRM"
+        "excerpt": "**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**."
       }
     }
   ],

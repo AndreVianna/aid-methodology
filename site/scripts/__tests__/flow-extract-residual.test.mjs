@@ -385,12 +385,19 @@ describe('R2 — aid-create-ticket (8 states)', () => {
     expect(chart.exits).toContain(last.id);
   });
 
-  it('sequential edges: count = nodes - 1', () => {
-    expect(chart.edges.length).toBe(chart.nodes.length - 1);
+  it('edges follow the advance lines: RESOLVE-CONNECTOR branches straight to COMPOSE', () => {
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    const edge = chart.edges.find((e) =>
+      e.from === id('RESOLVE-CONNECTOR') && e.to === id('COMPOSE'));
+    expect(edge?.kind).toBe('branch');
   });
 
-  it('all edges are kind sequence', () => {
-    expect(chart.edges.every((e) => e.kind === 'sequence')).toBe(true);
+  it('edges follow the advance lines: CONFIRM loops back to COMPOSE, not a straight chain', () => {
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    const edge = chart.edges.find((e) =>
+      e.from === id('CONFIRM') && e.to === id('COMPOSE'));
+    expect(edge?.kind).toBe('loop-back');
+    expect(chart.edges.some((e) => e.kind !== 'sequence')).toBe(true);
   });
 
   it('passes V1-V8', () => {
@@ -1236,3 +1243,169 @@ describe('parseAsciiStateMap — export signature', () => {
     expect(r.names.length).toBe(r.conditions.length);
   });
 });
+
+// ── R2–R4 read each step's **Advance:** line (advance.mjs) ───────────────────
+
+describe('R2 — an advance line decides the next state, not the heading order', () => {
+  const R2_JUMP = `---
+name: r2-jump
+description: R2 jump fixture
+---
+
+### State 1 — ALPHA
+
+Do the first thing.
+
+**Advance:** CHAIN → State 3 (GAMMA).
+
+### State 2 — BETA
+
+Do the second thing; the advance below names no state of this chart.
+
+**Advance:** CHAIN → [State: NOWHERE].
+
+### State 3 — GAMMA
+
+Finish the run.
+
+**Advance:** **HALT**.
+`;
+
+  it('ALPHA goes straight to GAMMA, skipping BETA', () => {
+    const chart = extractResidual(parseSkill(R2_JUMP, 'r2-jump'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.edges.some((e) => e.from === id('ALPHA') && e.to === id('GAMMA'))).toBe(true);
+    expect(chart.edges.some((e) => e.from === id('ALPHA') && e.to === id('BETA'))).toBe(false);
+  });
+
+  it('GAMMA ends the run with HALT, not an unspecified exit', () => {
+    const chart = extractResidual(parseSkill(R2_JUMP, 'r2-jump'));
+    const gamma = chart.nodes.find((n) => n.name === 'GAMMA');
+    expect(gamma.terminal.advanceType).toBe('HALT');
+    expect(chart.exits).toContain(gamma.id);
+  });
+
+  it('BETA names an undeclared state: it keeps the sequence and says so in a warning', () => {
+    const chart = extractResidual(parseSkill(R2_JUMP, 'r2-jump'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.edges.some((e) => e.from === id('BETA') && e.to === id('GAMMA'))).toBe(true);
+    expect(chart.warnings.some((w) => /NOWHERE/.test(w))).toBe(true);
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+describe('R3 — advance lines, read after prose on the same line', () => {
+  const R3_ADVANCE = `---
+name: r3-advance
+description: R3 advance fixture
+---
+
+### Step 1 — Gather
+
+Collect the input and keep the reply. **Advance:** **CHAIN** → STEP-3 (the check is skipped).
+
+### Step 2 — Check
+
+Check the input.
+
+**Advance:** **ASK** → STEP-3.
+
+### Step 3 — Report
+
+Report the result.
+
+**Advance:** **ASK** then **HALT**.
+`;
+
+  it('STEP-1 advances to STEP-3 as its advance line says', () => {
+    const chart = extractResidual(parseSkill(R3_ADVANCE, 'r3-advance'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.edges.some((e) => e.from === id('STEP-1') && e.to === id('STEP-3') && e.advanceType === 'CHAIN')).toBe(true);
+    expect(chart.edges.some((e) => e.from === id('STEP-1') && e.to === id('STEP-2'))).toBe(false);
+  });
+
+  it('STEP-2 asks its way to STEP-3 (ASK edge)', () => {
+    const chart = extractResidual(parseSkill(R3_ADVANCE, 'r3-advance'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.edges.some((e) => e.from === id('STEP-2') && e.to === id('STEP-3') && e.advanceType === 'ASK')).toBe(true);
+  });
+
+  it('STEP-3 is an ASK-then-HALT exit', () => {
+    const chart = extractResidual(parseSkill(R3_ADVANCE, 'r3-advance'));
+    const step3 = chart.nodes.find((n) => n.name === 'STEP-3');
+    expect(step3.terminal.advanceType).toBe('ASK');
+    expect(chart.exits).toContain(step3.id);
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+describe('R4 — a letter-suffixed item is a step, and its advance names its state', () => {
+  const R4_ADVANCE = `---
+name: r4-advance
+description: R4 advance fixture
+---
+
+1. **Start the flow** (\`START\`). Read the request. **Advance:** **CHAIN** → CHECK.
+2. **Check the request** (\`CHECK\`). Look at it.
+   **Advance:** **ASK** → ASK-FIRST.
+2a. **Ask first** (\`ASK-FIRST\`). Ask one question.
+   **Advance:** **CHAIN** → FINISH.
+3. **Finish the run** (\`FINISH\`). Close it.
+   **Advance:** **HALT**.
+`;
+
+  it('the 2a item is a node of its own', () => {
+    const chart = extractResidual(parseSkill(R4_ADVANCE, 'r4-advance'));
+    expect(chart.nodes.length).toBe(4);
+  });
+
+  it('START advances to CHECK mid-line, CHECK asks its way to ASK-FIRST, and ASK-FIRST chains to FINISH', () => {
+    const chart = extractResidual(parseSkill(R4_ADVANCE, 'r4-advance'));
+    const ids = chart.nodes.map((n) => n.id);
+    expect(chart.edges.some((e) => e.from === ids[0] && e.to === ids[1] && e.advanceType === 'CHAIN')).toBe(true);
+    expect(chart.edges.some((e) => e.from === ids[1] && e.to === ids[2] && e.advanceType === 'ASK')).toBe(true);
+    expect(chart.edges.some((e) => e.from === ids[2] && e.to === ids[3] && e.advanceType === 'CHAIN')).toBe(true);
+  });
+
+  it('the last item ends the run with HALT', () => {
+    const chart = extractResidual(parseSkill(R4_ADVANCE, 'r4-advance'));
+    const last = chart.nodes[chart.nodes.length - 1];
+    expect(last.terminal.advanceType).toBe('HALT');
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+describe('real skills — aid-orchestrate, aid-read-ticket, aid-update-ticket follow their advance lines', () => {
+  it('aid-orchestrate: 12 steps, including 6a', () => {
+    const chart = extractResidual(loadSkill('aid-orchestrate'));
+    expect(chart.nodes.length).toBe(12);
+  });
+
+  it('aid-orchestrate: FIND-OR-CREATE (step 6) branches to ASK-FIRST (6a) and to RECORD-INTENT (7)', () => {
+    const chart = extractResidual(loadSkill('aid-orchestrate'));
+    const out = chart.edges.filter((e) => e.from === 'n6').map((e) => e.to).sort();
+    expect(out).toEqual(['n7', 'n8']);
+  });
+
+  it('aid-orchestrate: step 1 ends the run with HALT, and no exit is left unspecified', () => {
+    const chart = extractResidual(loadSkill('aid-orchestrate'));
+    const n1 = chart.nodes.find((n) => n.order === 1);
+    expect(n1.terminal.advanceType).toBe('HALT');
+    expect(chart.nodes.filter((n) => n.terminal?.advanceType === 'UNSPECIFIED').length).toBe(0);
+  });
+
+  it('aid-read-ticket: RESOLVE-CONNECTOR can halt, and PICK-CONNECTOR asks before FETCH', () => {
+    const chart = extractResidual(loadSkill('aid-read-ticket'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.exits).toContain(id('RESOLVE-CONNECTOR'));
+    expect(chart.edges.some((e) => e.from === id('PICK-CONNECTOR') && e.to === id('FETCH') && e.advanceType === 'ASK')).toBe(true);
+  });
+
+  it('aid-update-ticket: CONFIRM asks before WRITE, and WRITE ends the run with HALT', () => {
+    const chart = extractResidual(loadSkill('aid-update-ticket'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    expect(chart.edges.some((e) => e.from === id('CONFIRM') && e.to === id('WRITE') && e.advanceType === 'ASK')).toBe(true);
+    expect(chart.nodes.find((n) => n.name === 'WRITE').terminal.advanceType).toBe('HALT');
+  });
+});
+

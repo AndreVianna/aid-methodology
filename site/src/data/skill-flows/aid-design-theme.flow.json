@@ -24,7 +24,7 @@
         "startLine": 36,
         "endLine": 51,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What theme or\n   token set do you want to design -- its palette, type, spacing, and variants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-theme`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/theme.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** DESIGN."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What theme or\n   token set do you want to design -- its palette, type, spacing, and variants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-theme`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/theme.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -46,7 +46,7 @@
         "startLine": 55,
         "endLine": 65,
         "sourceKind": "skill",
-        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/theme.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the style-token set (color, type,\nspacing), the light/dark variants, and how components apply the tokens**; its\n`## Destination` names where the built theme lands. **Never writes `.aid/knowledge/` and\nnever writes production code** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/theme.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the style-token set (color, type,\nspacing), the light/dark variants, and how components apply the tokens**; its\n`## Destination` names where the built theme lands. **Never writes `.aid/knowledge/` and\nnever writes production code** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -68,7 +68,7 @@
         "startLine": 69,
         "endLine": 74,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -125,13 +125,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
         "startLine": 51,
         "endLine": 51,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DESIGN."
+        "excerpt": "**Advance:** CHAIN -> [State: DESIGN]."
       }
     },
     {
@@ -139,13 +139,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
         "startLine": 65,
         "endLine": 65,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -167,13 +167,13 @@
       "to": "n4",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
         "startLine": 74,
         "endLine": 74,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** PRESENT."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {

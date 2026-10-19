@@ -28,18 +28,20 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PARSE-ARGS"])
-  n2["RESOLVE-CONNECTOR"]
+  n2(["RESOLVE-CONNECTOR"])
   n3["PICK-CONNECTOR"]
-  n4["FETCH"]
+  n4(["FETCH"])
   n5(["DISPLAY"])
   n1 --> n2
   n2 --> n3
-  n3 --> n4
-  n4 --> n5
+  n2 -->|"once a connector resolves without asking"| n4
+  n3 -. "otherwise" .- n3
+  n3 -->|"once the user has picked the connector"| n4
+  n4 -->|"on success"| n5
   class n1 aidEntry
-  class n2 aidStep
-  class n3 aidStep
-  class n4 aidStep
+  class n2 aidExit
+  class n3 aidLoopBack
+  class n4 aidExit
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -59,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L62)
 
-<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
+<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L71" wrap
 ### State 2 — RESOLVE-CONNECTOR
@@ -67,7 +69,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L71)
 
-<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _step_
+<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L96" wrap
 ### State 2a — PICK-CONNECTOR
@@ -75,7 +77,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L96)
 
-<a id="fragment-n4"></a>**4 · `FETCH`** · _step_
+<a id="fragment-n4"></a>**4 · `FETCH`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L104" wrap
 ### State 3 — FETCH

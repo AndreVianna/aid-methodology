@@ -75,7 +75,7 @@ Reply with one entry per line as:  <path-or-url> | file|directory|url | <one-lin
 **This is a genuine ASK.** Stop after presenting. Do **not** write the
 `## Discovery Elicitation` block yet — nothing has been captured.
 
-**Advance:** **CHAIN** → Step E1 (inside this state), once the user has replied; the question pauses this step until then.
+**Next, inside this step:** Step E1 (inside this state), once the user has replied; the question pauses this step until then.
 
 ### On resume — process the reply
 
@@ -156,7 +156,7 @@ Reply per tool with:  <preset-id>            (use a preset, then confirm/adjust 
 
 **This is a genuine ASK.** Stop after presenting.
 
-**Advance:** **CHAIN** → Step E3 (inside this state), once the user has replied; the question pauses this step until then.
+**Next, inside this step:** Step E3 (inside this state), once the user has replied; the question pauses this step until then.
 
 ### The `skip` / `none` distinction (Q9 marker)
 

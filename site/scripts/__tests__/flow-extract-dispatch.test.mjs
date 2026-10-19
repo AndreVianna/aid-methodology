@@ -404,11 +404,12 @@ describe('extractDispatch — aid-define: HALT terminal and worker self-loops', 
   let chart;
   beforeAll(() => { chart = extractDispatch('aid-define', null, REPO_ROOT); });
 
-  it('DONE (n3) has an ASK terminal', () => {
+  it('DONE (n3) has a HALT terminal', () => {
     // Mutant: skip terminal extraction from row advance → terminal null.
+    // DONE asks its menu mid-step (Q159), then CHAINs on [2] or HALTs.
     const done = chart.nodes.find((n) => n.name === 'DONE');
     expect(done.terminal).not.toBeNull();
-    expect(done.terminal.advanceType).toBe('ASK');
+    expect(done.terminal.advanceType).toBe('HALT');
   });
 
   it('DONE is the only exit', () => {
@@ -498,12 +499,52 @@ describe('extractDispatch — inline detail uses findStateSections from source.m
 
 // ── Absent-state warning (no dangling edge) ────────────────────────────────────
 
+/**
+ * Absent-state fixture: a worker whose advance line points at "Step 5", a part of
+ * a step rather than a declared state. The arrow regex captures "S", which is not
+ * in the table. A scratch skill carries the shape, so the assertion does not
+ * depend on a shipped skill keeping a defect.
+ */
+const AS_SKILL = 'aid-absent-state';
+const AS_ROOT = mkdtempSync(join(tmpdir(), 'flow-extract-dispatch-as-'));
+mkdirSync(join(AS_ROOT, 'canonical/skills', AS_SKILL, 'references'), { recursive: true });
+writeFileSync(join(AS_ROOT, 'canonical/skills', AS_SKILL, 'SKILL.md'), `---
+name: ${AS_SKILL}
+description: Fixture for an advance line naming an absent state.
+---
+
+# Absent State Fixture
+
+## Dispatch
+
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| GATE | \`references/state-gate.md\` | inline | CHAIN -> DONE |
+| DONE | inline (below) | inline | HALT |
+
+## State: DONE
+
+Finish.
+
+**Advance:** **HALT**.
+`);
+writeFileSync(join(AS_ROOT, 'canonical/skills', AS_SKILL, 'references', 'state-gate.md'), `# State: GATE
+
+Score the work.
+
+**Advance:** **CHAIN** → Step 5 (FIX).
+
+**Advance:** **CHAIN** → [State: DONE].
+`);
+
 describe('extractDispatch — absent-state warning with no dangling edge', () => {
-  it('aid-execute DELIVERY-GATE worker warning is emitted', () => {
-    // state-delivery-gate.md uses "→ Step" in advance text; the arrow regex
-    // captures "S" (capital letter before lowercase "tep") which is absent.
+  afterAll(() => rmSync(AS_ROOT, { recursive: true, force: true }));
+
+  it('a worker advance naming an absent state is warned', () => {
+    // The worker's "→ Step 5" makes the arrow regex capture "S" (capital letter
+    // before lowercase "tep"), which is not a declared state.
     // Mutant: remove _checkAbsentStates → no warning for absent states.
-    const chart = extractDispatch('aid-execute', null, REPO_ROOT);
+    const chart = extractDispatch(AS_SKILL, null, AS_ROOT);
     const absentWarns = chart.warnings.filter((w) =>
       w.includes('extract-dispatch') && w.includes('references state')
     );
@@ -514,7 +555,7 @@ describe('extractDispatch — absent-state warning with no dangling edge', () =>
     // The absent token 'S' has no corresponding node; confirm no edge to a
     // non-existent node ID exists in the chart.
     // Mutant: produce edges to unknown targets → the edge would appear.
-    const chart = extractDispatch('aid-execute', null, REPO_ROOT);
+    const chart = extractDispatch(AS_SKILL, null, AS_ROOT);
     const knownIds = new Set(chart.nodes.map((n) => n.id));
     for (const e of chart.edges) {
       expect(knownIds.has(e.from)).toBe(true);

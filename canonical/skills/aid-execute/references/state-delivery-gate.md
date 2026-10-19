@@ -84,7 +84,7 @@ from SPEC Data Model "Parallel-write coordination").**
 
    List each row from the file (task-id / description / status) for the user.
 
-**Advance:** **CHAIN** → Step 1 (SCORE).
+**Next, inside this step:** Step 1 (SCORE).
 
 ---
 
@@ -146,7 +146,7 @@ Complexity score: {N}  (tasks={T}, depth={D}, risk={R}, consults={C})
 Gate reviewer tier: {Small | Medium | Large}
 ```
 
-**Advance:** **CHAIN** → Step 2 (REVIEW).
+**Next, inside this step:** Step 2 (REVIEW).
 
 ---
 
@@ -237,7 +237,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 ▶ aid-reviewer (gate, {tier}) starting (~{ETA from rough-time-hints})
 ✓ aid-reviewer (gate) done (record actual time) — or ✗ gate reviewer failed: {reason}
 
-**Advance:** **CHAIN** → Step 3 (GRADE).
+**Next, inside this step:** Step 3 (GRADE).
 
 ---
 
@@ -263,7 +263,7 @@ on PASS):
 Gate grade: {grade}   Minimum: {min}   Cycle: {N}
 ```
 
-**Advance:** **CHAIN** → Step 4 (ROUTE).
+**Next, inside this step:** Step 4 (ROUTE).
 
 ---
 
@@ -277,7 +277,7 @@ A check only: it shows nothing to the user and asks nothing.
 | Grade < Minimum Grade, CODE issues remain | → Step 4A (PRESENT) |
 | Grade < Minimum Grade, only non-CODE issues remain | → Step 4B (UPSTREAM) |
 
-**Advance:** **CHAIN** → Step 6 (RECORD) when grade ≥ minimum; **CHAIN** → Step 4A (PRESENT) when grade < minimum and CODE issues remain; **CHAIN** → Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
+**Next, inside this step:** Step 6 (RECORD) when grade ≥ minimum; **CHAIN** → Step 4A (PRESENT) when grade < minimum and CODE issues remain; **CHAIN** → Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
 
 ---
 
@@ -321,7 +321,7 @@ Ask the user, through the question protocol, whether to fix the CODE issues now,
 The question is blocking: this step pauses on it, and the same step continues once it is answered.
 The TASK, SPEC and KB issues stay with the user.
 
-**Advance:** **CHAIN** → Step 5 (FIX) when the user approves the CODE fixes. When the user declines,
+**Next, inside this step:** Step 5 (FIX) when the user approves the CODE fixes. When the user declines,
 the CODE issues stay with the user too, and the run ends at this step (HALT).
 
 ---
