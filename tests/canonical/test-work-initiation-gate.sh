@@ -43,6 +43,11 @@
 #   Reconciliation  aid-review's now-mandatory work-level worktree (FR1) vs.
 #                   aid-research/aid-prototype's surviving SPIKE-only opt-in
 #                   worktree sentences (work-018 feature-002)
+#   Group RW  resume table fixtures:       one writer --check fixture per § 3b row
+#                                          (finished; missing type; uninstalled
+#                                          skill; healthy; open call), plus the
+#                                          one confirmed --repair of an old-name
+#                                          work that lands on row 3
 #
 # Fail-pre / pass-post contract:
 #   These tests pass against the POST-task-005 tree (the shared helper + gate
@@ -574,6 +579,187 @@ assert_file_contains "$GATE_DOC" "<!-- legacy-phase-map: end -->" "H: gate close
 OLD_NAME_OUTSIDE_LEGACY=$(awk '/legacy-phase-map: begin/{skip=1; next} /legacy-phase-map: end/{skip=0; next} !skip' "$GATE_DOC" \
     | grep -wE 'Describe|Define|Specify|Plan|Detail|Execute' || true)
 assert_eq "$OLD_NAME_OUTSIDE_LEGACY" "" "H: no old phase name appears in the gate outside the legacy markers (SS-11)"
+
+# ===========================================================================
+echo ""
+echo "=== Group RW: resume-table fixtures -- one per § 3b row, plus the --repair fixture (feature-002 § 2) ==="
+
+# Each fixture is a work record in a throwaway folder. The record is read by the
+# writer's --check and --repair (writeback-state.sh), which is the only thing the
+# resume table is allowed to read. AID_SKILLS_DIR names the one folder of installed
+# skills, so "installed" is decided by this fixture and not by the host.
+WRITER="${REPO_ROOT}/canonical/aid/scripts/execute/writeback-state.sh"
+RW_BASE=$(mktemp -d); CLEANUP_DIRS+=("$RW_BASE")
+RW_SKILLS="$RW_BASE/skills"
+for rw_skill in aid-execute aid-review aid-research; do
+    mkdir -p "$RW_SKILLS/$rw_skill"
+    printf '# %s\n' "$rw_skill" > "$RW_SKILLS/$rw_skill/SKILL.md"
+done
+
+# writer_check <STATE.yml> <skills-dir> -> sets _WOUT (stdout+stderr) and _WCODE.
+writer_check() {
+    _WOUT=$(AID_STATE_FILE="$1" AID_SKILLS_DIR="$2" bash "$WRITER" --check 2>&1); _WCODE=$?
+}
+
+# resume_row <STATE.yml> <skills-dir> -> prints 1, 2 or 3: the § 3b resume table,
+# first match wins. Row 1: the work is finished. Row 2: --check reports the record
+# missing or inconsistent. Row 3: every other open work.
+resume_row() {
+    local life
+    life=$(awk -F': *' '/^lifecycle:/ { print $2; exit }' "$1")
+    if [[ "$life" == "Completed" || "$life" == "Canceled" ]]; then
+        echo 1; return
+    fi
+    writer_check "$1" "$2"
+    if [[ "$_WCODE" -eq 0 ]]; then echo 3; else echo 2; fi
+}
+
+# Row 1 -- a finished work, even with a leftover saved skill.
+RW1="$RW_BASE/rw1"; mkdir -p "$RW1"
+cat > "$RW1/STATE.yml" <<'EOF'
+lifecycle: Completed
+phase: Building
+active_skill: aid-research
+step: WRITE
+step_detail: 'leftover from the finished research'
+intent:
+  reading: investigation
+  request: 'compare two queues'
+updated: '2026-07-17T00:00:00Z'
+EOF
+writer_check "$RW1/STATE.yml" "$RW_SKILLS"
+assert_exit_eq "$_WCODE" 9 "RW1: finished work with a leftover saved skill: --check reports it inconsistent (exit 9)"
+assert_output_contains "$_WOUT" "the work is Completed but still names the saved skill aid-research" \
+    "RW1: --check names the leftover saved skill on the finished work"
+assert_eq "$(resume_row "$RW1/STATE.yml" "$RW_SKILLS")" "1" \
+    "RW1: resume table lands on row 1 (finished), before the row-2 check can fire"
+
+# Row 2a -- an open work with no intent.reading (its type).
+RW2A="$RW_BASE/rw2a"; mkdir -p "$RW2A"
+cat > "$RW2A/STATE.yml" <<'EOF'
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: EXECUTE
+step_detail: 'task-004: half done'
+updated: '2026-07-17T00:00:00Z'
+EOF
+writer_check "$RW2A/STATE.yml" "$RW_SKILLS"
+assert_exit_eq "$_WCODE" 9 "RW2a: open work with no intent.reading: --check reports the record (exit 9)"
+assert_output_contains "$_WOUT" "missing: no intent.reading" "RW2a: --check gives the missing type as its reason"
+assert_eq "$(resume_row "$RW2A/STATE.yml" "$RW_SKILLS")" "2" \
+    "RW2a: resume table lands on row 2 (recovery)"
+
+# Row 2b -- an open work whose saved skill is not installed.
+RW2B="$RW_BASE/rw2b"; mkdir -p "$RW2B"
+cat > "$RW2B/STATE.yml" <<'EOF'
+lifecycle: Running
+phase: Building
+active_skill: aid-ghost-skill
+step: GHOST
+step_detail: '--'
+intent:
+  reading: change
+  request: 'rename the export'
+updated: '2026-07-17T00:00:00Z'
+EOF
+writer_check "$RW2B/STATE.yml" "$RW_SKILLS"
+assert_exit_eq "$_WCODE" 9 "RW2b: open work whose saved skill is not installed: --check reports it (exit 9)"
+assert_output_contains "$_WOUT" "the saved skill aid-ghost-skill is not installed" \
+    "RW2b: --check gives the uninstalled skill as its reason"
+assert_eq "$(resume_row "$RW2B/STATE.yml" "$RW_SKILLS")" "2" \
+    "RW2b: resume table lands on row 2 (recovery)"
+
+# Row 3a -- a healthy open work: type, installed skill and saved step all present.
+RW3A="$RW_BASE/rw3a"; mkdir -p "$RW3A"
+cat > "$RW3A/STATE.yml" <<'EOF'
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: EXECUTE
+step_detail: 'task-004: tests written, code half done'
+intent:
+  reading: change
+  request: 'rename the export'
+updated: '2026-07-17T00:00:00Z'
+EOF
+writer_check "$RW3A/STATE.yml" "$RW_SKILLS"
+assert_exit_zero "$_WCODE" "RW3a: healthy open work: --check passes (exit 0)"
+assert_eq "$(resume_row "$RW3A/STATE.yml" "$RW_SKILLS")" "3" \
+    "RW3a: resume table lands on row 3 (the saved skill at its saved step)"
+
+# Row 3b -- an open work with an open call: the called skill is the saved skill.
+RW3B="$RW_BASE/rw3b"; mkdir -p "$RW3B"
+cat > "$RW3B/STATE.yml" <<'EOF'
+lifecycle: Running
+phase: Building
+active_skill: aid-review
+step: REVIEW
+step_detail: '--'
+intent:
+  reading: change
+  request: 'rename the export'
+handoffs:
+  - at: '2026-07-17T09:00:00Z'
+    from: aid-execute
+    from_step: EXECUTE
+    from_detail: 'task-004: tests written, code half done'
+    to: aid-review
+    why: 'the diff needs a review'
+    returns: 'yes'
+    returned: --
+updated: '2026-07-17T09:00:00Z'
+EOF
+writer_check "$RW3B/STATE.yml" "$RW_SKILLS"
+assert_exit_zero "$_WCODE" "RW3b: open work with an open call: --check passes (exit 0)"
+assert_eq "$(resume_row "$RW3B/STATE.yml" "$RW_SKILLS")" "3" \
+    "RW3b: resume table lands on row 3 (inside the called skill)"
+
+# Repair fixture -- an old-name work with no type. Its phase is Execute and it
+# has no saved skill or step: the legacy block proposes aid-execute at EXECUTE, and
+# the type comes from its REQUIREMENTS.md, which the user confirms.
+RWR="$RW_BASE/rwr"; mkdir -p "$RWR"
+cat > "$RWR/STATE.yml" <<'EOF'
+lifecycle: Running
+phase: Execute
+active_skill: none
+step: --
+step_detail: --
+updated: '2026-06-01T00:00:00Z'
+lifecycle_history:
+  - date: '2026-06-01'
+    event: 'Work created'
+    grade: --
+    notes: 'Initial scaffold by aid-describe'
+EOF
+printf '# Work -- legacy\n\n## 1. Request\n\n- **Name:** Legacy Export Fix\n- **Type:** bug fix\n' > "$RWR/REQUIREMENTS.md"
+RWR_UNREPAIRED="$RW_BASE/rwr-unrepaired.yml"; cp "$RWR/STATE.yml" "$RWR_UNREPAIRED"
+
+writer_check "$RWR/STATE.yml" "$RW_SKILLS"
+assert_exit_eq "$_WCODE" 9 "RWR: old-name work with no type or saved skill: --check reports it (exit 9)"
+assert_output_contains "$_WOUT" "missing: no intent.reading" "RWR: --check reports the missing type"
+assert_output_contains "$_WOUT" "missing: no saved skill" "RWR: --check reports the missing saved skill"
+assert_eq "$(resume_row "$RWR/STATE.yml" "$RW_SKILLS")" "2" "RWR: resume table lands on row 2 before the repair"
+
+# --repair without a type on a record that has none is refused (exit 5): the
+# type must come from the confirmed answer, so nothing is written.
+repair_refused=0
+AID_STATE_FILE="$RWR_UNREPAIRED" bash "$WRITER" --repair --skill aid-execute --name EXECUTE >/dev/null 2>&1 || repair_refused=$?
+assert_exit_eq "$repair_refused" 5 "RWR: --repair with no --reading on a typeless record is refused (exit 5)"
+assert_eq "$(cmp -s "$RWR_UNREPAIRED" "$RWR/STATE.yml" && echo same)" "same" \
+    "RWR: the refused repair wrote nothing"
+
+# The one confirmed repair: skill and step from the legacy block, type from REQUIREMENTS.md.
+repair_code=0
+AID_STATE_FILE="$RWR/STATE.yml" bash "$WRITER" --repair --skill aid-execute --name EXECUTE \
+    --reading "bug fix" >/dev/null 2>&1 || repair_code=$?
+assert_exit_eq "$repair_code" 0 "RWR: the confirmed --repair succeeds (exit 0)"
+writer_check "$RWR/STATE.yml" "$RW_SKILLS"
+assert_exit_zero "$_WCODE" "RWR: after the one confirmed repair --check passes (exit 0)"
+assert_output_contains "$(cat "$RWR/STATE.yml")" "event: 'Record repaired'" \
+    "RWR: the repair appends a lifecycle_history entry naming the record change"
+assert_eq "$(resume_row "$RWR/STATE.yml" "$RW_SKILLS")" "3" \
+    "RWR: the next resume lands on row 3 (aid-execute at EXECUTE)"
 
 # ---------------------------------------------------------------------------
 echo ""
