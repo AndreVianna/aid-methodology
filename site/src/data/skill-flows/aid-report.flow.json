@@ -15,109 +15,156 @@
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
         "startLine": 34,
-        "endLine": 56,
+        "endLine": 45,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What data\n   should I analyze, and what question about it?\") and wait.\n2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask (\"analyze\n   the A/B results in `results.csv`\", \"error-rate breakdown from these logs\") -> analyze\n   now. **Guided** -- vague (\"analyze our usage\") -> scope *which data, which metrics, what\n   question* first, then analyze.\n3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->\n   `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,\n   deep telemetry) -> **opus / high**. Verifier tier >= producer tier.\n4. **Allocate the work through the gate.** Run the Work Initiation Gate\n   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's\n   new-vs-continuation question with the enumerated list.\n   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),\n     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree\n     (`worktree-lifecycle.sh create <work-id> <name>`),\n     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n     the writer, before it hands back: \"`STATE.yml` was created by the gate;\n     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n     set other keys through the writer.\" This skill drives no `phase`.\n   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step."
+        "excerpt": "## State: INTAKE\n\n1. **Check the subject.** Note whether the argument is empty. Do not ask here.\n2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask (\"analyze\n   the A/B results in `results.csv`\", \"error-rate breakdown from these logs\") -> analyze\n   now. **Guided** -- vague (\"analyze our usage\") -> scope *which data, which metrics, what\n   question* first, in INTAKE-ASK, then analyze.\n3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->\n   `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,\n   deep telemetry) -> **opus / high**. Verifier tier >= producer tier.\n4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
         "startLine": 34,
-        "endLine": 58,
+        "endLine": 48,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What data\n   should I analyze, and what question about it?\") and wait.\n2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask (\"analyze\n   the A/B results in `results.csv`\", \"error-rate breakdown from these logs\") -> analyze\n   now. **Guided** -- vague (\"analyze our usage\") -> scope *which data, which metrics, what\n   question* first, then analyze.\n3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->\n   `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,\n   deep telemetry) -> **opus / high**. Verifier tier >= producer tier.\n4. **Allocate the work through the gate.** Run the Work Initiation Gate\n   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's\n   new-vs-continuation question with the enumerated list.\n   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),\n     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree\n     (`worktree-lifecycle.sh create <work-id> <name>`),\n     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n     the writer, before it hands back: \"`STATE.yml` was created by the gate;\n     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n     set other keys through the writer.\" This skill drives no `phase`.\n   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\n**Advance:** ASK -> [State: ANALYZE]."
+        "excerpt": "## State: INTAKE\n\n1. **Check the subject.** Note whether the argument is empty. Do not ask here.\n2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask (\"analyze\n   the A/B results in `results.csv`\", \"error-rate breakdown from these logs\") -> analyze\n   now. **Guided** -- vague (\"analyze our usage\") -> scope *which data, which metrics, what\n   question* first, in INTAKE-ASK, then analyze.\n3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->\n   `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,\n   deep telemetry) -> **opus / high**. Verifier tier >= producer tier.\n4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
       }
     },
     {
       "id": "n2",
       "order": 2,
+      "name": "INTAKE-ASK",
+      "label": "only when a question must be put",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 52,
+        "endLine": 54,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 52,
+        "endLine": 61,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What data should I analyze, and what\n   question about it?\"). The answer is the subject; the path and complexity are then set from it.\n2. **Guided path** -> scope *which data, which metrics, what question*.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK -> [State: ALLOCATE]."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "ALLOCATE",
+      "label": "ALLOCATE",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 65,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 65,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),\n  its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\n**Advance:** CHAIN -> [State: ANALYZE] on a new work; a continuation follows the gate's § 3b instead."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
       "name": "ANALYZE",
       "label": "ANALYZE",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 62,
-        "endLine": 65,
+        "startLine": 83,
+        "endLine": 86,
         "sourceKind": "skill",
         "excerpt": "## State: ANALYZE\n\nAccess the data **read-only** and dispatch **`aid-researcher`** (clean context, tiered) to\nanalyze + consolidate:"
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 62,
-        "endLine": 77,
+        "startLine": 83,
+        "endLine": 98,
         "sourceKind": "skill",
         "excerpt": "## State: ANALYZE\n\nAccess the data **read-only** and dispatch **`aid-researcher`** (clean context, tiered) to\nanalyze + consolidate:\n\n- **Data access:** files / logs / exports -> read directly (never mutate the source). A\n  live DB / analytics / telemetry service -> **MCP-first connector**\n  (`connectors/consumption-protocol.md`): scan `.aid/connectors/INDEX.md`, request the\n  connection from the host MCP; no catalogued connector -> ask the user for the export.\n  Optional, never blocks.\n- **Two-tier grounding (enforced):** the **data** + KB/source (what a metric means) are\n  authoritative; external baselines/benchmarks are supplementary, cited URL + date. A\n  data-vs-KB-assumption contradiction is surfaced with its reason, never resolved.\n- It writes `REPORT.md` into the work folder (see [Response shape](#response-shape)).\n\n**Advance:** VERIFY."
       }
     },
     {
-      "id": "n3",
-      "order": 3,
+      "id": "n5",
+      "order": 5,
       "name": "VERIFY",
       "label": "VERIFY",
       "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 81,
-        "endLine": 91,
+        "startLine": 102,
+        "endLine": 112,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): findings cite the data; external claims a\n   URL+date; the **Caveats** and **Conflicts** sections exist.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `REPORT.md`:\n   findings supported by the data; **no metric or A/B conclusion stated without its caveat**\n   (sampling, significance, denominator, confounders); conflicts surfaced with reasons;\n   conclusions not overstated into resolutions. Writes a review-quality ledger to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 81,
-        "endLine": 93,
+        "startLine": 102,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): findings cite the data; external claims a\n   URL+date; the **Caveats** and **Conflicts** sections exist.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `REPORT.md`:\n   findings supported by the data; **no metric or A/B conclusion stated without its caveat**\n   (sampling, significance, denominator, confounders); conflicts surfaced with reasons;\n   conclusions not overstated into resolutions. Writes a review-quality ledger to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.\n\n**Advance:** PRESENT."
       }
     },
     {
-      "id": "n4",
-      "order": 4,
+      "id": "n6",
+      "order": 6,
       "name": "PRESENT",
       "label": "hard stop -- the user resolves",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 97,
-        "endLine": 101,
+        "startLine": 118,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `REPORT.md` clearly: findings\n(metrics/tables), conclusions (+/-), **caveats & data-quality gaps** (first-class),\nconflicts with reasons, and gaps. Assert no resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 97,
-        "endLine": 103,
+        "startLine": 118,
+        "endLine": 124,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `REPORT.md` clearly: findings\n(metrics/tables), conclusions (+/-), **caveats & data-quality gaps** (first-class),\nconflicts with reasons, and gaps. Assert no resolution.\n\n**Advance:** ASK -> [State: HANDOFF]."
       }
     },
     {
-      "id": "n5",
-      "order": 5,
+      "id": "n7",
+      "order": 7,
       "name": "HANDOFF",
       "label": "optional; printed suggestions only",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 107,
-        "endLine": 112,
+        "startLine": 128,
+        "endLine": 134,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 107,
-        "endLine": 114,
+        "startLine": 128,
+        "endLine": 136,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution.\n\n**Advance:** DONE."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line.\n\n**Advance:** ASK -> [State: DONE], then HALT."
       }
     },
     {
-      "id": "n6",
-      "order": 6,
+      "id": "n8",
+      "order": 8,
       "name": "DONE",
       "label": "DONE",
       "kind": "exit",
@@ -127,15 +174,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 118,
-        "endLine": 120,
+        "startLine": 140,
+        "endLine": 142,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`REPORT.md`, the verify ledger) as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 118,
-        "endLine": 122,
+        "startLine": 140,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`REPORT.md`, the verify ledger) as the audit record.\n\n**Advance:** HALT."
       }
@@ -145,15 +192,29 @@
     {
       "from": "n1",
       "to": "n2",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "ASK",
+      "kind": "branch",
+      "condition": "when the argument is empty, the path is Guided",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 58,
-        "endLine": 58,
+        "startLine": 47,
+        "endLine": 48,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: ANALYZE]."
+        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
+      }
+    },
+    {
+      "from": "n1",
+      "to": "n3",
+      "kind": "branch",
+      "condition": "works exist; otherwise",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 47,
+        "endLine": 48,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
       }
     },
     {
@@ -161,41 +222,41 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** ASK -> [State: ALLOCATE]."
       }
     },
     {
       "from": "n3",
-      "to": "n2",
+      "to": "n3",
       "kind": "loop-back",
-      "condition": null,
+      "condition": "otherwise",
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
-        "excerpt": "   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer."
+        "excerpt": "**Advance:** CHAIN -> [State: ANALYZE] on a new work; a continuation follows the gate's § 3b instead."
       }
     },
     {
       "from": "n3",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "kind": "branch",
+      "condition": "on a new work; a continuation follows the gate's § 3b instead",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 93,
-        "endLine": 93,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** PRESENT."
+        "excerpt": "**Advance:** CHAIN -> [State: ANALYZE] on a new work; a continuation follows the gate's § 3b instead."
       }
     },
     {
@@ -203,13 +264,27 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "ASK",
+      "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-report/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
+        "startLine": 98,
+        "endLine": 98,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: HANDOFF]."
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n4",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 112,
+        "endLine": 112,
+        "sourceKind": "skill",
+        "excerpt": "   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer."
       }
     },
     {
@@ -223,7 +298,35 @@
         "startLine": 114,
         "endLine": 114,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DONE."
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 124,
+        "endLine": 124,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** ASK -> [State: HANDOFF]."
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-report/SKILL.md",
+        "startLine": 136,
+        "endLine": 136,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** ASK -> [State: DONE], then HALT."
       }
     }
   ],
@@ -231,7 +334,8 @@
     "n1"
   ],
   "exits": [
-    "n6"
+    "n7",
+    "n8"
   ],
   "sources": [
     "canonical/skills/aid-report/SKILL.md"

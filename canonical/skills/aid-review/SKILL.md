@@ -20,8 +20,8 @@ criteria, where `/aid-ask` answers a free-form question.
   It never edits the reviewed code/design itself and never fixes -- fixing is
   `/aid-fix`'s job.
 
-State machine: **INTAKE -> REVIEW -> VERIFY (loop) -> PRESENT-FINDINGS [human] ->
-PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> REVIEW -> VERIFY (loop) ->
+PRESENT-FINDINGS [human] -> PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
 (`[State: NAME] -- {one-line purpose}`), the convention every AID skill uses.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
@@ -35,11 +35,12 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
-Purpose: resolve the target + criteria, pick the path, allocate the work folder.
+Purpose: resolve the target + criteria, pick the path, note the works.
 
-### Step 1 -- require a target
+### Step 1 -- check the target
 
-If the argument is empty, ask exactly one bootstrapping question and wait:
+Note whether the argument is empty. Do not ask here. If it is empty, INTAKE-ASK asks exactly one
+bootstrapping question:
 
 ```
 What do you want to review? Point me at a file/dir, a PR, a ticket id, a
@@ -49,7 +50,7 @@ work-NNN, "my changes", or describe the target.
 ### Step 2 -- pick the path (fast vs guided)
 
 **Fast path** -- the prompt carries an explicit, resolvable target whose review method
-is unambiguous. Record the target, method, and tentative delivery; go straight to REVIEW.
+is unambiguous. Record the target, method, and tentative delivery; go on to ALLOCATE, then REVIEW.
 
 | Signal | Method | Tentative delivery |
 |---|---|---|
@@ -65,8 +66,8 @@ is unambiguous. Record the target, method, and tentative delivery; go straight t
 or a fast trigger that does not resolve (file absent, ticket id but no catalogued
 connector, PR # with no repo context). Interpret the request and form a plan -- *what*
 you will review, *how* (method + any tool/MCP needed to gather evidence), and *where*
-findings will be delivered -- **present the plan and wait for the user to confirm or
-correct** before spending review effort.
+findings will be delivered. The plan is presented in INTAKE-ASK, where the user confirms or
+corrects it before any review effort is spent.
 
 ### Step 3 -- criteria
 
@@ -82,17 +83,37 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
   `opus`, effort `high`**; full VERIFY loop.
   Verifier tier is always >= reviewer tier.
 
-### Step 5 -- allocate the work through the gate
+### Step 5 -- check for works
 
-**Allocate through the Work Initiation Gate** (`.aid/runtime/templates/work-initiation-gate.md`):
-run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-Empty output -> allocate, no prompt. Works exist -> ask the gate's single new-vs-continuation
-question with the enumerated list.
+Run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree). Note
+whether any exist. Do not prompt here.
+
+**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is guided, or works
+exist; otherwise CHAIN -> [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path
+   is then picked from it.
+2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.
+3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK -> [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its
   first step (`INTAKE`), `--path lite`, and a short kebab-case slug derived from the target. The
   gate `§ 3a` step 2 creates and enters the work-level worktree
-  (`worktree-lifecycle.sh create <work-id> <name>`; mandatory per FR1, no longer optional),
+  (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
   the writer, before it hands back: "`STATE.yml` was created by the gate;
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
@@ -100,7 +121,7 @@ question with the enumerated list.
   `phase` (specs/aid-review.md 10).
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** ASK -> [State: REVIEW].
+**Advance:** CHAIN -> [State: REVIEW] on a new work; a continuation follows the gate's § 3b instead.
 
 ---
 
@@ -166,13 +187,14 @@ The hard stop follows the ASK step of `skill-steps.md`. Present:
 Then STOP and await the human's decision (approve / edit the text / choose a different
 delivery / do not publish). Nothing is posted to any external target until they approve.
 
-**Advance:** ASK -> [State: PUBLISH] on approval; otherwise [State: DONE].
+**Advance:** ASK -> [State: PUBLISH].
 
 ---
 
 ## State: PUBLISH  (only on approval)
 
-Deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
+If the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise
+deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
 enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 [<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
 PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again

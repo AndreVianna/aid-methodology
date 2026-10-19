@@ -632,22 +632,32 @@ Done.
 
 // ── aid-review corpus (6 states — AC-4 fixture) ───────────────────────────────
 
-describe('aid-review — 6 inline states, loop-back, branch decision, DONE exit', () => {
+describe('aid-review — 8 inline states, loop-back, ASK hard stop, DONE exit', () => {
   const params = loadSkill('aid-review');
   const chart = extractInline(params);
 
-  it('produces exactly 6 nodes (measured, not hard-coded)', () => {
-    // Mutant: skip one section in the loop → 5 nodes.
+  it('produces exactly 8 nodes (measured, not hard-coded)', () => {
+    // INTAKE is split into INTAKE (check, CHAIN) + INTAKE-ASK (ASK) + ALLOCATE.
+    // Mutant: skip one section in the loop → 7 nodes.
     const measured = countStateHeadings(params.allLines);
     expect(chart.nodes.length).toBe(measured);
-    expect(chart.nodes.length).toBe(6);
+    expect(chart.nodes.length).toBe(8);
   });
 
   it('node names match the declared state headings in order', () => {
     // Mutant: reverse sections → DONE would be first.
     expect(chart.nodes.map((n) => n.name)).toEqual([
-      'INTAKE', 'REVIEW', 'VERIFY', 'PRESENT-FINDINGS', 'PUBLISH', 'DONE',
+      'INTAKE', 'INTAKE-ASK', 'ALLOCATE', 'REVIEW', 'VERIFY', 'PRESENT-FINDINGS', 'PUBLISH', 'DONE',
     ]);
+  });
+
+  it('INTAKE-ASK advances to ALLOCATE by ASK (the question is asked, then allocation)', () => {
+    const ask = chart.nodes.find((n) => n.name === 'INTAKE-ASK');
+    const allocate = chart.nodes.find((n) => n.name === 'ALLOCATE');
+    const edge = chart.edges.find((e) => e.from === ask.id && e.to === allocate.id);
+    expect(edge).toBeDefined();
+    expect(edge.kind).toBe('sequence');
+    expect(edge.advanceType).toBe('ASK');
   });
 
   it('VERIFY has label matching its gloss "who reviews the reviewer"', () => {
@@ -673,35 +683,41 @@ describe('aid-review — 6 inline states, loop-back, branch decision, DONE exit'
     expect(loopEdge).toBeDefined();
   });
 
-  it('PRESENT-FINDINGS has 2 branch edges (decision node)', () => {
-    // "**Advance:** PUBLISH on approval; otherwise DONE." → 2 clauses.
-    // Mutant: treat semicolon as non-separator → 1 edge.
+  it('PRESENT-FINDINGS has exactly 1 outgoing edge, to PUBLISH, advanced by ASK', () => {
+    // The hard stop is an ASK: "**Advance:** ASK -> [State: PUBLISH]". The decline
+    // branch is no longer a second edge here; it lives in PUBLISH's text.
+    // Mutant: restore a two-clause "PUBLISH on approval; otherwise DONE" → 2 edges.
     const pf = chart.nodes.find((n) => n.name === 'PRESENT-FINDINGS');
+    const publish = chart.nodes.find((n) => n.name === 'PUBLISH');
     const edgesFrom = chart.edges.filter((e) => e.from === pf.id);
-    const branchEdges = edgesFrom.filter((e) => e.kind === 'branch');
-    expect(branchEdges).toHaveLength(2);
+    expect(edgesFrom).toHaveLength(1);
+    expect(edgesFrom[0].to).toBe(publish.id);
+    expect(edgesFrom[0].advanceType).toBe('ASK');
   });
 
-  it('PRESENT-FINDINGS → PUBLISH has condition "on approval"', () => {
-    // Mutant: strip all condition text → condition would be null.
+  it('PRESENT-FINDINGS → PUBLISH is a sequence edge with no condition', () => {
+    // Mutant: attach a condition to the ASK edge → condition would be non-null.
     const pf = chart.nodes.find((n) => n.name === 'PRESENT-FINDINGS');
     const publish = chart.nodes.find((n) => n.name === 'PUBLISH');
     const edge = chart.edges.find(
       (e) => e.from === pf.id && e.to === publish.id
     );
     expect(edge).toBeDefined();
-    expect(edge.condition).toBe('on approval');
+    expect(edge.kind).toBe('sequence');
+    expect(edge.condition).toBeNull();
   });
 
-  it('PRESENT-FINDINGS → DONE has condition "otherwise"', () => {
-    // Mutant: swap condition values → otherwise would be on PUBLISH edge.
+  it('no direct PRESENT-FINDINGS → DONE edge; the decline path runs PUBLISH → DONE', () => {
+    // "If the user did not approve publishing ... the step goes on to DONE" is
+    // written in PUBLISH, so DONE is reached through PUBLISH on every path.
+    // Mutant: re-add a PRESENT-FINDINGS → DONE branch → this fails.
     const pf = chart.nodes.find((n) => n.name === 'PRESENT-FINDINGS');
+    const publish = chart.nodes.find((n) => n.name === 'PUBLISH');
     const done = chart.nodes.find((n) => n.name === 'DONE');
-    const edge = chart.edges.find(
-      (e) => e.from === pf.id && e.to === done.id
-    );
-    expect(edge).toBeDefined();
-    expect(edge.condition).toBe('otherwise');
+    expect(chart.edges.find((e) => e.from === pf.id && e.to === done.id)).toBeUndefined();
+    const publishToDone = chart.edges.find((e) => e.from === publish.id && e.to === done.id);
+    expect(publishToDone).toBeDefined();
+    expect(publishToDone.kind).toBe('sequence');
   });
 
   it('DONE advance HALT → terminal HALT, in exits', () => {
@@ -711,10 +727,10 @@ describe('aid-review — 6 inline states, loop-back, branch decision, DONE exit'
     expect(chart.exits).toContain(done.id);
   });
 
-  it('PRESENT-FINDINGS.kind === decision (2 branch edges)', () => {
-    // Mutant: emit both as sequence → kind would be step, not decision.
+  it('PRESENT-FINDINGS.kind === step (single ASK hard stop, not a decision)', () => {
+    // Mutant: restore a two-branch decision → kind would be decision.
     const pf = chart.nodes.find((n) => n.name === 'PRESENT-FINDINGS');
-    expect(pf.kind).toBe('decision');
+    expect(pf.kind).toBe('step');
   });
 
   it('VERIFY.kind === loop-back (has outgoing loop-back edge)', () => {
@@ -743,10 +759,17 @@ describe('aid-test — PRESENT: ASK to HANDOFF, then DONE', () => {
   const params = loadSkill('aid-test');
   const chart = extractInline(params);
 
-  it('produces 6 nodes (measured)', () => {
+  it('produces 8 nodes (measured)', () => {
+    // INTAKE is split into INTAKE + INTAKE-ASK + ALLOCATE; HANDOFF is kept.
     const measured = countStateHeadings(params.allLines);
     expect(chart.nodes.length).toBe(measured);
-    expect(chart.nodes.length).toBe(6);
+    expect(chart.nodes.length).toBe(8);
+  });
+
+  it('node names match the declared state headings in order', () => {
+    expect(chart.nodes.map((n) => n.name)).toEqual([
+      'INTAKE', 'INTAKE-ASK', 'ALLOCATE', 'RUN', 'VERIFY', 'PRESENT', 'HANDOFF', 'DONE',
+    ]);
   });
 
   it('PRESENT has exactly 1 outgoing edge, to HANDOFF, advanced by ASK', () => {
@@ -770,7 +793,7 @@ describe('aid-test — PRESENT: ASK to HANDOFF, then DONE', () => {
     expect(edge.condition).toBeNull();
   });
 
-  it('HANDOFF → DONE sequence edge exists (through-path)', () => {
+  it('HANDOFF → DONE is a sequence edge advanced by ASK ("ASK -> DONE, then HALT")', () => {
     const handoff = chart.nodes.find((n) => n.name === 'HANDOFF');
     const done = chart.nodes.find((n) => n.name === 'DONE');
     const edge = chart.edges.find(
@@ -778,6 +801,7 @@ describe('aid-test — PRESENT: ASK to HANDOFF, then DONE', () => {
     );
     expect(edge).toBeDefined();
     expect(edge.kind).toBe('sequence');
+    expect(edge.advanceType).toBe('ASK');
   });
 
   it('PRESENT.kind === step (a hard stop is ASK, not a decision)', () => {

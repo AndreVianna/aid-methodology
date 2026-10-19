@@ -16,8 +16,8 @@ its output is **not** production. For a design you intend to **keep and build**,
 
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
-State machine: **INTAKE -> BUILD -> VERIFY (light) -> PRESENT [user decides] -> HANDOFF? ->
-DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> BUILD -> VERIFY (light) -> PRESENT [user
+decides] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
 ---
@@ -30,34 +30,56 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
-1. **Require a direction.** Empty argument -> ask one bootstrapping question ("What
-   direction do you want to validate, and what would tell you it works?") and wait.
+1. **Check the direction.** Note whether the argument is empty. Do not ask here.
 2. **Capture (thin):** direction/hypothesis; fidelity (`paper` | `low-fi` | `runnable
    spike`, default `low-fi`); the success signal that would validate it; the scope
    boundary (what it does NOT attempt -- keeps it throwaway).
 3. **Pick the path:** **Fast** -- a clear direction + success signal -> build now.
    **Guided** -- vague ("prototype something for onboarding") -> scope direction / success
-   signal / fidelity first.
+   signal / fidelity first, in INTAKE-ASK.
 4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
    medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
-5. **Allocate the work through the gate.** Run the Work Initiation Gate
-   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
-   new-vs-continuation question with the enumerated list.
-   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-     (`aid-prototype`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the
-     direction. The gate's `§ 3a` step 2 creates and enters the worktree
-     (`worktree-lifecycle.sh create <work-id> <name>`),
-     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
-     the writer, before it hands back: "`STATE.yml` was created by the gate;
-     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
-     set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
-     associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
-     passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
-     (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
-   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** ASK -> [State: BUILD].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
+exist; otherwise CHAIN -> [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question ("What direction do you want to validate, and
+   what would tell you it works?"). The answer is the direction; the path and complexity are then
+   set from it.
+2. **Guided path** -> scope the direction, the success signal and the fidelity.
+3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK -> [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate the work through the gate: the Work Initiation Gate
+(`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name
+  (`aid-prototype`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the
+  direction. The gate's `§ 3a` step 2 creates and enters the worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
+  associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
+  passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
+  (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+**Advance:** CHAIN -> [State: BUILD] on a new work; a continuation follows the gate's § 3b instead.
 
 ---
 
@@ -101,9 +123,10 @@ What we learned · viable? (a conclusion, not a resolution).** Assert no resolut
 
 Printed suggestions the user may act on: build the validated thing for real
 (`/aid-create*`, or `/aid-design` first if a kept design is wanted), or test it with users
-(`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution.
+(`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution. Ask which one, if
+any, the user takes; a picked one is named in one plain line.
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE], then HALT.
 
 ---
 

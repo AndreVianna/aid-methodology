@@ -1276,13 +1276,16 @@ describe('AC-4 fixture 2 — aid-test-security: spliced parent spine and provena
   const chart = liveChart('aid-test-security');
   const PARENT_SKILL = 'aid-test';
   const PARENT_SKILL_MD = `canonical/skills/${PARENT_SKILL}/SKILL.md`;
-  const EXPECTED_SPINE = ['INTAKE', 'RUN', 'VERIFY', 'PRESENT', 'HANDOFF', 'DONE'];
+  // aid-test: INTAKE splits into INTAKE + INTAKE-ASK + ALLOCATE; HANDOFF is ASK -> DONE.
+  const EXPECTED_SPINE = [
+    'INTAKE', 'INTAKE-ASK', 'ALLOCATE', 'RUN', 'VERIFY', 'PRESENT', 'HANDOFF', 'DONE',
+  ];
 
-  it('exactly six nodes after the entry node (parent spine only)', () => {
+  it('exactly eight nodes after the entry node (parent spine only)', () => {
     expect(chart.nodes.slice(1)).toHaveLength(EXPECTED_SPINE.length);
   });
 
-  it('spliced node names are the aid-test six-state spine in order (verbatim)', () => {
+  it('spliced node names are the aid-test eight-state spine in order (verbatim)', () => {
     const actual = chart.nodes.slice(1).map((n) => n.name);
     expect(actual).toEqual(EXPECTED_SPINE);
   });
@@ -1333,6 +1336,16 @@ describe('AC-4 fixture 2 — aid-test-security: PRESENT is an ASK step', () => {
     expect(presentEdges).toHaveLength(1);
     expect(presentEdges[0].to).toBe(handoffNode.id);
     expect(presentEdges[0].advanceType).toBe('ASK');
+  });
+
+  it('HANDOFF has exactly one outgoing edge, to DONE, advanced by ASK', () => {
+    // aid-test HANDOFF: "**Advance:** ASK -> [State: DONE], then HALT."
+    const handoffNode = chart.nodes.find((n) => n.name === 'HANDOFF');
+    const doneNode = chart.nodes.find((n) => n.name === 'DONE');
+    const handoffEdges = chart.edges.filter((e) => e.from === handoffNode.id);
+    expect(handoffEdges).toHaveLength(1);
+    expect(handoffEdges[0].to).toBe(doneNode.id);
+    expect(handoffEdges[0].advanceType).toBe('ASK');
   });
 });
 

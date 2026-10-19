@@ -2305,20 +2305,16 @@ describe('AC-4 corpus fixture — aid-review (inline-states)', () => {
     expect(_rvVerify.kind).toBe('loop-back');
   });
 
-  it('PRESENT-FINDINGS.kind === decision', () => {
+  it('PRESENT-FINDINGS.kind === step (one ASK target; the decline path lives in PUBLISH)', () => {
     expect(_rvPresent).toBeDefined();
-    expect(_rvPresent.kind).toBe('decision');
+    expect(_rvPresent.kind).toBe('step');
   });
 
-  it('PRESENT-FINDINGS has exactly two branch edges to PUBLISH and DONE', () => {
-    // Kind-specific: counts branches only, names both targets.
-    const _branches = _rvChart.edges.filter(
-      (e) => e.from === _rvPresent.id && e.kind === 'branch'
-    );
-    expect(_branches).toHaveLength(2);
-    const _targets = new Set(_branches.map((e) => _rvNn(e.to)?.name));
-    expect(_targets.has('PUBLISH')).toBe(true);
-    expect(_targets.has('DONE')).toBe(true);
+  it('PRESENT-FINDINGS has exactly one outgoing edge, a sequence edge to PUBLISH', () => {
+    const _out = _rvChart.edges.filter((e) => e.from === _rvPresent.id);
+    expect(_out).toHaveLength(1);
+    expect(_out[0].kind).toBe('sequence');
+    expect(_rvNn(_out[0].to)?.name).toBe('PUBLISH');
   });
 
   it('DONE is in exits', () => {

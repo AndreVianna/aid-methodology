@@ -17,107 +17,151 @@
         "startLine": 36,
         "endLine": 38,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nPurpose: resolve the target + criteria, pick the path, allocate the work folder."
+        "excerpt": "## State: INTAKE\n\nPurpose: resolve the target + criteria, pick the path, note the works."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
         "startLine": 36,
-        "endLine": 103,
+        "endLine": 92,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nPurpose: resolve the target + criteria, pick the path, allocate the work folder.\n\n### Step 1 -- require a target\n\nIf the argument is empty, ask exactly one bootstrapping question and wait:\n\n```\nWhat do you want to review? Point me at a file/dir, a PR, a ticket id, a\nwork-NNN, \"my changes\", or describe the target.\n```\n\n### Step 2 -- pick the path (fast vs guided)\n\n**Fast path** -- the prompt carries an explicit, resolvable target whose review method\nis unambiguous. Record the target, method, and tentative delivery; go straight to REVIEW.\n\n| Signal | Method | Tentative delivery |\n|---|---|---|\n| PR link / `#123` | diff review | PR comment(s) via `gh` |\n| ticket id (`PROJ-45`) | assess ticket content | ticket comment via `/aid-update-ticket` |\n| file / dir path | static review vs KB + coding-standards | findings report |\n| \"my changes\" / working tree / staged | working-diff review | findings report |\n| commit SHA / range / branch | diff review | findings report or PR comment |\n| `work-NNN` or an AID artifact (REQUIREMENTS/SPEC/PLAN/DETAIL) | review vs its acceptance criteria + KB | findings in the work folder |\n| a KB doc (`.aid/knowledge/*.md`) | review vs the KB-authoring rubric | findings report |\n\n**Guided path** -- target open-ended (a UI, a BDD-scenario set, \"is my auth sound?\"),\nor a fast trigger that does not resolve (file absent, ticket id but no catalogued\nconnector, PR # with no repo context). Interpret the request and form a plan -- *what*\nyou will review, *how* (method + any tool/MCP needed to gather evidence), and *where*\nfindings will be delivered -- **present the plan and wait for the user to confirm or\ncorrect** before spending review effort.\n\n### Step 3 -- criteria\n\nDerive the review criteria from the KB (`coding-standards.md`, `architecture.md`, and\nthe artifact's own acceptance criteria if it is AID work) plus anything the user named.\nFast path: implicit. Guided path: part of the plan the user confirms.\n\n### Step 4 -- classify complexity (sets model + effort)\n\n- **Simple** (one small file, a short doc, a tiny diff) -> dispatch `aid-reviewer` at\n  **model `sonnet`, effort `low`/`medium`**; single light VERIFY pass.\n- **Standard/complex** (a full PR, a design, security/perf, multi-file) -> **model\n  `opus`, effort `high`**; full VERIFY loop.\n  Verifier tier is always >= reviewer tier.\n\n### Step 5 -- allocate the work through the gate\n\n**Allocate through the Work Initiation Gate** (`.aid/runtime/templates/work-initiation-gate.md`):\nrun `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).\nEmpty output -> allocate, no prompt. Works exist -> ask the gate's single new-vs-continuation\nquestion with the enumerated list.\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its\n  first step (`INTAKE`), `--path lite`, and a short kebab-case slug derived from the target. The\n  gate `§ 3a` step 2 creates and enters the work-level worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`; mandatory per FR1, no longer optional),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" A standalone review is not a pipeline run and drives no\n  `phase` (specs/aid-review.md 10).\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\n**Advance:** ASK -> [State: REVIEW]."
+        "excerpt": "## State: INTAKE\n\nPurpose: resolve the target + criteria, pick the path, note the works.\n\n### Step 1 -- check the target\n\nNote whether the argument is empty. Do not ask here. If it is empty, INTAKE-ASK asks exactly one\nbootstrapping question:\n\n```\nWhat do you want to review? Point me at a file/dir, a PR, a ticket id, a\nwork-NNN, \"my changes\", or describe the target.\n```\n\n### Step 2 -- pick the path (fast vs guided)\n\n**Fast path** -- the prompt carries an explicit, resolvable target whose review method\nis unambiguous. Record the target, method, and tentative delivery; go on to ALLOCATE, then REVIEW.\n\n| Signal | Method | Tentative delivery |\n|---|---|---|\n| PR link / `#123` | diff review | PR comment(s) via `gh` |\n| ticket id (`PROJ-45`) | assess ticket content | ticket comment via `/aid-update-ticket` |\n| file / dir path | static review vs KB + coding-standards | findings report |\n| \"my changes\" / working tree / staged | working-diff review | findings report |\n| commit SHA / range / branch | diff review | findings report or PR comment |\n| `work-NNN` or an AID artifact (REQUIREMENTS/SPEC/PLAN/DETAIL) | review vs its acceptance criteria + KB | findings in the work folder |\n| a KB doc (`.aid/knowledge/*.md`) | review vs the KB-authoring rubric | findings report |\n\n**Guided path** -- target open-ended (a UI, a BDD-scenario set, \"is my auth sound?\"),\nor a fast trigger that does not resolve (file absent, ticket id but no catalogued\nconnector, PR # with no repo context). Interpret the request and form a plan -- *what*\nyou will review, *how* (method + any tool/MCP needed to gather evidence), and *where*\nfindings will be delivered. The plan is presented in INTAKE-ASK, where the user confirms or\ncorrects it before any review effort is spent.\n\n### Step 3 -- criteria\n\nDerive the review criteria from the KB (`coding-standards.md`, `architecture.md`, and\nthe artifact's own acceptance criteria if it is AID work) plus anything the user named.\nFast path: implicit. Guided path: part of the plan the user confirms.\n\n### Step 4 -- classify complexity (sets model + effort)\n\n- **Simple** (one small file, a short doc, a tiny diff) -> dispatch `aid-reviewer` at\n  **model `sonnet`, effort `low`/`medium`**; single light VERIFY pass.\n- **Standard/complex** (a full PR, a design, security/perf, multi-file) -> **model\n  `opus`, effort `high`**; full VERIFY loop.\n  Verifier tier is always >= reviewer tier.\n\n### Step 5 -- check for works\n\nRun `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree). Note\nwhether any exist. Do not prompt here.\n\n**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
       }
     },
     {
       "id": "n2",
       "order": 2,
+      "name": "INTAKE-ASK",
+      "label": "only when a question must be put",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 96,
+        "endLine": 98,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 96,
+        "endLine": 105,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path\n   is then picked from it.\n2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.\n3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK -> [State: ALLOCATE]."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "ALLOCATE",
+      "label": "ALLOCATE",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 109,
+        "endLine": 111,
+        "sourceKind": "skill",
+        "excerpt": "## State: ALLOCATE\n\nAllocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 109,
+        "endLine": 124,
+        "sourceKind": "skill",
+        "excerpt": "## State: ALLOCATE\n\nAllocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its\n  first step (`INTAKE`), `--path lite`, and a short kebab-case slug derived from the target. The\n  gate `§ 3a` step 2 creates and enters the work-level worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" A standalone review is not a pipeline run and drives no\n  `phase` (specs/aid-review.md 10).\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\n**Advance:** CHAIN -> [State: REVIEW] on a new work; a continuation follows the gate's § 3b instead."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
       "name": "REVIEW",
       "label": "REVIEW",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 107,
-        "endLine": 109,
+        "startLine": 128,
+        "endLine": 130,
         "sourceKind": "skill",
         "excerpt": "## State: REVIEW\n\nPurpose: gather evidence and produce the grounded findings ledger."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 107,
-        "endLine": 128,
+        "startLine": 128,
+        "endLine": 149,
         "sourceKind": "skill",
         "excerpt": "## State: REVIEW\n\nPurpose: gather evidence and produce the grounded findings ledger.\n\n1. **Gather evidence** the confirmed method needs, using whatever tools/MCP the plan\n   calls for -- `git diff` for a PR/commit/working-tree, `Read`/`Grep` for a file/dir,\n   the browser MCP to capture a UI, or -- for a ticket target -- fetch it by invoking\n   `/aid-read-ticket [<connector>:]<ticket-id>` (the connector resolution and host-MCP fetch\n   live there, feature-001; no direct-fetch recipe is re-implemented here; skip silently if no\n   matching connector is catalogued).\n2. **Dispatch `aid-reviewer` once, in a clean context** (model+effort from INTAKE Step\n   4), with the standard one-off five-section brief per\n   `.aid/runtime/templates/reviewer-dispatch.md` One-off reviews:\n   `ARTIFACTS UNDER REVIEW` / `CONTEXT` / `RUBRIC` / `OUT OF SCOPE` / `OUT-OF-SCOPE\n   FINDINGS POLICY`. The **RUBRIC MUST mandate** reading `.aid/knowledge/` + the relevant\n   source and **citing a KB doc or a `file:line` in every finding's Evidence cell**.\n   The reviewer writes the global 7-column ledger\n   (`.aid/runtime/templates/reviewer-ledger-schema.md`:\n   `# | Severity | Status | Doc | Line | Description | Evidence`) to\n   `.aid/.temp/review-pending/<work>-review.md`.\n\n**Advance:** VERIFY."
       }
     },
     {
-      "id": "n3",
-      "order": 3,
+      "id": "n5",
+      "order": 5,
       "name": "VERIFY",
       "label": "who reviews the reviewer",
       "kind": "loop-back",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 132,
-        "endLine": 134,
+        "startLine": 153,
+        "endLine": 155,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the reviewer)\n\nPurpose: ensure the review is grounded, correct, and complete before the human sees it."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 132,
-        "endLine": 152,
+        "startLine": 153,
+        "endLine": 173,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the reviewer)\n\nPurpose: ensure the review is grounded, correct, and complete before the human sees it.\n\n1. **Mechanical grounding check** (no dispatch): reject any finding row whose `Evidence`\n   cell is empty -- an ungrounded finding never reaches the human.\n2. **Adversarial verification** -- dispatch a *second* `aid-reviewer` in a clean context\n   (never sees the first reviewer's reasoning) to independently check each finding\n   against KB + source: flag ungrounded / hallucinated / mis-severity findings, and any\n   material **gap** (a real issue the first pass missed). It writes a review-quality\n   ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the review:** `bash .aid/runtime/scripts/grade.sh --explain <verify-ledger>`.\n   If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded\n   findings, add missed ones). **Circuit-breaker: 3 cycles** -> write\n   `.aid/works/{work}/IMPEDIMENT-review.md`, set the lifecycle to `Blocked` through the writer\n   (`--pipeline --field Lifecycle --value Blocked`), and surface it instead of looping.\n\nNote: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for\nthe presentation as information only -- it does NOT drive a fix loop here.\n\n**Advance:** PRESENT-FINDINGS."
       }
     },
     {
-      "id": "n4",
-      "order": 4,
+      "id": "n6",
+      "order": 6,
       "name": "PRESENT-FINDINGS",
       "label": "always a hard stop -- human final say",
-      "kind": "decision",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 156,
-        "endLine": 158,
+        "startLine": 177,
+        "endLine": 179,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:"
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 156,
-        "endLine": 169,
+        "startLine": 177,
+        "endLine": 190,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations**, and a **printed suggestion** to act: \"N issues found -- run\n  `/aid-fix` (or `/aid-update`) to address them\" (review never starts the fix itself);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP and await the human's decision (approve / edit the text / choose a different\ndelivery / do not publish). Nothing is posted to any external target until they approve.\n\n**Advance:** ASK -> [State: PUBLISH] on approval; otherwise [State: DONE]."
+        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations**, and a **printed suggestion** to act: \"N issues found -- run\n  `/aid-fix` (or `/aid-update`) to address them\" (review never starts the fix itself);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP and await the human's decision (approve / edit the text / choose a different\ndelivery / do not publish). Nothing is posted to any external target until they approve.\n\n**Advance:** ASK -> [State: PUBLISH]."
       }
     },
     {
-      "id": "n5",
-      "order": 5,
+      "id": "n7",
+      "order": 7,
       "name": "PUBLISH",
       "label": "only on approval",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 173,
-        "endLine": 182,
+        "startLine": 194,
+        "endLine": 204,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nDeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE."
+        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 173,
-        "endLine": 184,
+        "startLine": 194,
+        "endLine": 206,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nDeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE.\n\n**Advance:** DONE."
+        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE.\n\n**Advance:** DONE."
       }
     },
     {
-      "id": "n6",
-      "order": 6,
+      "id": "n8",
+      "order": 8,
       "name": "DONE",
       "label": "DONE",
       "kind": "exit",
@@ -127,15 +171,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 188,
-        "endLine": 190,
+        "startLine": 210,
+        "endLine": 212,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 188,
-        "endLine": 192,
+        "startLine": 210,
+        "endLine": 214,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.\n\n**Advance:** HALT."
       }
@@ -145,15 +189,29 @@
     {
       "from": "n1",
       "to": "n2",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "ASK",
+      "kind": "branch",
+      "condition": "when the argument is empty, the path is guided",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
+        "startLine": 91,
+        "endLine": 92,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: REVIEW]."
+        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
+      }
+    },
+    {
+      "from": "n1",
+      "to": "n3",
+      "kind": "branch",
+      "condition": "works exist; otherwise",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 91,
+        "endLine": 92,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is guided, or works\nexist; otherwise CHAIN -> [State: ALLOCATE]."
       }
     },
     {
@@ -161,69 +219,69 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 128,
-        "endLine": 128,
+        "startLine": 105,
+        "endLine": 105,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** ASK -> [State: ALLOCATE]."
       }
     },
     {
       "from": "n3",
-      "to": "n2",
+      "to": "n3",
       "kind": "loop-back",
-      "condition": null,
+      "condition": "otherwise",
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 144,
-        "endLine": 144,
+        "startLine": 124,
+        "endLine": 124,
         "sourceKind": "skill",
-        "excerpt": "   If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded"
+        "excerpt": "**Advance:** CHAIN -> [State: REVIEW] on a new work; a continuation follows the gate's § 3b instead."
       }
     },
     {
       "from": "n3",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "kind": "branch",
+      "condition": "on a new work; a continuation follows the gate's § 3b instead",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 152,
-        "endLine": 152,
+        "startLine": 124,
+        "endLine": 124,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** PRESENT-FINDINGS."
+        "excerpt": "**Advance:** CHAIN -> [State: REVIEW] on a new work; a continuation follows the gate's § 3b instead."
       }
     },
     {
       "from": "n4",
       "to": "n5",
-      "kind": "branch",
-      "condition": "on approval",
-      "advanceType": "ASK",
-      "provenance": {
-        "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 169,
-        "endLine": 169,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: PUBLISH] on approval; otherwise [State: DONE]."
-      }
-    },
-    {
-      "from": "n4",
-      "to": "n6",
-      "kind": "branch",
-      "condition": "otherwise",
+      "kind": "sequence",
+      "condition": null,
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 169,
-        "endLine": 169,
+        "startLine": 149,
+        "endLine": 149,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: PUBLISH] on approval; otherwise [State: DONE]."
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n4",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 165,
+        "endLine": 165,
+        "sourceKind": "skill",
+        "excerpt": "   If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded"
       }
     },
     {
@@ -234,8 +292,36 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 184,
-        "endLine": 184,
+        "startLine": 173,
+        "endLine": 173,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT-FINDINGS."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 190,
+        "endLine": 190,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** ASK -> [State: PUBLISH]."
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 206,
+        "endLine": 206,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }
@@ -245,7 +331,7 @@
     "n1"
   ],
   "exits": [
-    "n6"
+    "n8"
   ],
   "sources": [
     "canonical/skills/aid-review/SKILL.md"

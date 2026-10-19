@@ -24,8 +24,8 @@ the human gate (overwrite care is central).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 - **Genre structures:** `.aid/runtime/templates/shortcut-scaffolding/document.md`.
 
-State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff] -> WRITE
-(on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> AUTHOR -> VERIFY (loop) -> PRESENT [human
+gate, diff] -> WRITE (on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
 ---
@@ -38,31 +38,54 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
-1. **Require a target document + a change.** Empty argument -> ask one bootstrapping
-   question ("Which document should I update, and what change?") and wait.
-2. **Locate + read the existing document.** If it cannot be resolved, ask (or, if the user
-   meant a new doc, suggest `/aid-create-document`).
+1. **Check the target and the change.** Note whether the argument is empty. Do not ask here.
+2. **Locate + read the existing document.** Note whether it resolves; if it does not, INTAKE-ASK
+   asks which document is meant (or suggests `/aid-create-document` for a new one).
 3. **Pick the path** (fast if the document + change are clear; guided otherwise) and
    **classify complexity** -> `aid-tech-writer` model/effort (sonnet/medium default; opus/high
    for a large rewrite). Verifier tier >= producer.
-4. **Allocate the work through the gate.** Run the Work Initiation Gate
-   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
-   new-vs-continuation question with the enumerated list.
-   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-     (`aid-update-document`), its first step (`INTAKE`), and a kebab-case slug from the document.
-     The gate's `§ 3a` step 2 creates and enters the worktree
-     (`worktree-lifecycle.sh create <work-id> <name>`),
-     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
-     the writer, before it hands back: "`STATE.yml` was created by the gate;
-     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
-     set other keys through the writer." This skill drives no `phase`.
-   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Note whether any exist. Do not prompt here.
 5. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** ASK -> [State: AUTHOR].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the document does not
+resolve, the path is guided, or works exist; otherwise CHAIN -> [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question ("Which document should I update, and what
+   change?"). The answer is the target and the change; the path and complexity are then set from it.
+2. **Document does not resolve** -> ask which document is meant, or suggest
+   `/aid-create-document` if the user meant a new one.
+3. **Guided path** -> scope the change.
+4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK -> [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate the work through the gate: the Work Initiation Gate
+(`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name
+  (`aid-update-document`), its first step (`INTAKE`), and a kebab-case slug from the document.
+  The gate's `§ 3a` step 2 creates and enters the worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." This skill drives no `phase`.
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+**Advance:** CHAIN -> [State: AUTHOR] on a new work; a continuation follows the gate's § 3b instead.
 
 ---
 
@@ -91,14 +114,15 @@ adversarial check (accurate, complete, no fabrication, structure preserved) -> `
 The hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against
 the current file** + the target path. Await approval. Never writes `.aid/knowledge/`.
 
-**Advance:** ASK -> [State: WRITE] on approval; otherwise [State: DONE] (draft kept in the work folder).
+**Advance:** ASK -> [State: WRITE].
 
 ---
 
 ## State: WRITE  (only on approval)
 
-Write the revision back to the existing document (the diff was already reviewed at PRESENT).
-Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
+If the user declined, write nothing: the draft stays in the work folder, and the step goes on to
+DONE. Otherwise write the revision back to the existing document (the diff was already reviewed at
+PRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 
 **Advance:** DONE.
 

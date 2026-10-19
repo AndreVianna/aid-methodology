@@ -20,8 +20,8 @@ context, an optional authorized spike, verification, and a human-facing presenta
   gaps; the user decides.
 - **Not a numbered pipeline phase**; it does not route to `/aid-execute`.
 
-State machine: **INTAKE -> INVESTIGATE (-> PROPOSE-SPIKE?) -> VERIFY (loop) -> PRESENT
-[human resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> INVESTIGATE (-> PROPOSE-SPIKE?) -> VERIFY
+(loop) -> PRESENT [human resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line
 on each state.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
@@ -35,33 +35,55 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
-1. **Require a question.** If the argument is empty, ask one bootstrapping question ("What
-   do you want investigated?") and wait.
+1. **Check the question.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path (question scope):**
    - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria
      ("Is lib X compatible with our Node 24 build?", "Postgres vs SQLite for use-case Y
      against criteria A/B/C") -> investigate immediately.
-   - **Guided path** -- vague / broad / underspecified ("research our DB options") -> ask
-     2-3 scoping questions first (narrow it), then investigate.
+   - **Guided path** -- vague / broad / underspecified ("research our DB options") -> narrow
+     it first in INTAKE-ASK (2-3 scoping questions), then investigate.
 3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,
    <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad
    options analysis, deep traversal, many web sources, a spike) -> **opus / high**.
    Verifier tier is always >= producer tier.
-4. **Allocate the work through the gate.** Run the Work Initiation Gate
-   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
-   new-vs-continuation question with the enumerated list.
-   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),
-     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
-     (`worktree-lifecycle.sh create <work-id> <name>`),
-     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
-     the writer, before it hands back: "`STATE.yml` was created by the gate;
-     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
-     set other keys through the writer." This skill drives no `phase`. Associate a git worktree only
-     if a spike is later authorized (INVESTIGATE).
-   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** ASK -> [State: INVESTIGATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
+exist; otherwise CHAIN -> [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question ("What do you want investigated?"). The
+   answer is the question; the path and complexity are then set from it.
+2. **Guided path** -> the 2-3 scoping questions that narrow the question.
+3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK -> [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate the work through the gate: the Work Initiation Gate
+(`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),
+  its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." This skill drives no `phase`. Associate a git worktree only
+  if a spike is later authorized (PROPOSE-SPIKE).
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+**Advance:** CHAIN -> [State: INVESTIGATE] on a new work; a continuation follows the gate's § 3b
+instead.
 
 ---
 
@@ -78,12 +100,21 @@ and curate the evidence:
 
 **Spike escalation (conditional, human-authorized).** Default is **analytical-with-
 handoff** -- no code is written. If the researcher determines a gap genuinely cannot be
-closed on paper, it returns a **spike proposal** instead of a final answer, and the skill
-enters **PROPOSE-SPIKE**: present *what* it would build, *where* (isolated in the work
-folder / opt-in worktree, never touching production), and *what it would learn*, then STOP
-for the user's decision. On **authorization** -> re-dispatch `aid-researcher` to write the
-throwaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **decline**
--> proceed analytically and state the resulting limit in the Gaps section.
+closed on paper, it returns a **spike proposal** instead of a final answer; the step then
+goes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.
+
+**Advance:** CHAIN -> [State: VERIFY]; when the researcher returned a spike proposal,
+CHAIN -> [State: PROPOSE-SPIKE] instead.
+
+---
+
+## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)
+
+Present *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,
+never touching production), and *what it would learn*. Ask the user to authorize or decline it.
+Once the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the
+throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed
+analytically and state the resulting limit in the Gaps section.
 
 **Advance:** ASK -> [State: VERIFY].
 
@@ -128,9 +159,10 @@ Offer the natural next steps as **printed suggestions**, each requiring the user
 record an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the
 KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on
 a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never
-auto-invoked; never a resolution.
+auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
+in one plain line.
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE], then HALT.
 
 ---
 

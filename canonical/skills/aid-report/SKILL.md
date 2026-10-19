@@ -19,8 +19,8 @@ rather than an open question.
   that's a printed handoff to `/aid-create-dashboard`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
-State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -> HANDOFF?
--> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> ANALYZE -> VERIFY (loop) -> PRESENT [user
+resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
 ---
@@ -33,29 +33,50 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
-1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What data
-   should I analyze, and what question about it?") and wait.
+1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask ("analyze
    the A/B results in `results.csv`", "error-rate breakdown from these logs") -> analyze
    now. **Guided** -- vague ("analyze our usage") -> scope *which data, which metrics, what
-   question* first, then analyze.
+   question* first, in INTAKE-ASK, then analyze.
 3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->
    `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,
    deep telemetry) -> **opus / high**. Verifier tier >= producer tier.
-4. **Allocate the work through the gate.** Run the Work Initiation Gate
-   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
-   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
-   new-vs-continuation question with the enumerated list.
-   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),
-     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
-     (`worktree-lifecycle.sh create <work-id> <name>`),
-     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
-     the writer, before it hands back: "`STATE.yml` was created by the gate;
-     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
-     set other keys through the writer." This skill drives no `phase`.
-   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** ASK -> [State: ANALYZE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
+exist; otherwise CHAIN -> [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question ("What data should I analyze, and what
+   question about it?"). The answer is the subject; the path and complexity are then set from it.
+2. **Guided path** -> scope *which data, which metrics, what question*.
+3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK -> [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate the work through the gate: the Work Initiation Gate
+(`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),
+  its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." This skill drives no `phase`.
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+**Advance:** CHAIN -> [State: ANALYZE] on a new work; a continuation follows the gate's § 3b instead.
 
 ---
 
@@ -109,9 +130,10 @@ conflicts with reasons, and gaps. Assert no resolution.
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
 a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
-Never auto-invoked; never a resolution.
+Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
+in one plain line.
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE], then HALT.
 
 ---
 

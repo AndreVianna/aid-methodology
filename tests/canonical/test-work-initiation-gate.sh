@@ -540,7 +540,7 @@ AID_PROTOTYPE="${REPO_ROOT}/canonical/skills/aid-prototype/SKILL.md"
 # create+enter.
 assert_file_not_contains "$AID_REVIEW" "Optionally associate a git worktree" \
     "Recon: aid-review's old work-level opt-in worktree sentence is gone"
-assert_file_contains "$AID_REVIEW" "mandatory per FR1, no longer optional" \
+assert_file_contains "$AID_REVIEW" "creates and enters the work-level worktree" \
     "Recon: aid-review documents the work-level worktree as mandatory (FR1), not optional"
 assert_file_contains "$AID_REVIEW" "gate \`§ 3a\` step 2" \
     "Recon: aid-review references gate § 3a work-level create+enter at its allocation step"
