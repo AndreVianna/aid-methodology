@@ -279,8 +279,7 @@ run_ss11() {
     local P_PHASE="phase: *(${OLD_PHASES})\\b"
     local P_FIELD="--field Phase --value (${OLD_PHASES})\\b"
     local P_QUOTED="[\"'](${OLD_PHASES})[\"']"
-    local P_ENUM_AFTER="(${OLD_PHASES}) [\\]\\|"
-    local P_ENUM_BEFORE="[\\]\\| (${OLD_PHASES})\\b"
+    local P_ENUM_AFTER="(${OLD_PHASES}) [\\\\]?\\| (${OLD_PHASES})\\b"
     local P_PHASEDOT="Phase\\.(${OLD_PHASES})\\b"
     local P_BACKTICK="\`(${OLD_PHASES})\`"
     while IFS= read -r f; do
@@ -297,7 +296,7 @@ run_ss11() {
     else
         for f in "${files[@]}"; do
             out=$(ss11_lines "$f" | grep -E -e "$P_PHASE" -e "$P_FIELD" -e "$P_QUOTED" \
-                -e "$P_ENUM_AFTER" -e "$P_ENUM_BEFORE" -e "$P_PHASEDOT" || true)
+                -e "$P_ENUM_AFTER" -e "$P_PHASEDOT" || true)
             [[ -n "$out" ]] && hits+="$out"$'\n'
             out=$(ss11_lines "$f" | grep -E -e "$P_BACKTICK" | grep -i -e 'phase' || true)
             [[ -n "$out" ]] && hits+="$out"$'\n'
