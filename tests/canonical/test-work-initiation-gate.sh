@@ -601,17 +601,44 @@ writer_check() {
     _WOUT=$(AID_STATE_FILE="$1" AID_SKILLS_DIR="$2" bash "$WRITER" --check 2>&1); _WCODE=$?
 }
 
-# resume_row <STATE.yml> <skills-dir> -> prints 1, 2 or 3: the § 3b resume table,
-# first match wins. Row 1: the work is finished. Row 2: --check reports the record
-# missing or inconsistent. Row 3: every other open work.
+# gate_resume_rows [gate-doc] -> one line per row of the § 3b resume table, in table
+# order: "<row number>\t<condition>" (columns 2 and 3). The table is parsed from the
+# gate doc, never copied here, so a change to the table changes what resume_row decides.
+gate_resume_rows() {
+    awk '
+        /^### 3b\./ { in3b = 1; next }
+        in3b && /^##* / { exit }
+        in3b && /^ *\| *[0-9]+ *\|/ {
+            n = split($0, c, "|")
+            num = c[2]; gsub(/ /, "", num)
+            cond = c[3]; gsub(/^ +| +$/, "", cond)
+            print num "\t" cond
+        }
+    ' "${1:-$GATE_DOC}"
+}
+
+# resume_row <STATE.yml> <skills-dir> [gate-doc] -> prints the row number of the first
+# § 3b row whose condition holds, walking the table in its order (first match wins):
+# a condition naming Completed/Canceled holds when the work is finished; one naming
+# --check holds when --check fails; "every other" holds for any open work. A condition
+# this helper does not know prints "?", so it fails the assertion instead of matching.
 resume_row() {
-    local life
+    local life num cond
     life=$(awk -F': *' '/^lifecycle:/ { print $2; exit }' "$1")
-    if [[ "$life" == "Completed" || "$life" == "Canceled" ]]; then
-        echo 1; return
-    fi
-    writer_check "$1" "$2"
-    if [[ "$_WCODE" -eq 0 ]]; then echo 3; else echo 2; fi
+    while IFS=$'\t' read -r num cond; do
+        case "$cond" in
+            *Completed*|*Canceled*)
+                if [[ "$life" == "Completed" || "$life" == "Canceled" ]]; then echo "$num"; return; fi ;;
+            *--check*)
+                writer_check "$1" "$2"
+                if [[ "$_WCODE" -ne 0 ]]; then echo "$num"; return; fi ;;
+            *"every other"*)
+                echo "$num"; return ;;
+            *)
+                echo "?"; return ;;
+        esac
+    done < <(gate_resume_rows "${3:-$GATE_DOC}")
+    echo "none"
 }
 
 # Row 1 -- a finished work, even with a leftover saved skill.
@@ -760,6 +787,24 @@ assert_output_contains "$(cat "$RWR/STATE.yml")" "event: 'Record repaired'" \
     "RWR: the repair appends a lifecycle_history entry naming the record change"
 assert_eq "$(resume_row "$RWR/STATE.yml" "$RW_SKILLS")" "3" \
     "RWR: the next resume lands on row 3 (aid-execute at EXECUTE)"
+
+# Mutation: the RW assertions follow the gate doc's table, not a copy of it. In a
+# throwaway copy of the gate doc, swap § 3b rows 1 and 2; the RW1 assertion (finished
+# work lands on row 1) must then fail against the swapped table.
+RW_MUT_DOC="$RW_BASE/gate-rows-swapped.md"
+mut_r1=$(grep -n '^ *| 1 |' "$GATE_DOC" | head -1 | cut -d: -f1)
+mut_r2=$((mut_r1 + 1))
+if sed -n "${mut_r2}p" "$GATE_DOC" | grep -q '^ *| 2 |'; then
+    sed "${mut_r1}{h;d};${mut_r2}{G}" "$GATE_DOC" > "$RW_MUT_DOC"
+else
+    fail "MUT: § 3b rows 1 and 2 are not adjacent in the gate doc, the swap mutation cannot be made"
+fi
+if [[ -s "$RW_MUT_DOC" ]]; then
+    mut_out=$(assert_eq "$(resume_row "$RW1/STATE.yml" "$RW_SKILLS" "$RW_MUT_DOC")" "1" \
+        "MUT-RW1: resume table lands on row 1 (finished) with the swapped § 3b copy" 2>&1)
+    assert_output_contains "$mut_out" "FAIL: MUT-RW1" \
+        "MUT-RW1: the RW1 row assertion fails when § 3b rows 1 and 2 are swapped (mutation detected)"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""
