@@ -1811,3 +1811,11 @@ qa:
     suggested: 'Retire the Codex channel; every Codex job goes back to Claude sub-agents'
     answer: 'Yes (maintainer): stop delegating to Codex. Task reviews go to Sonnet reviewers (Q141), fix rounds to Haiku, delivery reviews to Opus (Q143); machine-limited runs stay known limits. h006, h007 and h008 are reassigned. Replaces Q154.'
     applied_to: 'handoff/PROTOCOL.md (retired); every task from delivery-002 wave 3 on'
+  - id: Q157
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'task-037 moves 34 skills to the one-line continuation form (gate § 3b). The site flow-chart builder (site/scripts/lib/flow-graph/engine-core.mjs, B1 rule) draws the Continuation branch only from the old HALTS / does-not-run wording, so 34 flow pages lose that branch and 42 site tests fail.'
+    suggested: 'A: accept the loss, update the tests, backlog the builder change'
+    answer: 'B (maintainer): fix the builder now, not later, so the correction is not lost. A new task (display name task-037a, id task-371) teaches the builder the one-line form; task-037 waits for it and then keeps its Continuation branches.'
+    applied_to: 'PLAN.md (task-371, task-037 depends on it); deliveries/delivery-002/tasks/task-371/'

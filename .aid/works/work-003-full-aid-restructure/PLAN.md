@@ -455,7 +455,7 @@ The Notes explain why each is needed.
 | task-034 | task-023, task-024, task-025, task-030 |
 | task-035 | task-023, task-024, task-025, task-030 |
 | task-036 | task-023, task-024, task-025, task-030 |
-| task-037 | task-023, task-024, task-025, task-030 |
+| task-037 | task-023, task-024, task-025, task-030, task-371 |
 | task-038 | task-023, task-024, task-025, task-030 |
 | task-039 | task-023, task-024, task-025, task-030 |
 | task-040 | task-023, task-024, task-025, task-030, task-039 |
@@ -476,6 +476,7 @@ The Notes explain why each is needed.
 | task-055 | task-026, task-027, task-028, task-054 |
 | task-056 | task-050, task-051, task-055 |
 | task-057 | task-045, task-049, task-053, task-056 |
+| task-371 | — |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -489,7 +490,7 @@ The Notes explain why each is needed.
 
 ```wave-map
 delivery: 002
-wave 1: task-020
+wave 1: task-020, task-371
 wave 2: task-021, task-022, task-024
 wave 3: task-023, task-026, task-027, task-031
 wave 4: task-025, task-028, task-033, task-048
