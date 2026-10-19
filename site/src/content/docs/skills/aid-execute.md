@@ -71,7 +71,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n3"></a>**3 · `FIX`** — CODE-source issues from the most recent REVIEW cycle are… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L224" wrap
-| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW (entered only when resuming a task saved at FIX; a new run fixes inside REVIEW) |
 ~~~~
 
 [Source: `canonical/skills/aid-execute/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L224) · [full step: `canonical/skills/aid-execute/references/state-fix.md#L1-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-fix.md#L1-L184)

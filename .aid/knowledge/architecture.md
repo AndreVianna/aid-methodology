@@ -324,9 +324,10 @@ instead of restating. CONFIRMED via that file and the directory inventory.
   step on resume; it never routes. A detected mismatch goes to recovery, where the user confirms one
   repaired record before anything runs.
 - **Hand-offs are one locked write.** `PASS` moves the work to the next skill and its entry step with
-  `--returns no`, and sets the phase when the phase changes. The one exception is `aid-orchestrate`'s `PASS` for a
-  continued work, which writes no hand-off: the record already names the skill and the step, so the skill is
-  started from the record (`skill-steps.md` § Acting on an existing work). `CALL` appends an open `handoffs` entry
+  `--returns no`, and sets the phase when the phase changes. `aid-orchestrate`'s two `PASS` steps write no hand-off: for a
+  continued work (HAND-OVER) the record already names the skill and the step, so the skill is started from the
+  record (`skill-steps.md` § Acting on an existing work); and START-ACTION runs before any work exists, so there is
+  no record to hand off, and the action skill creates the work through the gate. `CALL` appends an open `handoffs` entry
   with `--returns yes`, and `HALT` with an open call restores the caller's skill, step and detail
   from that entry. Calls nest, newest first.
 - **Phase** is a display label of the work, one of `Definition`, `Specification`, `Planning`,

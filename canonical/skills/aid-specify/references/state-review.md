@@ -62,7 +62,7 @@ Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh 
 |-----------|--------|
 | Grade ≥ minimum | Print summary, done. Set this feature's `state: Ready` and its `grade` in the work `STATE.yml`'s `features:` sequence. |
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
-| Grade < minimum, core assumptions wrong | Recommend `--reset`. |
+| Grade < minimum, core assumptions wrong | Recommend `--reset`. Before the HALT, set the lifecycle to `Paused-Awaiting-Input` and the pause reason (`--pipeline --field "Pause Reason" --value 'core assumptions wrong: recommend --reset'`) through the writer. |
 
 <!-- A delivery-definition review step once sat here and is retired, for two independent
      reasons either of which is sufficient.

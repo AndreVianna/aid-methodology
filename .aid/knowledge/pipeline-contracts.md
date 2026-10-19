@@ -291,9 +291,9 @@ Each step runs the same parts, in this order:
    paused, until the user approves or declines. Every other question may be skipped.
 4. **`PASS`.** If the approvals table requires an approval at this point for the work's depth, `ASK`
    it first. Then one locked write hands the work to the next skill and its entry step, with
-   `--returns no` and the phase when the phase changes; the next skill starts in the same turn. The one exception is
-   `aid-orchestrate`'s `PASS` for a continued work: it writes no hand-off, because the record already
-   names the skill and the step, and the skill is started from the record (`skill-steps.md`, Acting on an
+   `--returns no` and the phase when the phase changes; the next skill starts in the same turn. `aid-orchestrate`'s two
+   `PASS` steps write no hand-off: START-ACTION runs before any work exists, so there is no record yet; and
+   HAND-OVER for a continued work writes none because the record already names the skill and the step, and the skill is started from the record (`skill-steps.md`, Acting on an
    existing work).
 5. **`CALL`.** Record what is done, then one locked write appends a `handoffs` entry with
    `--returns yes` (the hand-off's from-skill, from-step and from-detail, and the reason) and moves the
@@ -339,9 +339,9 @@ skill follows the rules above, and each step's advance word is on that step's `*
 | `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION chains back to CONTINUE when the user adds a consideration, and ends with `HALT` when the user approves, naming `/aid-define`. |
 | `aid-define` | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE. DONE chains back to CROSS-REFERENCE when the user asks for a re-check, and ends with `HALT` otherwise; a requirements-level change is named in one plain line. |
 | `aid-specify` | INITIALIZE → CONTINUE → REVIEW → DONE; CONTINUE goes to SPIKE or BLOCKED when it must wait, and both `WAIT` and return to CONTINUE. A re-run enters at REVIEW. |
-| `aid-plan` | FIRST-RUN → CONFIRM → REVIEW → DONE; REVIEW goes back to FIRST-RUN when the grade is below the minimum and the deliverables are fixable. |
-| `aid-detail` | FIRST-RUN → CONFIRM → REVIEW → DONE, producing the task files and then the execution graph. |
-| `aid-execute` | EXECUTE → REVIEW → DONE per task, with FIX looping back to REVIEW, RE-RUN reopening a `Done` task, and DELIVERY-GATE closing a delivery. In delivery mode the per-task loop runs inside a parallel pool. |
+| `aid-plan` | FIRST-RUN → REVIEW → DONE. CONFIRM is the entry of a re-run on a planned work (it asks whether to reopen, then goes to REVIEW or DONE). REVIEW goes back to FIRST-RUN when the grade is below the minimum and the deliverables are fixable. |
+| `aid-detail` | FIRST-RUN → REVIEW → DONE, producing the task files and then the execution graph. CONFIRM is the entry of a re-run on a detailed delivery (it asks whether to reopen, then goes to REVIEW or DONE). |
+| `aid-execute` | EXECUTE → REVIEW → DONE per task (REVIEW fixes what its quick check finds in place; FIX is entered only when resuming a task saved at FIX, and returns to REVIEW), RE-RUN reopening a `Done` task, and DELIVERY-GATE closing a delivery. In delivery mode the per-task loop runs inside a parallel pool. |
 | `aid-orchestrate` | A numbered flow in the main conversation, with named steps: PROJECT-QUESTION, CHECK-READING, SIZE-READING, SHOW-READING, ACTION-HANDOVER, START-ACTION, FIND-OR-CREATE, ASK-FIRST, RECORD-INTENT, CANCEL, CLOSE, HAND-OVER and DURING-WORK. It hands an action-skill reading to its skill (which creates the work), or finds or creates the work, or cancels or closes it, and hands over the first phase. |
 | Shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT. The engine runs the Definition-to-Planning path as one autonomous run and never executes. |
 | `aid-deploy` | IDLE → SELECTING → VERIFYING → PACKAGING → DONE; a failed check goes to FIX-DECISION and then RE-VERIFY, which returns to PACKAGING; RE-RUN reopens a finished release. |

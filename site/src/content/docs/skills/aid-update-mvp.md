@@ -94,19 +94,21 @@ found in INTAKE.
 
 <a id="fragment-n3"></a>**3 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L98-L102" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L98-L104" wrap
 ## State: UPDATE
 
 **Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
 named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
-relative path, so PRESENT can restore them if the user declines.
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L98-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L102) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L98-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L141)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L98-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L104) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L98-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L143)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L145-L149" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L147-L151" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -114,25 +116,25 @@ defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escal
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L145-L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L145-L149) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L145-L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L145-L151)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L147-L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L147-L151) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L147-L153`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L147-L153)
 
 <a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L155-L158" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L157-L160" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the revised `## MVP` section clearly.
 Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L155-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L158) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L155-L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L182)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L157-L160`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L157-L160) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L157-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L157-L184)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L186-L188" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L188-L190" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L186-L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L186-L188) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L186-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L186-L190)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L188-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L188-L190) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L188-L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L188-L192)

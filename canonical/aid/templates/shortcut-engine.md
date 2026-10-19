@@ -90,7 +90,7 @@ to directly.
 | SPEC | below | `aid-architect` (Large) | CHAIN → PLAN |
 | PLAN | below | `aid-architect` (Large) | CHAIN → DETAIL |
 | DETAIL | below | `aid-architect` (Large) | CHAIN → GATE |
-| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and fewer than 3 cycles have run; HALT when the circuit breaker has blocked the work |
+| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work |
 | APPROVAL-HALT | below | inline | CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set must change; HALT when approved or dropped |
 
 Print the state-entry line on entry to each state (`[State: NAME] -- {one-line
@@ -884,7 +884,7 @@ rm -f .aid/.temp/review-pending/shortcut-{work}-defn.md .aid/.temp/review-pendin
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 
-**Advance:** CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and fewer than 3 cycles have run; HALT when the circuit breaker has blocked the work.
+**Advance:** CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work.
 
 ---
 

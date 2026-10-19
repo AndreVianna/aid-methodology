@@ -230,4 +230,8 @@ Delivery folders created:
 The step is finished once the user has approved the sequence, PLAN.md is written, delivery folders are
 created, and the final summary is printed. The approval question pauses the step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`.
 
-**Advance:** **CHAIN** → [State: REVIEW].
+An approval is never skipped. A request to change the sequence is an adjustment (Step 3) and the loop goes on. When the
+user declines the plan and does not want to adjust it, PLAN.md is not written and the work ends: set the lifecycle to
+`Canceled` through the writer (`--pipeline --field Lifecycle --value Canceled`), then HALT.
+
+**Advance:** **CHAIN** → [State: REVIEW] when the user approves the sequence; **HALT** when the user declines the plan.

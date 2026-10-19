@@ -64,7 +64,7 @@
         "startLine": 224,
         "endLine": 224,
         "sourceKind": "skill",
-        "excerpt": "| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |"
+        "excerpt": "| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW (entered only when resuming a task saved at FIX; a new run fixes inside REVIEW) |"
       },
       "detail": {
         "file": "canonical/skills/aid-execute/references/state-fix.md",

@@ -328,9 +328,13 @@ column to populate — `lifecycle_history` is the authoritative record of these 
 gates.
 
 **APPROVAL-HALT — the human gate.** A cleared grade is **necessary but not sufficient**: the
-engine never executes. APPROVAL-HALT presents the GATE-cleared work, sets Lifecycle
-`Paused-Awaiting-Input`, and STOPS — no branch is created, no task runs. Execution is a
-separate, user-initiated `/aid-execute` (FR-10 / NFR-10). CONFIRMED in `shortcut-engine.md`.
+engine never executes. APPROVAL-HALT presents the GATE-cleared work, records the approval as a
+question (`--ask`, category Approval), sets Lifecycle `Paused-Awaiting-Input`, and asks. An approval
+is never skipped. On approve it records the answer, sets Lifecycle back to `Running` and stops, so
+the user's `/aid-execute` can start; on a decline it goes back to CAPTURE (a requirements change)
+or DETAIL (a task-set change), or cancels the work. No branch is created and no task runs in the
+engine. Execution is a separate, user-initiated `/aid-execute` (FR-10 / NFR-10). CONFIRMED in
+`shortcut-engine.md`.
 
 ---
 
@@ -401,7 +405,7 @@ These also run in CI's `kb-hygiene` job for this repo (CONFIRMED in
 | Per-phase grade < `minimum_grade` | **Blocking** — phase cannot advance | Lower `minimum_grade` in `.aid/settings.yml`, or orchestrator marks specific findings `Accepted` with explicit user authorization (recorded in the ledger Evidence) |
 | Delivery gate grade | **Blocking** (with 3-cycle circuit breaker → STOP, not auto-pass) | Same `Accepted` path; human decides at the circuit breaker |
 | Shortcut-engine GATE grade < floor (A+ default) | **Blocking** — the Lite path cannot reach APPROVAL-HALT (3-cycle circuit breaker → `IMPEDIMENT` + Lifecycle `Blocked`) | Same `Accepted` path; or lower `{name}.minimum_grade` in `.aid/settings.yml` |
-| Shortcut-engine APPROVAL-HALT | **Human-gated** — a cleared grade is necessary but not sufficient; nothing executes | User approves by launching `/aid-execute`; the engine never auto-advances |
+| Shortcut-engine APPROVAL-HALT | **Human-gated** — a cleared grade is necessary but not sufficient; nothing executes | The user answers the recorded approval; on approve the work is `Running` again and the user starts `/aid-execute`; the engine never auto-advances |
 | Citation / frontmatter / INDEX / version-sync scripts | **Blocking** in `kb-hygiene` / release `gate` CI | Fix the source; there is no skip flag |
 | `visual-fidelity` Playwright gate | Blocking *when `kb.html` exists*; SKIPs (advisory) when absent | Generate the summary, or leave unbuilt |
 | Conformance check (design↔as-built divergence, aid-housekeep) | **Human-gated** — divergences flagged as a Q&A entry; design doc is never auto-updated | User supplies a per-item choice: evolve the design, fix the code, or accept/defer; no auto-pass |

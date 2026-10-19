@@ -221,7 +221,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 |-------|--------|--------|---------|
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | CHAIN → REVIEW |
 | REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE; HALT when a `[CRITICAL]` persists after the fix-on-spot |
-| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW (entered only when resuming a task saved at FIX; a new run fixes inside REVIEW) |
 | DONE | _(inline — task complete)_ | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |

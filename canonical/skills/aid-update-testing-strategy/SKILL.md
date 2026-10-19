@@ -85,7 +85,9 @@ named and the complexity tier, so a resume finds them in the record.
 
 **Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
 named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
-relative path, so PRESENT can restore them if the user declines.
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
 
 1. **Apply only the change the user named in this run**, to the owned C6 content, per the
    content rules below.

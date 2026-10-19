@@ -87,43 +87,45 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L84-L88" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L84-L90" wrap
 ## State: UPDATE
 
 **Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
 named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
-relative path, so PRESENT can restore them if the user declines.
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L84-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L88) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L84-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L97)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L84-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L90) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L84-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L99)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L101-L104" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L103-L106" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L101-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L101-L106)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L103-L106) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L103-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L103-L108)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L110-L112" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L112-L114" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the revision, name every output touched, and assert that a consumed seed is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L110-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L110-L112) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L110-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L110-L125)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L112-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L112-L114) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L112-L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L112-L127)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L129-L131" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L131-L133" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L129-L131) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L129-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L129-L133)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L131-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L131-L133) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L131-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L131-L135)

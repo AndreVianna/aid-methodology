@@ -89,7 +89,7 @@ found in INTAKE.
 - **No seed present** → advance (gate does not apply).
 - **Seed present, no unresolved questions, or override supplied** → advance.
 
-The run ends at a refusal, with the work paused at this step; a resume runs GUARD again and re-reads the seed.
+The run ends at a refusal, with the work paused at this step: set the lifecycle to `Paused-Awaiting-Input` and the pause reason (the refusal, in one line) through the writer (`--pipeline --field Lifecycle` and `--field "Pause Reason"`). A resume sets the lifecycle back to `Running`, runs GUARD again and re-reads the seed.
 
 **Advance:** CHAIN → [State: UPDATE] when no seed was found, it has no unresolved question, or the override is supplied; HALT when the guard refuses.
 
@@ -99,7 +99,9 @@ The run ends at a refusal, with the work paused at this step; a resume runs GUAR
 
 **Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
 named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
-relative path, so PRESENT can restore them if the user declines.
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
 
 Dispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.
 Apply the **byte-range write discipline** (`feature-003 §4`, feature-002 §3c *Mechanics*):

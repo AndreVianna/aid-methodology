@@ -29,11 +29,11 @@ flowchart TB
   n2(["CONFIRM"])
   n3(["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"])
   n4(["DONE"])
-  n1 --> n3
+  n1 -->|"when the user approves the sequence"| n3
   n2 --> n3
   n3 -->|"when the grade is below minimum and the deliverables are fixable"| n1
   n3 -->|"when the grade meets minimum and all delivery folders are created"| n4
-  class n1 aidEntry
+  class n1 aidExit
   class n2 aidEntry
   class n3 aidExit
   class n4 aidExit
@@ -46,13 +46,13 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No PLAN.md found; begin dependency mapping and deliverable… · _entry_
+<a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No PLAN.md found; begin dependency mapping and deliverable… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L164" wrap
-| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW when the user approves the sequence; HALT when the user declines the plan |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L164`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L164) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L234)
+[Source: `canonical/skills/aid-plan/SKILL.md#L164`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L164) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L238)
 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** · _entry_
 

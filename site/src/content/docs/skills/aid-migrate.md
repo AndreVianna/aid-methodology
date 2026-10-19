@@ -42,7 +42,7 @@ flowchart TB
   n5 --> n6
   n6 --> n7
   n7 --> n8
-  n8 -. "when a pass is below the floor and fewer than 3 cycles have run" .- n8
+  n8 -. "when a pass is below the floor and the circuit breaker has not tripped" .- n8
   n8 -->|"If the pass's grade has not improved across 3 consecutive cycles"| n9
   n8 -->|"when both passes clear"| n10
   n10 -. "when the requirements must change" .-> n4
@@ -131,7 +131,7 @@ Bind **VERB=`migrate`**, **ARTIFACT="" (bare verb)**, then run the shared engine
 <a id="fragment-n8"></a>**8 · `GATE`** — Runs feature-004's two batched Grading-Gate passes over the… · _decision_
 
 ~~~~plaintext title="canonical/aid/templates/shortcut-engine.md#L93" wrap
-| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and fewer than 3 cycles have run; HALT when the circuit breaker has blocked the work |
+| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work |
 ~~~~
 
 [Source: `canonical/aid/templates/shortcut-engine.md#L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L93) · [full step: `canonical/aid/templates/shortcut-engine.md#L705-L887`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L705-L887)

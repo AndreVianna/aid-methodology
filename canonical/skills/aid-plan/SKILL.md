@@ -161,7 +161,7 @@ aid-plan  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW when the user approves the sequence; HALT when the user declines the plan |
 | CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE when the grade meets minimum and all delivery folders are created; CHAIN → FIRST-RUN when the grade is below minimum and the deliverables are fixable; HALT when the sequence is invalidated |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
