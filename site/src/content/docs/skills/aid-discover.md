@@ -30,24 +30,24 @@ flowchart TB
   n3{"REVIEW"}
   n4{"Q-AND-A"}
   n5{"FIX"}
-  n6(["APPROVAL<br/>APPROVAL presents the KB summary and asks the user to…"])
+  n6["APPROVAL<br/>APPROVAL presents the KB summary and asks the user to…"]
   n7(["DONE<br/>DONE confirms discovery is complete and user-approved; it…"])
   n1 --> n2
   n2 --> n3
   n3 -->|"if Pending Q&amp;A entries with Impact: Required exist"| n4
   n3 -->|"otherwise"| n5
   n4 -->|"when any answer implies a doc change"| n5
-  n4 -->|"otherwise chain once zero Pending and grade &gt;= minimum"| n6
+  n4 -->|"otherwise once zero Pending and grade &gt;= minimum. With no question put to the…"| n6
   n5 -->|"if grade &lt; minimum"| n3
   n5 -->|"if grade ≥ minimum"| n6
   n6 -. "otherwise" .- n6
-  n6 -->|"user approval is the natural pause — once user approves"| n7
+  n6 -->|"the approval above; a consideration goes back as a pending question instead"| n7
   class n1 aidExit
   class n2 aidExit
   class n3 aidDecision
   class n4 aidDecision
   class n5 aidDecision
-  class n6 aidExit
+  class n6 aidLoopBack
   class n7 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -61,58 +61,58 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `ELICIT`** — ELICIT captures the project's external sources and tool… · _exit_ · PAUSE-FOR-USER-ACTION
+<a id="fragment-n1"></a>**1 · `ELICIT`** — ELICIT captures the project's external sources and tool… · _exit_ · ASK
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L266" wrap
-| ELICIT | `references/state-elicit.md` | inline | → GENERATE |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L268" wrap
+| ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L266`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L266) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L328`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L328)
+[Source: `canonical/skills/aid-discover/SKILL.md#L268`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L268) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L326`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L326)
 
-<a id="fragment-n2"></a>**2 · `GENERATE`** — GENERATE generates KB documents that are missing or still… · _exit_ · PAUSE-FOR-USER-ACTION
+<a id="fragment-n2"></a>**2 · `GENERATE`** — GENERATE generates KB documents that are missing or still… · _exit_ · ASK
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L267" wrap
-| GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L269" wrap
+| GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L267`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L267) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1087`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1087)
+[Source: `canonical/skills/aid-discover/SKILL.md#L269`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L269) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1084`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1084)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — REVIEW grades all declared KB documents for accuracy… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L268" wrap
-| REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L270" wrap
+| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L268`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L268) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L659`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L659)
+[Source: `canonical/skills/aid-discover/SKILL.md#L270`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L270) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L659`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L659)
 
 <a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L269" wrap
-| Q-AND-A | `references/state-q-and-a.md` | inline | → FIX |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L271" wrap
+| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L269`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L269) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L66)
+[Source: `canonical/skills/aid-discover/SKILL.md#L271`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L271) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65)
 
 <a id="fragment-n5"></a>**5 · `FIX`** — FIX applies Q&amp;A answers and reviewer feedback to bring KB… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L270" wrap
-| FIX | `references/state-fix.md` | `aid-architect` | → APPROVAL |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L272" wrap
+| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → APPROVAL |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L270`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L270) · [full step: `canonical/skills/aid-discover/references/state-fix.md#L1-L126`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-fix.md#L1-L126)
+[Source: `canonical/skills/aid-discover/SKILL.md#L272`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L272) · [full step: `canonical/skills/aid-discover/references/state-fix.md#L1-L126`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-fix.md#L1-L126)
 
-<a id="fragment-n6"></a>**6 · `APPROVAL`** — APPROVAL presents the KB summary and asks the user to… · _exit_ · HALT
+<a id="fragment-n6"></a>**6 · `APPROVAL`** — APPROVAL presents the KB summary and asks the user to… · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L271" wrap
-| APPROVAL | `references/state-approval.md` | inline | → halt |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L273" wrap
+| APPROVAL | `references/state-approval.md` | inline | ASK → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L271`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L271) · [full step: `canonical/skills/aid-discover/references/state-approval.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-approval.md#L1-L39)
+[Source: `canonical/skills/aid-discover/SKILL.md#L273`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L273) · [full step: `canonical/skills/aid-discover/references/state-approval.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-approval.md#L1-L39)
 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE confirms discovery is complete and user-approved; it… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L272" wrap
-| DONE | `references/state-done.md` | inline | → halt |
+~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L274" wrap
+| DONE | `references/state-done.md` | inline | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L272`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L272) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L73)
+[Source: `canonical/skills/aid-discover/SKILL.md#L274`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L274) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L73)

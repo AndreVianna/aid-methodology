@@ -18,7 +18,7 @@ Analyze an existing project repository — all code, configuration, and document
 produce a structured `.aid/knowledge/` directory by orchestrating 5 specialized discovery subagents.
 Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
-**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
+**State machine — each `/aid-discover` invocation drives the steps until one asks the user (`ASK`), waits for an outside action (`WAIT`) or ends the run (`HALT`), per [`skill-steps.md`](../../aid/templates/skill-steps.md). Mechanical steps auto-chain (`CHAIN`).**
 
 ---
 
@@ -40,7 +40,7 @@ assumption. Record a question and DEFER the decision to the user.**
   source). Otherwise, **ASK.**
 
 **The deferral machinery is already built in — use it:** the Step 0cx (domain), 0d (doc-set),
-0f (path), and Step 5c (term-exclusion) gates are PAUSE-FOR-USER-DECISION points; sub-agents
+0f (path), and Step 5c (term-exclusion) gates are ASK points; sub-agents
 write open questions to `.aid/knowledge/.scout-questions.tmp`; Step 6b consolidates them into
 `STATE.md ## Q&A (Pending)`; and the **Q-AND-A** state resolves them *with the user* before
 approval. Every disambiguation flows through this path — none is decided silently.
@@ -166,7 +166,9 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
-Read the filesystem to determine which mode to enter:
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection): a fresh start enters the step the ladder below finds; a resume checks the saved step against disk, and a mismatch is reported, never silently re-routed.
+
+Read the filesystem to find the entry step on a fresh start:
 
 ```
 State 0: `## Discovery Elicitation` absent, or `**Resolved:** no` → ELICIT mode
@@ -263,13 +265,13 @@ aid-discover  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| ELICIT | `references/state-elicit.md` | inline | → GENERATE |
-| GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |
-| REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
-| Q-AND-A | `references/state-q-and-a.md` | inline | → FIX |
-| FIX | `references/state-fix.md` | `aid-architect` | → APPROVAL |
-| APPROVAL | `references/state-approval.md` | inline | → halt |
-| DONE | `references/state-done.md` | inline | → halt |
+| ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
+| GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW |
+| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A |
+| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX |
+| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → APPROVAL |
+| APPROVAL | `references/state-approval.md` | inline | ASK → DONE |
+| DONE | `references/state-done.md` | inline | HALT |
 
 > **Sub-agent fanout (GENERATE):** The `aid-architect` Worker for GENERATE dispatches
 > discovery sub-agents internally — `aid-researcher` (Step 1 pre-scan, sequential), then
@@ -303,9 +305,10 @@ aid-discover  ▸ you are here
 > re-verification of the changes is the next cycle's REVIEW state job.
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, follow its `**Advance:**` word as [`skill-steps.md`](../../aid/templates/skill-steps.md) defines it:
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the state the line names.
+- **WAIT** → say what the user must do outside the conversation, then stop.
 - **HALT** → print the closing summary and exit.
 
 ---

@@ -35,4 +35,4 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** **HALT** (user approval is the natural pause — once user approves, **CHAIN** → [State: DONE]).
+**Advance:** **ASK** → [State: DONE] (the approval above; a consideration goes back as a pending question instead).

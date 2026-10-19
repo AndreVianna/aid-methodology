@@ -16,10 +16,10 @@ the user must always know what is being done and what is decided where). Print t
 [GENERATE] Building the Knowledge Base. The doc-set is NOT fixed up front — it is decided
            by the domain, at the gates below:
   [0c]  Build project index            (mechanical)
-  [0cx] Classify project DOMAIN         -> you confirm        (PAUSE)
-  [0d]  Propose DOC-SET from the domain -> you confirm        (PAUSE)   <- this is what decides which docs
+  [0cx] Classify project DOMAIN         -> you confirm        (ASK)
+  [0d]  Propose DOC-SET from the domain -> you confirm        (ASK)   <- this is what decides which docs
   [0e]  Harvest coined terms            (mechanical)
-  [0f]  Classify discovery PATH         -> you confirm        (PAUSE)
+  [0f]  Classify discovery PATH         -> you confirm        (ASK)
   [1-5] Fan-out research -> closure -> review panel -> approval
 ```
 
@@ -183,7 +183,7 @@ After reading the signals:
     below) with `**Confirmed:** no` and your measured label.
   - Present the classification to the user and ask for confirmation (see "Present the
     classification" below).
-  - **PAUSE-FOR-USER-DECISION** — stop after presenting.
+  - **ASK** — stop after presenting.
 
 - **Insufficient / uncertain / dubious** — signals are absent, contradictory, or too sparse to
   classify with confidence (e.g. an empty repo, a repo with equal-weight signals in two
@@ -202,7 +202,7 @@ After reading the signals:
     ```
   - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md. Resolve Q{N} then
     re-run /aid-discover.`
-  - **PAUSE** at the existing Q&A gate. Do not proceed to Step 0d until the Q&A is answered
+  - **ASK** at the existing Q&A gate. Do not proceed to Step 0d until the Q&A is answered
     and a domain is confirmed.
   - On the resume run (after the user answers the Q&A), read the user's answer as the domain,
     write the `## Discovery Domain` block (confirmed), and chain to Step 0d.
@@ -234,11 +234,10 @@ Domain classification
 > - Or type the domain label you want to use instead (e.g. `methodology/tooling` or
 >   `hybrid:software-cli+methodology/tooling`).
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting. The user's choice
+**This is a genuine ASK.** Stop here after presenting. The user's choice
 (not the source signals alone) is the authoritative domain; an override is recorded as such.
 
-**Advance:** Stop here. Re-run `/aid-discover` after confirming the domain to continue to
-Step 0d.
+**Advance:** **ASK** → [State: GENERATE — Step 0d].
 
 #### On confirm (resume path) -- write the record
 
@@ -286,8 +285,8 @@ Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-deci
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
-**PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/state-machine-chaining.md`).
+**ASK** (contracted checkpoint per SPEC feature-004 §3.1 and
+`.aid/runtime/templates/skill-steps.md`).
 
 Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d until the
 `## Discovery Domain` block in `.aid/knowledge/STATE.md` carries `**Confirmed:** yes`.
@@ -427,11 +426,10 @@ Then ask the user to confirm or edit:
 > - Type **`confirm`** (or press Enter) to accept as proposed.
 > - Or provide edits in the pipe-delimited format: `filename|owner|presence[:when]` — one entry per line — and the confirmed set will be written to `.aid/settings.yml`.
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting the proposal.
+**This is a genuine ASK.** Stop here after presenting the proposal.
 
-**Advance:** Stop here (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
-proposed doc-set to continue to [State: GENERATE — Step 1].
+**Advance:** **ASK** → [State: GENERATE — Step 1] (contracted checkpoint per SPEC feature-004 §3.1 and
+`.aid/runtime/templates/skill-steps.md`).
 
 #### On confirm (resume path)
 
@@ -563,7 +561,7 @@ prior_path="$(grep -m1 '^\*\*Path:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
   re-triage lifecycle made visible (FR-22 -- the path is re-measured every run).
 - **No prior path** (first run): proceed to the triage gate below.
 
-#### Present the proposal (PAUSE-FOR-USER-DECISION)
+#### Present the proposal (ASK)
 
 Display the measured metrics + the proposed path + the threshold rationale, then present the
 three choices (example for a brownfield-large proposal):
@@ -583,13 +581,12 @@ Proposed discovery path: brownfield-large
 [3] Override greenfield        (no source yet => signpost + HALT: run /aid-describe to define the project; the KB fills in as you build)
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
+**This is a genuine ASK** (C4 human-gated; the path is measured but
 confirmed, never auto-decided -- FR-20). Stop here after presenting. The human's choice (not a
 static `project.type`) is authoritative; an override is recorded as such. Escalation/uncertainty
 defaults to the proposed path on a bare confirm, exactly like Step 0d's conservative default.
 
-**Advance:** Stop here after presenting the triage proposal. Re-run `/aid-discover` after
-confirming the path to continue to Step 1.
+**Advance:** **ASK** → [State: GENERATE — Step 1] on a brownfield path; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
 
 #### On confirm (resume path) -- write the decision
 
@@ -949,7 +946,7 @@ loop simply feeds the same pipe.
 
 Print on completion: `[5b] Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
 
-### Step 5c: Confirm term exclusions (PAUSE-FOR-USER-DECISION)
+### Step 5c: Confirm term exclusions (ASK)
 
 The closure step's EXCLUSION-REVIEW (see `references/state-closure.md`) wrote
 `.aid/generated/exclusion-candidates.md` -- terms it could not define and proposes to EXCLUDE
@@ -976,7 +973,7 @@ knowledge-base self-check can finish. Please confirm which are safe to exclude:
 Reply: confirm all  |  exclude only <list>  |  none
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting.
+**This is a genuine ASK.** Stop after presenting.
 
 **On confirm (resume):** append the user-confirmed terms to `discovery.term_exclusions` in
 `.aid/settings.yml` (one `    - <term>` entry per line under the `term_exclusions:` key; create
@@ -986,7 +983,7 @@ never add an unconfirmed term). The DETECT step reads this list on every future 
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
 `[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
-Then **CHAIN -> Step 6.**
+**Advance:** **ASK** → [State: GENERATE — Step 6], once the user has replied and the confirmed terms are written.
 
 ### Step 6: Generate README.md and INDEX.md
 
