@@ -53,13 +53,13 @@ entry line on each state.
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
 saved step on resume, and never routes; the work record alone decides where a work continues.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> [State: DESIGN].
 
 ---
 
 ## State: DESIGN
 
-Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
+Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
 `.aid/design/architecture.md` in the seed shape the contract fixes (`design-seed.md`;
 feature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read
 in INTAKE. What this artifact's seed must settle: **the components, their boundaries and
@@ -79,7 +79,9 @@ realization is genuinely ambiguous, **ask -- never pick silently**.
 **Writes only `.aid/design/architecture.md`.** Never writes `.aid/knowledge/`, never writes
 production code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** ASK -> [State: VERIFY].
+The destination confirmation is a blocking question, asked before the dispatch writes anything: this step pauses on it until the user answers.
+
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -88,7 +90,7 @@ production code -- the `design` invariant (`design-lifecycle.md`).
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

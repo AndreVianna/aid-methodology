@@ -20,6 +20,8 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 **State machine — each `/aid-discover` invocation drives the steps until one asks the user (`ASK`), waits for an outside action (`WAIT`) or ends the run (`HALT`), per [`skill-steps.md`](../../aid/templates/skill-steps.md). Mechanical steps auto-chain (`CHAIN`).**
 
+This skill creates no work, so it saves no steps through the work-record writer (`skill-steps.md`, "Before a work exists"): its progress and its questions are kept in `.aid/knowledge/STATE.md`, and each ASK resumes from that record.
+
 ---
 
 ## ⛔ PRIME DIRECTIVE: NO ASSUMPTIONS — DEFER TO THE USER
@@ -266,11 +268,11 @@ aid-discover  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
-| GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW |
-| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A |
-| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX; CHAIN → APPROVAL |
-| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → APPROVAL |
-| APPROVAL | `references/state-approval.md` | inline | ASK → DONE |
+| GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW; HALT on greenfield |
+| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A or FIX |
+| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX or APPROVAL |
+| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → REVIEW or APPROVAL |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE; HALT on a consideration |
 | DONE | `references/state-done.md` | inline | HALT |
 
 > **Sub-agent fanout (GENERATE):** The `aid-architect` Worker for GENERATE dispatches

@@ -65,11 +65,12 @@ continues at come only from its work record.
    with the user before writing**. Never resolve silently. C1's default set holds both
    `project-structure.md` and `architecture.md`; this skill targets the document describing
    the system's shape, never `project-structure.md`.
-5. **Read the whole destination**, and note its `source:` field. Absent destination -> route
-   to `/aid-create-architecture` and write nothing.
+5. **Read the whole destination**, and note its `source:` field. Absent destination -> close the
+   allocated work as `Canceled` through the writer, route to `/aid-create-architecture`, and write nothing.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CHAIN -> [State: UPDATE].
+**Advance:** ASK -> [State: UPDATE]. The questions of steps 1 and 4 are asked in this step. The route of step 5
+is ASK then HALT instead.
 
 ---
 
@@ -85,7 +86,9 @@ continues at come only from its work record.
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-**Advance:** CHAIN -> [State: VERIFY].
+The step ends with the question of step 2, asked on every run.
+
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -100,8 +103,8 @@ continues at come only from its work record.
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, and
-assert that a consumed seed is gone.
+Set `lifecycle` to `Paused-Awaiting-Input` through the writer, with its pause reason. Present the
+revision, name every output touched, and assert that a consumed seed is gone.
 
 **Advance:** ASK -> [State: DONE].
 
@@ -109,7 +112,9 @@ assert that a consumed seed is gone.
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+
+**Advance:** HALT.
 
 ---
 

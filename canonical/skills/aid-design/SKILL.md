@@ -92,10 +92,12 @@ kept record).
 
 ## State: PRESENT  (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --
+Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-**Advance:** ASK -> HANDOFF (optional) then DONE.
+The user's decision is a blocking question: this step pauses on it until the user answers.
+
+**Advance:** ASK -> HANDOFF.
 
 ---
 

@@ -66,11 +66,11 @@ conversation (**ASK**): answering `[1]` (CONFIRM's `Confirm` / APPROVAL's `Appro
 continues straight through to APPLY / DONE within the same invocation
 (`state-confirm.md`'s and `state-approval.md`'s own `[1]` Advance lines say so
 explicitly, and the Dispatch table below agrees). A **WAIT** is used only where the
-user must act outside the chat: CONFIRM `[2] Adjust` loops back to SCOPE (or ANALYZE
-if the understanding itself changes) and waits, because a genuine re-plan needs a
-fresh clean-context SCOPE dispatch in a later invocation. CONFIRM `[3] Cancel` HALTs.
+user must act outside the chat. CONFIRM `[2] Adjust` loops back to SCOPE (or ANALYZE
+if the understanding itself changes) inside the same invocation, as a fresh clean-context
+SCOPE dispatch; the user's answer is taken in the chat. CONFIRM `[3] Cancel` HALTs.
 APPROVAL `[2] Additional consideration` re-scopes back to CONFIRM/SCOPE (never blindly
-back to APPLY) and waits for the same reason. REVIEW's FIX loop (REVIEW -> fix edits
+back to APPLY) in the same way. REVIEW's FIX loop (REVIEW -> fix edits
 -> REVIEW) repeats until `grade >= minimum_grade AND teach-back PASS AND act-back PASS`,
 bounded to Confirmed Scope only (HL-7).
 
@@ -368,7 +368,7 @@ reformatted between states):
 | `**Understanding:**` | ANALYZE | plain restatement of what the instruction asks |
 | `**Impact Findings:**` | ANALYZE | per-location table: KB location, current statement, Relation, Confidence |
 | `**Contradictions & open questions:**` | ANALYZE | HL-3/HL-4 items CONFIRM must ask, never silently resolved |
-| `**Escalation:**` | ANALYZE (ungroundable-concept WAIT only) | the term + Q&A pointer when ANALYZE cannot ground a concept |
+| `**Escalation:**` | ANALYZE (ungroundable-concept ASK only) | the term + Q&A pointer when ANALYZE cannot ground a concept |
 | `**Scope Plan:**` | SCOPE (replaces the legacy `Change Plan`) | the minimal (doc, change-type, description, Traces-to, Kind) table |
 | `**Not-Changing:**` | SCOPE | docs considered but excluded, with reasons (HL-5) |
 | `**Confirm Questions:**` | SCOPE | the questions CONFIRM presents |
@@ -444,12 +444,12 @@ aid-update-kb  > you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or WAIT if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or ASK if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
 | SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
-| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` ASK -> APPLY; `[2]` WAIT -> SCOPE/ANALYZE; `[3]` HALT |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` ASK -> APPLY; `[2]` CHAIN -> SCOPE/ANALYZE; `[3]` HALT |
 | APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
 | REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> WAIT -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL |
-| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> ASK -> DONE; `[2] Additional consideration` -> WAIT -> re-scope (CONFIRM/SCOPE) |
+| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> ASK -> DONE; `[2] Additional consideration` -> CHAIN -> re-scope (CONFIRM/SCOPE) |
 | DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state) |
 
 > **FIX loop.** Once the scope-diff guard has already PASSED, only grade /
@@ -506,17 +506,11 @@ aid-update-kb  > you are here
 > falsely current.
 
 On state entry, print `[State: NAME]` + the "you are here" banner from State
-Detection above. When a state completes, route by its `**Advance:**` type per
-`.aid/runtime/templates/skill-steps.md`:
-
-- **CHAIN** -> begin the next state's reference doc within the same invocation; no exit.
-- **ASK** -> ask the user through the question protocol, then continue at the named state.
-- **WAIT** -> say what the user must do, plainly, and exit.
-- **HALT** -> print the closing summary and exit.
+Detection above. When a state completes, its `**Advance:**` line decides the next move, as
+`.aid/runtime/templates/skill-steps.md` § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Step rules:** Each `/aid-update-kb` invocation drives the state machine until it
-> reaches an ASK, WAIT or HALT, per `.aid/runtime/templates/skill-steps.md`. Mechanical
-> states CHAIN; only ASK, WAIT and HALT stop the run.
+> reaches its stop words, as `.aid/runtime/templates/skill-steps.md` § The advance words sets them.
 
 ---
 

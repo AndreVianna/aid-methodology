@@ -57,7 +57,7 @@ continues at come only from its work record.
    driven.
 3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to
    `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
+   Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
 4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or
    absence; do not require it.
 5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
@@ -66,7 +66,7 @@ continues at come only from its work record.
 6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** CHAIN -> [State: GUARD].
+**Advance:** ASK -> [State: GUARD]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer.
 
 ---
 
@@ -77,8 +77,7 @@ found in INTAKE.
 
 - **Seed present, unresolved questions, no override** → refuse. Name each unresolved
   question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write
-  nothing; leave seed and destination byte-identical. Set `lifecycle:
-  Paused-Awaiting-Input`.
+  nothing; leave seed and destination byte-identical. Set `lifecycle` to `Paused-Awaiting-Input` through the writer.
 - **No seed present** → advance (gate does not apply).
 - **Seed present, no unresolved questions, or override supplied** → advance.
 
@@ -137,7 +136,7 @@ to IMPEDIMENT + `lifecycle: Blocked`.
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. Assert:
+Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revised document clearly. Assert:
 
 - `## MVP` content is byte-identical to what it was before this run (or still absent if
   it was absent).
@@ -152,7 +151,9 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. As
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+
+**Advance:** HALT.
 
 ---
 

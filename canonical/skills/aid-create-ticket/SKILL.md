@@ -27,14 +27,14 @@ described **once**, in
 never restates any of that — each state below points to the relevant section instead.
 
 **Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
-an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
+an optional, on-demand utility skill outside the pipeline phases: no phase gate references
 it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
 **Step advance:** each `/aid-create-ticket` invocation runs the state machine —
 `PARSE-ARGS → RESOLVE-CONNECTOR → [PICK-CONNECTOR] → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
 advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). The connector pick
-(`PICK-CONNECTOR`, only when two or more match) and CONFIRM are **ASK** advances: the user decides
+(`PICK-CONNECTOR`, only when two or more match) and CONFIRM are blocking questions: the user decides
 there, through one `AskUserQuestion` exchange answered inline, so a single invocation still runs
 every state through to `RETURN-REF` (or an earlier stop or cancel) without exiting mid-run.
 
@@ -63,6 +63,8 @@ Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to th
 ---
 
 ## States
+
+This skill creates no work, so it saves no steps through the work-record writer (`skill-steps.md`, "Before a work exists"). Its questions are asked through the question protocol and recorded with `--ask --project`.
 
 ### State 1 — PARSE-ARGS
 
@@ -97,7 +99,7 @@ Per-flag handling:
   Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to the /orders list"
   ```
 
-**Advance:** → State: RESOLVE-CONNECTOR (continue inline).
+**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR (continue inline).
 
 ### State 2 — RESOLVE-CONNECTOR
 
@@ -112,8 +114,8 @@ further than that. When a connector resolves silently, `$CONNECTOR` holds its st
 state; when two or more match, State 2a settles it.
 
 **Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole
-match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on the
-unknown-stem or notify exit above.
+match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match. An unknown stem or the
+notify exit above ends the run here (HALT).
 
 ### State 2a — PICK-CONNECTOR
 
@@ -122,7 +124,9 @@ lists the candidate stems (their descriptor `name`) and the user picks one; the 
 `$CONNECTOR` for every later state. This is a connector choice, never a write confirm, and nothing
 is sent to any tracker here.
 
-**Advance:** **ASK** → State: COMPOSE once the user has picked the connector (continue inline).
+The pick is a blocking question: this state pauses on it until the user answers.
+
+**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline).
 
 ### State 3 — COMPOSE
 
@@ -150,7 +154,7 @@ neither silently**:
 Assemble the draft payload: a title/summary derived from `<description>`, the level (a tier, a
 quoted literal, or unset), and the parent ref (or none). Nothing is sent anywhere yet.
 
-**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline); **HALT** on the cross-tracker stop above.
+**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline). The cross-tracker stop above ends the run here (HALT).
 
 ### State 4 — LEVEL-RESOLVE
 
@@ -176,13 +180,13 @@ only reads -- no new silent behaviour and no new write. Per
   connector-descriptor schema change, out of scope here); this runtime synonym match plus the
   literal passthrough are the whole mechanism.
 
-**Advance:** → State: CONFIRM (continue inline).
+**Advance:** **CHAIN** → State: CONFIRM (continue inline).
 
 ### State 5 — CONFIRM
 
 A single in-run `AskUserQuestion` exchange (one tool call, never two prompts across turns) per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Write Preview +
-Confirm Gate" — an **ASK** advance (`skill-steps.md`): the user decides here, and the exchange is
+Confirm Gate" — a blocking question (`skill-steps.md`): the user decides here, and the exchange is
 asked and answered inline. It carries up to two parts, both resolved within this same call:
 
 - **Level pick** (only when the level is still unset after `COMPOSE` — no explicit `--level` and
@@ -203,9 +207,11 @@ asked and answered inline. It carries up to two parts, both resolved within this
 mandatory before `[1] File it` can be chosen — there is no path from `COMPOSE`/`LEVEL-RESOLVE`
 straight to `FILE` that skips this gate.
 
-**Advance:** **ASK** → State: FILE on `[1] File it` (continue inline). **ASK** → State: COMPOSE on
-`[2] Edit` (continue inline, with the user's requested change folded into the payload). **ASK** then
-**HALT** on `[3] Cancel`; nothing is sent, nothing is filed.
+The confirm is a blocking question: this state pauses on it until the user answers.
+
+**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`. On `[2] Edit` the flow goes back
+to State: COMPOSE (continue inline), with the user's requested change folded into the payload. On `[3] Cancel`
+nothing is sent or filed, and the run ends here (HALT).
 
 ### State 6 — FILE
 
@@ -222,7 +228,7 @@ Reached **only** after an explicit `[1] File it` confirm. Writes via the host MC
 A failed / not-found / unauthorized / unavailable host-MCP call surfaces the tracker's error
 **verbatim** and exits **non-destructively** — never a partial write.
 
-**Advance:** → State: RETURN-REF (continue inline).
+**Advance:** **CHAIN** → State: RETURN-REF (continue inline).
 
 ### State 7 — RETURN-REF
 

@@ -26,7 +26,7 @@ Running lifecycle + active skill so the work-initiation gate can
 resume an interrupted deploy via `active_skill: aid-deploy`:
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-deploy --name IDLE
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 

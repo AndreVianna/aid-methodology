@@ -12,11 +12,12 @@ aid-execute  ▸ you are here
   [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● RE-RUN ]
 ```
 
-1. Ask: _"This task is marked Done. Do you want to reopen it for review?
-   Is there something specific you want to re-examine?"_
-2. If user confirms → set State to `In Review` (full path: this task's own `STATE.yml`;
-   flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry for this task), proceed
-   to Step 2 (REVIEW)
-3. If user has a specific concern → record it as context for the reviewer
+1. Ask, through the question protocol: _"This task is marked Done. Do you want to reopen it for
+   review? Is there something specific you want to re-examine?"_ The question is blocking, so this
+   step pauses on it until the user answers.
+2. If the user confirms a reopen → set State to `In Review` (full path: this task's own `STATE.yml`;
+   flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry for this task). Record any specific
+   concern as context for the reviewer. The step then goes on to REVIEW.
+3. If the user keeps the task Done → change nothing, and the run ends here (HALT). The task stays `Done`.
 
-**Advance:** **ASK** → [State: REVIEW] or [State: DONE], depending on the user's decision.
+**Advance:** **CHAIN** → [State: REVIEW], once the user has confirmed the reopen.

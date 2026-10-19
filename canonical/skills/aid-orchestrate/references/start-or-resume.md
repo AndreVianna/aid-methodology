@@ -1,9 +1,9 @@
 # Start or Resume a Work
 
-Use this from SKILL.md step 1 onward. In order, it answers a project question, finds the work,
+Use this from PROJECT-QUESTION onward. In order, it answers a project question, finds the work,
 creates one only when none exists, reads its resume point, handles a cancel and records the
-intent. The reading is checked, sized and shown first (SKILL.md steps 2 to 4); an action-skill
-reading never reaches this file, since its skill's START creates the work.
+intent. The reading is checked, sized and shown first (SKILL.md steps CHECK-READING to SHOW-READING); an
+action-skill reading never reaches this file, since its skill's START creates the work.
 
 ## 1. Project question
 
@@ -24,9 +24,9 @@ Then stop. The flow does not continue to the next step.
 
 Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
 reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
-action-skill reading goes to SKILL.md step 5 and creates no work here.
+action-skill reading goes to ACTION-HANDOVER and creates no work here.
 
-**Advance:** **CHAIN** → SKILL step 6.
+**Advance:** **CHAIN** → FIND-OR-CREATE.
 
 ## 3. Find the work
 
@@ -36,18 +36,19 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 
 - A matching work is continued. Its `STATE.yml` already holds the `intent:` block, which stands
   unless the check found a new fact.
-- No match: the gate's § 3a runs `writeback-state.sh --create`, the flow's first write. The flow
-  creates no work by hand.
+- No match: the gate's § 3a runs `writeback-state.sh --create` with `--skill aid-orchestrate --step
+  RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing).
+  The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
-**Advance:** **CHAIN** → SKILL step 7, or SKILL step 6a when several works plausibly match.
+**Advance:** **CHAIN** → RECORD-INTENT, or ASK-FIRST when several works plausibly match.
 
 ## 3a. Ask which work
 
 Ask one question -- which work the request continues: its reason, your recommendation (the work
 whose phase fits best), the plausible works by name plus "a new work", and a free-text answer.
 
-**Advance:** **ASK** → SKILL step 7.
+**Advance:** **ASK** → RECORD-INTENT.
 
 ## 4. Read the resume point
 
@@ -68,7 +69,7 @@ A work that is `Paused-Awaiting-Input` resumes by asking the question it is wait
 that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
 `Canceled` is finished: say so and stop, with no advance.
 
-**Advance:** **CHAIN** → SKILL step 6a, which asks the open questions before the work goes on.
+**Advance:** **CHAIN** → ASK-FIRST, which asks the open questions before the work goes on.
 
 ## 5. Cancel a named work
 
@@ -101,19 +102,15 @@ what happened and that no new work was created.
 
 ## 6. Record the intent
 
-The reading was sized and shown before this step (SKILL.md steps 3 and 4), and the user has
-approved it. Write the `intent:` block into the new work's `STATE.yml` at once. The block is
-authored, so write it in block style and keep its keys to the three levels the readers allow:
+The reading was sized and shown before this step (SKILL.md steps SIZE-READING and SHOW-READING), and
+the user has approved it. The record's keys are set through the writer only, never by hand:
 
-- `request` -- the user's words, short.
-- `reading` -- one of: bug fix, refactor, change, new capability, document, operational,
-  knowledge update, investigation.
-- `reason` -- why the reading fits, in a short phrase.
-- `depth` -- `lite` or `full`.
-- `phases` -- one `- <phase>` line each, in order.
-- `changes` -- starts as `[]`; one entry per re-route, with `at`, `from`, `to` and `why`.
+- The gate's `--create` (section 3) has already written `intent.request`, `intent.reading` and
+  `intent.depth`, from the user's words, the reading and the depth. Nothing else writes them.
+- `intent.reason`, `intent.phases` and `intent.changes` have no writer mode yet. A new work does not
+  write them by hand: the step stops and says so, and the work stays at this step, as the
+  fail-closed rule in `skill-steps.md` requires, until the writer can set them.
+- A resumed work keeps its `intent:` block. Change it only through a re-route (`--reroute`), which
+  appends the re-route to `changes`.
 
-A resumed work keeps its `intent:` block. Change it only through a re-route, and append the
-re-route to `changes`.
-
-**Advance:** **CHAIN** → SKILL step 10.
+**Advance:** **CHAIN** → HAND-OVER.

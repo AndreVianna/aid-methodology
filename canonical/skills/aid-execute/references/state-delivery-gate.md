@@ -302,7 +302,7 @@ Deferred [HIGH]s from quick checks (from delivery-NNN-issues.md):
 | task-NNN    | [HIGH]   | ...         | Open   |
 
 Gate grade below minimum. Next steps:
-- CODE issues (#1, #3): I'll fix these automatically.
+- CODE issues (#1, #3): I'll fix these once you approve.
 - TASK issues (#2): Task spec update needed. {explain}
 - SPEC issues: Would require re-running /aid-specify.
 - KB issues: Would require re-running /aid-discover.
@@ -317,9 +317,12 @@ Gate grade below minimum. Next steps:
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 
-**Advance:** **ASK** → Step 5 (FIX). Ask the user, through the question protocol, whether to fix the
-CODE issues now, recommending yes. The TASK, SPEC and KB issues stay with the user. Continue to Step 5
-once the question is answered.
+Ask the user, through the question protocol, whether to fix the CODE issues now, recommending yes.
+The question is blocking: this step pauses on it, and the same step continues once it is answered.
+The TASK, SPEC and KB issues stay with the user.
+
+**Advance:** **CHAIN** → Step 5 (FIX) when the user approves the CODE fixes. When the user declines,
+the CODE issues stay with the user too, and the run ends at this step (HALT).
 
 ---
 
@@ -337,8 +340,8 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **ASK** the user to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB issues), and to
-update the TASK issues, before re-running `/aid-execute`; then **HALT**.
+**Advance:** **ASK then HALT**. Ask the user to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB
+issues), and to update the TASK issues, before re-running `/aid-execute`. The question stays open and the run ends.
 
 ---
 

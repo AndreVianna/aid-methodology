@@ -34,4 +34,8 @@ Interview for {work} is complete and approved.
     ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
-**Advance:** **ASK** then **HALT**. The question is the menu above; a requirements-level change hands off to `/aid-describe` in one plain line. This is the terminal state. Run `/aid-define` again only to add information or re-validate.
+The menu is a blocking question, asked through the question protocol: this step pauses on it until the user
+answers. A requirements-level change hands off to `/aid-describe` in one plain line. Run `/aid-define` again
+only to add information or re-validate.
+
+**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option. This is the terminal state.

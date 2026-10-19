@@ -38,6 +38,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
 1. **Check the target and the change.** Note whether the argument is empty. Do not ask here.
 2. **Locate + read the existing document.** Note whether it resolves; if it does not, INTAKE-ASK
    asks which document is meant (or suggests `/aid-create-document` for a new one).
@@ -50,8 +52,7 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the document does not
-resolve, the path is guided, or works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -66,7 +67,8 @@ Ask one topic at a time, through the question protocol, in this order and only f
 3. **Guided path** -> scope the change.
 4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** ASK -> [State: ALLOCATE]. A route to `/aid-create-document` is ASK then HALT instead: the run
+ends there, names that skill, and nothing is allocated.
 
 ---
 
@@ -76,7 +78,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-  (`aid-update-document`), its first step (`INTAKE`), and a kebab-case slug from the document.
+  (`aid-update-document`), its saved step (`AUTHOR`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), and a kebab-case slug from the document.
   The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
@@ -85,7 +87,7 @@ Allocate the work through the gate: the Work Initiation Gate
   set other keys through the writer." This skill drives no `phase`.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: AUTHOR] on a new work; a continuation follows the gate's § 3b instead.
+**Advance:** CHAIN -> [State: AUTHOR].
 
 ---
 

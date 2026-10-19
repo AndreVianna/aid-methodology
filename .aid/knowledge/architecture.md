@@ -330,9 +330,11 @@ instead of restating. CONFIRMED via that file and the directory inventory.
   Building phase. The full per-skill step list is in
   [pipeline-contracts.md](pipeline-contracts.md) § Per-Skill State Machines.
 
-State machines are *chained* across skills by `PASS` (the next skill starts in the same turn) and by
-`CALL` (the called skill returns to the caller's step). Step names are never shown to the user; they
-appear only as the target of an advance line.
+Today a skill hands the work on by `ASK` then `HALT`, which ends its run and names the next skill; the
+hand-off is then taken by a new run. The `PASS` (the next skill starts in the same turn) and `CALL` (the
+called skill returns to the caller's step) words are defined in `skill-steps.md`, and no skill's
+`**Advance:**` line uses them yet. Step names are never shown to the user; they appear only as the
+target of an advance line.
 
 ---
 

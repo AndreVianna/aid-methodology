@@ -35,6 +35,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
 1. **Check the question.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path (question scope):**
    - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria
@@ -49,8 +51,7 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -73,7 +74,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),
-  its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
+  its saved step (`INVESTIGATE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
   the writer, before it hands back: "`STATE.yml` was created by the gate;
@@ -82,8 +83,7 @@ Allocate the work through the gate: the Work Initiation Gate
   if a spike is later authorized (PROPOSE-SPIKE).
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: INVESTIGATE] on a new work; a continuation follows the gate's § 3b
-instead.
+**Advance:** CHAIN -> [State: INVESTIGATE].
 
 ---
 
@@ -162,7 +162,7 @@ a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
 in one plain line.
 
-**Advance:** ASK -> [State: DONE], then HALT.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

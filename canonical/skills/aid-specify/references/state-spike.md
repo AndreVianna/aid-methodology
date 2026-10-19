@@ -16,4 +16,6 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **WAIT** → [State: CONTINUE] once the spike results are recorded in the feature's section. The spike work happens outside /aid-specify, as a separate investigation task.
+The spike work happens outside /aid-specify, as a separate investigation task; the step stays saved until its results are recorded in the feature's section.
+
+**Advance:** **WAIT** → [State: CONTINUE].

@@ -2,6 +2,7 @@
 id: 002-05-merge-request-declined
 covers: AC-11
 fixture: done-work
+branch: work-001-csv-export
 skills: aid-orchestrate
 ---
 
@@ -37,4 +38,6 @@ Persona: the maintainer of the notes tool. Has reviewed the export tasks and wan
 
 - no-new-dir .aid/works
 - tool-not-called Bash *merge*
+- ref-unchanged default
+- ref-unchanged work-001-csv-export
 - no-push

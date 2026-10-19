@@ -223,11 +223,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.
-- **WAIT** → say what the user must do outside the conversation, plainly, and stop.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 ## Re-run
 

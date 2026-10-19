@@ -14,7 +14,7 @@ grounded, cited, and never plan-and-halt -- review evaluates an existing artifac
 criteria, where `/aid-ask` answers a free-form question.
 
 - **Not a numbered pipeline phase.** It runs on demand; it does not enter the
-  Discover->Execute flow and never routes to `/aid-execute`.
+  pipeline phases (Definition to CI) and never routes to `/aid-execute`.
 - **Read-only except:** the findings ledger (a `.temp` artifact) and, only after
   your approval, a publish to the reviewed target (a PR/ticket comment, doc notes).
   It never edits the reviewed code/design itself and never fixes -- fixing is
@@ -34,6 +34,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 ---
 
 ## State: INTAKE
+
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
 
 Purpose: resolve the target + criteria, pick the path, note the works.
 
@@ -88,8 +90,7 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
 Run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree). Note
 whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -110,8 +111,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 
 Allocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`).
 
-- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its
-  first step (`INTAKE`), `--path lite`, and a short kebab-case slug derived from the target. The
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its saved step (`REVIEW`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a short kebab-case slug derived from the target. The
   gate `§ 3a` step 2 creates and enters the work-level worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
@@ -121,7 +121,10 @@ Allocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiati
   `phase` (specs/aid-review.md 10).
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: REVIEW] on a new work; a continuation follows the gate's § 3b instead.
+Every `--step` call in this skill passes in its `--detail` the target, method, criteria, complexity tier and the
+  plan the user confirmed, so a resume finds them in the record.
+
+**Advance:** CHAIN -> [State: REVIEW].
 
 ---
 

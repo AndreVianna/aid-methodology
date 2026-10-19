@@ -6,7 +6,7 @@ Confirm`. It is selected when the run-state file records `**State:**
 CONFIRM`.
 
 **Pattern reuse.** Shaped like this skill's own APPROVAL-gate pattern (`[1]`/
-`[2]` prompt, ASK and WAIT), plus a `[3] Cancel` exit, but gates
+`[2]` prompt, ASK), plus a `[3] Cancel` exit, but gates
 SCOPE before any edit exists rather than the finished edits.
 
 Print the `[State: CONFIRM]` banner from `SKILL.md § State Detection`.
@@ -132,8 +132,7 @@ Print:
 Run /aid-update-kb again to address it and return to this gate.
 ```
 
-**Advance:** WAIT -- return to SCOPE (or ANALYZE) on the
-next invocation.
+**Advance:** CHAIN -- return to SCOPE (or ANALYZE) in this invocation.
 
 ---
 

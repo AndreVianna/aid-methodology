@@ -650,8 +650,8 @@ Proposed KB refresh scope:
 - `[3]` -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
   cancelled` and HALT (stalled exit below).
 
-**Advance:** **ASK**, then continue at Step 4 once `[1]` or `[2]` is answered; **HALT** on
-`[3]` (after the stall fields are written).
+The scope question is asked inside this step: `[1]` or `[2]` continues it at Step 4 once answered;
+`[3]` writes the stall fields and HALTs (the stalled exit below).
 
 ## Step 4 -- Synthesize an `Impact: Required` Q&A entry + invoke `/aid-discover` (AC3)
 

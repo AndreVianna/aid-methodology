@@ -101,7 +101,6 @@ Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -140,4 +139,6 @@ Does this look right? Answer the questions, and tell me if I'm missing anything.
 
 Process response → update this feature's `features:` entry in the work STATE.yml → begin **The Loop** for first Pending section.
 
-**Advance:** **ASK** → [State: CONTINUE] once the open questions are answered.
+The step is finished once the open questions are answered.
+
+**Advance:** **ASK** → [State: CONTINUE].

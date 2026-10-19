@@ -74,6 +74,8 @@ Hold three values across the remaining states: **PART** (the validated enum valu
 raw ref token, colon-split by RESOLVE-CONNECTOR below), and **CONTENT** (the untouched free-text
 remainder).
 
+**Advance:** **CHAIN** → RESOLVE-CONNECTOR.
+
 ### State 2 — RESOLVE-CONNECTOR
 
 Apply `ticket-resolution.md` § "Connector-Resolution Ladder" to **REF**, exactly as it shares
@@ -83,6 +85,8 @@ the connector comes from the ladder (explicit override → exactly-one-silent �
 host tool's own MCP → the `"no issue-tracker connector found."` notify + exit). This skill does not
 restate the four-step ladder or the `api`/`ssh`/`cli` fall-through note — see the shared reference
 for the full procedure.
+
+**Advance:** **CHAIN** → LOAD-CONTEXT.
 
 ### State 3 — LOAD-CONTEXT
 
@@ -103,6 +107,8 @@ reaches COMPOSE/CONFIRM/WRITE for that attempt.
 `status`, the host MCP explicitly reporting that transition-enumeration is unsupported (a
 capability gap, not an error) is a *different*, expected outcome — see Status Validation below,
 which is the only place that distinction matters.
+
+**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered.
 
 ### State 4 — COMPOSE
 
@@ -163,6 +169,8 @@ The stop, for every case:
    option the user did not pick, and never retries a blocked file. A chosen option (a) is a fresh
    `comment` mutation and goes through COMPOSE and CONFIRM as one.
 
+**Advance:** **CHAIN** → CONFIRM.
+
 ### State 5 — CONFIRM
 
 A single in-invocation confirm, asked and answered inline before WRITE — the skill never exits
@@ -192,6 +200,8 @@ Close with the shared reference's confirm-gate button row, reused **verbatim**
   For `attachment`, a revised CONTENT re-runs LOAD-CONTEXT's preview as well.
 - **`[3] Cancel`** → exit. No MCP call is made.
 
+**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**.
+
 ### State 6 — WRITE
 
 Only after an explicit `[1] File it` — perform the single mutation call through the connector
@@ -210,6 +220,8 @@ them. This is distinct from — and, for `status`, can only be reached *after* �
 Validation branch above, which can already have stopped the run before CONFIRM was ever asked.
 
 ---
+
+**Advance:** **HALT**, after the one mutation call (or its failure) is reported.
 
 ## Worked examples
 

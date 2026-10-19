@@ -87,4 +87,6 @@ Minimum: B+. ✅ Meets minimum.
 For grades below minimum: re-enter the loop (Propose → Discuss → Write → Review)
 for affected sections. When all resolved, set status back to Ready.
 
-**Advance:** **ASK** → [State: DONE] when spec is Ready and meets minimum grade, once the user has answered the reopen question.
+The step is finished when the spec is Ready and meets minimum grade, once the user has answered the reopen question.
+
+**Advance:** **ASK** → [State: DONE].

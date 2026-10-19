@@ -60,7 +60,7 @@ the `[State: NAME] -- {purpose}` entry line on each state.
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
 saved step on resume, and never routes; the work record alone decides where a work continues.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> [State: DESIGN].
 
 ---
 
@@ -79,7 +79,7 @@ the `design` invariant, binding without exception. Proposing a `tech-debt.md` ro
 acceptance is not a write to it -- the seed only names candidates; the move itself, and
 its per-item confirmation, happen at `/aid-create-backlog` or `/aid-update-backlog`.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -89,7 +89,7 @@ its per-item confirmation, happen at `/aid-create-backlog` or `/aid-update-backl
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
 IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

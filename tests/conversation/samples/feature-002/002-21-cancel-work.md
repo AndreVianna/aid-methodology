@@ -17,7 +17,7 @@ Persona: the product lead of the notes tool. Has decided to drop the tag filter 
 - When the assistant asks you to confirm the cancellation, answer yes.
 - If the assistant asks which work, name work-001-tag-filter.
 - Do not ask for any other work to be cancelled or created.
-- Once the assistant has said the work is cancelled, reply <<END>>.
+- Once the assistant has said the work is cancelled, ask it in a new message: "Where does work-001-tag-filter stand now?" Once it has answered, reply <<END>>.
 
 ## Expected outcome
 
@@ -25,6 +25,7 @@ Persona: the product lead of the notes tool. Has decided to drop the tag filter 
 - The assistant asks one confirmation question before it writes anything, with its reason and a recommendation.
 - Only after the user's yes, the work's STATE.yml shows `lifecycle: Canceled` and `active_skill: none`.
 - The assistant tells the user in plain words that work-001-tag-filter is cancelled.
+- When the user asks where the work stands, the assistant reports it as finished (cancelled), and does not offer to resume it.
 
 ## Must not
 

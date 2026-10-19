@@ -47,6 +47,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-steps.md`, "Before a work exists"). Their questions are asked through the question protocol, and their answers go into the record when ALLOCATE creates it.
+
 1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. "an
    ADR for X" -> markdown ADR; "a diagram of the pipeline" -> mermaid; "the release notes"
@@ -85,7 +87,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-  (`aid-create-document`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from
+  (`aid-create-document`), its first step (`AUTHOR`, the first step that runs once the work exists: INTAKE and INTAKE-ASK ran before it, and the user's words go into `intent.request`), `--path lite`, and a kebab-case slug from
   the subject. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
@@ -111,7 +113,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 (markdown, mermaid, HTML, CSV/tables); for a format it cannot cleanly emit (native
 `.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -125,7 +127,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -148,7 +150,7 @@ overwrite an existing doc. Then optionally print handoffs the user may act on: `
 (if it belongs in the KB), `/aid-create*` (if it describes something not yet built),
 `/aid-refactor` (an ADR mandating a refactor).
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

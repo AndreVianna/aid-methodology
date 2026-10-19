@@ -357,10 +357,13 @@ export function parseAdvanceBlock({
   // is not the source node itself, the state stays put while the guard is
   // unmet: emit a loop-back self-edge with condition 'otherwise'.
   // Not suppressed by dispatch-row branches (merged later by the extractor).
+  // A block that also ends the run (a HALT clause) already says where the
+  // unmet guard goes, so it gets no self-loop.
   if (
     edges.length === 1 &&
     edges[0].condition !== null &&
-    edges[0].to !== fromNodeId
+    edges[0].to !== fromNodeId &&
+    terminal === null
   ) {
     edges.push({
       to: fromNodeId,

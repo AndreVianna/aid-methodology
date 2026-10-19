@@ -13,8 +13,10 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 **Ask first:** _"Tasks for this work are already complete. Do you want to reopen for review?
 Is there something specific you want to re-examine?"_
 
-**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern
-the user gives is recorded as context for it.
+The question is blocking: this step pauses on it until the user answers.
+
+**Advance:** **CHAIN** → [State: REVIEW] once the user confirms the reopen. A specific concern the user gives is
+recorded as context for the review.
 
 ---
 

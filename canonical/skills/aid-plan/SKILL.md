@@ -155,15 +155,14 @@ aid-plan  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |
-| CONFIRM | `references/review-deliverables.md` | `inline` | ASK → REVIEW |
+| CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as
+[`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an
+open call returns to the caller.
 
 **DONE (inline):** When DONE is detected, print:
 

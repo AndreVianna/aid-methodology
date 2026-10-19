@@ -105,10 +105,12 @@ bash .aid/runtime/scripts/works/enumerate-works.sh
 ### No works exist (empty output) -> NEW, no prompt
 
 Run the gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) with this skill as the
-caller, its first step `FIRST-RUN` and phase `Definition`. The gate resolves the id, runs
-`worktree-lifecycle.sh create <work-id> <name>` to create and enter the worktree, reads the work's
-type, and creates the work record through the writer before it hands the work back. The gate
-derives the work's short name. If the user gave no words, ask what they want to build, as
+caller, its first step `FIRST-RUN`, phase `Definition`, depth `full`, path `full`, and the minimum
+grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A`.
+This skill is the FULL-pipeline starter, never a flattened Lite shortcut. The gate resolves the id,
+runs `worktree-lifecycle.sh create <work-id> <name>` to create and enter the worktree, reads the work's
+type, and creates the work record through the writer before it hands the work back. This skill derives
+the work's kebab-case short name, as the gate's `§ 3a` says the starter does, and passes it on. If the user gave no words, ask what they want to build, as
 `.aid/runtime/templates/question-protocol.md` says; that answer is the request.
 
 Then proceed to State Detection with this work.

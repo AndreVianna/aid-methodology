@@ -235,13 +235,13 @@ allow, and it stops only at an `ASK`, a `WAIT`, a `PASS` or `CALL` that hands th
 
 ### Advance words
 
-Every step ends with exactly one advance word on its `**Advance:**` line. The words are internal
-and never shown to the user.
+Every step ends with exactly one advance ending on its `**Advance:**` line: one of the six words, where
+`ASK then HALT` counts as one ending. The words are internal and never shown to the user.
 
 | Word | Meaning |
 |------|---------|
 | `CHAIN` | Go on to the next step now, in the same run. Used when nothing is for the user to decide at that point. |
-| `ASK` | Stop for the user through the question protocol (`canonical/aid/templates/question-protocol.md`), then continue to the step the line names once every question is answered. |
+| `ASK` | Stop for the user through the question protocol (`canonical/aid/templates/question-protocol.md`). A question may come at any point of a step; a blocking one pauses the step where it stands, and the step stays saved. At the end of a step, `ASK` pauses there and names the one next step, which the work goes on to once every question is answered. A resumed work asks its open questions first, then continues the same step. |
 | `WAIT` | The user must act outside the conversation. Say what, plainly, and stop. |
 | `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
 | `CALL` | In the middle of this skill's process. Hand the work to another skill, then come back to this step when it finishes. |
@@ -274,11 +274,13 @@ Each step runs the same parts, in this order:
    doing or dispatching any of the step's work.
 2. **Work.** Inline, or by a worker. A worker returns its open questions to the main conversation;
    it never asks them.
-3. **`ASK`.** Save the step the advance line names as the next one, record each question, set the
-   lifecycle to `Paused-Awaiting-Input`, and ask. If the answers come in the same conversation, record
-   them, set the lifecycle back to `Running`, and continue to the named step. If they come later, the
-   session that resumes finds the saved step and the open questions, asks the open questions first,
-   and then continues at that step.
+3. **Questions, at any point.** The main conversation may ask a question at any point of a step. A
+   blocking question pauses the step where it stands: the record keeps the step saved, its detail says
+   what is done and which question is open, and the lifecycle is `Paused-Awaiting-Input`. A session that
+   resumes asks the open questions first, then continues the same step.
+   **`ASK`** is that pause at the end of a step. It saves the step the advance line names as the next
+   one, records each question, and asks. Once every question is answered or skipped, the work goes on to
+   the named step. When the next step depends on the answer, the line names the one step that reads it.
 4. **`PASS`.** If the approvals table requires an approval at this point for the work's depth, `ASK`
    it first. Then one locked write hands the work to the next skill and its entry step, with
    `--returns no` and the phase when the phase changes; the next skill starts in the same turn.
@@ -575,8 +577,8 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **Every inter-phase artifact is a typed markdown contract.** A phase consumes and produces
   the declared artifacts (see the Phase Input/Output Contracts table); a phase cannot start
   until its inputs exist and its predecessor's gate has passed.
-- **Phase order is fixed.** On the full path a work runs Definition (`aid-describe`, `aid-define`)
-  -> Specification (`aid-specify`) -> Planning (`aid-plan`, `aid-detail`) -> Building (`aid-execute`)
+- **Phase order is fixed.** On the full path a work runs Definition (`aid-describe`)
+  -> Specification (`aid-define`, `aid-specify`) -> Planning (`aid-plan`, `aid-detail`) -> Building (`aid-execute`)
   -> CI, with `aid-discover` preparing the KB first on brownfield projects. The flattened Lite path
   (via the shortcut engine) collapses Definition through Planning into one autonomous run and hands
   off to Building, but never reorders the phases.

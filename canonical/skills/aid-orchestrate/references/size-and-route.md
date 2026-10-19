@@ -23,7 +23,7 @@ A reading that matches an action skill -- `/aid-create`, `/aid-update`, `/aid-fi
 `/aid-refactor`, `/aid-document`, `/aid-test`, `/aid-prototype` -- is sized here first, like any
 other reading: Preparation is offered when the project has no Knowledge Base, the phases and the
 depth are shown in one line, and only after the user answers is the reading handed to that skill
-(SKILL.md steps 3 to 5). Its START creates the work through the gate, and the `intent:` record is
+(SKILL.md steps SIZE-READING to ACTION-HANDOVER). Its START creates the work through the gate, and the `intent:` record is
 written into that work. A typed `/aid-<skill>` still goes straight to that skill.
 
 ## 2. How much the user reviews
@@ -43,11 +43,11 @@ concrete target at all is broad or ambiguous. Broad or ambiguous work is `full`.
 
 CI closes every work. It closes at minimum by marking the work done. Until `/aid-monitor-pipeline`
 exists, this skill does that minimum itself, and only when every task of the work is `Done` (or,
-for an investigation, when nothing was to land). It sets the phase to the last one, then the
+for an investigation, when nothing was to land). It sets the phase to CI, the last one, then the
 lifecycle. Both writes name the work, as the cancel step does, so they land on that work and on no other:
 
 ```bash
-AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Building
+AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value CI
 AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
 ```
 
@@ -63,4 +63,4 @@ re-route into the work's `STATE.yml` at once: append an entry to `intent.changes
 
 When the work needs a Knowledge Base and the project has none, offer Preparation before the first
 phase, with a recommendation, under the question rule. The offer goes in the same message as the
-reading (SKILL.md step 4). Build no Knowledge Base file before the user agrees.
+reading (SKILL.md step SHOW-READING). Build no Knowledge Base file before the user agrees.

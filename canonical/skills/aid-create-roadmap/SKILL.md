@@ -57,7 +57,7 @@ continues at come only from its work record.
    driven.
 3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and
    ask whether to proceed without one (direction entered interactively) or to run
-   `/aid-design-roadmap` first; do not proceed silently.
+   `/aid-design-roadmap` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its state:
    absent | present-horizon-empty | present-horizon-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
@@ -77,7 +77,7 @@ continues at come only from its work record.
   seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE].
+**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done.
 
 ---
 
@@ -90,7 +90,7 @@ determined in INTAKE:
 |---|---|
 | `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |
 | Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |
-| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |
+| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling REGISTER or VERIFY. |
 
 **`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written
 at creation and always left intact on the fill path:
@@ -136,7 +136,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). On the route path: **ASK then HALT**, naming the skill the route names.
 
 ---
 

@@ -33,6 +33,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
 1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask ("analyze
    the A/B results in `results.csv`", "error-rate breakdown from these logs") -> analyze
@@ -44,8 +46,7 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -68,7 +69,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),
-  its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
+  its saved step (`ANALYZE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
   the writer, before it hands back: "`STATE.yml` was created by the gate;
@@ -76,7 +77,7 @@ Allocate the work through the gate: the Work Initiation Gate
   set other keys through the writer." This skill drives no `phase`.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: ANALYZE] on a new work; a continuation follows the gate's § 3b instead.
+**Advance:** CHAIN -> [State: ANALYZE].
 
 ---
 
@@ -88,8 +89,8 @@ analyze + consolidate:
 - **Data access:** files / logs / exports -> read directly (never mutate the source). A
   live DB / analytics / telemetry service -> **MCP-first connector**
   (`connectors/consumption-protocol.md`): scan `.aid/connectors/INDEX.md`, request the
-  connection from the host MCP; no catalogued connector -> ask the user for the export.
-  Optional, never blocks.
+  connection from the host MCP; no catalogued connector -> the main conversation asks the user for the export, inside this step
+  before the dispatch (the researcher never asks). Optional, never blocks.
 - **Two-tier grounding (enforced):** the **data** + KB/source (what a metric means) are
   authoritative; external baselines/benchmarks are supplementary, cited URL + date. A
   data-vs-KB-assumption contradiction is surfaced with its reason, never resolved.
@@ -133,7 +134,7 @@ or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket
 Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
 in one plain line.
 
-**Advance:** ASK -> [State: DONE], then HALT.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

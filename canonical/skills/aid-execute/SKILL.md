@@ -223,8 +223,8 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | HALT |
-| RE-RUN | `references/state-re-run.md` | `inline` | ASK → REVIEW or DONE |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / ASK → FIX (grade < min) |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min); CHAIN → FIX when the user approves the CODE fixes; ASK then HALT for upstream (non-CODE) issues |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

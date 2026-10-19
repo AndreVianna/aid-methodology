@@ -50,7 +50,7 @@ entry line on each state.
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
 saved step on resume, and never routes; the work record alone decides where a work continues.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> [State: DESIGN].
 
 ---
 
@@ -64,7 +64,7 @@ client/adapter surface, and the auth and failure modes**; its `## Destination` n
 the built client/adapter lands. **Never writes `.aid/knowledge/` and never writes
 production code** -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -73,7 +73,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

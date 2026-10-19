@@ -58,7 +58,7 @@ the `[State: NAME] -- {purpose}` entry line on each state.
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
 saved step on resume, and never routes; the work record alone decides where a work continues.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> [State: DESIGN].
 
 ---
 
@@ -74,7 +74,7 @@ Writes `.aid/design/roadmap.md` **only**, in `design-seed.md`'s shape --
 accumulating rather than being replaced. **Never writes `.aid/knowledge/`; never writes
 production code** -- the `design` invariant, binding without exception.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -84,7 +84,7 @@ production code** -- the `design` invariant, binding without exception.
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
 IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

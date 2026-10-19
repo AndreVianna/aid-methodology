@@ -7,7 +7,7 @@ Release artifacts are produced, release notes generated, KB updates routed, and 
 Follow what infrastructure.md § Deployment prescribes. This step varies by project type.
 
 **The agent adapts to what the KB says. Examples:**
-- **PR-based:** Create pull request with structured description
+- **PR-based:** Prepare the pull request description (format below) and hand it to `/aid-monitor-pipeline`. This skill never creates a pull request: that is made only on the user's yes, and only by `/aid-monitor-pipeline`.
 - **Container:** Build image, tag with version, push to registry
 - **Package/Library:** Build package, publish to registry (npm, NuGet, Maven, PyPI)
 - **Installer:** Build installer (MSIX, DMG, deb), sign if configured
@@ -18,7 +18,7 @@ Record what was produced in the package file (Deployment section).
 
 The project type comes from the KB and from any packaging answer recorded at SELECTING. Do not ask here.
 
-**PR description format (when applicable):**
+**PR description format (when applicable, for `/aid-monitor-pipeline`):**
 ```markdown
 ## Release: {version}
 

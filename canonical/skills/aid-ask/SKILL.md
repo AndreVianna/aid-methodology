@@ -28,7 +28,7 @@ fully read-only; only the gap-append branch writes (NFR-6/C4: capture-and-flag,
 never auto-apply).
 
 **Not a numbered pipeline phase.** `/aid-ask` is an optional, on-demand skill
-outside the Discover-Execute flow. No work folder, no STATE.md of its own.
+outside the pipeline phases. No work folder, no STATE.md of its own.
 
 **Single-shot, no state machine.** One pass: read context -> answer -> exit.
 

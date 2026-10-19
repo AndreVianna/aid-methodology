@@ -336,7 +336,7 @@ Write the file as:
 
 Print: `[5b] Exclusion review: {N} candidate terms to confirm (not-concept / descriptive / junk) + {M} glossary fixes recommended. Continue to confirm them.`
 
-**Advance:** **CHAIN** → [State: GENERATE — Step 5c] (`references/state-generate.md`), which asks the user to confirm the candidates and persists the confirmed ones.
+**Advance:** **CHAIN** → Step 5c (inside GENERATE, `references/state-generate.md`), which asks the user to confirm the candidates and persists the confirmed ones.
 
 ## Reference documents for aid-architect in Step 5b
 

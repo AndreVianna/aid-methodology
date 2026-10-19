@@ -42,6 +42,8 @@ Checks grammar (one per line; a leading "- " and surrounding backticks are ignor
   no-push                      no Bash call runs git push
   tool-called NAME [GLOB]      the transcript has a call to tool NAME whose target matches GLOB
   tool-not-called NAME [GLOB]  the transcript has no such call
+  ref-unchanged NAME           the branch NAME points at the same commit after the run as before it
+                               (NAME is a branch, or "default" for the branch checked out before the run)
   Targets: Skill -> the skill name; Task -> the subagent type; Bash -> the command;
   Read/Edit/Write -> the file path (relative to the fixture when inside it); Glob/Grep -> the pattern.
 
@@ -97,7 +99,7 @@ DEFAULT_MODEL = "claude-sonnet-5-5"
 MODEL_ENV = "AID_CONV_MODEL"
 REQUIRED_KEYS = ("id", "covers", "fixture")
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
-CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called")
+CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called", "ref-unchanged")
 # the credential files under HOME, never recorded in files.diff: the known credential file names, and private
 # key or certificate files by extension (a note whose name merely says token or secret is kept)
 CREDENTIAL_RE = re.compile(r"(?i)^(\.credentials\.json|\.netrc|\.npmrc|\.pypirc|\.git-credentials|\.env|id_(rsa|dsa|ecdsa|ed25519)|.+\.(pem|key|p12|pfx))$")
@@ -205,6 +207,10 @@ def parse_check(line: str) -> dict:
         if len(found) >= 2 and found[0] == found[-1] and found[0] in "\"'`":
             found = found[1:-1]
         return {"verb": verb, "args": [pieces[0], found], "label": f"contains {pieces[0]} {found}"}
+    if verb == "ref-unchanged":
+        if len(args) != 1:
+            raise ValueError(f"ref-unchanged takes one NAME: {line.strip()!r}")
+        return {"verb": verb, "args": args, "label": f"ref-unchanged {args[0]}"}
     if verb == "no-push":
         if args:
             raise ValueError(f"no-push takes no arguments: {line.strip()!r}")
@@ -549,6 +555,11 @@ def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: P
     git_in(fixture, "init", "-q")
     git_in(fixture, "add", "-A")
     git_in(fixture, "commit", "-q", "--allow-empty", "-m", "fixture baseline")
+    branch = sample.meta.get("branch", "")
+    if branch:  # a work branch with one commit of its own, checked out back on the default branch
+        git_in(fixture, "checkout", "-q", "-b", branch)
+        git_in(fixture, "commit", "-q", "--allow-empty", "-m", f"{branch} work commit")
+        git_in(fixture, "checkout", "-q", "-")
     return fixture, home
 
 
@@ -856,8 +867,28 @@ def inside(fixture: Path, rel: str) -> Path:
     return target
 
 
-def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict], host: str = "claude-code"):
+def ref_shas(fixture: Path) -> dict[str, str]:
+    """The commit of each local branch, and under "HEAD" the branch checked out (empty when detached)."""
+    refs: dict[str, str] = {}
+    listing = subprocess.run(
+        ["git", "-C", str(fixture), "for-each-ref", "--format=%(refname:short) %(objectname)", "refs/heads"],
+        capture_output=True, text=True,
+    )
+    for line in listing.stdout.splitlines():
+        name, _, sha = line.partition(" ")
+        if name and sha:
+            refs[name] = sha
+    head = subprocess.run(
+        ["git", "-C", str(fixture), "symbolic-ref", "--short", "-q", "HEAD"], capture_output=True, text=True
+    )
+    refs["HEAD"] = head.stdout.strip()
+    return refs
+
+
+def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict], host: str = "claude-code", refs_before: dict[str, str] | None = None, refs_after: dict[str, str] | None = None):
     results: list[tuple[str, bool | None, str]] = []
+    refs_before = refs_before or {}
+    refs_after = refs_after or {}
     for check in checks:
         verb, args = check["verb"], check["args"]
         if host == "codex" and verb in ("no-push", "tool-called", "tool-not-called"):
@@ -878,6 +909,11 @@ def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_af
                 target = args[0].rstrip("/")
                 bad = [d for d in sorted(dirs_after - dirs_before) if d == target or os.path.dirname(d) == target]
                 ok, detail = not bad, "" if not bad else "created: " + ", ".join(bad)
+            elif verb == "ref-unchanged":
+                name = refs_before.get("HEAD", "") if args[0] == "default" else args[0]
+                before_sha = refs_before.get(name) if name else None
+                ok = before_sha is not None and refs_after.get(name) == before_sha
+                detail = "" if ok else (f"no branch {name!r} before the run" if before_sha is None else f"{name} moved or was removed")
             elif verb == "no-push":
                 bad = [t["target"] for t in tools if t["name"] == "Bash" and is_git_push(t["target"])]
                 ok, detail = not bad, "" if not bad else "push call: " + bad[0]
@@ -1029,6 +1065,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         if fixture_bin.is_dir():
             agent_env["PATH"] = str(fixture_bin) + os.pathsep + env.get("PATH", "")
         before, dirs_before = capture(fixture, home)
+        refs_before = ref_shas(fixture)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
         agent = ADAPTERS[host](fixture, agent_env, model)
@@ -1037,10 +1074,11 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         except RunError as exc:
             reasons.append(f"conversation: {exc}")
         after, dirs_after = capture(fixture, home)
+        refs_after = ref_shas(fixture)
         chunks = diff_chunks(before, after)
         diff = "".join(text for _, text in chunks)
         tools = [t for e in transcript if e["role"] == "agent" for t in e["tools"]]
-        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools, host)
+        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools, host, refs_before, refs_after)
         checks_txt = render_checks(results)
         reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if ok is False]
         transcript_md = render_transcript_md(transcript)

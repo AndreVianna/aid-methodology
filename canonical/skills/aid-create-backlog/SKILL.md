@@ -52,7 +52,7 @@ continues at come only from its work record.
    driven.
 3. **Read the seed** at `.aid/design/backlog.md`. If no seed exists, inform the user and
    ask whether to proceed without one (items entered interactively) or to run
-   `/aid-design-backlog` first; do not proceed silently.
+   `/aid-design-backlog` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
 4. **Read the destination** at `.aid/knowledge/backlog.md` if it exists. Classify its
    state: absent | present-sections-empty | present-sections-populated.
 5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed may
@@ -74,7 +74,7 @@ continues at come only from its work record.
   seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE].
+**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done.
 
 ---
 
@@ -87,7 +87,7 @@ determined in INTAKE:
 |---|---|
 | `backlog.md` absent | **Create** the document: write frontmatter (§3b values below, verbatim), `# Backlog` title, one-paragraph preamble (what this document holds and the promotion criterion -- an item moves here when it is **accepted into the plan**, an explicit human decision at a per-item confirm gate), `## Contents` with all three entries in heading order, then `## Next Release`, `## Prioritized`, `## Gotchas`. Then run the **promotion pass** below. **Delete the seed.** |
 | Present, item sections empty or absent | Fill `## Next Release`, `## Prioritized`, `## Gotchas` from the seed; leave every byte outside those sections identical. Then run the **promotion pass**. **Delete the seed.** |
-| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |
+| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling REGISTER or VERIFY. |
 
 **`## Contents` index** -- the fixed three-entry form (`feature-003 §3b`), always written
 at creation and always left intact on the fill path:
@@ -177,7 +177,7 @@ audience: [developer, architect, pm]
 ---
 ```
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). On the route path: **ASK then HALT**, naming the skill the route names.
 
 ---
 

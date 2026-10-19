@@ -27,7 +27,7 @@ Package completed deliveries into a release.
 Step 0):
 
 - **`work-NNN` present** -- the existing pipeline path below runs unchanged
-  (`IDLE -> SELECTING -> VERIFYING -> PACKAGING -> DONE`, post-Execute). Required: work
+  (`IDLE -> SELECTING -> VERIFYING -> PACKAGING -> DONE`, after the Building phase). Required: work
   ID. If only one work exists, auto-select it.
 - **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
   shortcut: binds `{name}=aid-deploy`, `{verb}=deploy`, `{artifact}=""` (bare verb),
@@ -75,7 +75,7 @@ Step 0):
   shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-deploy`,
   `{verb}=deploy`, `{artifact}=""`, `{description}=<the given text>`, then delegate
   directly to `.aid/runtime/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
-  below do not run for this path (that pre-flight belongs to the post-Execute pipeline
+  below do not run for this path (that pre-flight belongs to the after-Building pipeline
   role, not the shortcut entry). Size never skips a step of this workflow: the STATE.yml writes,
   the documents and the gates run for a one-line package too.
 - **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
@@ -186,13 +186,13 @@ dispatch in this skill.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
-| SELECTING | `references/state-selecting.md` | `aid-operator` | ASK → VERIFYING; ASK then HALT on cancel |
+| SELECTING | `references/state-selecting.md` | `aid-operator` | CHAIN → VERIFYING; HALT on cancel |
 | VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
-| FIX-DECISION | `references/state-fix-decision.md` | `inline` | ASK → RE-VERIFY; ASK then HALT on loop back |
+| FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
 | RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |
 | PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |
 | DONE | `references/state-done.md` | `inline` | HALT |
-| RE-RUN | `references/state-re-run.md` | `inline` | ASK → IDLE; ASK then HALT on review |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

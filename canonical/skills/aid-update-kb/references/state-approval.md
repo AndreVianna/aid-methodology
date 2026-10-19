@@ -150,5 +150,4 @@ re-scoping via SCOPE/CONFIRM (not a blind return to APPLY).
 Run /aid-update-kb again to address it and return to this gate.
 ```
 
-**Advance:** WAIT -- return to SCOPE (or ANALYZE) on the
-next invocation; SCOPE auto-chains to CONFIRM once it has re-planned.
+**Advance:** CHAIN -- return to SCOPE (or ANALYZE) in this invocation; SCOPE auto-chains to CONFIRM once it has re-planned.

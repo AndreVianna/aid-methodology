@@ -732,7 +732,7 @@ Emit pipeline phase (silent state-write only -- no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Building
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-execute --name EXECUTE
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 

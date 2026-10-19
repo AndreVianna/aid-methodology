@@ -67,7 +67,7 @@ continues at come only from its work record.
    to `/aid-create-stack` and write nothing.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CHAIN -> [State: UPDATE].
+**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer.
 
 ---
 
@@ -83,7 +83,9 @@ continues at come only from its work record.
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-**Advance:** CHAIN -> [State: VERIFY].
+The step ends with the derived-outputs question of step 2, asked on every run.
+
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -98,7 +100,7 @@ continues at come only from its work record.
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, state
+Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, name every output touched, state
 where any rejected alternative went, and assert that a consumed seed is gone.
 
 **Advance:** ASK -> [State: DONE].
@@ -107,7 +109,9 @@ where any rejected alternative went, and assert that a consumed seed is gone.
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+
+**Advance:** HALT.
 
 ---
 

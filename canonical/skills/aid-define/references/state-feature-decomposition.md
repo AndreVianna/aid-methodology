@@ -6,7 +6,7 @@ Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-define
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -17,4 +17,8 @@ Read `references/feature-decomposition.md` for the full decomposition process
 (analyze, propose, create folders, update meta-documents).
 ✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}
 
-**Advance:** **ASK** → [State: CROSS-REFERENCE] once the user has approved the feature list (continue inline).
+The approval of the feature list is a blocking question: this step pauses on it until the user answers.
+Once it is approved, the same step writes the feature sections and updates the meta-documents
+(`feature-decomposition.md` Steps 4 and 5), then goes on.
+
+**Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline).

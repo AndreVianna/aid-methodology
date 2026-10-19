@@ -7,8 +7,9 @@
 #  Its divergences from canonical, and only these:
 #    1. It additionally accepts `Deploy` as a Phase value, which canonical rejects
 #       (the `Phase)` case list and its error message).
-#    2. It has no record modes: --create, --step, --reroute, --check and --repair
-#       exist only in canonical. The dashboard never invokes them.
+#    2. It has no record modes: --create, --step, --reroute, --check, --repair,
+#       --handoff, --handoff-return, --ask and --answer exist only in canonical. The
+#       dashboard never invokes them.
 #    3. Its write helpers are its own. It writes a temporary copy and renames it into
 #       place, as canonical does, but it does not use canonical's staged helpers
 #       (wb_stage, wb_stage_append, wb_stage_commit).

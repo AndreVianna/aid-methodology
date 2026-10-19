@@ -15,26 +15,18 @@ The gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) creates `.
 before this state runs. Do not copy the template and do not write the record's keys by hand; set any
 other key through the writer.
 
-### 1b-ii. Seed the record through the writer
+### 1b-ii. The opening record is already written
 
-The gate's `§ 3a` writes the opening record in one locked write, with the writer's create mode and
-this skill as the caller, its first step and the Definition phase:
+The gate's `§ 3a` wrote the opening record in one locked write, with the writer's create mode and
+this skill as the caller (`--skill aid-describe`), the step `FIRST-RUN`, the phase `--phase Definition`,
+`--depth full`, `--path full` and the resolved minimum grade, all given when this skill started the work.
+The record holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase
+`Definition`, `pipeline.path: full`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`. `aid-describe` is the FULL-pipeline starting skill,
+never a flattened Lite shortcut.
 
-```bash
-bash .aid/runtime/scripts/execute/writeback-state.sh --create \
-  --work-dir .aid/works/{work} --reading {type} --request '{the user's words}' \
-  --skill aid-describe --step FIRST-RUN --phase Definition --depth full \
-  --minimum-grade "{resolved value of: bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A}"
-```
-
-The record then holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase
-`Definition`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`.
-`pipeline.path` is `full`: `aid-describe` is the FULL-pipeline starting skill, never a flattened Lite
-shortcut. This write is silent (no user-visible output, no gate, no prompt). CONTINUE begins
-immediately after it.
-
-**Idempotency:** `--create` refuses a work that already has a `STATE.yml` (exit 8), so this write
-happens once. On a resume, the record decides the step; do not write it again.
+Do not write the record again from this state. `--create` is run only by the gate, and it refuses a
+work that already has a `STATE.yml` (exit 8). CONTINUE begins immediately after this check. On a
+resume, the record decides the step.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 

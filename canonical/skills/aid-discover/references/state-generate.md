@@ -183,7 +183,7 @@ After reading the signals:
     below) with `**Confirmed:** no` and your measured label.
   - Present the classification to the user and ask for confirmation (see "Present the
     classification" below).
-  - **ASK** — stop after presenting.
+  - The question is blocking: stop after presenting, and this step pauses on it until the user answers.
 
 - **Insufficient / uncertain / dubious** — signals are absent, contradictory, or too sparse to
   classify with confidence (e.g. an empty repo, a repo with equal-weight signals in two
@@ -200,10 +200,9 @@ After reading the signals:
     - **Question:** What is the primary domain of this project? Use one of the domain labels
       listed in Step 0cx (or describe a composite using `hybrid:<A>+<B>`).
     ```
-  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md. Resolve Q{N} then
-    re-run /aid-discover.`
-  - **ASK** at the existing Q&A gate. Do not proceed to Step 0d until the Q&A is answered
-    and a domain is confirmed.
+  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md.`
+  - Ask the Q&A through the question protocol. This step pauses on it. Do not proceed to Step 0d until
+    the Q&A is answered and a domain is confirmed.
   - On the resume run (after the user answers the Q&A), read the user's answer as the domain,
     write the `## Discovery Domain` block (confirmed), and chain to Step 0d.
 
@@ -237,7 +236,7 @@ Domain classification
 **This is a genuine ASK.** Stop here after presenting. The user's choice
 (not the source signals alone) is the authoritative domain; an override is recorded as such.
 
-**Advance:** **ASK** → [State: GENERATE — Step 0d].
+**Advance:** **CHAIN** → Step 0d (inside this state), once the user has answered; the question pauses this step until then.
 
 #### On confirm (resume path) -- write the record
 
@@ -285,8 +284,8 @@ Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-deci
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
-**ASK** (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/skill-steps.md`).
+The question is a contracted checkpoint (SPEC feature-004 §3.1 and
+`.aid/runtime/templates/skill-steps.md`): this step pauses on it until the user answers.
 
 Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d until the
 `## Discovery Domain` block in `.aid/knowledge/STATE.md` carries `**Confirmed:** yes`.
@@ -428,8 +427,8 @@ Then ask the user to confirm or edit:
 
 **This is a genuine ASK.** Stop here after presenting the proposal.
 
-**Advance:** **ASK** → [State: GENERATE — Step 0e] (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/skill-steps.md`).
+**Advance:** **CHAIN** → Step 0e (inside this state), once the user has answered; the question pauses this step
+until then (contracted checkpoint per SPEC feature-004 §3.1 and `.aid/runtime/templates/skill-steps.md`).
 
 #### On confirm (resume path)
 
@@ -586,7 +585,7 @@ confirmed, never auto-decided -- FR-20). Stop here after presenting. The human's
 static `project.type`) is authoritative; an override is recorded as such. Escalation/uncertainty
 defaults to the proposed path on a bare confirm, exactly like Step 0d's conservative default.
 
-**Advance:** **ASK** → [State: GENERATE — Step 1] on a brownfield path; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
+**Advance:** **CHAIN** → Step 1 (inside this state) on a brownfield path, once the user has answered; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
 
 #### On confirm (resume path) -- write the decision
 
@@ -983,7 +982,7 @@ never add an unconfirmed term). The DETECT step reads this list on every future 
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
 `[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
-**Advance:** **ASK** → [State: GENERATE — Step 6], once the user has replied and the confirmed terms are written.
+**Advance:** **CHAIN** → Step 6 (inside this state), once the user has replied and the confirmed terms are written.
 
 ### Step 6: Generate README.md and INDEX.md
 

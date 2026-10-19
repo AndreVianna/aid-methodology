@@ -18,7 +18,7 @@ field. Read-only; ANALYZE never edits a file.
 
 **Re-plan re-entry vs. same-pass resume.** ANALYZE is re-entered two
 distinct ways, and they are NOT the same thing: (1) the ungroundable-concept
-WAIT (Step 4) resumes the *same* pass after the user supplies a definition
+ASK (Step 4) resumes the *same* pass after the user supplies a definition
 -- Step 0 below keeps the existing `**Prompt:**` and proceeds; (2) `[2]
 Adjust` at CONFIRM, when the adjustment corrects the **Understanding**
 itself, sets `**State:** ANALYZE` for a genuine **re-plan** pass -- this is
@@ -59,7 +59,7 @@ placeholder for a later state to fill in (unlike today's design, DONE
 creates no branch of its own).
 
 If the run-state file already has a `**Prompt:**` (a resumed ANALYZE -- e.g.
-returning from the ungroundable-concept WAIT in Step 4 below), do NOT
+returning from the ungroundable-concept ASK in Step 4 below), do NOT
 re-initialize; keep the existing `**Prompt:**`/`**Started:**`/`**Branch:**`
 values and proceed.
 
@@ -235,7 +235,7 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
      or source pointer, then run /aid-update-kb again to resume.
      ```
 
-  4. WAIT -- do NOT advance to SCOPE.
+  4. ASK -- put the definition question in the chat; do NOT advance to SCOPE until it is answered.
 
 ---
 

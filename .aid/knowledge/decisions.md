@@ -787,5 +787,9 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   still holds for every other step.
 - **Status:** Accepted. CONFIRMED `canonical/aid/templates/question-protocol.md`,
   `canonical/aid/templates/skill-steps.md` (the advance words and the writer modes) and the writer modes in
-  `canonical/aid/scripts/execute/writeback-state.sh`.
+  `canonical/aid/scripts/execute/writeback-state.sh`. NOT YET IN FORCE in every skill: the
+  `canonical/agents/aid-interviewer/` agent still exists and `canonical/skills/aid-describe/SKILL.md`
+  dispatches it, `canonical/skills/aid-config/SKILL.md` still names `AskUserQuestion`, and most skills
+  do not yet cite `question-protocol.md`. Those are the open conversion work; the rule above is the
+  target they are converted to.
 

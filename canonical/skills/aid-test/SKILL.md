@@ -34,6 +34,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
 1. **Check the target.** Note whether the argument is empty. Do not ask here.
 2. **Determine the verification kind** from the request (or the kind a sibling bound):
    functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),
@@ -48,8 +50,7 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -71,17 +72,18 @@ Ask one topic at a time, through the question protocol, in this order and only f
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
-- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-test`), its
-  first step (`INTAKE`), `--path lite`, and a kebab-case slug from the target. The gate's `§ 3a` step 2 creates and enters the worktree (`worktree-lifecycle.sh create <work-id> <name>`),
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-test`), its saved step (`RUN`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the target. The gate's `§ 3a` step 2 creates and enters the worktree (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
   the writer, before it hands back: "`STATE.yml` was created by the gate;
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
   set other keys through the writer." This skill drives no `phase`. When `/aid-orchestrate`
-  passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
-  (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-test` writes none.
+  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; the record is never written by hand, so the rest of the block stays in the conversation (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-test` writes none.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: RUN] on a new work; a continuation follows the gate's § 3b instead.
+Every `--step` call in this skill passes in its `--detail` the verification kind, including one a sibling bound, so a
+  resume finds it in the record.
+
+**Advance:** CHAIN -> [State: RUN].
 
 ---
 
@@ -132,7 +134,7 @@ Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regr
 for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked. Ask which one,
 if any, the user takes; a picked one is named in one plain line.
 
-**Advance:** ASK -> [State: DONE], then HALT.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

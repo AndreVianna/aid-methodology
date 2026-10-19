@@ -31,8 +31,10 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
   Add Review History entry under `## Review History`.
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
 - **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
-  Print: `[Approval] Consideration recorded as Q{N}. Run /aid-discover again to address it.`
+  Print: `[Approval] Consideration recorded as Q{N}.` The run ends here (HALT); the pending Q&A is addressed by the Q-AND-A state of the next run.
 
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** **ASK** → [State: DONE] (the approval above; a consideration goes back as a pending question instead).
+The approval is a blocking question: this step pauses on it until the user answers.
+
+**Advance:** **CHAIN** → [State: DONE] on approval; on a consideration the run ends here (HALT).

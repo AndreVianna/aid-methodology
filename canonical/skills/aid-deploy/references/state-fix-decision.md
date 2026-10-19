@@ -11,4 +11,8 @@ The checks failed in VERIFYING. The user decides whether to fix the failures her
 - If looping back: set work `STATE.yml`'s Deploy State (`deploy` key) → Idle, keep package file as Draft.
   Delete ledger: `rm -f {{LEDGER}}`. Then name `/aid-execute` as the skill to run next, in one plain line.
 
-**Advance:** **ASK** → [State: RE-VERIFY] when the user chooses to fix here, once answered; **ASK** then **HALT** when the user loops back to `/aid-execute`, after the writes above.
+The question is blocking: this step pauses on it until the user answers, and then goes on with the
+branch the user chose.
+
+**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here. When the user loops back to
+`/aid-execute`, the run ends here (HALT), after the writes above.

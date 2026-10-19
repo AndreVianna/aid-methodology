@@ -14,7 +14,7 @@ Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Planning
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-detail --name FIRST-RUN
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -125,4 +125,6 @@ Execution graphs written to PLAN.md.
 
 [State: FIRST-RUN] complete.
 
-**Advance:** **ASK** → [State: REVIEW] once the user has approved the task breakdown (continue inline).
+**Advance:** **CHAIN** → [State: REVIEW] once the task breakdown is approved and its files are written. The
+approval in Step 2 is a blocking question: this step pauses on it, and the same step goes on with Step 3 once
+it is answered.

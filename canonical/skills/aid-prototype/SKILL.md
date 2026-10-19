@@ -30,6 +30,8 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 
 ## State: INTAKE
 
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
 1. **Check the direction.** Note whether the argument is empty. Do not ask here.
 2. **Capture (thin):** direction/hypothesis; fidelity (`paper` | `low-fi` | `runnable
    spike`, default `low-fi`); the success signal that would validate it; the scope
@@ -42,8 +44,7 @@ Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templat
 5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
 
 ---
 
@@ -67,7 +68,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-  (`aid-prototype`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the
+  (`aid-prototype`), its saved step (`BUILD`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the
   direction. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
@@ -75,11 +76,10 @@ Allocate the work through the gate: the Work Initiation Gate
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
   set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
   associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
-  passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
-  (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
+  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; the record is never written by hand, so the rest of the block stays in the conversation (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: BUILD] on a new work; a continuation follows the gate's § 3b instead.
+**Advance:** CHAIN -> [State: BUILD].
 
 ---
 
@@ -126,7 +126,7 @@ Printed suggestions the user may act on: build the validated thing for real
 (`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution. Ask which one, if
 any, the user takes; a picked one is named in one plain line.
 
-**Advance:** ASK -> [State: DONE], then HALT.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

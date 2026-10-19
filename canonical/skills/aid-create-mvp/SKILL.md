@@ -63,7 +63,7 @@ continues at come only from its work record.
    driven.
 3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and
    ask whether to proceed without one (slice entered interactively) or to run
-   `/aid-design-mvp` first; do not proceed silently.
+   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its
    state: absent | present-MVP-absent | present-MVP-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
@@ -84,7 +84,7 @@ non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule
   Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE].
+**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done.
 
 ---
 
@@ -95,9 +95,9 @@ case determined in INTAKE:
 
 | Destination state | Action |
 |---|---|
-| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |
+| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling VERIFY. |
 | `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |
-| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |
+| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling VERIFY. |
 
 **Byte-range write discipline (binding; precondition for V7 and V8).** Read the
 whole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading
@@ -127,7 +127,7 @@ would place the section above the document index and break KB layout order (feat
     - **Status:** Not started | In progress | Shipped <version> -- with the evidence
       anchor.
 
-**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
+**Advance:** CHAIN -> [State: VERIFY] (creation path). On the route path: **ASK then HALT**, naming the skill the route names.
 
 ---
 

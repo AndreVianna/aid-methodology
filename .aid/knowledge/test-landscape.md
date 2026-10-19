@@ -111,7 +111,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
-| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs`, `dashboard/server/tests/test_home_stage_rails.mjs` | Node `.mjs` server tests. The stage-rail test takes `PHASE_ORDER` and `renderStageRail` from `home.html` by name and runs them under `node:vm` against a stand-in for the page. |
+| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs`, `dashboard/server/tests/test_home_stage_rails.mjs` | Node `.mjs` server tests. The stage-rail test takes `PHASE_ORDER` and `renderStageRail` from `home.html` by name and runs them under `node:vm` against a stand-in for the page. Run by `tests/canonical/test-dashboard-node.sh`, together with `test_task048_phase_mapping.mjs` and `test_task031_intent_phases.mjs`; `test_server_node.mjs` is run by no suite. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
@@ -254,8 +254,8 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
   `tests/canonical/skill-steps-exempt.tsv`. It covers the advance words (`CHAIN`, `ASK`, `WAIT`, `PASS`,
   `CALL`, `HALT`) on `**Advance:**` lines, the citation of `skill-steps.md` by every skill that has a
   Dispatch table or a `## State:` section, the old phase names kept out of logic, no hand-written
-  `lifecycle: Completed` or `Canceled`, and the rule that only the work-initiation gate creates and writes
-  the work record. Each exempt row names a skill or path that a later change rebuilds or retires; the
+  `lifecycle: Completed` or `Canceled`, and the rules that the work-initiation gate is the only creator of
+  the work record and the writer the only writer of it. Each exempt row names a skill or path that a later change rebuilds or retires; the
   test fails when an exempt row no longer exists on disk, and under `AID_RELEASE_CHECK=1` while the list
   is not empty.
 - **`tests/canonical/test-never-merges.sh`** -- groups `NM-01` to `NM-04` over the tracked files under
