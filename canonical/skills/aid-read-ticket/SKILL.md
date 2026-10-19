@@ -89,9 +89,9 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
   ```
   and exit (AC-6).
 
-**Advance:** **CHAIN** → FETCH when a connector resolves without asking (explicit stem,
-single match, or host MCP); **CHAIN** → PICK-CONNECTOR on the two-or-more branch;
-**HALT** on the unknown-stem or notify branches above.
+**Advance:** **CHAIN** → FETCH when a connector resolves without asking (stem, one match);
+**CHAIN** → PICK-CONNECTOR on the two-or-more branch;
+**HALT** when the stem is unknown or no connector is found.
 
 ### State 2a — PICK-CONNECTOR
 
@@ -113,7 +113,7 @@ tracker's own error **verbatim** and exits non-destructively — never retry sil
 back to a different connector, never fabricate a placeholder result (feature-001 § Feature Flow,
 "MCP-call failure policy").
 
-**Advance:** **CHAIN** → DISPLAY on success; **HALT** on failure per the policy above.
+**Advance:** **CHAIN** → DISPLAY on success; **HALT** when the call fails.
 
 ### State 4 — DISPLAY
 

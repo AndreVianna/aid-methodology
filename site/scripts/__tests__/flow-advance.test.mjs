@@ -1860,10 +1860,27 @@ describe('Cycle-2 label repairs — pause arms, parentheses, code spans and hand
 
   it('a separator inside a parenthetical does not cut the clause', () => {
     const r = parse(
-      advBlock('HALT when the user loops back (after the writes above; see the note). CHAIN → B'),
+      advBlock('HALT when the user loops back (after the writes; see the note). CHAIN → B'),
       states('A', 'B'),
     );
-    expect(r.terminal.handoff).toBe('when the user loops back (after the writes above; see the note)');
+    expect(r.terminal.handoff).toBe('when the user loops back (after the writes; see the note)');
+  });
+
+  it('a hand-off drops a parenthetical that points at the prose above or below', () => {
+    const r = parse(advBlock('CHAIN → B; HALT when the destination is absent (the route above).'), states('A', 'B'));
+    expect(r.terminal.handoff).toBe('when the destination is absent');
+    const r2 = parse(advBlock('HALT when it stalled (see Branch C below)'), states('A', 'B'));
+    expect(r2.terminal.handoff).toBe('when it stalled');
+  });
+
+  it('a condition keeps its balanced closing bracket', () => {
+    const r = parse(advBlock('CHAIN → B when the user picks [2]; HALT when the user picks another option'), states('A', 'B'));
+    expect(r.edges.find((e) => e.to === 'n2').condition).toBe('when the user picks [2]');
+  });
+
+  it('a hand-off unwraps a backticked command instead of deleting it', () => {
+    const r = parse(advBlock('HALT when approved. Run `/aid-define {work}` next.'), states('A', 'B'));
+    expect(r.terminal.handoff).toContain('/aid-define {work}');
   });
 
   it('a hand-off keeps the closing parenthesis of its parenthetical', () => {

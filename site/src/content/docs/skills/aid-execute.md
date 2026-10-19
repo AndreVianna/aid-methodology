@@ -26,18 +26,17 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["EXECUTE<br/>Task work is dispatched to the type-appropriate executor…"])
-  n2["REVIEW<br/>Task output is graded by a lightweight quick-check pass…"]
+  n2(["REVIEW<br/>Task output goes through a lightweight quick-check pass by…"])
   n3(["FIX<br/>CODE-source issues from the most recent REVIEW cycle are…"])
   n4(["DONE"])
   n5(["RE-RUN<br/>The task is already Done and the user has re-invoked…"])
   n6(["DELIVERY-GATE<br/>Per-delivery quality gate — runs once per delivery as the…"])
   n1 --> n2
-  n2 -. "otherwise" .- n2
-  n2 -->|"after triage, findings write, and the terminal State write above"| n4
+  n2 -->|"once the triage, the findings write and the terminal State write are done"| n4
   n3 --> n2
   n5 -->|"once the user has confirmed the reopen"| n2
   class n1 aidEntry
-  class n2 aidLoopBack
+  class n2 aidExit
   class n3 aidEntry
   class n4 aidExit
   class n5 aidExit
@@ -61,13 +60,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-execute/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L222) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L783`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L783)
 
-<a id="fragment-n2"></a>**2 · `REVIEW`** — Task output is graded by a lightweight quick-check pass… · _loop-back_
+<a id="fragment-n2"></a>**2 · `REVIEW`** — Task output goes through a lightweight quick-check pass by… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L223" wrap
-| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE; HALT when a `[CRITICAL]` persists after the fix-on-spot |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L223`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L223) · [full step: `canonical/skills/aid-execute/references/state-review.md#L1-L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-review.md#L1-L194)
+[Source: `canonical/skills/aid-execute/SKILL.md#L223`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L223) · [full step: `canonical/skills/aid-execute/references/state-review.md#L1-L197`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-review.md#L1-L197)
 
 <a id="fragment-n3"></a>**3 · `FIX`** — CODE-source issues from the most recent REVIEW cycle are… · _entry_
 
@@ -99,4 +98,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L528`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L528)
+[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L529`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L529)

@@ -51,7 +51,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -64,7 +64,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> the 2-3 scoping questions that narrow the question.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** ASK → [State: ALLOCATE].
 
 ---
 
@@ -86,7 +86,7 @@ Allocate the work through the gate: the Work Initiation Gate
 Every `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a
 resume finds them in the record.
 
-**Advance:** CHAIN -> [State: INVESTIGATE].
+**Advance:** CHAIN → [State: INVESTIGATE].
 
 ---
 
@@ -106,7 +106,7 @@ handoff** -- no code is written. If the researcher determines a gap genuinely ca
 closed on paper, it returns a **spike proposal** instead of a final answer; the step then
 goes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.
 
-**Advance:** CHAIN -> [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN → [State: VERIFY].
 
 ---
 
@@ -118,11 +118,10 @@ Once the user answers: on **authorization** -> re-dispatch `aid-researcher` to w
 throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed
 analytically and state the resulting limit in the Gaps section.
 
-The question pauses this step where it stands (`--step` with a `--detail` that says the spike question
-is open); the write that follows the answer, the spike or the Gaps note, is part of this step. Once it
-is done, record in the `--detail` what was decided.
+The question pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. The write that follows the answer, the spike
+or the Gaps note, is part of this step. Once it is done, record in the `--detail` what was decided.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -144,7 +143,7 @@ is done, record in the `--detail` what was decided.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
-**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -155,7 +154,7 @@ the in-depth answer, conclusions (positive **and** negative), conflicts/contradi
 **with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and
 gaps are first-class, never buried under positives.
 
-**Advance:** ASK -> [State: HANDOFF].
+**Advance:** ASK → [State: HANDOFF].
 
 ---
 
@@ -168,7 +167,7 @@ a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
 in one plain line.
 
-**Advance:** ASK -> [State: DONE].
+**Advance:** ASK → [State: DONE].
 
 ---
 

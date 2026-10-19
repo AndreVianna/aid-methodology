@@ -105,7 +105,7 @@ named was written; otherwise it stays in place carrying just the unrealized part
 
 **A refusal pauses the work.** The step ends with the HALT case of the advance line, after these writes through the writer: bring the detail up to date with `--step` (done: nothing written; refused under the condition above that applied), set the lifecycle to `Paused-Awaiting-Input`, and set the pause reason to what the user must do next (produce the seed with `/aid-design-architecture`, resolve the open questions or pass the override token, or leave the generated destination to its build script). The step stays saved; a resumed run sets the lifecycle back to `Running` through the writer and checks the three conditions again from the top.
 
-**Advance:** CHAIN → [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write.
+**Advance:** CHAIN → [State: VERIFY] when every refusal check passes; HALT when a refusal check stops the step.
 
 ---
 

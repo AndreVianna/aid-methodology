@@ -1111,10 +1111,10 @@ describe('AC-4 fixture 1 — aid-create-api: GATE (3 outgoing edges)', () => {
     expect(gateEdges.filter((e) => e.kind === 'loop-back')).toHaveLength(1);
   });
 
-  it('GATE has a branch edge to APPROVAL-HALT (condition null)', () => {
+  it('GATE has a branch edge to APPROVAL-HALT (when both passes clear)', () => {
     const ahNode = chart.nodes.find((n) => n.name === 'APPROVAL-HALT');
     const edge = gateEdges.find(
-      (e) => e.kind === 'branch' && e.to === ahNode.id && e.condition === null
+      (e) => e.kind === 'branch' && e.to === ahNode.id && /both passes clear/.test(e.condition ?? '')
     );
     expect(edge).toBeDefined();
   });
@@ -1146,10 +1146,10 @@ describe('AC-4 fixture 1 — aid-create-api: exits (APPROVAL-HALT, CONTINUATION,
     expect(chart.exits).toContain(cbNode.id);
   });
 
-  it('APPROVAL-HALT terminal.advanceType is ASK (ASK then HALT)', () => {
+  it('APPROVAL-HALT terminal.advanceType is HALT (the run ends once approved or dropped)', () => {
     const ahNode = chart.nodes.find((n) => n.name === 'APPROVAL-HALT');
     // Mutation-proof: changing advanceType in engine-core.mjs would break this.
-    expect(ahNode.terminal.advanceType).toBe('ASK');
+    expect(ahNode.terminal.advanceType).toBe('HALT');
   });
 
   it('APPROVAL-HALT terminal.handoff is a non-null string citing the halt behaviour', () => {

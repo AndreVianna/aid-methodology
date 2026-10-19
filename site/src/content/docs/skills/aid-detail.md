@@ -30,9 +30,9 @@ flowchart TB
   n3["REVIEW<br/>Existing task files found; re-review against current…"]
   n4(["DONE"])
   n1 -. "otherwise" .- n1
-  n1 -->|"once the task breakdown is approved and its files are written. The approval in…"| n3
+  n1 -->|"once the task breakdown is approved and its files are written"| n3
   n2 -->|"when the user confirms the reopen"| n3
-  n2 -->|"when the user keeps the task list as it is. A specific concern the user gives…"| n4
+  n2 -->|"when the user keeps the task list as it is"| n4
   n3 --> n4
   class n1 aidEntry
   class n2 aidEntry
@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | CHAIN → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L94) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L136`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L136)
+[Source: `canonical/skills/aid-detail/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L94) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L137)
 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** — Existing task files found, and the task list was previously… · _entry_
 
@@ -61,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW when the user reopens; CHAIN → DONE when the user keeps the list |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/confirm.md#L1-L16`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/confirm.md#L1-L16)
+[Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/confirm.md#L1-L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/confirm.md#L1-L17)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — Existing task files found; re-review against current… · _step_
 

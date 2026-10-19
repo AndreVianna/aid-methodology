@@ -411,4 +411,4 @@ to fix), return to Step 0 of this state -- re-run the scope-diff guard
 
 Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
 
-**Advance:** CHAIN -> APPLY when an APPLY is incomplete; CHAIN -> CONFIRM when an out-of-scope edit is on disk; CHAIN -> APPROVAL when the review is READY.
+**Advance:** CHAIN → APPLY when an APPLY is incomplete; CHAIN → CONFIRM when an out-of-scope edit is on disk; CHAIN → APPROVAL when the review is READY.

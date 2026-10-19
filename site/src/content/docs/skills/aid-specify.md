@@ -62,7 +62,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L231) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L146)
+[Source: `canonical/skills/aid-specify/SKILL.md#L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L231) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L145)
 
 <a id="fragment-n2"></a>**2 · `CONTINUE`** — The work STATE.yml's features: entry for this feature shows… · _decision_
 

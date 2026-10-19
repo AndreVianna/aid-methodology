@@ -352,4 +352,4 @@ Print the resume banner, then end the run:
 
 **No commit** is made in this branch.
 
-**Advance:** **CHAIN** → [State: CLEANUP] when the stage did not stall; **HALT** when it stalled (Branch C).
+**Advance:** **CHAIN** → [State: CLEANUP] when the stage did not stall; **HALT** when it stalled.

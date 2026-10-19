@@ -196,10 +196,10 @@ function _buildEngineCore(override = {}) {
 
     const nodeProv = buildProvenance(ENGINE_REL, engineLines, rowLine, rowLine, 'engine');
 
-    // Row Advance parse — safe declaredStates excludes self + keyword-named states.
-    const safeDecl = declaredStates.filter(
-      (s) => s.id !== nodeId && !kwNamedStates.some((k) => k.id === s.id)
-    );
+    // Row Advance parse — safe declaredStates excludes keyword-named states. It keeps the
+    // row's own state: an Advance line that says `CHAIN → GATE when a pass is below the
+    // floor` is the state's loop back to itself, and only an explicit target can draw it.
+    const safeDecl = declaredStates;
 
     const rowBlock  = '**Advance:** ' + row.advance;
     const rowResult = parseAdvanceBlock({
@@ -334,7 +334,9 @@ function _buildEngineCore(override = {}) {
       rawEdges.push(makeEdge({
         from:        nodeId,
         to:          e.to,
-        kind:        e.kind,
+        // An Advance line that names its own state (`CHAIN → GATE when a pass is below the
+        // floor`) is that state's loop back to itself.
+        kind:        e.to === nodeId ? 'loop-back' : e.kind,
         condition:   e.condition,
         advanceType: e.advanceType,
         provenance:  e.provenance,

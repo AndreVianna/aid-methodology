@@ -28,17 +28,19 @@ flowchart TB
   n1(["INTAKE"])
   n2["UPDATE"]
   n3(["VERIFY"])
-  n4["PRESENT<br/>hard stop -- the user decides"]
+  n4{"PRESENT"}
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
-  n4 --> n5
+  n4 -. "when the user asks for changes" .-> n2
+  n4 -->|"when the user approves"| n5
+  n4 -->|"when the user declines (the revision is rolled back first)"| n5
   class n1 aidExit
   class n2 aidStep
   class n3 aidExit
-  class n4 aidStep
+  class n4 aidDecision
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -86,48 +88,45 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L88-L95" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L88-L92" wrap
 ## State: UPDATE
 
-1. **Apply only the change the user named in this run**, to the owned C8 content, per the
-   content rules below.
-2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
-3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
-   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
-4. **`source: generated` refuses.** A registered build script owns that content.
+**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
+named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
+relative path, so PRESENT can restore them if the user declines.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L88-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L95) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L88-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L97)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L88-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L92) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L88-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L101)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L101-L104" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L105-L108" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L101-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L101-L106)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L105-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L105-L108) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L105-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L105-L110)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L110-L114" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L114-L118" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say whether a workflow file was
+Present the revision, say whether a workflow file was
 touched and that it was asked for, name every output touched, and assert that a consumed seed
 is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L110-L114) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L110-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L110-L116)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L114-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L114-L118) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L114-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L114-L131)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L120-L122" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L135-L137" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L120-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L122) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L120-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L124)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L135-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L135-L137) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L135-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L135-L139)

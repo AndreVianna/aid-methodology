@@ -232,7 +232,9 @@ Exit 0.
 This skill writes **only** within `.aid/connectors/` — the same P7 exemption ELICIT uses
 (`.aid/runtime/templates/kb-authoring/principles.md` P7 "Exception (connector sub-phase)"):
 `.aid/connectors/.gitignore`, `.aid/connectors/<stem>.md`, and, via `connector-secret.sh`,
-`.aid/connectors/.secrets/<stem>`. It never touches `.aid/knowledge/`, never invokes
+`.aid/connectors/.secrets/<stem>`. The one other write is the record of its own questions: the project
+file `.aid/STATE.yml`, written only by `writeback-state.sh --project --ask` and `--answer` (see
+Recording above), never by hand. It never touches `.aid/knowledge/`, never invokes
 `/aid-discover`, and never writes any host tool's MCP configuration (STATE.md Q10 — AID is a
 catalog, not a connection manager).
 
@@ -245,6 +247,7 @@ catalog, not a connection manager).
 | `connector-registry.sh` | `read <stem> <field>` | Read the on-disk `connection_type`/`auth_method` on UPDATE (Step 3) |
 | `connector-secret.sh` | `write <stem>` / `purge <stem>` | Capture/rotate or purge the one secret `$STEM`'s reconcile calls for (Step 5b) |
 | `build-connectors-index.sh` | default | Rebuild `INDEX.md` from every descriptor on disk (Step 6) |
+| `writeback-state.sh` | `--project --ask` / `--answer` | Record each question and its answer in `.aid/STATE.yml` (Recording) |
 
 (PowerShell twins: `connector-registry.ps1`, `connector-secret.ps1`, `build-connectors-index.ps1`.)
 No new script is introduced by this skill.

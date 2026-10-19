@@ -236,9 +236,11 @@ describe('L1 rule: GATE self-loop', () => {
     expect(gateSelf[0].kind).toBe('loop-back');
   });
 
-  it('L1 self-edge has condition null', () => {
-    // Separability: this condition alone distinguishes L1 from a guarded loop.
-    expect(gateSelf[0].condition).toBeNull();
+  it('GATE self-edge carries the Advance line condition (the pass is below the floor)', () => {
+    // GATE's own Advance line names GATE as a target (`CHAIN → GATE when a pass is below the
+    // floor ...`), so the loop is a guarded edge. The older prose form ("Loop back to Step 1")
+    // drew the same edge with a null condition; that form is covered by the L1 fixtures.
+    expect(gateSelf[0].condition).toMatch(/below the floor/);
   });
 
   it('L1 self-edge provenance cites shortcut-engine.md', () => {

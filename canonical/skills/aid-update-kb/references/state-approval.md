@@ -151,4 +151,4 @@ re-scoping via SCOPE/CONFIRM (not a blind return to APPLY).
 
 SCOPE auto-chains to CONFIRM once it has re-planned.
 
-**Advance:** CHAIN -> DONE when the user approves; CHAIN -> SCOPE when the user adds a consideration; CHAIN -> ANALYZE when the consideration challenges the Understanding itself.
+**Advance:** CHAIN → DONE when the user approves; CHAIN → SCOPE when the user adds a consideration; CHAIN → ANALYZE when the consideration challenges the Understanding itself.

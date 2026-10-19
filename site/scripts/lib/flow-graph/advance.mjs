@@ -983,11 +983,18 @@ function _trimLeadingPunct(text) {
 function _trimEdgePunct(text) {
   let s = _trimLeadingPunct(text);
   for (;;) {
-    const m = s.match(/[[\](.,;:!?→>-]+$/);
+    const m = s.match(/[[(.,;:!?→>-]+$/);
     if (m) { s = s.slice(0, s.length - m[0].length).trim(); continue; }
+    // A closing bracket is trimmed only when it is orphaned. A balanced one is part of the
+    // text ("when the user picks [2]"), and cutting it published "when the user picks [2".
     if (s.endsWith(')')) {
       const opens = (s.match(/\(/g) || []).length;
       const closes = (s.match(/\)/g) || []).length;
+      if (closes > opens) { s = s.slice(0, -1).trim(); continue; }
+    }
+    if (s.endsWith(']')) {
+      const opens = (s.match(/\[/g) || []).length;
+      const closes = (s.match(/\]/g) || []).length;
       if (closes > opens) { s = s.slice(0, -1).trim(); continue; }
     }
     return s;
@@ -1195,6 +1202,10 @@ function _extractHandoff(clauseText) {
   // when the state-name strip was fixed for exactly this reason.
   text = text.replace(/(?<![A-Za-z0-9-])halt(?![A-Za-z0-9-])/gi, ' ');
   text = text.replace(/`([^`]*)`/g, '$1');
+  // A parenthetical that points at the prose around the clause ("(the route above)",
+  // "(see below)") means nothing on a chart, where there is no "above". Drop it, so a
+  // published hand-off never sends a reader to text that is not on the page.
+  text = text.replace(/\s*\([^()]*(?<![A-Za-z0-9-])(?:above|below)(?![A-Za-z0-9-])[^()]*\)/gi, ' ');
   // Markdown emphasis markers are formatting, never part of a state name. Without
   // this, a bare `**PAUSE-FOR-USER-ACTION**` — which names no resume state — has its
   // keyword stripped and returns the literal `** **` instead of null, because `*` is

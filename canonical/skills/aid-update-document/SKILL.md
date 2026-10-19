@@ -52,7 +52,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -68,7 +68,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 3. **Guided path** -> scope the change.
 4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** CHAIN -> [State: ALLOCATE]; HALT when the user meant a new document (item 2).
+**Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2).
 
 ---
 
@@ -90,7 +90,7 @@ Allocate the work through the gate: the Work Initiation Gate
 Every `--step` call in this skill passes in its `--detail` the target document, the change, the path and the
 complexity tier, so a resume finds them in the record.
 
-**Advance:** CHAIN -> [State: AUTHOR].
+**Advance:** CHAIN → [State: AUTHOR].
 
 ---
 
@@ -100,7 +100,7 @@ Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised*
 (a draft in the work folder, not yet written back), grounded in and accurate to the KB +
 project source, preserving the document's existing genre structure.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -110,7 +110,7 @@ Same as `/aid-create-document`: mechanical grounding check + a clean-context **`
 adversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`
 -> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).
 
-**Advance:** CHAIN -> [State: PRESENT] when the check is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the check is clean; CHAIN → [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -119,7 +119,7 @@ adversarial check (accurate, complete, no fabrication, structure preserved) -> `
 The hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against
 the current file** + the target path. Await approval. Never writes `.aid/knowledge/`.
 
-**Advance:** ASK -> [State: WRITE].
+**Advance:** ASK → [State: WRITE].
 
 ---
 
@@ -129,7 +129,7 @@ If the user declined, write nothing: the draft stays in the work folder, and the
 DONE. Otherwise write the revision back to the existing document (the diff was already reviewed at
 PRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** CHAIN → [State: DONE].
 
 ---
 

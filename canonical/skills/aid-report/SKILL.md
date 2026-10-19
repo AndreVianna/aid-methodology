@@ -46,7 +46,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -59,7 +59,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope *which data, which metrics, what question*.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** ASK → [State: ALLOCATE].
 
 ---
 
@@ -80,7 +80,7 @@ Allocate the work through the gate: the Work Initiation Gate
 Every `--step` call in this skill passes in its `--detail` the data, the metrics, the question and the complexity tier,
 so a resume finds them in the record.
 
-**Advance:** CHAIN -> [State: ANALYZE].
+**Advance:** CHAIN → [State: ANALYZE].
 
 ---
 
@@ -99,7 +99,7 @@ analyze + consolidate:
   data-vs-KB-assumption contradiction is surfaced with its reason, never resolved.
 - It writes `REPORT.md` into the work folder (see [Response shape](#response-shape)).
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -115,7 +115,7 @@ analyze + consolidate:
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: ANALYZE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: ANALYZE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -125,7 +125,7 @@ The hard stop follows the ASK step of `skill-steps.md`. Present `REPORT.md` clea
 (metrics/tables), conclusions (+/-), **caveats & data-quality gaps** (first-class),
 conflicts with reasons, and gaps. Assert no resolution.
 
-**Advance:** ASK -> [State: HANDOFF].
+**Advance:** ASK → [State: HANDOFF].
 
 ---
 
@@ -137,7 +137,7 @@ or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket
 Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
 in one plain line.
 
-**Advance:** ASK -> [State: DONE].
+**Advance:** ASK → [State: DONE].
 
 ---
 

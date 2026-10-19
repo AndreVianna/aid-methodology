@@ -163,7 +163,7 @@ If the Scope Plan has at least one item:
 
 Print: `[SCOPE] Scope Plan ready. {N} item(s) in scope, {M} in Not-Changing. Advancing to CONFIRM.`
 
-**Advance:** CHAIN -> CONFIRM (continue inline).
+**Advance:** CHAIN → CONFIRM (continue inline).
 
 If the Scope Plan is empty (every Impact Finding was `No change needed` or
 excluded to Not-Changing), print:

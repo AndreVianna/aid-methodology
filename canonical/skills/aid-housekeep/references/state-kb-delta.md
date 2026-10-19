@@ -884,4 +884,4 @@ Print the resume banner, then end the run:
    Resume: the next /aid-housekeep run picks up at KB-DELTA (not job 1).
 ```
 
-**Advance:** CHAIN -> SUMMARY-DELTA when the stage did not stall; HALT when it stalled (the stalled exit above).
+**Advance:** CHAIN → SUMMARY-DELTA when the stage did not stall; HALT when it stalled.

@@ -234,4 +234,4 @@ To publish the update:
   # -- the human merges only after CI is green)
 ```
 
-**Advance:** CHAIN -> APPLY when the closure gap is fixable within Confirmed Scope (1a); CHAIN -> CONFIRM when it needs an out-of-scope addition (1b); HALT after the commit.
+**Advance:** CHAIN → APPLY when the closure gap is fixable within Confirmed Scope (1a); CHAIN → CONFIRM when it needs an out-of-scope addition (1b); HALT after the commit.

@@ -139,7 +139,6 @@ Does this look right? Answer the questions, and tell me if I'm missing anything.
 
 Process response → update this feature's `features:` entry in the work STATE.yml → begin **The Loop** for first Pending section.
 
-The questions pause this step where it stands (`--step` with a `--detail` that says which question is
-open); the update of the `features:` entry after the answers is part of this step.
+The questions pause this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. The update of the `features:` entry after the answers is part of this step.
 
 **Advance:** **CHAIN** → [State: CONTINUE].

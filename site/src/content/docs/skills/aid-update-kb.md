@@ -68,7 +68,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n1"></a>**1 · `ANALYZE`** — ANALYZE maps the user's instruction onto concrete KB… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L446" wrap
-| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (a concept that cannot be grounded is asked in the step first -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN → SCOPE (a concept that cannot be grounded is asked in the step first -- Q&A escalation to `.aid/knowledge/STATE.md`) |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L446`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L446) · [full step: `canonical/skills/aid-update-kb/references/state-analyze.md#L1-L276`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-analyze.md#L1-L276)
@@ -76,7 +76,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n2"></a>**2 · `SCOPE`** — SCOPE turns ANALYZE's Impact Map into the minimal Scope… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L447" wrap
-| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
+| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN → CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L447`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L447) · [full step: `canonical/skills/aid-update-kb/references/state-scope.md#L1-L178`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-scope.md#L1-L178)
@@ -84,7 +84,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n3"></a>**3 · `CONFIRM`** — CONFIRM is the new pre-apply human gate -- the root fix… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L448" wrap
-| CONFIRM | `references/state-confirm.md` | inline (human gate) | CHAIN -> APPLY when the user confirms; CHAIN -> SCOPE when the user adjusts; CHAIN -> ANALYZE when the adjustment corrects the understanding; HALT when the user cancels |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | CHAIN → APPLY when the user confirms; CHAIN → SCOPE when the user adjusts; CHAIN → ANALYZE when the adjustment corrects the understanding; HALT when the user cancels |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L448`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L448) · [full step: `canonical/skills/aid-update-kb/references/state-confirm.md#L1-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-confirm.md#L1-L155)
@@ -92,7 +92,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n4"></a>**4 · `APPLY`** — APPLY makes targeted summary+pointer edits to the KB docs… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L449" wrap
-| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
+| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN → REVIEW |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L449`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L449) · [full step: `canonical/skills/aid-update-kb/references/state-apply.md#L1-L312`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-apply.md#L1-L312)
@@ -100,7 +100,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n5"></a>**5 · `REVIEW`** — REVIEW first runs two mechanical, aid-update-kb-specific… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L450" wrap
-| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 3 endings (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> CHAIN -> CONFIRM; READY -> CHAIN -> APPROVAL. Below the gate (scope-diff already PASS), the fix pass runs inside the step and the review runs again |
+| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 3 endings (`state-review.md § Step 4`): incomplete APPLY -> CHAIN → APPLY; out-of-scope disk edit -> CHAIN → CONFIRM; READY -> CHAIN → APPROVAL. Below the gate (scope-diff already PASS), the fix pass runs inside the step and the review runs again |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L450`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L450) · [full step: `canonical/skills/aid-update-kb/references/state-review.md#L1-L415`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-review.md#L1-L415)
@@ -108,7 +108,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n6"></a>**6 · `APPROVAL`** — APPROVAL is the explicit human gate before the KB change is… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L451" wrap
-| APPROVAL | `references/state-approval.md` | inline | CHAIN -> DONE when the user approves; CHAIN -> SCOPE when the user adds a consideration; CHAIN -> ANALYZE when the consideration challenges the understanding |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE when the user approves; CHAIN → SCOPE when the user adds a consideration; CHAIN → ANALYZE when the consideration challenges the understanding |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L451`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L451) · [full step: `canonical/skills/aid-update-kb/references/state-approval.md#L1-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-approval.md#L1-L155)
@@ -116,7 +116,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE commits the approved KB changes and closes the run. · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-kb/SKILL.md#L452" wrap
-| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state); a closure shortfall goes back instead: CHAIN -> APPLY (fixable within Confirmed Scope) or CHAIN -> CONFIRM (needs an out-of-scope addition) |
+| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state); a closure shortfall goes back instead: CHAIN → APPLY (fixable within Confirmed Scope) or CHAIN → CONFIRM (needs an out-of-scope addition) |
 ~~~~
 
 [Source: `canonical/skills/aid-update-kb/SKILL.md#L452`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L452) · [full step: `canonical/skills/aid-update-kb/references/state-done.md#L1-L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-done.md#L1-L238)

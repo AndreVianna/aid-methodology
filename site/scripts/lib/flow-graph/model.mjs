@@ -202,7 +202,7 @@ export function buildChart({
 
   // ── 2. Compute entries ────────────────────────────────────────────────────
   // entries = every in-degree-0 node + lowest-order node of any weakly-connected
-  // component that has no in-degree-0 node (a pure cycle).
+  // component that has no in-degree-0 node (a pure cycle) + the first node in source order.
   //
   // SELF-EDGES ARE EXCLUDED from the in-degree count, and that exclusion is
   // load-bearing rather than tidiness. An edge from a node to itself is not a way
@@ -268,6 +268,12 @@ export function buildChart({
       entryIdSet.add(idByOrder.get(lowestOrder));
     }
   }
+
+  // The first node in source order is the first row of the skill's step table, the step a
+  // fresh start begins at (skill-steps.md § The step table). It is always an entry, even when
+  // a later step routes back to it (a REVIEW that sends a failed grade to FIRST-RUN), so the
+  // chart still shows where a first run begins.
+  if (nodes.length > 0) entryIdSet.add(nodes[0].id);
 
   const entries = [...entryIdSet].sort(
     (a, b) => nodeById.get(a).order - nodeById.get(b).order

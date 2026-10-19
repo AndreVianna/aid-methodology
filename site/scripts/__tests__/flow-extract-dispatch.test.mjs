@@ -246,14 +246,14 @@ describe('extractDispatch — aid-describe: richest corpus fixture', () => {
     expect(names[4]).toBe('COMPLETION');
   });
 
-  it('COMPLETION is the only exit (has HALT terminal naming /aid-define, reached after the approval pause)', () => {
+  it('COMPLETION is the only exit (has HALT terminal, reached after the approval pause)', () => {
     // Mutant: omit terminal for the HALT advance → no exit node.
     // The approval is a pause inside the step, so the exit is HALT, not ASK.
     const completion = chart.nodes.find((n) => n.name === 'COMPLETION');
     expect(chart.exits).toEqual([completion.id]);
     expect(completion.terminal).not.toBeNull();
     expect(completion.terminal.advanceType).toBe('HALT');
-    expect(completion.terminal.handoff).toContain('/aid-define');
+    expect(completion.terminal.handoff).toMatch(/approves the requirements/);
   });
 
   it('FIRST-RUN is the entry', () => {
@@ -668,6 +668,22 @@ describe('extractDispatch — all 12 D1 skills produce valid charts', () => {
       }
     }
     expect(checked).toBeGreaterThan(1);
+  });
+
+  it('the first row of the step table is an ENTRY, even when a later step routes back to it', () => {
+    // `aid-plan`'s REVIEW sends a below-minimum grade back to FIRST-RUN, which gives FIRST-RUN an
+    // inbound edge. It is still where a fresh run starts, so the chart must list it.
+    // Mutant: compute entries from in-degree alone → FIRST-RUN drops out of aid-plan's entries.
+    const plan = extractDispatch('aid-plan', null, REPO_ROOT);
+    const firstRun = plan.nodes.find((n) => n.name === 'FIRST-RUN');
+    expect(plan.edges.some((e) => e.to === firstRun.id && e.from !== firstRun.id)).toBe(true);
+    expect(plan.entries).toContain(firstRun.id);
+
+    // Whole-corpus form: the lowest-order node of every D1 chart is an entry.
+    for (const skill of D1_SKILLS) {
+      const c = extractDispatch(skill, null, REPO_ROOT);
+      expect(c.entries, `${skill}:${c.nodes[0].name}`).toContain(c.nodes[0].id);
+    }
   });
 });
 

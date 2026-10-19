@@ -183,7 +183,7 @@ orchestrator side after the sub-agent reports back — that is a second,
 redundant, idempotent write, not a substitute for this one; the sub-agent
 must not skip its own write on the assumption "the orchestrator will do it.")
 
-**Advance:** **CHAIN** → [State: DONE] after triage, findings write, and the terminal State write above (continue inline); **HALT** when a `[CRITICAL]` persists after the fix-on-spot (the task stays `Failed` and the work `Blocked`).
+**Advance:** **CHAIN** → [State: DONE] once the triage, the findings write and the terminal State write are done; **HALT** when a `[CRITICAL]` persists after the fix-on-spot (the task stays `Failed` and the work `Blocked`).
 
 > **Two-tier model contract (feature-004 SPEC §State Machines):** Per-task REVIEW
 > runs the quick-check pass only. **No grade is computed at the task level.**

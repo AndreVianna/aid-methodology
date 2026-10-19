@@ -307,6 +307,19 @@ describe('buildChart — entries', () => {
     expect(chart.entries).toEqual(['n1']);
   });
 
+  it('the first node is an entry even when a later step routes back to it', () => {
+    // FIRST-RUN is the first row of the step table; REVIEW sends a failed grade back to it.
+    // The loop-back gives it an inbound edge, and it must still be shown as a start.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test',
+      confidence: 'approximate',
+      nodes: [node(1, 'FIRST-RUN'), node(2, 'CONFIRM'), node(3, 'REVIEW'), node(4, 'DONE', halt())],
+      edges: [edge('n1', 'n3'), edge('n2', 'n3'), edge('n3', 'n1'), edge('n3', 'n4')],
+      sources: [],
+    });
+    expect(chart.entries).toEqual(['n1', 'n2']);
+  });
+
   it('entries ids are all valid node ids in the chart', () => {
     const chart = buildChart({
       skill: 'aid-test', shape: 'residual', extractor: 'test',
@@ -2255,17 +2268,16 @@ describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
     expect(_reentry).toBeDefined();
   });
 
-  it('COMPLETION is in exits, HALT terminal, handoff mentioning /aid-define', () => {
+  it('COMPLETION is in exits, HALT terminal, handoff saying when the run ends', () => {
     expect(_dCompletion).toBeDefined();
     expect(_dChart.exits).toContain(_dCompletion.id);
     expect(_dCompletion.terminal.advanceType).toBe('HALT');
 
-    // The AC names `/aid-define` specifically, and asserting only `!== null` would have
-    // passed while the handoff read "Run to decompose approved requirements into
-    // features" — the command deleted, the sentence left dangling. `_extractHandoff`
-    // removed backtick spans, and this corpus writes the resume command as code. It now
-    // unwraps them instead, so the one thing a handoff exists to convey survives.
-    expect(_dCompletion.terminal.handoff).toContain('/aid-define');
+    // The Advance line now holds only the case on which the run ends ("when the user approves
+    // the requirements"); the plain line naming `/aid-define {work}` sits in the step body.
+    // The backtick-unwrapping that keeps a named command in a hand-off is pinned in
+    // flow-advance.test.mjs.
+    expect(_dCompletion.terminal.handoff).toMatch(/approves the requirements/);
   });
 
   it('no W-1 residual-text warning', () => {

@@ -29,19 +29,21 @@ flowchart TB
   n2(["GUARD"])
   n3["UPDATE"]
   n4(["VERIFY"])
-  n5["PRESENT<br/>hard stop -- the user decides"]
+  n5{"PRESENT"}
   n6(["DONE"])
   n1 --> n2
   n2 -->|"when no seed was found, it has no unresolved question"| n3
   n3 --> n4
   n4 -. "when it is not clean and fewer than 3 cycles have run" .-> n3
   n4 -->|"when the verify is clean"| n5
-  n5 --> n6
+  n5 -. "when the user asks for changes" .-> n3
+  n5 -->|"when the user approves"| n6
+  n5 -->|"when the user declines (the revision is rolled back first)"| n6
   class n1 aidExit
   class n2 aidExit
   class n3 aidStep
   class n4 aidExit
-  class n5 aidStep
+  class n5 aidDecision
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -92,23 +94,19 @@ found in INTAKE.
 
 <a id="fragment-n3"></a>**3 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L98-L106" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L98-L102" wrap
 ## State: UPDATE
 
-Dispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.
-Apply the **byte-range write discipline** (`feature-003 §4`, feature-002 §3c *Mechanics*):
-read the whole `roadmap.md` file, identify the `## MVP` byte range (the literal heading
-`## MVP`, matched exactly, through to the next heading of level 2 or shallower, or EOF),
-replace only that range with the new content, and write the file back with every byte
-outside that range **byte-identical** -- no reformatting, no whitespace change, no
-re-ordering of any other region.
+**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
+named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
+relative path, so PRESENT can restore them if the user declines.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L98-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L106) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L98-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L137)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L98-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L102) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L98-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L141)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L141-L145" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L145-L149" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -116,25 +114,25 @@ defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escal
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L141-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L141-L145) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L141-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L141-L147)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L145-L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L145-L149) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L145-L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L145-L151)
 
-<a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _step_
+<a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L151-L154" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L155-L158" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revised `## MVP` section clearly.
+Present the revised `## MVP` section clearly.
 Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L151-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L151-L154) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L151-L167`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L151-L167)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L155-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L158) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L155-L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L182)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L171-L173" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L186-L188" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L171-L173`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L171-L173) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L171-L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L171-L175)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L186-L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L186-L188) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L186-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L186-L190)

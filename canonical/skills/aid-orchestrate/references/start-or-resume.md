@@ -68,6 +68,13 @@ and from no other file or folder. `phase:` is a display label and never routes.
 Ask the open questions first: every `qa:` entry in state `Pending` or `Skipped`, in the usual
 groups (FR-17), before the work goes on. A `Skipped` question is offered again here.
 
+Record each answer with `--answer`, and then set the lifecycle back to `Running` through the writer,
+aimed at that work as in section 5 step 2 (`AID_STATE_FILE` and `AID_WORK_DIR`):
+`bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running`.
+Do this once every open question is answered or skipped, and also for a `Paused-Awaiting-Input` work that had none, so the
+skill started by HAND-OVER finds the work `Running` and runs it. An approval is never skipped: it stays
+open, and the work stays paused, until the user approves or declines.
+
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
 that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
 `Canceled` is finished: say so and end the run.

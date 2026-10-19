@@ -24,7 +24,7 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1["IDLE<br/>No active release; assess eligible deliveries and…"]
+  n1(["IDLE<br/>No active release; assess eligible deliveries and…"])
   n2(["SELECTING<br/>Eligible deliveries are presented to the user for inclusion…"])
   n3{"VERIFYING"}
   n4(["FIX-DECISION<br/>The checks failed in VERIFYING."])
@@ -41,7 +41,7 @@ flowchart TB
   n5 -->|"when every check passes"| n6
   n6 --> n7
   n8 -->|"on [1] New release"| n1
-  class n1 aidStep
+  class n1 aidEntry
   class n2 aidExit
   class n3 aidDecision
   class n4 aidExit
@@ -62,7 +62,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `IDLE`** — No active release; assess eligible deliveries and… · _step_
+<a id="fragment-n1"></a>**1 · `IDLE`** — No active release; assess eligible deliveries and… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L188" wrap
 | IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
@@ -76,7 +76,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L48)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L50)
 
 <a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _decision_
 
@@ -92,7 +92,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L191) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L19)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L191) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L21)
 
 <a id="fragment-n5"></a>**5 · `RE-VERIFY`** — The user chose to fix the failed checks here. · _decision_
 

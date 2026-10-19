@@ -308,4 +308,4 @@ Update `<STATE_FILE>`:
 
 Print: `[APPLY] {N} doc(s) edited. Advancing to REVIEW.`
 
-**Advance:** CHAIN -> REVIEW (continue inline).
+**Advance:** CHAIN → REVIEW (continue inline).

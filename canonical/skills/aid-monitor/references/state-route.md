@@ -57,6 +57,6 @@ If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print
 consider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,
 never auto-invoked; silent (no output) if no issue-tracker connector is catalogued.
 
-The approval question of Step 4 pauses this step where it stands (`--step` with a `--detail` that says the route approval is open). Steps 5 and 6 run once the user has approved or adjusted the routes. The fix and new-work requests of Step 5 go back to `/aid-orchestrate`, the intake, as plain requests.
+The approval question of Step 4 pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. Steps 5 and 6 run once the user has approved or adjusted the routes. The fix and new-work requests of Step 5 go back to `/aid-orchestrate`, the intake, as plain requests.
 
 **Advance:** **HALT**.

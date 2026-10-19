@@ -17,10 +17,12 @@ The skill guide in `.aid/runtime/rules.md` sends a plain request here; a typed c
 Work through the steps in order, as `.aid/runtime/templates/skill-steps.md` sets them. Load
 each reference when its step comes up. No work is created before FIND-OR-CREATE.
 
-A step that acts on a work that already exists (a continued work, CANCEL, CLOSE) writes no `--step`
-of its own into that work's record: the record keeps its saved skill, step and `step_detail`, and
-the only writes are the answers (`--answer`) and the cancel or close the user confirmed. A new
-work is saved from the gate's `--create`, with RECORD-INTENT as its first step.
+A step that acts on a work that already exists (a continued work, CANCEL, CLOSE) follows
+`skill-steps.md` § Acting on an existing work: it writes no `--step` of its own into that work's
+record, which keeps its saved skill, step and `step_detail`. The only writes are the answers to the
+work's open questions (`--answer`), the lifecycle set back to `Running` through the writer once every one is
+answered or skipped, and the cancel or close the user confirmed. A new work is saved from the gate's `--create`,
+with RECORD-INTENT as its first step.
 
 1. **Project question** (`PROJECT-QUESTION`). `references/check-intent.md` step 0 spots a question about the
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
@@ -52,7 +54,9 @@ work is saved from the gate's `--create`, with RECORD-INTENT as its first step.
 6a. **Ask before going on** (`ASK-FIRST`). Ask one question when several works plausibly match
    (`references/start-or-resume.md` section 3a), and ask every open `qa:` question of a resumed
    work (section 4). The questions pause the step where it stands; when the answer is "a new work",
-   the gate then creates it (section 3). Skip this step when neither applies.
+   the gate then creates it (section 3). Once the resumed work's open questions are answered, record
+   each answer with `--answer` and set its lifecycle back to `Running` through the writer (section 4).
+   Skip this step when neither applies.
    **Advance:** **CHAIN** → RECORD-INTENT.
 7. **Record the intent** (`RECORD-INTENT`). `references/start-or-resume.md` section 6. The record's keys are set
    through the writer only, never by hand; a continued work already holds its intent and writes nothing.

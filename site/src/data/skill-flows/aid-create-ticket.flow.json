@@ -32,7 +32,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on an unknown stem and on the notify exit above"
+        "handoff": "on an unknown stem, and on the notify exit"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
@@ -67,7 +67,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on the cross-tracker stop above"
+        "handoff": "on the cross-tracker stop"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
@@ -161,7 +161,7 @@
         "startLine": 102,
         "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR when the arguments parse; **HALT** when the usage line was printed."
+        "excerpt": "**Advance:** **CHAIN** → [State: RESOLVE-CONNECTOR] when the arguments parse; **HALT** when the usage line was printed."
       }
     },
     {
@@ -175,7 +175,7 @@
         "startLine": 118,
         "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above."
+        "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit."
       }
     },
     {
@@ -189,7 +189,7 @@
         "startLine": 118,
         "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above."
+        "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit."
       }
     },
     {
@@ -203,7 +203,7 @@
         "startLine": 129,
         "endLine": 129,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline)."
+        "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline)."
       }
     },
     {
@@ -217,7 +217,7 @@
         "startLine": 129,
         "endLine": 129,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline)."
+        "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline)."
       }
     },
     {
@@ -231,7 +231,7 @@
         "startLine": 157,
         "endLine": 157,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline); **HALT** on the cross-tracker stop above."
+        "excerpt": "**Advance:** **CHAIN** → [State: LEVEL-RESOLVE] (continue inline); **HALT** on the cross-tracker stop."
       }
     },
     {
@@ -245,7 +245,7 @@
         "startLine": 183,
         "endLine": 183,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: CONFIRM (continue inline)."
+        "excerpt": "**Advance:** **CHAIN** → [State: CONFIRM] (continue inline)."
       }
     },
     {
@@ -259,7 +259,7 @@
         "startLine": 212,
         "endLine": 213,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`; **CHAIN** → State: COMPOSE on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
+        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
       }
     },
     {
@@ -273,7 +273,7 @@
         "startLine": 212,
         "endLine": 213,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`; **CHAIN** → State: COMPOSE on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
+        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
       }
     },
     {
@@ -287,7 +287,7 @@
         "startLine": 230,
         "endLine": 230,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: RETURN-REF (continue inline)."
+        "excerpt": "**Advance:** **CHAIN** → [State: RETURN-REF] (continue inline)."
       }
     }
   ],

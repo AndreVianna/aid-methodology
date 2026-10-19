@@ -32,7 +32,7 @@ flowchart TB
   n1 -->|"once the feature sections are written"| n2
   n2 -. "otherwise" .- n2
   n2 -->|"once the cross-reference questions are answered and their answers applied"| n3
-  n3 -->|"when the user picks [2"| n2
+  n3 -->|"when the user picks [2]"| n2
   class n1 aidEntry
   class n2 aidLoopBack
   class n3 aidExit
@@ -66,4 +66,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DONE | `references/state-done.md` | `inline` | CHAIN → CROSS-REFERENCE when the user picks [2]; HALT when the user picks another option |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L41)
+[Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L46)

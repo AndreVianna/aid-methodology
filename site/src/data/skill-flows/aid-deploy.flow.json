@@ -10,7 +10,7 @@
       "order": 1,
       "name": "IDLE",
       "label": "No active release; assess eligible deliveries and…",
-      "kind": "step",
+      "kind": "entry",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
@@ -47,9 +47,9 @@
       "detail": {
         "file": "canonical/skills/aid-deploy/references/state-selecting.md",
         "startLine": 1,
-        "endLine": 48,
+        "endLine": 50,
         "sourceKind": "worker",
-        "excerpt": "# State: SELECTING\n\nEligible deliveries are presented to the user for inclusion in this release; a package file is created.\n\n**Who asks.** This step runs in the main conversation (inline), because it puts questions to the user; a worker never asks. It uses what IDLE gathered (the eligible deliveries and the knowledge-base facts).\n\n### Step 2: Select Deliveries\n\nPresent eligible deliveries to the user:\n\n```\nReady to ship:\n  ✅ delivery-001: User Authentication (4 tasks, all A or above)\n  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)\n\nAlready shipped:\n  📦 delivery-003: Core Models (in package-001-mvp)\n\nNot ready:\n  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)\n\nWhich deliveries should be in this release? [all ready / select / cancel]\n```\n\nIf user selects \"all ready\" → include all eligible.\nIf user selects specific ones → include only those.\nIf user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written, and the run ends (the advance line below).\n\nAsk for:\n- Version/tag name (suggest based on versioning scheme from KB)\n- Package name slug (for the filename: `package-NNN-{slug}.md`)\n- Only when infrastructure.md has no Deployment section or its project type is unclear: how the\n  project gets packaged and deployed (build output, target, environment). Ask it through the question\n  protocol (`.aid/runtime/templates/question-protocol.md`), so the answer is recorded in the work's\n  `STATE.yml` `qa`. Asked in this same exchange, so the question is answered before PACKAGING needs it.\n\nCreate the package file from template (`../../../aid/templates/package.md`):\n- Fill in: deliveries, deployment type/target from KB, environment from KB\n- Determine package number (next sequential after existing packages)\n- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.\n\nThe questions above are blocking: this step pauses on them until they are answered, and then carries on\nthrough the package file and the status update.\n\n**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels.\n"
+        "excerpt": "# State: SELECTING\n\nEligible deliveries are presented to the user for inclusion in this release; a package file is created.\n\n**Who asks.** This step runs in the main conversation (inline), because it puts questions to the user; a worker never asks. It uses what IDLE gathered (the eligible deliveries and the knowledge-base facts).\n\n### Step 2: Select Deliveries\n\nPresent eligible deliveries to the user:\n\n```\nReady to ship:\n  ✅ delivery-001: User Authentication (4 tasks, all A or above)\n  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)\n\nAlready shipped:\n  📦 delivery-003: Core Models (in package-001-mvp)\n\nNot ready:\n  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)\n\nWhich deliveries should be in this release? [all ready / select / cancel]\n```\n\nIf user selects \"all ready\" → include all eligible.\nIf user selects specific ones → include only those.\nIf user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written. Set the lifecycle to\n`Paused-Awaiting-Input` and the pause reason to 'Release selection canceled -- run /aid-deploy to select deliveries again'\nthrough the writer, and the run ends (the advance line below).\n\nAsk for:\n- Version/tag name (suggest based on versioning scheme from KB)\n- Package name slug (for the filename: `package-NNN-{slug}.md`)\n- Only when infrastructure.md has no Deployment section or its project type is unclear: how the\n  project gets packaged and deployed (build output, target, environment). Ask it through the question\n  protocol (`.aid/runtime/templates/question-protocol.md`), so the answer is recorded in the work's\n  `STATE.yml` `qa`. Asked in this same exchange, so the question is answered before PACKAGING needs it.\n\nCreate the package file from template (`../../../aid/templates/package.md`):\n- Fill in: deliveries, deployment type/target from KB, environment from KB\n- Determine package number (next sequential after existing packages)\n- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.\n\nThe questions above are blocking: this step pauses on them until they are answered, and then carries on\nthrough the package file and the status update.\n\n**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels.\n"
       }
     },
     {
@@ -82,7 +82,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "when the user loops back to /aid-execute (after the writes above)"
+        "handoff": "when the user loops back to /aid-execute"
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
@@ -94,9 +94,9 @@
       "detail": {
         "file": "canonical/skills/aid-deploy/references/state-fix-decision.md",
         "startLine": 1,
-        "endLine": 19,
+        "endLine": 21,
         "sourceKind": "worker",
-        "excerpt": "# State: FIX-DECISION\n\nThe checks failed in VERIFYING. The user decides whether to fix the failures here or loop back to aid-execute.\n\n### Step 3a: Decide\n\n- Show the failures logged in `{{LEDGER}}` (one line each).\n- Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?\n- Fix here is offered while fewer than three fix attempts have been made. After the third failed\n  attempt, only the loop back is offered.\n- If looping back: set work `STATE.yml`'s Deploy State (`deploy` key) → Idle, keep package file as Draft.\n  Delete ledger: `rm -f {{LEDGER}}`. Then name `/aid-execute` as the skill to run next, in one plain line.\n\nThe question is blocking: this step pauses on it until the user answers, and then goes on with the\nbranch the user chose.\n\n**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here; **HALT** when the user loops back to\n`/aid-execute` (after the writes above).\n"
+        "excerpt": "# State: FIX-DECISION\n\nThe checks failed in VERIFYING. The user decides whether to fix the failures here or loop back to aid-execute.\n\n### Step 3a: Decide\n\n- Show the failures logged in `{{LEDGER}}` (one line each).\n- Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?\n- Fix here is offered while fewer than three fix attempts have been made. After the third failed\n  attempt, only the loop back is offered.\n- If looping back: set work `STATE.yml`'s Deploy State (`deploy` key) → Idle, keep package file as Draft.\n  Delete ledger: `rm -f {{LEDGER}}`. Set the lifecycle to `Paused-Awaiting-Input` and the pause reason to\n  'Release checks failed -- fix with /aid-execute, then run /aid-deploy again' through the writer. Then name\n  `/aid-execute` as the skill to run next, in one plain line.\n\nThe question is blocking: this step pauses on it until the user answers, and then goes on with the\nbranch the user chose.\n\n**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here; **HALT** when the user loops back to\n`/aid-execute` (after the writes above).\n"
       }
     },
     {
@@ -217,8 +217,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-deploy/references/state-selecting.md",
-        "startLine": 47,
-        "endLine": 47,
+        "startLine": 49,
+        "endLine": 49,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels."
       }
@@ -259,8 +259,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-deploy/references/state-fix-decision.md",
-        "startLine": 17,
-        "endLine": 18,
+        "startLine": 19,
+        "endLine": 20,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here; **HALT** when the user loops back to\n`/aid-execute` (after the writes above)."
       }
@@ -323,6 +323,7 @@
     }
   ],
   "entries": [
+    "n1",
     "n8"
   ],
   "exits": [

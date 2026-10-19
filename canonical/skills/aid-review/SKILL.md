@@ -90,7 +90,7 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
 Run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree). Note
 whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -103,7 +103,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.
 3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** ASK → [State: ALLOCATE].
 
 ---
 
@@ -124,7 +124,7 @@ Allocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiati
 Every `--step` call in this skill passes in its `--detail` the target, method, criteria, complexity tier and the
   plan the user confirmed, so a resume finds them in the record.
 
-**Advance:** CHAIN -> [State: REVIEW].
+**Advance:** CHAIN → [State: REVIEW].
 
 ---
 
@@ -149,7 +149,7 @@ Purpose: gather evidence and produce the grounded findings ledger.
    `# | Severity | Status | Doc | Line | Description | Evidence`) to
    `.aid/.temp/review-pending/<work>-review.md`.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -173,7 +173,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for
 the presentation as information only -- it does NOT drive a fix loop here.
 
-**Advance:** CHAIN -> [State: PRESENT-FINDINGS] when the grade is clean; CHAIN -> [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -190,7 +190,7 @@ The hard stop follows the ASK step of `skill-steps.md`. Present:
 Then STOP and await the human's decision (approve / edit the text / choose a different
 delivery / do not publish). Nothing is posted to any external target until they approve.
 
-**Advance:** ASK -> [State: PUBLISH].
+**Advance:** ASK → [State: PUBLISH].
 
 ---
 
@@ -206,7 +206,7 @@ inline-comment suggestions) for code; inline notes for a document. **Graceful fa
 no catalogued connector / unknown target -> present the exact text for the human to paste.
 Publishing is optional and never blocks DONE.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** CHAIN → [State: DONE].
 
 ---
 

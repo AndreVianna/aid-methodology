@@ -30,15 +30,16 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 --> n2
+  n1 -->|"when the gate allocated a new work"| n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
-  n4 --> n5
-  class n1 aidEntry
+  n4 -. "when the user declines or asks for changes" .-> n2
+  n4 -->|"when the user approves"| n5
+  class n1 aidExit
   class n2 aidStep
   class n3 aidExit
-  class n4 aidStep
+  class n4 aidLoopBack
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -50,7 +51,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L38-L48" wrap
 ## State: INTAKE
@@ -95,24 +96,24 @@ code** -- the `design` invariant (`design-lifecycle.md`).
 
 [Source: `canonical/skills/aid-design-data-model/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L72-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L72-L77)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L81-L84" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L81-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L86)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L81-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L89)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L90-L93" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L93-L96" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L93-L96)

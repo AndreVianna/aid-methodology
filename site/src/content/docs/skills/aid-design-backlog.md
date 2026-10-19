@@ -30,15 +30,16 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 --> n2
+  n1 -->|"when the gate allocated a new work"| n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
-  n4 --> n5
-  class n1 aidEntry
+  n4 -. "when the user declines or asks for changes" .-> n2
+  n4 -->|"when the user approves"| n5
+  class n1 aidExit
   class n2 aidStep
   class n3 aidExit
-  class n4 aidStep
+  class n4 aidLoopBack
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -50,7 +51,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L43-L54" wrap
 ## State: INTAKE
@@ -95,21 +96,21 @@ IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 [Source: `canonical/skills/aid-design-backlog/SKILL.md#L83-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L83-L87) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L83-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L83-L89)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L93-L97" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user decides whether to iterate further (re-invoke this skill) or realize it now
 (`/aid-create-backlog`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L93-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L97) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L93-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L99)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L93-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L97) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L93-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L102)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L103-L107" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L106-L110" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
@@ -117,4 +118,4 @@ stays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog
 here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L103-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L103-L107) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L103-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L103-L107)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L106-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L106-L110) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L106-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L106-L110)

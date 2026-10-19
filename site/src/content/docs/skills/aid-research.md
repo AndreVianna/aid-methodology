@@ -122,11 +122,11 @@ throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline
 analytically and state the resulting limit in the Gaps section.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L113-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L113-L119) · [full step: `canonical/skills/aid-research/SKILL.md#L113-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L113-L125)
+[Source: `canonical/skills/aid-research/SKILL.md#L113-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L113-L119) · [full step: `canonical/skills/aid-research/SKILL.md#L113-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L113-L124)
 
 <a id="fragment-n6"></a>**6 · `VERIFY`** — who reviews the researcher · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L129-L143" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L128-L142" wrap
 ## State: VERIFY  (who reviews the researcher)
 
 1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source
@@ -144,11 +144,11 @@ analytically and state the resulting limit in the Gaps section.
    surface it, and the run ends.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L129-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L129-L143) · [full step: `canonical/skills/aid-research/SKILL.md#L129-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L129-L147)
+[Source: `canonical/skills/aid-research/SKILL.md#L128-L142`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L128-L142) · [full step: `canonical/skills/aid-research/SKILL.md#L128-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L128-L146)
 
 <a id="fragment-n7"></a>**7 · `PRESENT`** — always a hard stop -- the user resolves · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L151-L156" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L150-L155" wrap
 ## State: PRESENT  (always a hard stop -- the user resolves)
 
 The hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:
@@ -157,11 +157,11 @@ the in-depth answer, conclusions (positive **and** negative), conflicts/contradi
 gaps are first-class, never buried under positives.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L151-L156`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L151-L156) · [full step: `canonical/skills/aid-research/SKILL.md#L151-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L151-L158)
+[Source: `canonical/skills/aid-research/SKILL.md#L150-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L150-L155) · [full step: `canonical/skills/aid-research/SKILL.md#L150-L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L150-L157)
 
 <a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L162-L169" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L161-L168" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Offer the natural next steps as **printed suggestions**, each requiring the user to act:
@@ -172,14 +172,14 @@ auto-invoked; never a resolution. Ask which one, if any, the user takes; a picke
 in one plain line.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L162-L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L162-L169) · [full step: `canonical/skills/aid-research/SKILL.md#L162-L171`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L162-L171)
+[Source: `canonical/skills/aid-research/SKILL.md#L161-L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L161-L168) · [full step: `canonical/skills/aid-research/SKILL.md#L161-L170`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L161-L170)
 
 <a id="fragment-n9"></a>**9 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L175-L177" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L174-L176" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L175-L177`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L175-L177) · [full step: `canonical/skills/aid-research/SKILL.md#L175-L179`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L175-L179)
+[Source: `canonical/skills/aid-research/SKILL.md#L174-L176`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L174-L176) · [full step: `canonical/skills/aid-research/SKILL.md#L174-L178`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L174-L178)

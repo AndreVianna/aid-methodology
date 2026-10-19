@@ -40,7 +40,7 @@
         "startLine": 35,
         "endLine": 53,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).\n\n1. **Check the target.** Note whether the argument is empty. Do not ask here.\n2. **Determine the verification kind** from the request (or the kind a sibling bound):\n   functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),\n   **performance** (workload/threshold/environment), **data-quality** (schema/freshness/\n   completeness/uniqueness), or **model-eval** (run the eval harness, assert metric vs\n   threshold). The framework is inferred from the KB (`test-landscape.md`).\n3. **Pick the path:** **Fast** -- a clear target + kind (\"run the security scan on the auth\n   module\", \"benchmark the /orders endpoint vs the p99 SLO\") -> run now. **Guided** -- vague\n   -> scope target / kind / threshold first, in INTAKE-ASK.\n4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /\n   medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.\n5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).\n\n1. **Check the target.** Note whether the argument is empty. Do not ask here.\n2. **Determine the verification kind** from the request (or the kind a sibling bound):\n   functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),\n   **performance** (workload/threshold/environment), **data-quality** (schema/freshness/\n   completeness/uniqueness), or **model-eval** (run the eval harness, assert metric vs\n   threshold). The framework is inferred from the KB (`test-landscape.md`).\n3. **Pick the path:** **Fast** -- a clear target + kind (\"run the security scan on the auth\n   module\", \"benchmark the /orders endpoint vs the p99 SLO\") -> run now. **Guided** -- vague\n   -> scope target / kind / threshold first, in INTAKE-ASK.\n4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /\n   medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.\n5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -62,7 +62,7 @@
         "startLine": 57,
         "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What should I test or verify?\"). The\n   answer is the target; the path and complexity are then set from it.\n2. **Guided path** -> scope target / kind / threshold.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK -> [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What should I test or verify?\"). The\n   answer is the target; the path and complexity are then set from it.\n2. **Guided path** -> scope target / kind / threshold.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {
@@ -84,7 +84,7 @@
         "startLine": 70,
         "endLine": 86,
         "sourceKind": "skill",
-        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-test`), its saved step (`RUN`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the target. The gate's `§ 3a` step 2 creates and enters the worktree (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. When `/aid-orchestrate`\n  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-test` writes none.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the verification kind, including one a sibling bound, so a\n  resume finds it in the record.\n\n**Advance:** CHAIN -> [State: RUN]."
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-test`), its saved step (`RUN`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the target. The gate's `§ 3a` step 2 creates and enters the worktree (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. When `/aid-orchestrate`\n  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-test` writes none.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the verification kind, including one a sibling bound, so a\n  resume finds it in the record.\n\n**Advance:** CHAIN → [State: RUN]."
       }
     },
     {
@@ -106,7 +106,7 @@
         "startLine": 90,
         "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "## State: RUN\n\nExecute the verification **read-only** (Bash: the test runner, scanner, benchmark, or\ndata-quality check per the kind; never mutate the source), capturing raw output. Then\ndispatch **`aid-reviewer`** (clean context, tiered) to **consolidate** the raw results into\nthe global 7-column findings ledger (`reviewer-ledger-schema.md`) at\n`.aid/.temp/review-pending/<work>-test.md`, applying the kind's guidance -- security:\nSAST/DAST/fuzz/audit findings + severity; performance: measured-vs-threshold with the\nworkload/environment noted; data-quality: per-check pass/fail with thresholds; functional:\npass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence\n(the run output + a `file:line` where applicable).\n\n**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "## State: RUN\n\nExecute the verification **read-only** (Bash: the test runner, scanner, benchmark, or\ndata-quality check per the kind; never mutate the source), capturing raw output. Then\ndispatch **`aid-reviewer`** (clean context, tiered) to **consolidate** the raw results into\nthe global 7-column findings ledger (`reviewer-ledger-schema.md`) at\n`.aid/.temp/review-pending/<work>-test.md`, applying the kind's guidance -- security:\nSAST/DAST/fuzz/audit findings + severity; performance: measured-vs-threshold with the\nworkload/environment noted; data-quality: per-check pass/fail with thresholds; functional:\npass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence\n(the run output + a `file:line` where applicable).\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
     },
     {
@@ -131,7 +131,7 @@
         "startLine": 106,
         "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.\n\n**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -153,7 +153,7 @@
         "startLine": 121,
         "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (hard stop -- human)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the consolidated findings, severity-ranked,\neach with its evidence; state pass/fail against any threshold; and a printed suggestion:\n\"N issues found -- run `/aid-fix` to address them.\" Assert no resolution.\n\n**Advance:** ASK -> [State: HANDOFF]."
+        "excerpt": "## State: PRESENT  (hard stop -- human)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the consolidated findings, severity-ranked,\neach with its evidence; state pass/fail against any threshold; and a printed suggestion:\n\"N issues found -- run `/aid-fix` to address them.\" Assert no resolution.\n\n**Advance:** ASK → [State: HANDOFF]."
       }
     },
     {
@@ -175,7 +175,7 @@
         "startLine": 131,
         "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked. Ask which one,\nif any, the user takes; a picked one is named in one plain line.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked. Ask which one,\nif any, the user takes; a picked one is named in one plain line.\n\n**Advance:** ASK → [State: DONE]."
       }
     },
     {
@@ -230,7 +230,7 @@
         "startLine": 53,
         "endLine": 53,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE]."
+        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -244,7 +244,7 @@
         "startLine": 53,
         "endLine": 53,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE]."
+        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -258,7 +258,7 @@
         "startLine": 66,
         "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: ALLOCATE]."
+        "excerpt": "**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {
@@ -272,7 +272,7 @@
         "startLine": 86,
         "endLine": 86,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: RUN]."
+        "excerpt": "**Advance:** CHAIN → [State: RUN]."
       }
     },
     {
@@ -286,7 +286,7 @@
         "startLine": 102,
         "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
     },
     {
@@ -300,7 +300,7 @@
         "startLine": 117,
         "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -314,7 +314,7 @@
         "startLine": 117,
         "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -328,7 +328,7 @@
         "startLine": 127,
         "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: HANDOFF]."
+        "excerpt": "**Advance:** ASK → [State: HANDOFF]."
       }
     },
     {
@@ -342,7 +342,7 @@
         "startLine": 137,
         "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: DONE]."
+        "excerpt": "**Advance:** ASK → [State: DONE]."
       }
     }
   ],

@@ -151,4 +151,4 @@ Print:
 [CONFIRM] Cancelled -- no KB edit made. Run-state cleaned.
 ```
 
-**Advance:** CHAIN -> APPLY when the user confirms; CHAIN -> SCOPE when the user adjusts; CHAIN -> ANALYZE when the adjustment corrects the Understanding itself; HALT when the user cancels.
+**Advance:** CHAIN → APPLY when the user confirms; CHAIN → SCOPE when the user adjusts; CHAIN → ANALYZE when the adjustment corrects the Understanding itself; HALT when the user cancels.

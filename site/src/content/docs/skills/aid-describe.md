@@ -90,4 +90,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | CHAIN → CONTINUE when the user adds a consideration; HALT when the user approves, naming `/aid-define {work}` |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L245`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L245) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L154)
+[Source: `canonical/skills/aid-describe/SKILL.md#L245`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L245) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L160`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L160)

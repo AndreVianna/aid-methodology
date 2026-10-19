@@ -34,7 +34,7 @@ flowchart TB
   n5(["DISPLAY"])
   n1 --> n2
   n2 -->|"on the two-or-more branch"| n3
-  n2 -->|"when a connector resolves without asking (explicit stem, single match, or host…"| n4
+  n2 -->|"when a connector resolves without asking (stem, one match)"| n4
   n3 --> n4
   n4 -->|"on success"| n5
   class n1 aidEntry

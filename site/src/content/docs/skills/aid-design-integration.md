@@ -30,15 +30,16 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 --> n2
+  n1 -->|"when the gate allocated a new work"| n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
-  n4 --> n5
-  class n1 aidEntry
+  n4 -. "when the user declines or asks for changes" .-> n2
+  n4 -->|"when the user approves"| n5
+  class n1 aidExit
   class n2 aidStep
   class n3 aidExit
-  class n4 aidStep
+  class n4 aidLoopBack
   class n5 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -50,7 +51,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L37-L47" wrap
 ## State: INTAKE
@@ -95,24 +96,24 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 
 [Source: `canonical/skills/aid-design-integration/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L71-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L71-L76)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L80-L83" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L80-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L85)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L80-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L88)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L89-L92" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L92-L95" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L89-L92) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L89-L92)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L92-L95) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L92-L95)

@@ -81,11 +81,15 @@ continues at come only from its work record.
 Every `--step` call after the allocation passes in its `--detail` the change, the destination, whether a workflow file is wanted, the derived
 outputs the user named and the complexity tier, so a resume finds them in the record.
 
-**Advance:** CHAIN -> [State: UPDATE]; HALT when the destination is absent (the route above).
+**Advance:** CHAIN → [State: UPDATE]; HALT when the destination is absent.
 
 ---
 
 ## State: UPDATE
+
+**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
+named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
+relative path, so PRESENT can restore them if the user declines.
 
 1. **Apply only the change the user named in this run**, to the owned C8 content, per the
    content rules below.
@@ -94,7 +98,7 @@ outputs the user named and the complexity tier, so a resume finds them in the re
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -103,17 +107,28 @@ outputs the user named and the complexity tier, so a resume finds them in the re
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say whether a workflow file was
+Present the revision, say whether a workflow file was
 touched and that it was asked for, name every output touched, and assert that a consumed seed
 is gone.
 
-**Advance:** ASK -> [State: DONE].
+Then ask the approval question: keep this revision, change it, or decline it. It is an approval under
+`.aid/runtime/templates/question-protocol.md`: record it with `--ask` (category `Approval`, `covers` the revision), set
+`lifecycle` to `Paused-Awaiting-Input` and the pause reason through the writer, and ask. The question pauses this step
+where it stands and cannot be skipped. Once it is answered, record the answer with `--answer` and set `lifecycle` back to
+`Running` through the writer (`skill-steps.md` part 3). Then:
+
+- **Approve:** the revision stays as written.
+- **Change:** the changes the user asks for go into the step detail, and UPDATE applies them; the verify runs again.
+- **Decline:** copy every file saved under `rollback/` back to its place (a consumed seed included), so the Knowledge
+  Base is as it was before this run and nothing lands.
+
+**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes.
 
 ---
 

@@ -44,7 +44,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -58,7 +58,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope the direction, the success signal and the fidelity.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** ASK → [State: ALLOCATE].
 
 ---
 
@@ -82,7 +82,7 @@ Allocate the work through the gate: the Work Initiation Gate
 Every `--step` call in this skill passes in its `--detail` the direction, the fidelity, the success signal, the scope
 boundary and the complexity tier, so a resume finds them in the record.
 
-**Advance:** CHAIN -> [State: BUILD].
+**Advance:** CHAIN → [State: BUILD].
 
 ---
 
@@ -95,7 +95,7 @@ job is production code), keeping the throwaway/non-production boundary crisp. Al
 stay in the work folder / opt-in worktree and **never touch production modules**. It writes
 a validation assessment (see [Deliverable](#deliverable)) into the work folder.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -108,7 +108,7 @@ actually built, and (b) the **throwaway scope was respected** -- no production c
 nothing was committed to real modules. If the check fails, return to BUILD once to correct;
 do not loop on polish.
 
-**Advance:** CHAIN -> [State: BUILD] when the check fails the first time; otherwise CHAIN -> [State: PRESENT].
+**Advance:** CHAIN → [State: BUILD] when the check fails the first time; otherwise CHAIN → [State: PRESENT].
 
 ---
 
@@ -118,7 +118,7 @@ The hard stop follows the ASK step of `skill-steps.md`. Present the throwaway mo
 assessment: **Direction · What was built (fidelity) · Success signal — observed or not ·
 What we learned · viable? (a conclusion, not a resolution).** Assert no resolution.
 
-**Advance:** ASK -> [State: HANDOFF].
+**Advance:** ASK → [State: HANDOFF].
 
 ---
 
@@ -129,7 +129,7 @@ Printed suggestions the user may act on: build the validated thing for real
 (`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution. Ask which one, if
 any, the user takes; a picked one is named in one plain line.
 
-**Advance:** ASK -> [State: DONE].
+**Advance:** ASK → [State: DONE].
 
 ---
 

@@ -29,7 +29,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on the unknown-stem or notify branches above"
+        "handoff": "when the stem is unknown or no connector is found"
       },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
@@ -64,7 +64,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on failure per the policy above"
+        "handoff": "when the call fails"
       },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
@@ -121,21 +121,21 @@
         "startLine": 92,
         "endLine": 94,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → FETCH when a connector resolves without asking (explicit stem,\nsingle match, or host MCP); **CHAIN** → PICK-CONNECTOR on the two-or-more branch;\n**HALT** on the unknown-stem or notify branches above."
+        "excerpt": "**Advance:** **CHAIN** → FETCH when a connector resolves without asking (stem, one match);\n**CHAIN** → PICK-CONNECTOR on the two-or-more branch;\n**HALT** when the stem is unknown or no connector is found."
       }
     },
     {
       "from": "n2",
       "to": "n4",
       "kind": "branch",
-      "condition": "when a connector resolves without asking (explicit stem, single match, or host…",
+      "condition": "when a connector resolves without asking (stem, one match)",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
         "startLine": 92,
         "endLine": 94,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → FETCH when a connector resolves without asking (explicit stem,\nsingle match, or host MCP); **CHAIN** → PICK-CONNECTOR on the two-or-more branch;\n**HALT** on the unknown-stem or notify branches above."
+        "excerpt": "**Advance:** **CHAIN** → FETCH when a connector resolves without asking (stem, one match);\n**CHAIN** → PICK-CONNECTOR on the two-or-more branch;\n**HALT** when the stem is unknown or no connector is found."
       }
     },
     {
@@ -163,7 +163,7 @@
         "startLine": 116,
         "endLine": 116,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → DISPLAY on success; **HALT** on failure per the policy above."
+        "excerpt": "**Advance:** **CHAIN** → DISPLAY on success; **HALT** when the call fails."
       }
     }
   ],

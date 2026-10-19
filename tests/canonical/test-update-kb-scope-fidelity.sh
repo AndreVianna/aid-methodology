@@ -440,7 +440,7 @@ assert_eq "$RESOLVED_FLOOR" "$GLOBAL_FLOOR" \
 # re-plan Adjustments/Consideration channel wired to SCOPE/ANALYZE
 # =============================================================================
 
-assert_file_contains "$SKILL_MD" 'CHAIN -> DONE when the user approves' \
+assert_file_contains "$SKILL_MD" 'CHAIN → DONE when the user approves' \
   "UK92 SKILL.md Dispatch table's APPROVAL row reads the answer and CHAINs to DONE on approval (Q159)"
 
 assert_file_not_contains "$SKILL_MD" 'PAUSE-FOR-USER-ACTION -> DONE on approval' \

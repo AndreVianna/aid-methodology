@@ -259,7 +259,7 @@ escalation was triggered:
 
 Print: `[ANALYZE] Impact Map ready. {N} location(s) recorded. Advancing to SCOPE.`
 
-**Advance:** CHAIN -> SCOPE (continue inline).
+**Advance:** CHAIN → SCOPE (continue inline).
 
 If ANALYZE finds NO location the instruction concerns at all (a truly empty
 Impact Map -- the instruction does not describe anything KB-relevant),

@@ -262,7 +262,7 @@ conversation half). This worktree's branch is what ANALYZE's Step 0 records
 as `**Branch:**` in the run-state file -- DONE never creates a separate
 branch, it only ever commits on this one.
 
-**Advance:** CHAIN -> ANALYZE (State Detection, below, resolves the state to
+**Advance:** CHAIN → ANALYZE (State Detection, below, resolves the state to
 resume inside the entered worktree).
 
 ---
@@ -443,13 +443,13 @@ aid-update-kb  > you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (a concept that cannot be grounded is asked in the step first -- Q&A escalation to `.aid/knowledge/STATE.md`) |
-| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
-| CONFIRM | `references/state-confirm.md` | inline (human gate) | CHAIN -> APPLY when the user confirms; CHAIN -> SCOPE when the user adjusts; CHAIN -> ANALYZE when the adjustment corrects the understanding; HALT when the user cancels |
-| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
-| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 3 endings (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> CHAIN -> CONFIRM; READY -> CHAIN -> APPROVAL. Below the gate (scope-diff already PASS), the fix pass runs inside the step and the review runs again |
-| APPROVAL | `references/state-approval.md` | inline | CHAIN -> DONE when the user approves; CHAIN -> SCOPE when the user adds a consideration; CHAIN -> ANALYZE when the consideration challenges the understanding |
-| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state); a closure shortfall goes back instead: CHAIN -> APPLY (fixable within Confirmed Scope) or CHAIN -> CONFIRM (needs an out-of-scope addition) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN → SCOPE (a concept that cannot be grounded is asked in the step first -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN → CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | CHAIN → APPLY when the user confirms; CHAIN → SCOPE when the user adjusts; CHAIN → ANALYZE when the adjustment corrects the understanding; HALT when the user cancels |
+| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN → REVIEW |
+| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 3 endings (`state-review.md § Step 4`): incomplete APPLY -> CHAIN → APPLY; out-of-scope disk edit -> CHAIN → CONFIRM; READY -> CHAIN → APPROVAL. Below the gate (scope-diff already PASS), the fix pass runs inside the step and the review runs again |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE when the user approves; CHAIN → SCOPE when the user adds a consideration; CHAIN → ANALYZE when the consideration challenges the understanding |
+| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state); a closure shortfall goes back instead: CHAIN → APPLY (fixable within Confirmed Scope) or CHAIN → CONFIRM (needs an out-of-scope addition) |
 
 > **FIX loop.** Once the scope-diff guard has already PASSED, only grade /
 > teach-back / act-back / `[TRACE-1]` findings route to the FIX cycle
@@ -458,7 +458,7 @@ aid-update-kb  > you are here
 > (HL-7). Scope-diff outcomes never reach this loop: an incomplete APPLY (a
 > Confirmed-Scope doc not yet edited) chains straight back to APPLY, and an
 > out-of-scope disk edit escalates to the user
-> (CHAIN -> CONFIRM) instead of expanding scope -- see
+> (CHAIN → CONFIRM) instead of expanding scope -- see
 > `references/state-review.md § Step 4` for the full 4-outcome routing.
 > The minimum grade resolves via:
 > `bash .aid/runtime/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`

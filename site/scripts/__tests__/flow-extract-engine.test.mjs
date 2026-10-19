@@ -241,9 +241,9 @@ describe('AC-6 — validateChart passes', () => {
     expect(createApiChart.exits).toContain(approvalHaltNode.id);
   });
 
-  it('APPROVAL-HALT node has terminal.advanceType === "ASK" (ASK then HALT)', () => {
+  it('APPROVAL-HALT node has terminal.advanceType === "HALT" (the run ends once approved or dropped)', () => {
     const approvalHaltNode = createApiChart.nodes.find((n) => n.name === 'APPROVAL-HALT');
-    expect(approvalHaltNode.terminal.advanceType).toBe('ASK');
+    expect(approvalHaltNode.terminal.advanceType).toBe('HALT');
   });
 
   it('APPROVAL-HALT node has a non-null terminal.handoff', () => {

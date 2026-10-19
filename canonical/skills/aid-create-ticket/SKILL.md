@@ -99,7 +99,7 @@ Per-flag handling:
   Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to the /orders list"
   ```
 
-**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR when the arguments parse; **HALT** when the usage line was printed.
+**Advance:** **CHAIN** → [State: RESOLVE-CONNECTOR] when the arguments parse; **HALT** when the usage line was printed.
 
 ### State 2 — RESOLVE-CONNECTOR
 
@@ -115,7 +115,7 @@ state; when two or more match, State 2a settles it.
 
 A connector resolves silently as the explicit stem, the sole match or the host MCP.
 
-**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above.
+**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit.
 
 ### State 2a — PICK-CONNECTOR
 
@@ -126,7 +126,7 @@ is sent to any tracker here.
 
 The pick is a blocking question: this state pauses on it until the user answers.
 
-**Advance:** **CHAIN** → State: COMPOSE once the user has picked the connector (continue inline).
+**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline).
 
 ### State 3 — COMPOSE
 
@@ -154,7 +154,7 @@ neither silently**:
 Assemble the draft payload: a title/summary derived from `<description>`, the level (a tier, a
 quoted literal, or unset), and the parent ref (or none). Nothing is sent anywhere yet.
 
-**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline); **HALT** on the cross-tracker stop above.
+**Advance:** **CHAIN** → [State: LEVEL-RESOLVE] (continue inline); **HALT** on the cross-tracker stop.
 
 ### State 4 — LEVEL-RESOLVE
 
@@ -180,7 +180,7 @@ only reads -- no new silent behaviour and no new write. Per
   connector-descriptor schema change, out of scope here); this runtime synonym match plus the
   literal passthrough are the whole mechanism.
 
-**Advance:** **CHAIN** → State: CONFIRM (continue inline).
+**Advance:** **CHAIN** → [State: CONFIRM] (continue inline).
 
 ### State 5 — CONFIRM
 
@@ -209,7 +209,7 @@ straight to `FILE` that skips this gate.
 
 The confirm is a blocking question: this state pauses on it until the user answers.
 
-**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`; **CHAIN** → State: COMPOSE on `[2] Edit`,
+**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,
 with the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed).
 
 ### State 6 — FILE
@@ -227,7 +227,7 @@ Reached **only** after an explicit `[1] File it` confirm. Writes via the host MC
 A failed / not-found / unauthorized / unavailable host-MCP call surfaces the tracker's error
 **verbatim** and exits **non-destructively** — never a partial write.
 
-**Advance:** **CHAIN** → State: RETURN-REF (continue inline).
+**Advance:** **CHAIN** → [State: RETURN-REF] (continue inline).
 
 ### State 7 — RETURN-REF
 
