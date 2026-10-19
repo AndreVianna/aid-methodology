@@ -167,6 +167,14 @@ or, on the flat path, the work-root `STATE.yml`'s `tasks_lifecycle` entry for `t
 | `State: In Review`, issues listed | **FIX** (Step 3) |
 | `State: Done` | **RE-RUN** (see Re-run below) |
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks above to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
 ## Inputs
 
 **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`. Use summaries to decide which
@@ -211,17 +219,17 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
-| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
-| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
-| DONE | _(inline — task complete)_ | `inline` | → halt |
-| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
+| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | CHAIN → REVIEW |
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE |
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
+| DONE | _(inline — task complete)_ | `inline` | HALT |
+| RE-RUN | `references/state-re-run.md` | `inline` | ASK → REVIEW or DONE |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / CHAIN → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit.
 
 ## Dispatch Protocol

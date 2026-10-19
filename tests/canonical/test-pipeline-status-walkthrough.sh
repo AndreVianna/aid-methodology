@@ -330,9 +330,9 @@ M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/st
 declare -A M4_PHASES
 M4_PHASES["aid-define"]="Specification"
 M4_PHASES["aid-specify"]="Specification"
-M4_PHASES["aid-plan"]="Plan"
-M4_PHASES["aid-detail"]="Detail"
-M4_PHASES["aid-execute"]="Execute"
+M4_PHASES["aid-plan"]="Planning"
+M4_PHASES["aid-detail"]="Planning"
+M4_PHASES["aid-execute"]="Building"
 
 for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute"; do
     sfile="${M4_FILES[$skill]}"

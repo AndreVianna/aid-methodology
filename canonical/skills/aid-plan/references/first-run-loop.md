@@ -9,7 +9,7 @@ No PLAN.md found; begin dependency mapping and deliverable sequencing.
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Planning
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -228,5 +228,5 @@ Delivery folders created:
   ...
 ```
 
-**Advance:** **CHAIN** -> [State: REVIEW] when PLAN.md is written, delivery folders are created,
-and the final summary is printed (continue inline).
+**Advance:** **ASK** -> [State: REVIEW] once the user has approved the sequence, PLAN.md is written,
+delivery folders are created, and the final summary is printed (continue inline).

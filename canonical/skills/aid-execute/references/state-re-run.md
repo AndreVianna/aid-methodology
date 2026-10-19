@@ -19,4 +19,4 @@ aid-execute  ▸ you are here
    to Step 2 (REVIEW)
 3. If user has a specific concern → record it as context for the reviewer
 
-**Advance:** **PAUSE-FOR-USER-DECISION** → this is a human-gated decision point. The router prints the prompt above and exits; the user re-invokes `/aid-execute` with their answer to continue to [State: REVIEW] or [State: DONE] depending on the decision.
+**Advance:** **ASK** → [State: REVIEW] or [State: DONE], depending on the user's decision.

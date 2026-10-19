@@ -28,7 +28,8 @@ flowchart TB
   n1(["FIRST-RUN<br/>No task files exist yet."])
   n2["REVIEW<br/>Existing task files found; re-review against current…"]
   n3(["DONE"])
-  n1 --> n2
+  n1 -. "otherwise" .- n1
+  n1 -->|"once the user has approved the task breakdown"| n2
   n2 --> n3
   class n1 aidEntry
   class n2 aidStep
@@ -43,24 +44,24 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No task files exist yet. · _entry_
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L86" wrap
-| FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L94" wrap
+| FIRST-RUN | `references/first-run.md` | `aid-architect` | ASK → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L129)
+[Source: `canonical/skills/aid-detail/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L94) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L129)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — Existing task files found; re-review against current… · _step_
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L87" wrap
-| REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L95" wrap
+| REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L83)
+[Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L83)
 
 <a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L88" wrap
-| DONE | — | `inline` | `→ halt` |
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L96" wrap
+| DONE | — | `inline` | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L88)
+[Source: `canonical/skills/aid-detail/SKILL.md#L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L96)

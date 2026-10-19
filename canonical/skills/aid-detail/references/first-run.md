@@ -13,7 +13,7 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Planning
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -125,4 +125,4 @@ Execution graphs written to PLAN.md.
 
 [State: FIRST-RUN] complete.
 
-**Advance:** **CHAIN** → [State: REVIEW] (continue inline).
+**Advance:** **ASK** → [State: REVIEW] once the user has approved the task breakdown (continue inline).

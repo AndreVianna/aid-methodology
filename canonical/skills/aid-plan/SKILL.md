@@ -103,6 +103,14 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks below to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
 - No PLAN.md → **FIRST-RUN**
 - PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
 - PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
@@ -146,14 +154,14 @@ aid-plan  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |
-| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |
-| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | → halt |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |
+| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |
+| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit.
 
 **DONE (inline):** When DONE is detected, print:
