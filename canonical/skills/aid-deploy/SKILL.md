@@ -104,11 +104,16 @@ Step 0):
 
 ## State Detection
 
-Read work `STATE.yml`'s Deploy State (`deploy` key):
-- **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
-- **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
-- **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)
-- **Status: Packaging** → PACKAGING state (resume packaging; see `references/state-packaging.md`)
+Per `.aid/runtime/templates/skill-steps.md` § State Detection, this detection shapes the entry step of a
+fresh start and validates a saved step on resume; it never routes. The work record decides where a work
+continues.
+
+Read work `STATE.yml`'s Deploy State (`deploy` key) to choose the entry step of a fresh start, and to
+check a saved step on resume:
+- **Status: Idle** → entry step IDLE (start new package; see `references/state-idle.md`)
+- **Status: Selecting** → entry step SELECTING (resume delivery selection; see `references/state-selecting.md`)
+- **Status: Verifying** → entry step VERIFYING (resume verification; see `references/state-verifying.md`)
+- **Status: Packaging** → entry step PACKAGING (resume packaging; see `references/state-packaging.md`)
 - **Status: Done** → Re-run mode (see Re-run section)
 
 Print the state-entry line and "you are here" map:
@@ -180,9 +185,10 @@ dispatch in this skill.
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.
+- **WAIT** → say what the user must do outside the conversation, plainly, and stop.
 - **HALT** → print the closing summary and exit.
 
 ## Quality Checklist

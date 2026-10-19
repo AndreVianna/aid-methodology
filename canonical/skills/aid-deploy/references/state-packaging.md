@@ -95,4 +95,4 @@ Print what was done:
    KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
-**Advance:** **CHAIN** → [State: DONE] (see `references/state-done.md`).
+**Advance:** **ASK** → [State: DONE] when the project type is unclear, once the user answers; **CHAIN** → [State: DONE] otherwise (see `references/state-done.md`).

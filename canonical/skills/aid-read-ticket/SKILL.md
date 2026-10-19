@@ -91,8 +91,9 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
   ```
   and exit (AC-6).
 
-**Advance:** CHAIN → State 3 (FETCH) once a connector resolves; STOP/exit on the unknown-stem or
-notify branches above.
+**Advance:** CHAIN → State 3 (FETCH) once a connector resolves; ASK → State 3 (FETCH) on the
+two-or-more branch, once the user picks the connector; HALT on the unknown-stem or notify branches
+above.
 
 ### State 3 — FETCH
 
@@ -106,7 +107,7 @@ tracker's own error **verbatim** and exits non-destructively — never retry sil
 back to a different connector, never fabricate a placeholder result (feature-001 § Feature Flow,
 "MCP-call failure policy").
 
-**Advance:** CHAIN → State 4 (DISPLAY) on success; STOP/exit on failure per the policy above.
+**Advance:** CHAIN → State 4 (DISPLAY) on success; HALT on failure per the policy above.
 
 ### State 4 — DISPLAY
 
@@ -127,7 +128,15 @@ the whole run is State 3's single read.
 
 ---
 
+## State Detection
+
+Per [`skill-steps.md`](../../aid/templates/skill-steps.md) § State Detection: this skill reads no
+artifacts to detect a state, so a fresh run enters State 1 (PARSE-ARGS). It keeps no work record and
+no saved step to validate, and it never routes.
+
 ## Dispatch table
+
+The advance words of each state are read per [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
 | Condition | Path | Result |
 |---|---|---|

@@ -57,4 +57,4 @@ If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print
 consider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,
 never auto-invoked; silent (no output) if no issue-tracker connector is catalogued.
 
-**Advance:** **CHAIN** → [State: DONE] (continue inline).
+**Advance:** **ASK** → [State: DONE] once the user has approved or adjusted the routes in Step 4 (continue inline).

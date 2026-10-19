@@ -49,4 +49,4 @@ Delete ledger on success: `rm -f {{LEDGER}}`
 
 Update work `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.
 
-**Advance:** **CHAIN** → [State: PACKAGING] (continue inline).
+**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **ASK** → [State: PACKAGING] after a failure, once the user chooses to fix here and the re-verification passes; **HALT** when the user loops back to aid-execute.

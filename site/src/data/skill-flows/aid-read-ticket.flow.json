@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 97,
-        "endLine": 97,
+        "startLine": 98,
+        "endLine": 98,
         "sourceKind": "skill",
         "excerpt": "### State 3 — FETCH"
       },
@@ -65,8 +65,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 111,
-        "endLine": 111,
+        "startLine": 112,
+        "endLine": 112,
         "sourceKind": "skill",
         "excerpt": "### State 4 — DISPLAY"
       },
@@ -110,8 +110,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 97,
-        "endLine": 97,
+        "startLine": 98,
+        "endLine": 98,
         "sourceKind": "skill",
         "excerpt": "### State 3 — FETCH"
       }

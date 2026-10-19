@@ -167,8 +167,8 @@ The stop, for every case:
 
 A single in-invocation confirm, asked and answered inline before WRITE — the skill never exits
 mid-run to collect this answer (`ticket-resolution.md` § "Write Preview + Confirm Gate";
-[`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md) § "The four advance
-types" — a transition whose user interaction is fully `AskUserQuestion`-based is CHAIN). Show the
+[`skill-steps.md`](../../aid/templates/skill-steps.md) § "The advance words" — the user decides
+here, so the step advances with `ASK`). Show the
 **exact** change for whichever PART is being mutated:
 
 - **`description`** → the before/after pair from COMPOSE.
@@ -188,7 +188,7 @@ Close with the shared reference's confirm-gate button row, reused **verbatim**
 
 - **`[1] File it`** → proceed to WRITE.
 - **`[2] Edit`** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run
-  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline, still CHAIN.
+  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline, still ASK.
   For `attachment`, a revised CONTENT re-runs LOAD-CONTEXT's preview as well.
 - **`[3] Cancel`** → exit. No MCP call is made.
 

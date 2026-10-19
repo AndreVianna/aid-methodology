@@ -23,7 +23,7 @@ Update work `STATE.md` `## Deploy State`: Status → Selecting.
 
 Emit pipeline lifecycle state (silent state-write only — no output, no gate). Deploy is a
 separate path, not a numbered phase, so this does NOT change the work's `Phase` (it stays at
-`Execute`); it only marks the Running lifecycle + active skill so the work-initiation gate can
+`Building`); it only marks the Running lifecycle + active skill so the work-initiation gate can
 resume an interrupted deploy via `active_skill: aid-deploy`:
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
@@ -31,4 +31,4 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active 
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **CHAIN** → [State: SELECTING] (continue inline).
+**Advance:** **ASK** → [State: SELECTING] when infrastructure.md has no Deployment section, once the user answers; **CHAIN** → [State: SELECTING] (continue inline) otherwise.

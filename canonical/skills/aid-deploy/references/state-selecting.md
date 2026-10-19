@@ -35,4 +35,4 @@ Create the package file from template (`../../../aid/templates/package.md`):
 
 Update work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.
 
-**Advance:** **CHAIN** → [State: VERIFYING] (continue inline).
+**Advance:** **ASK** → [State: VERIFYING] once the user has chosen the deliveries and given the version and package name; **HALT** when the user cancels.

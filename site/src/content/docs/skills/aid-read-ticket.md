@@ -65,16 +65,16 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n3"></a>**3 · `FETCH`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L97" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L98" wrap
 ### State 3 — FETCH
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L97)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L98)
 
 <a id="fragment-n4"></a>**4 · `DISPLAY`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L111" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L112" wrap
 ### State 4 — DISPLAY
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L111)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L112)

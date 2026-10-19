@@ -31,13 +31,12 @@ an optional, on-demand utility skill outside the Discover-Execute flow: no phase
 it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
-**State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —
-`PARSE-ARGS → RESOLVE-CONNECTOR → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — until
-it hits a natural pause point per
-[`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
-CONFIRM's `AskUserQuestion` exchange is fully inline, so it is a **CHAIN** advance, never
-`PAUSE-FOR-USER-DECISION` — a single invocation runs every state through to `RETURN-REF` (or an
-earlier stop/cancel) without exiting mid-run to collect an answer.
+**Step advance:** each `/aid-create-ticket` invocation runs the state machine —
+`PARSE-ARGS → RESOLVE-CONNECTOR → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
+advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). CONFIRM is an
+**ASK** advance: the user decides there, through one `AskUserQuestion` exchange answered inline,
+so a single invocation still runs every state through to `RETURN-REF` (or an earlier stop or
+cancel) without exiting mid-run.
 
 **Read-only until CONFIRM.** `RESOLVE-CONNECTOR`, `COMPOSE`, and `LEVEL-RESOLVE` only ever read —
 the tracker's issue-type list is queried (a non-destructive read), never written. Nothing about
@@ -170,9 +169,8 @@ only reads -- no new silent behaviour and no new write. Per
 
 A single in-run `AskUserQuestion` exchange (one tool call, never two prompts across turns) per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Write Preview +
-Confirm Gate" — a **CHAIN** advance, never `PAUSE-FOR-USER-DECISION`
-(`state-machine-chaining.md` — fully `AskUserQuestion`-based exchanges are asked and answered
-inline). It carries up to two parts, both resolved within this same call:
+Confirm Gate" — an **ASK** advance (`skill-steps.md`): the user decides here, and the exchange is
+asked and answered inline. It carries up to two parts, both resolved within this same call:
 
 - **Level pick** (only when the level is still unset after `COMPOSE` — no explicit `--level` and
   none inferable from the description): an `epic | story | task` choice, presented against the
@@ -192,9 +190,9 @@ inline). It carries up to two parts, both resolved within this same call:
 mandatory before `[1] File it` can be chosen — there is no path from `COMPOSE`/`LEVEL-RESOLVE`
 straight to `FILE` that skips this gate.
 
-**Advance:** `[1] File it` → State: FILE (continue inline). `[2] Edit` → State: COMPOSE (continue
-inline, with the user's requested change folded into the payload). `[3] Cancel` → halt; nothing is
-sent, nothing is filed.
+**Advance:** **ASK** → State: FILE on `[1] File it` (continue inline). **ASK** → State: COMPOSE on
+`[2] Edit` (continue inline, with the user's requested change folded into the payload). **ASK** then
+**HALT** on `[3] Cancel`; nothing is sent, nothing is filed.
 
 ### State 6 — FILE
 
@@ -219,7 +217,7 @@ Return the new **`<connector-stem>:<external-id>`** — only now, after `FILE` s
 parent link could not be applied (`FILE`'s best-effort note), restate that alongside the new ref so
 the outcome is never silent.
 
-**Advance:** → halt.
+**Advance:** **HALT**.
 
 ---
 
