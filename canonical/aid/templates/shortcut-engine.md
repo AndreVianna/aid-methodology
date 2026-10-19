@@ -125,7 +125,7 @@ load-bearing gap escalates to CAPTURE's single inline question (CAPTURE Step 3).
 
 | REQUIREMENTS.md section | Default source | Escalates only when |
 |---|---|---|
-| §1 Objective / §2 Problem Statement | `{description}` (verbatim or lightly restated) | `{description}` is empty (CAPTURE's bootstrapping question, Step 1) |
+| §1 Objective / §2 Problem Statement | `{description}` (verbatim or lightly restated) | `{description}` is empty (INTAKE Step 2's bootstrapping question) |
 | §3 Users & Stakeholders | Inferred (typically "the requesting developer/maintainer"; a KB module owner if named) | description names a distinct external user group not inferable from context |
 | §4 Scope | `{verb, artifact}` + `{description}` bound the scope by construction | description leaves the "in scope" boundary genuinely ambiguous (e.g. touches multiple unrelated artifacts) |
 | §5 Functional Requirements | `{description}` + family scaffolding guidance | **load-bearing** -- cannot be stated concretely without more information |
@@ -542,7 +542,7 @@ recording.
 
 ### Step 1: Emit pipeline phase
 
-same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
+Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
 `--field Phase --value Planning`.
 
 ### Step 2: none
@@ -928,7 +928,7 @@ strategy asserts both).
 - Invocation binds `{name}=aid-create-api`, `{verb}=create`, `{artifact}=api`,
   `{description}="a /orders read endpoint with pagination"`.
 - INTAKE: catalog row resolves `default_type=IMPLEMENT`, `group=G4`; allocates
-  `work-014-orders-read-api`; scaffolds `STATE.yml` (frontmatter-zone keys only).
+  `work-014-orders-read-api`; creates `STATE.yml` in one gate write (`writeback-state.sh --create`).
 - CAPTURE: description is non-empty (no bootstrapping question); no load-bearing gap
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
@@ -943,7 +943,7 @@ strategy asserts both).
 
 | Input | Expected engine output |
 |---|---|
-| `aid-fix` (no description) | CAPTURE Step 1 asks one bootstrapping question; `work-NNN-fix` slug is provisional until answered |
+| `aid-fix` (no description) | INTAKE Step 2 asks one bootstrapping question before allocation; the `work-NNN-fix` slug is derived from the answer |
 | `aid-fix` with a full bug description | Zero inline questions; `REQUIREMENTS.md` fully terse-filled; a single IMPLEMENT task (no `fix.md` landed yet) or the `fix.md` IMPLEMENT -> TEST pair (once task-013 lands) |
 | `aid-create-data-model` with a full description | the feature section activates `##### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
 | Catalog row missing for the invoking `{name}` | INTAKE STOPs with the build-defect error; no work folder allocated |
