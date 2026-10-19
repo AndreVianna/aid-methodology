@@ -40,8 +40,8 @@ flowchart TB
   n3 --> n4
   n4 --> n5
   n5 --> n6
-  n6 -.-> n5
-  n6 --> n7
+  n6 -. "when the check fails the first time" .-> n5
+  n6 -->|"otherwise"| n7
   n7 --> n8
   n8 --> n9
   class n1 aidEntry

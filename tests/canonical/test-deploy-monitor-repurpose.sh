@@ -149,8 +149,8 @@ assert_file_contains "$MONITOR_SKILL" "| OBSERVE | \`references/state-observe.md
     "DMR11a aid-monitor Dispatch: OBSERVE row advance is CHAIN → CLASSIFY"
 assert_file_contains "$MONITOR_SKILL" "| CLASSIFY | \`references/state-classify.md\` | \`aid-researcher\` | CHAIN → ROUTE |" \
     "DMR11b aid-monitor Dispatch: CLASSIFY row advance is CHAIN → ROUTE"
-assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`inline\` (main conversation) | ASK then HALT" \
-    "DMR11c aid-monitor Dispatch: ROUTE row runs inline in the main conversation and ends in ASK then HALT"
+assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`inline\` (main conversation) | HALT |" \
+    "DMR11c aid-monitor Dispatch: ROUTE row runs inline in the main conversation and ends in HALT (its approval is a pause inside the step)"
 assert_file_contains "$MONITOR_SKILL" "State machine: OBSERVE → CLASSIFY → ROUTE → DONE." \
     "DMR11d aid-monitor frontmatter State machine line unchanged"
 

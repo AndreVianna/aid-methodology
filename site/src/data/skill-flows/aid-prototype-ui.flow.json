@@ -128,7 +128,7 @@
         "startLine": 102,
         "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (LIGHT -- do not polish-grade a rough model)\n\nA prototype is *deliberately* low-fidelity, so this is a single light clean-context check\n(not the full adversarial loop the other collapses run): dispatch **`aid-reviewer`** once to\nconfirm (a) the **\"success signal observed\" claim is honest and grounded** in what was\nactually built, and (b) the **throwaway scope was respected** -- no production code snuck in,\nnothing was committed to real modules. If the check fails, return to BUILD once to correct;\ndo not loop on polish.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY  (LIGHT -- do not polish-grade a rough model)\n\nA prototype is *deliberately* low-fidelity, so this is a single light clean-context check\n(not the full adversarial loop the other collapses run): dispatch **`aid-reviewer`** once to\nconfirm (a) the **\"success signal observed\" claim is honest and grounded** in what was\nactually built, and (b) the **throwaway scope was respected** -- no production code snuck in,\nnothing was committed to real modules. If the check fails, return to BUILD once to correct;\ndo not loop on polish.\n\n**Advance:** CHAIN -> [State: BUILD] when the check fails the first time; otherwise CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -290,28 +290,28 @@
       "from": "n6",
       "to": "n5",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 108,
-        "endLine": 108,
-        "sourceKind": "skill",
-        "excerpt": "nothing was committed to real modules. If the check fails, return to BUILD once to correct;"
-      }
-    },
-    {
-      "from": "n6",
-      "to": "n7",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when the check fails the first time",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
         "startLine": 111,
         "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: BUILD] when the check fails the first time; otherwise CHAIN -> [State: PRESENT]."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "branch",
+      "condition": "otherwise",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-prototype/SKILL.md",
+        "startLine": 111,
+        "endLine": 111,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: BUILD] when the check fails the first time; otherwise CHAIN -> [State: PRESENT]."
       }
     },
     {

@@ -114,7 +114,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 

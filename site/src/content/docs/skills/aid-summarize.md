@@ -38,7 +38,7 @@ flowchart TB
   n1 --> n2
   n2 -->|"when the result is STALE"| n3
   n2 -->|"when it is CURRENT_UNAPPROVED"| n8
-  n2 -->|"when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch"| n10
+  n2 -->|"when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch)"| n10
   n3 --> n4
   n4 --> n5
   n5 -->|"if Machine Grade &gt;= minimum"| n6

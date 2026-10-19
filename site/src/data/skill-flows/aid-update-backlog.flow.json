@@ -82,8 +82,11 @@
       "order": 4,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the circuit-breaker has blocked the work"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-backlog/SKILL.md",
         "startLine": 166,
@@ -96,7 +99,7 @@
         "startLine": 166,
         "endLine": 172,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -136,14 +139,14 @@
         "startLine": 191,
         "endLine": 193,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step."
       },
       "detail": {
         "file": "canonical/skills/aid-update-backlog/SKILL.md",
         "startLine": 191,
         "endLine": 195,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.\n\n**Advance:** HALT."
       }
     }
   ],
@@ -194,28 +197,28 @@
       "from": "n4",
       "to": "n3",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-update-backlog/SKILL.md",
-        "startLine": 169,
-        "endLine": 169,
-        "sourceKind": "skill",
-        "excerpt": "defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation"
-      }
-    },
-    {
-      "from": "n4",
-      "to": "n5",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-backlog/SKILL.md",
         "startLine": 172,
         "endLine": 172,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "branch",
+      "condition": "when the verify is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-backlog/SKILL.md",
+        "startLine": 172,
+        "endLine": 172,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -239,6 +242,7 @@
   "exits": [
     "n1",
     "n2",
+    "n4",
     "n6"
   ],
   "sources": [

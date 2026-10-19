@@ -109,7 +109,13 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
   - Set this feature's `state: Ready` in the work `STATE.yml`'s `features:` sequence
   - Print summary with all completed sections
   - `/aid-specify` on this feature now enters **REVIEW** (step 4 on all sections)
+- A gap that only a spike can close (`references/handling-outcomes.md` § Spike Needed) -> set this
+  feature's `state: Spike Needed`; the spike is handled in SPIKE.
+- A loopback that stops the feature (`references/handling-outcomes.md` § Blocked) -> set this
+  feature's `state: Blocked`; it is handled in BLOCKED.
 
-The step is finished once all sections are Complete and the user has agreed to each.
+The user's agreement to each section pauses this step where it stands; the writes that follow each
+answer are part of this step. The step is finished once all sections are Complete, or once a spike or a
+blocker has stopped it.
 
-**Advance:** **ASK** → [State: REVIEW].
+**Advance:** **CHAIN** → [State: REVIEW] when all sections are Complete; **CHAIN** → [State: SPIKE] when a spike is needed; **CHAIN** → [State: BLOCKED] when a loopback blocks the feature.

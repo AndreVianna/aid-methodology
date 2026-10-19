@@ -99,4 +99,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L526`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L526)
+[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L528`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L528)

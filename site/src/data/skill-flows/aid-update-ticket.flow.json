@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 64,
-        "endLine": 64,
+        "startLine": 70,
+        "endLine": 70,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 85,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "### State 3 — LOAD-CONTEXT"
       },
@@ -65,8 +65,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
+        "startLine": 121,
+        "endLine": 121,
         "sourceKind": "skill",
         "excerpt": "### State 4 — COMPOSE"
       },
@@ -84,8 +84,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 176,
-        "endLine": 176,
+        "startLine": 182,
+        "endLine": 182,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -103,8 +103,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 207,
-        "endLine": 207,
+        "startLine": 214,
+        "endLine": 214,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -120,8 +120,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 83,
+        "endLine": 83,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → RESOLVE-CONNECTOR."
       }
@@ -134,8 +134,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 89,
-        "endLine": 89,
+        "startLine": 95,
+        "endLine": 95,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → LOAD-CONTEXT."
       }
@@ -148,8 +148,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 119,
+        "endLine": 119,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → COMPOSE."
       }
@@ -162,8 +162,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 180,
+        "endLine": 180,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CONFIRM; **HALT** when the status has no matching transition, or the user ends the run at the attachment stop."
       }
@@ -176,8 +176,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 205,
-        "endLine": 205,
+        "startLine": 212,
+        "endLine": 212,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }
@@ -190,8 +190,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 205,
-        "endLine": 205,
+        "startLine": 212,
+        "endLine": 212,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }

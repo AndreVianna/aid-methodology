@@ -35,7 +35,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "the override is supplied; when a question is unresolved and no override is supplied (the refusal above)"
+        "handoff": "when the gate refuses"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
@@ -49,7 +49,7 @@
         "startLine": 73,
         "endLine": 83,
         "sourceKind": "skill",
-        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a\nnon-empty `## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved\n  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write\n  nothing; leave seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above)."
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a\nnon-empty `## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved\n  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write\n  nothing; leave seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses."
       }
     },
     {
@@ -60,21 +60,21 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on a route case (the question above stays open and the run ends)"
+        "handoff": "when a route case applies and its question has been answered"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 87,
-        "endLine": 90,
+        "endLine": 91,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:"
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE. The worker never asks the user: the route question below is\nasked by the main conversation."
       },
       "detail": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 87,
-        "endLine": 126,
+        "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and VERIFY is not called. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and VERIFY is not called. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] (creation path); HALT on a route case (the question above stays open and the run ends)."
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE. The worker never asks the user: the route question below is\nasked by the main conversation.\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] when the section was created; HALT when a route case applies and its question has been answered."
       }
     },
     {
@@ -82,21 +82,24 @@
       "order": 4,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the 3-cycle circuit breaker has tripped"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 130,
-        "endLine": 134,
+        "startLine": 131,
+        "endLine": 135,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 130,
-        "endLine": 136,
+        "startLine": 131,
+        "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -108,15 +111,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 140,
-        "endLine": 143,
+        "startLine": 141,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized `## MVP` section clearly.\nAssert:"
       },
       "detail": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 140,
-        "endLine": 153,
+        "startLine": 141,
+        "endLine": 154,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized `## MVP` section clearly.\nAssert:\n\n- `## Contents` is unchanged -- the `- [MVP](#mvp)` entry is present (written by\n  `/aid-create-roadmap`) and no new entry was added.\n- No `.aid/settings.yml` `knowledge.doc_set` entry was written and no\n  `.aid/knowledge/README.md` Completeness row was written -- this skill creates no\n  document.\n- Every byte outside the `## MVP` range is identical to what it was before this run.\n- To revise the MVP section later, use `/aid-update-mvp`.\n\n**Advance:** ASK -> [State: DONE]."
       }
@@ -133,17 +136,17 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 157,
-        "endLine": 159,
+        "startLine": 158,
+        "endLine": 160,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 157,
-        "endLine": 159,
+        "startLine": 158,
+        "endLine": 160,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       }
     }
   ],
@@ -166,56 +169,56 @@
       "from": "n2",
       "to": "n3",
       "kind": "branch",
-      "condition": "when no question is unresolved",
+      "condition": "when the gate passes",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 83,
         "endLine": 83,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above)."
+        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses."
       }
     },
     {
       "from": "n3",
       "to": "n4",
       "kind": "branch",
-      "condition": "creation path",
+      "condition": "when the section was created",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 126,
-        "endLine": 126,
+        "startLine": 127,
+        "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path); HALT on a route case (the question above stays open and the run ends)."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] when the section was created; HALT when a route case applies and its question has been answered."
       }
     },
     {
       "from": "n4",
       "to": "n3",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "condition": "when it is not clean and fewer than 3 cycles have run",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 133,
-        "endLine": 133,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation"
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
       "from": "n4",
       "to": "n5",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "when the verify is clean",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 136,
-        "endLine": 136,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -226,8 +229,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
-        "startLine": 153,
-        "endLine": 153,
+        "startLine": 154,
+        "endLine": 154,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
@@ -239,6 +242,7 @@
   "exits": [
     "n2",
     "n3",
+    "n4",
     "n6"
   ],
   "sources": [

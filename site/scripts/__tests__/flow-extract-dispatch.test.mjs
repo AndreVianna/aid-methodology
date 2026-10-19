@@ -246,12 +246,14 @@ describe('extractDispatch — aid-describe: richest corpus fixture', () => {
     expect(names[4]).toBe('COMPLETION');
   });
 
-  it('COMPLETION is the only exit (has ASK terminal, reached after ASK)', () => {
-    // Mutant: omit terminal for the ASK -> HALT advance → no exit node.
-    expect(chart.exits).toContain('n5');
+  it('COMPLETION is the only exit (has HALT terminal naming /aid-define, reached after the approval pause)', () => {
+    // Mutant: omit terminal for the HALT advance → no exit node.
+    // The approval is a pause inside the step, so the exit is HALT, not ASK.
     const completion = chart.nodes.find((n) => n.name === 'COMPLETION');
+    expect(chart.exits).toEqual([completion.id]);
     expect(completion.terminal).not.toBeNull();
-    expect(completion.terminal.advanceType).toBe('ASK');
+    expect(completion.terminal.advanceType).toBe('HALT');
+    expect(completion.terminal.handoff).toContain('/aid-define');
   });
 
   it('FIRST-RUN is the entry', () => {
@@ -343,25 +345,25 @@ describe('extractDispatch — artifact condition normalization', () => {
     expect(e.kind).toBe('sequence');
   });
 
-  it('CONTINUE→COMPLETION is the unconditioned fall-through after the greenfield branch', () => {
-    // CONTINUE now advances with CHAIN, and its greenfield branch to DESCRIBE-SEED is the only
-    // conditioned edge. The COMPLETION edge is the fall-through sequence: no condition is
-    // attached, so _isArtifactCondition is never consulted for it.
-    // Mutant: attach the greenfield guard to the fall-through edge → condition non-null.
+  it('CONTINUE→COMPLETION is the conditioned brownfield-or-seed-complete branch', () => {
+    // CONTINUE advances "CHAIN → DESCRIBE-SEED when the work is greenfield and its seed is not
+    // yet complete; CHAIN → COMPLETION when the work is brownfield, or its seed is already
+    // complete". Both edges are conditioned branches; the COMPLETION one keeps its real content.
+    // Mutant: drop the condition (or treat it as an artifact) → condition null / kind sequence.
     const e = chart.edges.find((e) => e.from === 'n3' && e.to === 'n5');
     expect(e).toBeDefined();
-    expect(e.kind).toBe('sequence');
-    expect(e.condition).toBeNull();
+    expect(e.kind).toBe('branch');
+    expect(e.condition).toMatch(/brownfield/);
+    expect(e.condition).toMatch(/seed is already complete/);
   });
 
-  it('near-miss: FIRST-RUN→CONTINUE condition contains real content', () => {
-    // FIRST-RUN worker: "**CHAIN** → [State: CONTINUE] after scaffolding is complete
-    // (continue inline)."  "after scaffolding is complete" is real content → not artifact.
+  it('near-miss: FIRST-RUN→CONTINUE is a plain CHAIN with no condition', () => {
+    // FIRST-RUN worker: "**CHAIN** → [State: CONTINUE]." — no guard text at all, so the edge
+    // is an unconditioned sequence (no artifact text may leak in as a condition).
     const edges = chart.edges.filter((e) => e.from === 'n1' && e.to === 'n3');
-    expect(edges.length).toBeGreaterThan(0);
-    // At least one must have real content.
-    const real = edges.find((e) => e.condition !== null && /after scaffolding is complete/.test(e.condition));
-    expect(real).toBeDefined();
+    expect(edges).toHaveLength(1);
+    expect(edges[0].kind).toBe('sequence');
+    expect(edges[0].condition).toBeNull();
   });
 });
 
@@ -641,31 +643,31 @@ describe('extractDispatch — all 12 D1 skills produce valid charts', () => {
   });
 
   it('a node with no inbound edges from other nodes is an ENTRY', () => {
-    // The general rule pinned independently of any one skill.  `aid-specify`'s
-    // SPIKE is the live instance: it is reachable from no other declared state
-    // (CONTINUE routes to REVIEW, not SPIKE — the "State 3" detection is prose
-    // guidance, not an advance edge).  SPIKE → CONTINUE is a loop-back, so SPIKE
-    // has in-degree 0 and buildChart marks it as an ENTRY.
-    //
-    // Before the _extractCondition fix, SPIKE's PAUSE-FOR-USER-ACTION advance
-    // produced a mangled non-null condition ("Re-run … to to"), which triggered
-    // rule 5 (single conditional → self-loop).  The self-loop made SPIKE an
-    // ENTRY via the "self-edges excluded from in-degree" path in buildChart.
-    // The fix returns null for that condition (trailing-preposition guard), so
-    // rule 5 does NOT fire.  SPIKE is an ENTRY through the direct in-degree-0
-    // path instead — same result, correct mechanism.
-    const chart = extractDispatch('aid-specify', null, REPO_ROOT);
-    const spike = chart.nodes.find((n) => n.name === 'SPIKE');
-    expect(spike, 'aid-specify should declare a SPIKE state').toBeDefined();
+    // The general rule pinned independently of any one skill.  `aid-specify`'s SPIKE used to be
+    // the instance, but CONTINUE now routes to it, so it has an inbound edge.  The instance is
+    // measured instead: every node of every D1 chart with no inbound edge from another node must
+    // be listed in `entries`, and `aid-deploy`'s RE-RUN is one such non-first node.
+    // Mutant: stop marking in-degree-0 nodes as entries → RE-RUN missing from entries.
+    const chart = extractDispatch('aid-deploy', null, REPO_ROOT);
+    const rerun = chart.nodes.find((n) => n.name === 'RE-RUN');
+    expect(rerun, 'aid-deploy should declare a RE-RUN state').toBeDefined();
 
-    const inbound = chart.edges.filter((e) => e.to === spike.id && e.from !== spike.id);
-    // SPIKE should have no inbound edges from other nodes (in-degree 0).
-    // If the corpus ever gives SPIKE a real inbound edge from another node,
-    // this test needs to be revisited — but the ENTRY assertion below would
-    // still hold.
+    const inbound = chart.edges.filter((e) => e.to === rerun.id && e.from !== rerun.id);
     expect(inbound.length).toBe(0);
+    expect(chart.entries).toContain(rerun.id);
 
-    expect(chart.entries).toContain(spike.id);
+    // Whole-corpus form of the rule, non-vacuous.
+    let checked = 0;
+    for (const skill of D1_SKILLS) {
+      const c = extractDispatch(skill, null, REPO_ROOT);
+      for (const n of c.nodes) {
+        if (!c.edges.some((e) => e.to === n.id && e.from !== n.id)) {
+          expect(c.entries, `${skill}:${n.name}`).toContain(n.id);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(1);
   });
 });
 

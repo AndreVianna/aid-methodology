@@ -110,7 +110,7 @@ Same as `/aid-create-document`: mechanical grounding check + a clean-context **`
 adversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`
 -> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the check is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 

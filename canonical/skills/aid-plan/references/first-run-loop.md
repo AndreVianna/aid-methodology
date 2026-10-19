@@ -228,6 +228,7 @@ Delivery folders created:
 ```
 
 The step is finished once the user has approved the sequence, PLAN.md is written, delivery folders are
-created, and the final summary is printed (continue inline).
+created, and the final summary is printed. The approval question pauses the step where it stands
+(`--step` with a `--detail` that says the sequence approval is open).
 
-**Advance:** **ASK** -> [State: REVIEW].
+**Advance:** **CHAIN** -> [State: REVIEW].

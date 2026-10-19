@@ -108,7 +108,7 @@ Bind **VERB=`update`**, **ARTIFACT=`ui`**, then run the shared engine at `.aid/r
 | SPEC | below | `aid-architect` (Large) | CHAIN -> PLAN |
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L90) · [full step: `canonical/aid/templates/shortcut-engine.md#L465-L524`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L465-L524)
+[Source: `canonical/aid/templates/shortcut-engine.md#L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L90) · [full step: `canonical/aid/templates/shortcut-engine.md#L465-L525`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L465-L525)
 
 <a id="fragment-n6"></a>**6 · `PLAN`** — Collapses the Plan work. · _step_
 
@@ -116,7 +116,7 @@ Bind **VERB=`update`**, **ARTIFACT=`ui`**, then run the shared engine at `.aid/r
 | PLAN | below | `aid-architect` (Large) | CHAIN -> DETAIL |
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L91) · [full step: `canonical/aid/templates/shortcut-engine.md#L528-L597`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L528-L597)
+[Source: `canonical/aid/templates/shortcut-engine.md#L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L91) · [full step: `canonical/aid/templates/shortcut-engine.md#L529-L598`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L529-L598)
 
 <a id="fragment-n7"></a>**7 · `DETAIL`** — Collapses the Detail work. · _step_
 
@@ -124,7 +124,7 @@ Bind **VERB=`update`**, **ARTIFACT=`ui`**, then run the shared engine at `.aid/r
 | DETAIL | below | `aid-architect` (Large) | CHAIN -> GATE |
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L92) · [full step: `canonical/aid/templates/shortcut-engine.md#L601-L702`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L601-L702)
+[Source: `canonical/aid/templates/shortcut-engine.md#L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L92) · [full step: `canonical/aid/templates/shortcut-engine.md#L602-L703`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L602-L703)
 
 <a id="fragment-n8"></a>**8 · `GATE`** — Runs feature-004's two batched Grading-Gate passes over the… · _decision_
 
@@ -132,15 +132,15 @@ Bind **VERB=`update`**, **ARTIFACT=`ui`**, then run the shared engine at `.aid/r
 | GATE | below | `aid-reviewer` (Large) | CHAIN -> APPROVAL-HALT |
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L93) · [full step: `canonical/aid/templates/shortcut-engine.md#L704-L883`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L704-L883)
+[Source: `canonical/aid/templates/shortcut-engine.md#L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L93) · [full step: `canonical/aid/templates/shortcut-engine.md#L705-L884`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L705-L884)
 
 <a id="fragment-n9"></a>**9 · `Circuit breaker`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/aid/templates/shortcut-engine.md#L839" wrap
+~~~~plaintext title="canonical/aid/templates/shortcut-engine.md#L840" wrap
    **Circuit breaker.** If the pass's grade has not improved across 3
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L839`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L839)
+[Source: `canonical/aid/templates/shortcut-engine.md#L840`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L840)
 
 <a id="fragment-n10"></a>**10 · `APPROVAL-HALT`** — Terminal state (FR-10 / NFR-10). · _exit_ · ASK
 
@@ -148,4 +148,4 @@ Bind **VERB=`update`**, **ARTIFACT=`ui`**, then run the shared engine at `.aid/r
 | APPROVAL-HALT | below | inline | ASK then HALT |
 ~~~~
 
-[Source: `canonical/aid/templates/shortcut-engine.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L94) · [full step: `canonical/aid/templates/shortcut-engine.md#L887-L935`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L887-L935)
+[Source: `canonical/aid/templates/shortcut-engine.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L94) · [full step: `canonical/aid/templates/shortcut-engine.md#L888-L948`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L888-L948)

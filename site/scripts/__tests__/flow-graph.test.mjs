@@ -2230,16 +2230,21 @@ describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
     expect(_dChart.exits.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('CONTINUE.kind === step (CHAIN, no user decision at its exit)', () => {
+  it('CONTINUE.kind === decision (two conditioned CHAIN branches, no user pause at its exit)', () => {
     expect(_dContinue).toBeDefined();
-    expect(_dContinue.kind).toBe('step');
+    expect(_dContinue.kind).toBe('decision');
   });
 
-  it('CONTINUE out-degree 2 with kinds {branch, sequence}', () => {
+  it('CONTINUE out-degree 2 with kinds {branch, branch}', () => {
     // Kind-list assertion so a rule-5 change or KI-008 regression cannot pass silently.
-    // Greenfield branch to DESCRIBE-SEED, fall-through sequence to COMPLETION.
+    // Greenfield branch to DESCRIBE-SEED, brownfield-or-seed-complete branch to COMPLETION;
+    // both carry a condition.
     expect(_dContOut).toHaveLength(2);
-    expect(_dContOut.map((e) => e.kind).sort()).toEqual(['branch', 'sequence']);
+    expect(_dContOut.map((e) => e.kind).sort()).toEqual(['branch', 'branch']);
+    const _toSeed = _dContOut.find((e) => _dNn(e.to)?.name === 'DESCRIBE-SEED');
+    const _toCompletion = _dContOut.find((e) => e.to === _dCompletion.id);
+    expect(_toSeed?.condition).toMatch(/greenfield/);
+    expect(_toCompletion?.condition).toMatch(/brownfield/);
   });
 
   it('a re-entry edge enters Q-AND-A', () => {
@@ -2250,10 +2255,10 @@ describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
     expect(_reentry).toBeDefined();
   });
 
-  it('COMPLETION is in exits, ASK terminal, handoff mentioning /aid-define', () => {
+  it('COMPLETION is in exits, HALT terminal, handoff mentioning /aid-define', () => {
     expect(_dCompletion).toBeDefined();
     expect(_dChart.exits).toContain(_dCompletion.id);
-    expect(_dCompletion.terminal.advanceType).toBe('ASK');
+    expect(_dCompletion.terminal.advanceType).toBe('HALT');
 
     // The AC names `/aid-define` specifically, and asserting only `!== null` would have
     // passed while the handoff read "Run to decompose approved requirements into
@@ -2308,10 +2313,10 @@ describe('AC-4 corpus fixture — aid-review (inline-states)', () => {
     expect(_lb).toBeDefined();
   });
 
-  it('VERIFY.kind === loop-back, not decision', () => {
-    // VERIFY has one sequence edge forward and one loop-back backward;
-    // its node kind must be loop-back, not decision, because decisions require branches.
-    expect(_rvVerify.kind).toBe('loop-back');
+  it('VERIFY.kind === exit (circuit-breaker HALT case), not decision', () => {
+    // VERIFY has a branch forward, a loop-back backward and a HALT case for the circuit-breaker;
+    // an ending node is an exit, and the loop-back stays drawn as an edge (previous test).
+    expect(_rvVerify.kind).toBe('exit');
   });
 
   it('PRESENT-FINDINGS.kind === step (one ASK target; the decline path lives in PUBLISH)', () => {

@@ -139,6 +139,7 @@ Does this look right? Answer the questions, and tell me if I'm missing anything.
 
 Process response → update this feature's `features:` entry in the work STATE.yml → begin **The Loop** for first Pending section.
 
-The step is finished once the open questions are answered.
+The questions pause this step where it stands (`--step` with a `--detail` that says which question is
+open); the update of the `features:` entry after the answers is part of this step.
 
-**Advance:** **ASK** → [State: CONTINUE].
+**Advance:** **CHAIN** → [State: CONTINUE].

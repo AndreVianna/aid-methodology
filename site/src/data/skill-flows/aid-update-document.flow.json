@@ -101,8 +101,11 @@
       "order": 5,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the circuit-breaker has blocked the work"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
         "startLine": 107,
@@ -115,7 +118,7 @@
         "startLine": 107,
         "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\nSame as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**\nadversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`\n-> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\nSame as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**\nadversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`\n-> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).\n\n**Advance:** CHAIN -> [State: PRESENT] when the check is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -261,16 +264,30 @@
     },
     {
       "from": "n5",
-      "to": "n6",
-      "kind": "sequence",
-      "condition": null,
+      "to": "n4",
+      "kind": "loop-back",
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
         "startLine": 113,
         "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the check is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "branch",
+      "condition": "when the check is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-document/SKILL.md",
+        "startLine": 113,
+        "endLine": 113,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the check is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -307,6 +324,7 @@
   ],
   "exits": [
     "n2",
+    "n5",
     "n8"
   ],
   "sources": [

@@ -799,7 +799,7 @@ bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --add .aid/knowledge/
 ```
 
-**Advance:** CHAIN -> SUMMARY-DELTA.
+Next, inside this step: the stage has passed; this step's one **Advance:** line is at the end of this file.
 
 ### Step 6d -- Closure broken: escalate via Q&A + stall (never commit a hole)
 
@@ -859,7 +859,7 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
-**Advance:** CHAIN -> SUMMARY-DELTA.
+Next, inside this step: the stage was skipped; this step's one **Advance:** line is at the end of this file.
 
 ## Exit -- stalled (scope cancelled, re-approval declined, or closure broken)
 
@@ -876,13 +876,12 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 
-Print the resume banner, then WAIT:
+Print the resume banner, then end the run:
 
 ```
 [!] /aid-housekeep paused at KB-DELTA -- <reason>.
    Fix: <actionable instruction>.
-   Resume: re-run /aid-housekeep -- it will pick up at KB-DELTA (not job 1).
+   Resume: the next /aid-housekeep run picks up at KB-DELTA (not job 1).
 ```
 
-**Advance:** WAIT (re-run resumes at KB-DELTA via `SKILL.md S
-State Detection` row 3).
+**Advance:** CHAIN -> SUMMARY-DELTA when the stage did not stall; HALT when it stalled (the stalled exit above).

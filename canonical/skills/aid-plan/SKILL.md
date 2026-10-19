@@ -161,7 +161,7 @@ aid-plan  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW |
 | CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |

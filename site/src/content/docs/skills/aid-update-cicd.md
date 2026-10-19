@@ -27,17 +27,17 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["UPDATE"]
-  n3["VERIFY"]
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidExit
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -99,7 +99,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-update-cicd/SKILL.md#L88-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L95) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L88-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L97)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L101-L104" wrap
 ## State: VERIFY
@@ -127,7 +127,7 @@ is gone.
 ~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L120-L122" wrap
 ## State: DONE
 
-Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
 [Source: `canonical/skills/aid-update-cicd/SKILL.md#L120-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L122) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L120-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L124)

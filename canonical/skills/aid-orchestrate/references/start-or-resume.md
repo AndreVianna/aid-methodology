@@ -16,9 +16,9 @@ says, where something stands -- starts no work. Answer it with `/aid-ask`:
 - Create no `.aid/works/` folder and write nothing into a work.
 - Say so plainly when the sources cannot answer. Do not guess.
 
-Then stop. The flow does not continue to the next step.
+Then stop. A request that is not a project question goes on to the check (section 2).
 
-**Advance:** **HALT**.
+**Advance:** **CHAIN** → CHECK-READING when the request is not a project question; **HALT** when it is a project question.
 
 ## 2. Check, size and show the reading
 
@@ -46,9 +46,12 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 ## 3a. Ask which work
 
 Ask one question -- which work the request continues: its reason, your recommendation (the work
-whose phase fits best), the plausible works by name plus "a new work", and a free-text answer.
+whose phase fits best), the plausible works by name plus "a new work", and a free-text answer. The
+question pauses the step where it stands. On "a new work", the gate creates it as in section 3,
+with `--step RECORD-INTENT`; on an existing work, that work is continued and its record is not
+written by this step.
 
-**Advance:** **ASK** → RECORD-INTENT.
+**Advance:** **CHAIN** → RECORD-INTENT.
 
 ## 4. Read the resume point
 
@@ -70,7 +73,8 @@ that is `Blocked` says what blocks it before anything else runs. A work that is 
 `Canceled` is finished: say so and end the run.
 
 A continued work resumes at the skill and step its record names, which HAND-OVER starts once the open
-questions above are asked (ASK-FIRST).
+questions above are asked (ASK-FIRST). This flow writes no `--step` and no `--handoff` into a continued
+work, so the record keeps its saved step and `step_detail`.
 
 ## 5. Cancel a named work
 

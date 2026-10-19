@@ -10,8 +10,11 @@
       "order": 1,
       "name": "PARSE-ARGS",
       "label": "PARSE-ARGS",
-      "kind": "entry",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the usage line was printed"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
         "startLine": 69,
@@ -29,7 +32,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "more match; on an unknown stem or the notify exit above"
+        "handoff": "on an unknown stem and on the notify exit above"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
@@ -150,43 +153,43 @@
     {
       "from": "n1",
       "to": "n2",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "when the arguments parse",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
         "startLine": 102,
         "endLine": 102,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR (continue inline)."
+        "excerpt": "**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR when the arguments parse; **HALT** when the usage line was printed."
       }
     },
     {
       "from": "n2",
       "to": "n3",
       "kind": "branch",
-      "condition": "when two",
+      "condition": "when several connectors match",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 116,
+        "startLine": 118,
         "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole\nmatch, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on an unknown stem or\nthe notify exit above."
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above."
       }
     },
     {
       "from": "n2",
       "to": "n4",
       "kind": "branch",
-      "condition": "when the connector resolves silently (explicit stem, sole match, or host MCP",
+      "condition": "when the connector resolves silently",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 116,
+        "startLine": 118,
         "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole\nmatch, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on an unknown stem or\nthe notify exit above."
+        "excerpt": "**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above."
       }
     },
     {
@@ -292,6 +295,7 @@
     "n1"
   ],
   "exits": [
+    "n1",
     "n2",
     "n4",
     "n6",

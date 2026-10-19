@@ -28,19 +28,19 @@ flowchart TB
   n1(["INTAKE"])
   n2(["GUARD"])
   n3["UPDATE"]
-  n4["VERIFY"]
+  n4(["VERIFY"])
   n5["PRESENT<br/>hard stop -- the user decides"]
   n6(["DONE"])
   n1 --> n2
   n2 -->|"when no seed was found, it has no unresolved question"| n3
   n3 --> n4
-  n4 -.-> n3
-  n4 --> n5
+  n4 -. "when it is not clean and fewer than 3 cycles have run" .-> n3
+  n4 -->|"when the verify is clean"| n5
   n5 --> n6
   class n1 aidExit
   class n2 aidExit
   class n3 aidStep
-  class n4 aidLoopBack
+  class n4 aidExit
   class n5 aidStep
   class n6 aidExit
   class n1 aidNode
@@ -106,7 +106,7 @@ re-ordering of any other region.
 
 [Source: `canonical/skills/aid-update-mvp/SKILL.md#L98-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L106) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L98-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L98-L137)
 
-<a id="fragment-n4"></a>**4 · `VERIFY`** · _loop-back_
+<a id="fragment-n4"></a>**4 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L141-L145" wrap
 ## State: VERIFY
@@ -134,7 +134,7 @@ Assert:
 ~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L171-L173" wrap
 ## State: DONE
 
-Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
 [Source: `canonical/skills/aid-update-mvp/SKILL.md#L171-L173`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L171-L173) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L171-L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L171-L175)

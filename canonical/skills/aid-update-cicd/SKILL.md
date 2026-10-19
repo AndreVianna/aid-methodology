@@ -103,7 +103,7 @@ outputs the user named and the complexity tier, so a resume finds them in the re
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -119,7 +119,7 @@ is gone.
 
 ## State: DONE
 
-Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 
 **Advance:** HALT.
 
@@ -174,4 +174,4 @@ so a flag the user did not point at survives this run untouched.
 - **No seed required; a present seed is consumed.**
 - **Never stands up its destination** -- that path belongs to `/aid-create-cicd`.
 - **Clean context**; verification always an `aid-reviewer` sub-agent dispatch.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the lifecycle through the writer (`--pipeline --field Lifecycle`) at every transition.

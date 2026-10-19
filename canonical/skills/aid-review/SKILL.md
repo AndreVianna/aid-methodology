@@ -173,7 +173,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for
 the presentation as information only -- it does NOT drive a fix loop here.
 
-**Advance:** CHAIN -> [State: PRESENT-FINDINGS].
+**Advance:** CHAIN -> [State: PRESENT-FINDINGS] when the grade is clean; CHAIN -> [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 

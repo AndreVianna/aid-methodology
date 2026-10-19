@@ -27,17 +27,17 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["DESIGN"]
-  n3["VERIFY"]
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -81,7 +81,7 @@ interactions, the invariants, and what is deliberately NOT a component**.
 
 [Source: `canonical/skills/aid-design-architecture/SKILL.md#L60-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L60-L66) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L60-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L60-L84)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L88-L91" wrap
 ## State: VERIFY
@@ -108,7 +108,7 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-archit
 ~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L106-L110" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/architecture.md`; consumption happens at
 `/aid-create-architecture`.
 ~~~~

@@ -29,7 +29,7 @@ flowchart TB
   n2(["INTAKE-ASK<br/>only when a question must be put"])
   n3["ALLOCATE"]
   n4["AUTHOR"]
-  n5["VERIFY"]
+  n5(["VERIFY"])
   n6["PRESENT<br/>hard stop -- human final say"]
   n7["WRITE<br/>only on approval"]
   n8(["DONE"])
@@ -38,14 +38,15 @@ flowchart TB
   n2 --> n3
   n3 --> n4
   n4 --> n5
-  n5 --> n6
+  n5 -. "when it is not clean and fewer than 3 cycles have run" .-> n4
+  n5 -->|"when the check is clean"| n6
   n6 --> n7
   n7 --> n8
   class n1 aidEntry
   class n2 aidExit
   class n3 aidStep
   class n4 aidStep
-  class n5 aidStep
+  class n5 aidExit
   class n6 aidStep
   class n7 aidStep
   class n8 aidExit
@@ -105,7 +106,7 @@ project source, preserving the document's existing genre structure.
 
 [Source: `canonical/skills/aid-update-document/SKILL.md#L97-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L97-L101) · [full step: `canonical/skills/aid-update-document/SKILL.md#L97-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L97-L103)
 
-<a id="fragment-n5"></a>**5 · `VERIFY`** · _step_
+<a id="fragment-n5"></a>**5 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L107-L111" wrap
 ## State: VERIFY

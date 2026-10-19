@@ -44,8 +44,8 @@ flowchart TB
   n6 -->|"when the consideration challenges the Understanding itself"| n1
   n6 -->|"when the user adds a consideration"| n2
   n6 -->|"when the user approves"| n7
-  n7 -->|"when it needs an out-of-scope addition (1b"| n3
-  n7 -->|"when the closure gap is fixable within Confirmed Scope (1a"| n4
+  n7 -->|"when it needs an out-of-scope addition (1b)"| n3
+  n7 -->|"when the closure gap is fixable within Confirmed Scope (1a)"| n4
   class n1 aidEntry
   class n2 aidExit
   class n3 aidExit

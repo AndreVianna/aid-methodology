@@ -60,7 +60,7 @@
       "label": "Rebuild INDEX.md",
       "kind": "exit",
       "terminal": {
-        "advanceType": "UNSPECIFIED",
+        "advanceType": "HALT",
         "handoff": null
       },
       "provenance": {

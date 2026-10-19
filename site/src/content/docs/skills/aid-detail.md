@@ -31,8 +31,8 @@ flowchart TB
   n4(["DONE"])
   n1 -. "otherwise" .- n1
   n1 -->|"once the task breakdown is approved and its files are written. The approval in…"| n3
-  n2 -. "otherwise" .- n2
-  n2 -->|"once the user confirms the reopen. A specific concern the user gives is…"| n3
+  n2 -->|"when the user confirms the reopen"| n3
+  n2 -->|"when the user keeps the task list as it is. A specific concern the user gives…"| n4
   n3 --> n4
   class n1 aidEntry
   class n2 aidEntry
@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** — Existing task files found, and the task list was previously… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L95" wrap
-| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW |
+| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW when the user reopens; CHAIN → DONE when the user keeps the list |
 ~~~~
 
 [Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/confirm.md#L1-L16`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/confirm.md#L1-L16)

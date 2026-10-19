@@ -37,7 +37,7 @@ flowchart TB
   n3 -->|"when any check fails"| n4
   n3 -->|"when every check passes"| n6
   n4 -->|"when the user chooses to fix here"| n5
-  n5 -->|"otherwise"| n4
+  n5 -->|"when a check still fails"| n4
   n5 -->|"when every check passes"| n6
   n6 --> n7
   n8 -->|"on [1] New release"| n1
@@ -97,7 +97,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n5"></a>**5 · `RE-VERIFY`** — The user chose to fix the failed checks here. · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L192" wrap
-| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |
+| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check still fails |
 ~~~~
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L192) · [full step: `canonical/skills/aid-deploy/references/state-re-verify.md#L1-L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-verify.md#L1-L17)

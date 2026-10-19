@@ -26,18 +26,18 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
-  n2["CREATE"]
-  n3["VERIFY"]
+  n2(["CREATE"])
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
-  n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n2 -->|"when no condition above refuses"| n3
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidEntry
-  class n2 aidStep
-  class n3 aidLoopBack
+  class n2 aidExit
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -74,7 +74,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-cicd/SKILL.md#L53-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L53-L69) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L53-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L53-L71)
 
-<a id="fragment-n2"></a>**2 · `CREATE`** · _step_
+<a id="fragment-n2"></a>**2 · `CREATE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L75-L77" wrap
 ## State: CREATE
@@ -84,7 +84,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-cicd/SKILL.md#L75-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L75-L77) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L75-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L75-L109)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L113-L116" wrap
 ## State: VERIFY
@@ -112,7 +112,7 @@ surfaces were written; and anything routed to `/aid-update-cicd` is named.
 ~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L132-L134" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-create-cicd/SKILL.md#L132-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L132-L134) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L132-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L132-L134)

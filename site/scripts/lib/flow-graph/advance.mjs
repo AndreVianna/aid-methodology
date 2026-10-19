@@ -941,6 +941,34 @@ function _tokenBoundaryRe(name, flags = '') {
 }
 
 /**
+ * Trim routing punctuation from the start of `text`. An opening parenthesis is kept when a
+ * closing one in the text matches it, so a clause that opens with a parenthetical keeps
+ * its pair: removing only the `(` left the `)` unmatched and the trailing trim then cut
+ * the real closing parenthesis at the end ("... (Step 4B, question open").
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function _trimLeadingPunct(text) {
+  let s = text;
+  for (;;) {
+    s = s.trim();
+    const m = s.match(/^[[\]().,;:!?→>-]/);
+    if (!m) return s;
+    if (m[0] === '(') {
+      let depth = 0;
+      let matched = false;
+      for (let i = 0; i < s.length; i++) {
+        if (s[i] === '(') depth++;
+        else if (s[i] === ')') { depth--; if (depth === 0) { matched = true; break; } }
+      }
+      if (matched) return s;
+    }
+    s = s.slice(1);
+  }
+}
+
+/**
  * Trim routing punctuation from both ends of `text`, keeping a closing parenthesis that
  * closes an opening one inside the text.
  *
@@ -953,7 +981,7 @@ function _tokenBoundaryRe(name, flags = '') {
  * @returns {string}
  */
 function _trimEdgePunct(text) {
-  let s = text.replace(/^[[\]().,;:!?→>-]+/, '').trim();
+  let s = _trimLeadingPunct(text);
   for (;;) {
     const m = s.match(/[[\](.,;:!?→>-]+$/);
     if (m) { s = s.slice(0, s.length - m[0].length).trim(); continue; }
@@ -1063,6 +1091,17 @@ function _extractCondition(clauseText, targetName) {
   // (9) Collapse whitespace and trim
   text = text.replace(/\s+/g, ' ').trim();
 
+  // (9a) A parenthetical aside that is the only text left is a note about the step, not a
+  //      guard on the edge. "CHAIN -> SCOPE (a concept that cannot be grounded is asked in
+  //      the step first ...)" published an "otherwise" self-loop on ANALYZE, because the
+  //      aside became the edge's condition and a lone conditional edge gets a self-loop.
+  //      An aside that opens with a condition word is still a guard and is kept.
+  if (/\(/.test(text)
+      && !/[A-Za-z0-9]/.test(text.replace(/\([^()]*\)/g, ''))
+      && !/^\(\s*(?:when|if|once|unless|after|on|only|otherwise|or|optional)\b/i.test(text)) {
+    return null;
+  }
+
   // (10) Strip leading/trailing routing punctuation
   text = _trimEdgePunct(text);
 
@@ -1075,7 +1114,7 @@ function _extractCondition(clauseText, targetName) {
   const closes = (text.match(/\)/g) || []).length;
   if (opens > closes) {
     text = text.slice(0, text.lastIndexOf('(')).trim();
-    text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
+    text = _trimEdgePunct(text);
   }
 
   // (12) Fragment guard — orphaned CLOSE-bracket (more closes than opens).
@@ -1100,7 +1139,9 @@ function _extractCondition(clauseText, targetName) {
   // prefix is ordinary authoring that nobody has written yet, and it would publish
   // a dangling footnote. Its own test below pins it, so it cannot rot unnoticed.
   text = text.replace(/\s*[—–\-:;]\s*see\s*$/i, '').trim();
-  text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
+  // A trailing "instead" is the tail of a sentence that put the condition first ("..., instead").
+  text = text.replace(/[\s,;]+instead$/i, '').trim();
+  text = _trimEdgePunct(text);
 
   // (14) Trailing-preposition guard.  When the resolved state name was the
   //      object of a routing phrase such as "to continue to [State: CONTINUE]",

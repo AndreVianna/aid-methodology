@@ -240,7 +240,7 @@ aid-describe  ▸ you are here
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | CHAIN → CONTINUE |
 | Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / CHAIN → COMPLETION (brownfield or seed already complete) |
+| CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED when the work is greenfield and its seed is not yet complete; CHAIN → COMPLETION when the work is brownfield, or its seed is already complete |
 | DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | CHAIN → CONTINUE when the user adds a consideration; HALT when the user approves, naming `/aid-define {work}` |
 

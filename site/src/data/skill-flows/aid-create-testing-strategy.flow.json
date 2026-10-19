@@ -32,8 +32,11 @@
       "order": 2,
       "name": "CREATE",
       "label": "CREATE",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when a refusal above leaves nothing to write"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 70,
@@ -46,7 +49,7 @@
         "startLine": 70,
         "endLine": 104,
         "sourceKind": "skill",
-        "excerpt": "## State: CREATE\n\n**Exactly three conditions refuse. There is no fourth.**\n\n1. **No seed** at `.aid/design/testing-strategy.md` -> refuse, name\n   `/aid-design-testing-strategy` as the skill that produces one, and write nothing.\n2. **The seed's `## Open questions` still carries unresolved questions** by the detection\n   rule in `design-lifecycle.md`, and no `--override-open-questions` was supplied -> refuse,\n   naming each unresolved question and that override token. Leave the seed byte-identical.\n3. **A destination's frontmatter says `source: generated`** -> refuse for that document: a\n   registered build script owns its content, so this skill must not write it.\n\nOtherwise it **realizes**. Whatever a destination already holds is never itself a reason to\nrefuse -- an as-built C6 document is the normal case this skill is for.\n\n**The realization event.** Merge the settled seed content into the two destinations per the\ncontent rules below, offer any additional output the user asks for, then **delete the seed**.\nSituations resolve as:\n\n- A destination absent, this skill owning the whole document -> create it, then register it\n  (see *Creating the gate document* below).\n- Destination present, the owned content absent -> add it. This is the dominant path.\n- Destination present, carrying content **an earlier `create` for this artifact committed**\n  -> that part routes to `/aid-update-testing-strategy` rather than being overwritten.\n  \"Committed content\" means content an earlier run of this lifecycle wrote, at the\n  granularity of the sections the seed's `## Destination` names -- **not** the as-built\n  content `/aid-discover` wrote.\n\n**A repeat `create` never halts with nothing done.** Every part of the seed that is new is\nwritten; each part that would overwrite previously committed content is **named and routed**\nto `/aid-update-testing-strategy`. The seed is deleted only when everything its\n`## Destination` named was written; otherwise it stays in place carrying just the unrealized\nparts, which `/aid-update-testing-strategy` then consumes.\n\n**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "## State: CREATE\n\n**Exactly three conditions refuse. There is no fourth.**\n\n1. **No seed** at `.aid/design/testing-strategy.md` -> refuse, name\n   `/aid-design-testing-strategy` as the skill that produces one, and write nothing.\n2. **The seed's `## Open questions` still carries unresolved questions** by the detection\n   rule in `design-lifecycle.md`, and no `--override-open-questions` was supplied -> refuse,\n   naming each unresolved question and that override token. Leave the seed byte-identical.\n3. **A destination's frontmatter says `source: generated`** -> refuse for that document: a\n   registered build script owns its content, so this skill must not write it.\n\nOtherwise it **realizes**. Whatever a destination already holds is never itself a reason to\nrefuse -- an as-built C6 document is the normal case this skill is for.\n\n**The realization event.** Merge the settled seed content into the two destinations per the\ncontent rules below, offer any additional output the user asks for, then **delete the seed**.\nSituations resolve as:\n\n- A destination absent, this skill owning the whole document -> create it, then register it\n  (see *Creating the gate document* below).\n- Destination present, the owned content absent -> add it. This is the dominant path.\n- Destination present, carrying content **an earlier `create` for this artifact committed**\n  -> that part routes to `/aid-update-testing-strategy` rather than being overwritten.\n  \"Committed content\" means content an earlier run of this lifecycle wrote, at the\n  granularity of the sections the seed's `## Destination` names -- **not** the as-built\n  content `/aid-discover` wrote.\n\n**A repeat `create` never halts with nothing done.** Every part of the seed that is new is\nwritten; each part that would overwrite previously committed content is **named and routed**\nto `/aid-update-testing-strategy`. The seed is deleted only when everything its\n`## Destination` named was written; otherwise it stays in place carrying just the unrealized\nparts, which `/aid-update-testing-strategy` then consumes.\n\n**Advance:** CHAIN -> [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write."
       }
     },
     {
@@ -54,8 +57,11 @@
       "order": 3,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the 3-cycle circuit breaker has tripped"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 108,
@@ -68,7 +74,7 @@
         "startLine": 108,
         "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -108,14 +114,14 @@
         "startLine": 127,
         "endLine": 129,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 127,
         "endLine": 129,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       }
     }
   ],
@@ -137,43 +143,43 @@
     {
       "from": "n2",
       "to": "n3",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "when no condition above refuses",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 104,
         "endLine": 104,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write."
       }
     },
     {
       "from": "n3",
       "to": "n2",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
-        "startLine": 110,
-        "endLine": 110,
-        "sourceKind": "skill",
-        "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the"
-      }
-    },
-    {
-      "from": "n3",
-      "to": "n4",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 113,
         "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "when the verify is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
+        "startLine": 113,
+        "endLine": 113,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -195,6 +201,8 @@
     "n1"
   ],
   "exits": [
+    "n2",
+    "n3",
     "n5"
   ],
   "sources": [

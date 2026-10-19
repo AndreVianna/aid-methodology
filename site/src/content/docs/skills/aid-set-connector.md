@@ -85,32 +85,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n4"></a>**4 · `STEP-3`** — Classify — ADD vs UPDATE (single stem only) · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L108" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L115" wrap
 ## Step 3: Classify — ADD vs UPDATE (single stem only)
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L108)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L115)
 
 <a id="fragment-n5"></a>**5 · `STEP-4`** — Ensure the .secrets/ gitignore precondition — BEFORE any… · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L130" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L137" wrap
 ## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L130)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L137)
 
 <a id="fragment-n6"></a>**6 · `STEP-5`** — Author the descriptor + reconcile the secret (set-skill… · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L152" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L159" wrap
 ## Step 5: Author the descriptor + reconcile the secret (set-skill logic)
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L152)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L159)
 
-<a id="fragment-n7"></a>**7 · `STEP-6`** — Single-stem reconcile → rebuild INDEX.md · _exit_ · UNSPECIFIED
+<a id="fragment-n7"></a>**7 · `STEP-6`** — Single-stem reconcile → rebuild INDEX.md · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L196" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L203" wrap
 ## Step 6: Single-stem reconcile → rebuild `INDEX.md`
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L196`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L196)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L203`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L203)

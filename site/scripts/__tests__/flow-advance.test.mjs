@@ -1891,3 +1891,60 @@ describe('Cycle-2 label repairs — pause arms, parentheses, code spans and hand
     expect(r.edges.find((e) => e.to === 'n2').condition).toBe('when the result is STALE');
   });
 });
+
+describe('Rule 3 — a closing parenthesis that closes a pair in the condition stays (cycle 3 label damage)', () => {
+  it('a label in parentheses ending the condition keeps its closing parenthesis', () => {
+    const r = parse(
+      advBlock('CHAIN -> A when the gap is fixable within scope (1a); CHAIN -> B when it needs an addition (1b); HALT after the commit.'),
+      states('A', 'B'),
+    );
+    expect(r.edges.find((e) => e.to === 'n1').condition).toBe('when the gap is fixable within scope (1a)');
+    expect(r.edges.find((e) => e.to === 'n2').condition).toBe('when it needs an addition (1b)');
+  });
+
+  it('a name with a hyphen inside the closing parenthetical keeps the pair', () => {
+    const r = parse(
+      advBlock('CHAIN -> B when the result is `CURRENT` (the DONE-IDEMPOTENT branch).'),
+      states('A', 'B'),
+    );
+    expect(r.edges[0].condition).toBe('when the result is CURRENT (the DONE-IDEMPOTENT branch)');
+  });
+
+  it('a hand-off that opens with a parenthetical keeps both of its pairs', () => {
+    const r = parse(
+      advBlock('HALT (the gate is the end for a delivery). This one ending closes the run (question open).'),
+      states('NEXT', 'OTHER'),
+    );
+    expect(r.terminal.handoff).toBe('(the gate is the end for a delivery). This one ending closes the run (question open)');
+  });
+
+  it('a stray closing parenthesis with no opening one is still removed', () => {
+    const r = parse(advBlock('HALT when done).'), states('A', 'B'));
+    expect(r.terminal.handoff).toBe('when done');
+  });
+});
+
+describe('Rule 3 — a trailing "instead" is not part of the condition (cycle 3 label damage)', () => {
+  it('"when the researcher returned a proposal, instead" reads as the condition without "instead"', () => {
+    const r = parse(
+      advBlock('CHAIN -> A; when the researcher returned a proposal, CHAIN -> B instead.'),
+      states('A', 'B'),
+    );
+    const cond = r.edges.find((e) => e.to === 'n2')?.condition ?? null;
+    expect(cond).not.toMatch(/instead/);
+  });
+});
+
+describe('Rule 5 — a parenthetical aside is a note, not a guard, so no "otherwise" self-loop (cycle 3)', () => {
+  it('"CHAIN -> B (a note about the step)" has an unconditional edge and no self-loop', () => {
+    const r = parse(advBlock('CHAIN -> B (a concept that cannot be grounded is asked in the step first)'), states('A', 'B'));
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].to).toBe('n2');
+    expect(r.edges[0].condition).toBeNull();
+  });
+
+  it('an aside that opens with a condition word is still a guard', () => {
+    const r = parse(advBlock('CHAIN -> B (when the user agrees)'), states('A', 'B'));
+    expect(r.edges.find((e) => e.to === 'n2').condition).toBe('(when the user agrees)');
+  });
+});

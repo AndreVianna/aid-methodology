@@ -30,7 +30,7 @@ flowchart TB
   n3["INTAKE-ASK<br/>only when a question must be put"]
   n4["ALLOCATE"]
   n5["RUN"]
-  n6["VERIFY"]
+  n6(["VERIFY"])
   n7["PRESENT<br/>hard stop -- human"]
   n8["HANDOFF<br/>optional; printed suggestions only"]
   n9(["DONE"])
@@ -40,8 +40,8 @@ flowchart TB
   n3 --> n4
   n4 --> n5
   n5 --> n6
-  n6 -.-> n5
-  n6 --> n7
+  n6 -. "when it is not clean and fewer than 3 cycles have run" .-> n5
+  n6 -->|"when the grade is clean"| n7
   n7 --> n8
   n8 --> n9
   class n1 aidEntry
@@ -49,7 +49,7 @@ flowchart TB
   class n3 aidStep
   class n4 aidStep
   class n5 aidStep
-  class n6 aidLoopBack
+  class n6 aidExit
   class n7 aidStep
   class n8 aidStep
   class n9 aidExit
@@ -124,7 +124,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
 
 [Source: `canonical/skills/aid-test/SKILL.md#L90-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L90-L100) · [full step: `canonical/skills/aid-test/SKILL.md#L90-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L90-L102)
 
-<a id="fragment-n6"></a>**6 · `VERIFY`** · _loop-back_
+<a id="fragment-n6"></a>**6 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L106-L115" wrap
 ## State: VERIFY

@@ -117,6 +117,8 @@ write a secret value):
 
 Exit 0.
 
+**Advance:** **HALT**.
+
 ---
 
 ## Write-zone

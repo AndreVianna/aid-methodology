@@ -27,19 +27,19 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["DESIGN"]
-  n3["VERIFY<br/>full -- a kept design drives a build"]
+  n3(["VERIFY<br/>full -- a kept design drives a build"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidStep
   class n6 aidExit
@@ -80,7 +80,7 @@ kept record).
 
 [Source: `canonical/skills/aid-design/SKILL.md#L67-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L67-L73) · [full step: `canonical/skills/aid-design/SKILL.md#L67-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md#L67-L75)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** — full -- a kept design drives a build · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** — full -- a kept design drives a build · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L79-L87" wrap
 ## State: VERIFY  (full -- a kept design drives a build)
@@ -123,7 +123,7 @@ capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a
 ~~~~plaintext title="canonical/skills/aid-design/SKILL.md#L113-L116" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. Keep
+Set the lifecycle to `Completed` through the writer. Keep
 `DESIGN.md` in the work folder as the kept design record.
 ~~~~
 

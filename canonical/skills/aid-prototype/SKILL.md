@@ -108,7 +108,7 @@ actually built, and (b) the **throwaway scope was respected** -- no production c
 nothing was committed to real modules. If the check fails, return to BUILD once to correct;
 do not loop on polish.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: BUILD] when the check fails the first time; otherwise CHAIN -> [State: PRESENT].
 
 ---
 

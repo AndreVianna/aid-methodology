@@ -29,21 +29,21 @@ flowchart TB
   n2(["GUARD"])
   n3(["REALIZE"])
   n4["REGISTER"]
-  n5["VERIFY"]
+  n5(["VERIFY"])
   n6["PRESENT<br/>hard stop -- the user decides"]
   n7(["DONE"])
   n1 --> n2
-  n2 -->|"when no question is unresolved"| n3
-  n3 -->|"creation or fill path"| n4
+  n2 -->|"when the gate passes"| n3
+  n3 -->|"when the document was created"| n4
   n4 --> n5
-  n5 -.-> n3
-  n5 --> n6
+  n5 -. "when it is not clean and fewer than 3 cycles have run" .-> n3
+  n5 -->|"when the verify is clean"| n6
   n6 --> n7
   class n1 aidEntry
   class n2 aidExit
   class n3 aidExit
   class n4 aidStep
-  class n5 aidLoopBack
+  class n5 aidExit
   class n6 aidStep
   class n7 aidExit
   class n1 aidNode
@@ -92,29 +92,31 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L78-L81" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L78-L83" wrap
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case
-determined in INTAKE:
+determined in INTAKE. The worker never asks the user: it returns the questions below
+(the route question, each per-item confirm gate and any undetermined `Tag`) and the main
+conversation asks them, through the question protocol.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L78-L177`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L177)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L78-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L83) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L78-L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L180)
 
 <a id="fragment-n4"></a>**4 · `REGISTER`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L181-L184" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L184-L187" wrap
 ## State: REGISTER
 
 **On creation only** (destination was absent in INTAKE). Write two surfaces atomically
 in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L181-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L181-L184) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L181-L196`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L181-L196)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L184-L187`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L184-L187) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L184-L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L184-L199)
 
-<a id="fragment-n5"></a>**5 · `VERIFY`** · _loop-back_
+<a id="fragment-n5"></a>**5 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L200-L204" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L203-L207" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -122,24 +124,24 @@ defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs esca
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L200-L204`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L200-L204) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L200-L206`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L200-L206)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L203-L207`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L203-L207) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L203-L209`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L203-L209)
 
 <a id="fragment-n6"></a>**6 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L210-L212" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L213-L215" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document clearly. Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L210-L212`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L210-L212) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L210-L219`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L210-L219)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L213-L215`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L213-L215) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L213-L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L213-L222)
 
 <a id="fragment-n7"></a>**7 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L223-L225" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L226-L228" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L223-L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L223-L225) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L223-L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L223-L225)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L226-L228`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L226-L228) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L226-L228`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L226-L228)

@@ -4,7 +4,7 @@
 
 Feature State is `Spike Needed`; a knowledge gap must be resolved before specification can continue.
 
-1. Update STATE.md: `**State:** Spike Needed` with What/Why/Scope/Blocked Sections
+1. Record in the work `STATE.yml` that this feature's `state` is `Spike Needed`, with What/Why/Scope/Blocked Sections
 2. Print spike details and exit
 
 On return: read spike results, record in the feature's `#### Technical Specification`, resume loop.

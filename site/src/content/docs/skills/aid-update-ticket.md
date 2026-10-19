@@ -58,48 +58,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L64" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L70" wrap
 ### State 1 — PARSE-ARGS
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L64)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L70)
 
 <a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L79" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L85" wrap
 ### State 2 — RESOLVE-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L79)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L85)
 
 <a id="fragment-n3"></a>**3 · `LOAD-CONTEXT`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L91" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L97" wrap
 ### State 3 — LOAD-CONTEXT
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L91)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L97)
 
 <a id="fragment-n4"></a>**4 · `COMPOSE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L115" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L121" wrap
 ### State 4 — COMPOSE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L115)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L121)
 
 <a id="fragment-n5"></a>**5 · `CONFIRM`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L176" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L182" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L176`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L176)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L182)
 
 <a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L207" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L214" wrap
 ### State 6 — WRITE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L207`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L207)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L214`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L214)

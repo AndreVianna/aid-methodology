@@ -35,12 +35,13 @@ flowchart TB
   n1 --> n2
   n2 --> n3
   n3 -->|"if Pending Q&amp;A entries with Impact: Required exist"| n4
-  n3 -->|"otherwise"| n5
+  n3 -->|"when none exists"| n5
   n4 -->|"when any answer implies a doc change"| n5
-  n4 -->|"otherwise once zero Pending and grade &gt;= minimum. The questions in Step 2 pause…"| n6
+  n4 -->|"when no answer does, zero questions are Pending and the grade is at least the…"| n6
   n5 -->|"if grade &lt; minimum"| n3
   n5 -->|"if grade ≥ minimum"| n6
   n6 -->|"on approval"| n7
+  n7 -->|"when the user confirms the reopen"| n3
   class n1 aidEntry
   class n2 aidExit
   class n3 aidDecision
@@ -74,12 +75,12 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW; HALT on greenfield |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L271`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L271) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1083`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1083)
+[Source: `canonical/skills/aid-discover/SKILL.md#L271`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L271) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1085`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1085)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — REVIEW grades all declared KB documents for accuracy… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L272" wrap
-| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A or FIX |
+| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A when a question is pending; CHAIN → FIX when none is |
 ~~~~
 
 [Source: `canonical/skills/aid-discover/SKILL.md#L272`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L272) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L659`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L659)
@@ -87,7 +88,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L273" wrap
-| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX or APPROVAL |
+| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX when an answer implies a doc change; CHAIN → APPROVAL when none does |
 ~~~~
 
 [Source: `canonical/skills/aid-discover/SKILL.md#L273`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L273) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65)
@@ -95,7 +96,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n5"></a>**5 · `FIX`** — FIX applies Q&amp;A answers and reviewer feedback to bring KB… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L274" wrap
-| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → REVIEW or APPROVAL |
+| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → REVIEW when the grade is below the minimum; CHAIN → APPROVAL when it is not |
 ~~~~
 
 [Source: `canonical/skills/aid-discover/SKILL.md#L274`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L274) · [full step: `canonical/skills/aid-discover/references/state-fix.md#L1-L126`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-fix.md#L1-L126)
@@ -111,7 +112,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE confirms discovery is complete and user-approved; it… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L276" wrap
-| DONE | `references/state-done.md` | inline | HALT |
+| DONE | `references/state-done.md` | inline | CHAIN → REVIEW when the user reopens; HALT when the user keeps the discovery |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L276`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L276) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L73)
+[Source: `canonical/skills/aid-discover/SKILL.md#L276`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L276) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L75)

@@ -233,9 +233,9 @@ aid-housekeep  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → CLEANUP if Mode=cleanup-only; otherwise CHAIN → KB-DELTA |
-| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled (the scope question is asked inside the step) |
-| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / WAIT if stalled |
-| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE (the checklist and teardown offers are asked inside the step) |
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA when it did not stall; HALT when it stalled |
+| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP when it did not stall; HALT when it stalled |
+| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 
 > **KB-DELTA sub-agent dispatch (feature-002).** The `aid-architect` Worker for

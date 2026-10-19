@@ -114,8 +114,11 @@
       "order": 6,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the circuit-breaker has blocked the work"
+      },
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
         "startLine": 106,
@@ -128,7 +131,7 @@
         "startLine": 106,
         "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -290,28 +293,28 @@
       "from": "n6",
       "to": "n5",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
-        "sourceKind": "skill",
-        "excerpt": "   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer."
-      }
-    },
-    {
-      "from": "n6",
-      "to": "n7",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
         "startLine": 117,
         "endLine": 117,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "branch",
+      "condition": "when the grade is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-test/SKILL.md",
+        "startLine": 117,
+        "endLine": 117,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -347,6 +350,7 @@
     "n1"
   ],
   "exits": [
+    "n6",
     "n9"
   ],
   "sources": [

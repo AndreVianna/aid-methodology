@@ -68,4 +68,4 @@ contradiction between two of them is visible. Run it on cycle 1 only -- that mak
 once per phase by construction. Definition:
 `reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
-**Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created (continue inline).
+**Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created; **CHAIN** -> [State: FIRST-RUN] when the grade is below minimum and the deliverables are fixable; **HALT** when the sequence is invalidated (recommend `--reset`).

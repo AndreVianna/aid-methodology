@@ -279,7 +279,7 @@
       "from": "n2",
       "to": "n10",
       "kind": "branch",
-      "condition": "when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch",
+      "condition": "when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch)",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-summarize/references/state-stale-check.md",

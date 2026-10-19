@@ -228,11 +228,11 @@ aid-specify ({feature})  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| INITIALIZE | `references/state-initialize.md` | `aid-architect` | ASK → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `aid-architect` | ASK → REVIEW |
+| INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |
+| CONTINUE | `references/state-continue.md` | `aid-architect` | CHAIN → REVIEW when every section is Complete; CHAIN → SPIKE when a spike is needed; CHAIN → BLOCKED when a loopback blocks it |
 | SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |
 | BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |
-| REVIEW | `references/state-review.md` | `aid-reviewer` | ASK → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
 | DONE | `references/state-done.md` | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

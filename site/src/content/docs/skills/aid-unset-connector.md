@@ -71,7 +71,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-unset-connector/SKILL.md#L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L67)
 
-<a id="fragment-n4"></a>**4 · `STEP-3`** — Rebuild INDEX.md · _exit_ · UNSPECIFIED
+<a id="fragment-n4"></a>**4 · `STEP-3`** — Rebuild INDEX.md · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L97" wrap
 ## Step 3: Rebuild `INDEX.md`

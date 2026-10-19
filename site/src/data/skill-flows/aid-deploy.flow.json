@@ -24,7 +24,7 @@
         "startLine": 1,
         "endLine": 34,
         "sourceKind": "worker",
-        "excerpt": "# State: IDLE\n\nNo active release; assess eligible deliveries and transition to SELECTING.\n\n### Step 1: Assess\n\nRead all inputs. Build a picture:\n- Which deliveries are complete (all tasks done, all grades ≥ minimum)?\n- Which deliveries are partially complete?\n- Which deliveries are already shipped (from prior packages)?\n- What does infrastructure.md § Deployment say about packaging?\n  - Build output type (executable, container, package, library, static site, installer)\n  - Target (app store, registry, cloud, on-prem, CDN)\n  - CI/CD pipeline (if any)\n  - Versioning scheme (semver, calver, custom)\n  - Environment details (runtime, config, secrets, dependencies)\n\nIf infrastructure.md has no Deployment section or it's a placeholder, SELECTING asks how this\nproject gets packaged and deployed, in the same question exchange (see `references/state-selecting.md`).\n\nUpdate work `STATE.md` `## Deploy State`: Status → Selecting.\n\nEmit pipeline lifecycle state (silent state-write only — no output, no gate). Deploy is a\nseparate path, not a numbered phase, so this does NOT change the work's `Phase`; it only marks the\nRunning lifecycle + active skill so the work-initiation gate can\nresume an interrupted deploy via `active_skill: aid-deploy`:\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-deploy --name IDLE\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Advance:** **CHAIN** → [State: SELECTING] (continue inline).\n"
+        "excerpt": "# State: IDLE\n\nNo active release; assess eligible deliveries and transition to SELECTING.\n\n### Step 1: Assess\n\nRead all inputs. Build a picture:\n- Which deliveries are complete (all tasks done, all grades ≥ minimum)?\n- Which deliveries are partially complete?\n- Which deliveries are already shipped (from prior packages)?\n- What does infrastructure.md § Deployment say about packaging?\n  - Build output type (executable, container, package, library, static site, installer)\n  - Target (app store, registry, cloud, on-prem, CDN)\n  - CI/CD pipeline (if any)\n  - Versioning scheme (semver, calver, custom)\n  - Environment details (runtime, config, secrets, dependencies)\n\nIf infrastructure.md has no Deployment section or it's a placeholder, SELECTING asks how this\nproject gets packaged and deployed, in the same question exchange (see `references/state-selecting.md`).\n\nUpdate work `STATE.md` `## Deploy State`: Status → Selecting.\n\nEmit pipeline lifecycle state (silent state-write only — no output; a failed write stops the run). Deploy is a\nseparate path, not a numbered phase, so this does NOT change the work's `Phase`; it only marks the\nRunning lifecycle + active skill so the work-initiation gate can\nresume an interrupted deploy via `active_skill: aid-deploy`:\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-deploy --name IDLE\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Advance:** **CHAIN** → [State: SELECTING] (continue inline).\n"
       }
     },
     {
@@ -111,14 +111,14 @@
         "startLine": 192,
         "endLine": 192,
         "sourceKind": "skill",
-        "excerpt": "| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |"
+        "excerpt": "| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check still fails |"
       },
       "detail": {
         "file": "canonical/skills/aid-deploy/references/state-re-verify.md",
         "startLine": 1,
         "endLine": 17,
         "sourceKind": "worker",
-        "excerpt": "# State: RE-VERIFY\n\nThe user chose to fix the failed checks here. Fix them, then run the checks again.\n\n### Step 3b: Fix and re-verify\n\n1. Fix the failing checks (minor fixes only; anything larger loops back to aid-execute at FIX-DECISION).\n2. Run the full build, the full test suite and the lint check again, as in VERIFYING Step 3, against the COMBINED scope of all selected deliveries.\n3. Log any failure to `{{LEDGER}}` per `.aid/runtime/templates/reviewer-ledger-schema.md`, and run\n   `bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}`.\n4. Record the results in the package file (Verification section).\n\nWhen every check passes (ledger is empty → grade A+): delete the ledger (`rm -f {{LEDGER}}`), update\nwork `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.\n\n**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) otherwise.\n"
+        "excerpt": "# State: RE-VERIFY\n\nThe user chose to fix the failed checks here. Fix them, then run the checks again.\n\n### Step 3b: Fix and re-verify\n\n1. Fix the failing checks (minor fixes only; anything larger loops back to aid-execute at FIX-DECISION).\n2. Run the full build, the full test suite and the lint check again, as in VERIFYING Step 3, against the COMBINED scope of all selected deliveries.\n3. Log any failure to `{{LEDGER}}` per `.aid/runtime/templates/reviewer-ledger-schema.md`, and run\n   `bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}`.\n4. Record the results in the package file (Verification section).\n\nWhen every check passes (ledger is empty → grade A+): delete the ledger (`rm -f {{LEDGER}}`), update\nwork `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.\n\n**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) when a check still fails.\n"
       }
     },
     {
@@ -151,7 +151,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "terminal — work is complete; user re-invokes /aid-deploy to start a new release"
+        "handoff": "(terminal — work is complete; user re-invokes /aid-deploy to start a new release)"
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
@@ -165,7 +165,7 @@
         "startLine": 1,
         "endLine": 33,
         "sourceKind": "worker",
-        "excerpt": "# State: DONE\n\nRelease complete. Emit the normalized Completed lifecycle state.\n\n### Step 10: Emit Completed lifecycle state\n\nEmit the normalized Completed lifecycle state (silent state-write only — no output, no gate):\n\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value none\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\nThis is the **M6 normalized-Completed emit**: it writes the authoritative Completed value of the `lifecycle`\nfrontmatter scalar so the dashboard reader can derive Completed from the normalized\nvalue (not from legacy fallback signals). It mirrors the same silent-state-write pattern that\nM4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,\nno observable behavior change.\n\n### Step 11: Summary\n\nPrint the release summary:\n```\nRelease complete.\n  Package: package-NNN ({version})\n  Deliveries shipped: {count}\n  Tasks shipped: {total count}\n  All lifecycle state updated.\n```\n\n**Advance:** **HALT** (terminal — work is complete; user re-invokes /aid-deploy to start a new release).\n"
+        "excerpt": "# State: DONE\n\nRelease complete. Emit the normalized Completed lifecycle state.\n\n### Step 10: Emit Completed lifecycle state\n\nEmit the normalized Completed lifecycle state (silent state-write only — no output; a failed write stops the run):\n\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value none\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\nThis is the **M6 normalized-Completed emit**: it writes the authoritative Completed value of the `lifecycle`\nfrontmatter scalar so the dashboard reader can derive Completed from the normalized\nvalue (not from legacy fallback signals). It mirrors the same silent-state-write pattern that\nM4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,\nno observable behavior change.\n\n### Step 11: Summary\n\nPrint the release summary:\n```\nRelease complete.\n  Package: package-NNN ({version})\n  Deliveries shipped: {count}\n  Tasks shipped: {total count}\n  All lifecycle state updated.\n```\n\n**Advance:** **HALT** (terminal — work is complete; user re-invokes /aid-deploy to start a new release).\n"
       }
     },
     {
@@ -269,14 +269,14 @@
       "from": "n5",
       "to": "n4",
       "kind": "branch",
-      "condition": "otherwise",
+      "condition": "when a check still fails",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-deploy/references/state-re-verify.md",
         "startLine": 16,
         "endLine": 16,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) otherwise."
+        "excerpt": "**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) when a check still fails."
       }
     },
     {
@@ -290,7 +290,7 @@
         "startLine": 16,
         "endLine": 16,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) otherwise."
+        "excerpt": "**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) when a check still fails."
       }
     },
     {

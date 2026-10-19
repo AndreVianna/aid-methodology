@@ -54,8 +54,11 @@
       "order": 3,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the 3-cycle circuit breaker has tripped"
+      },
       "provenance": {
         "file": "canonical/skills/aid-design-integration/SKILL.md",
         "startLine": 71,
@@ -68,7 +71,7 @@
         "startLine": 71,
         "endLine": 76,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -108,14 +111,14 @@
         "startLine": 89,
         "endLine": 92,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-integration/SKILL.md",
         "startLine": 89,
         "endLine": 92,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
       }
     }
   ],
@@ -152,28 +155,28 @@
       "from": "n3",
       "to": "n2",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-design-integration/SKILL.md",
-        "startLine": 73,
-        "endLine": 73,
-        "sourceKind": "skill",
-        "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
-      }
-    },
-    {
-      "from": "n3",
-      "to": "n4",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-integration/SKILL.md",
         "startLine": 76,
         "endLine": 76,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "when the verify is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 76,
+        "endLine": 76,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -195,6 +198,7 @@
     "n1"
   ],
   "exits": [
+    "n3",
     "n5"
   ],
   "sources": [

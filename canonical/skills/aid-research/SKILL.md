@@ -106,8 +106,7 @@ handoff** -- no code is written. If the researcher determines a gap genuinely ca
 closed on paper, it returns a **spike proposal** instead of a final answer; the step then
 goes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.
 
-**Advance:** CHAIN -> [State: VERIFY]; when the researcher returned a spike proposal,
-CHAIN -> [State: PROPOSE-SPIKE] instead.
+**Advance:** CHAIN -> [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN -> [State: VERIFY].
 
 ---
 
@@ -119,7 +118,11 @@ Once the user answers: on **authorization** -> re-dispatch `aid-researcher` to w
 throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed
 analytically and state the resulting limit in the Gaps section.
 
-**Advance:** ASK -> [State: VERIFY].
+The question pauses this step where it stands (`--step` with a `--detail` that says the spike question
+is open); the write that follows the answer, the spike or the Gaps note, is part of this step. Once it
+is done, record in the `--detail` what was decided.
+
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -137,11 +140,11 @@ analytically and state the resulting limit in the Gaps section.
 3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
    cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,
-   surface it.
+   surface it, and the run ends.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the grade is clean; CHAIN -> [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 

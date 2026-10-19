@@ -57,8 +57,11 @@
       "order": 3,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the circuit-breaker has blocked the work"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 101,
@@ -71,7 +74,7 @@
         "startLine": 101,
         "endLine": 106,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -111,14 +114,14 @@
         "startLine": 120,
         "endLine": 122,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step."
       },
       "detail": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 120,
         "endLine": 124,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
+        "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.\n\n**Advance:** HALT."
       }
     }
   ],
@@ -155,28 +158,28 @@
       "from": "n3",
       "to": "n2",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-update-cicd/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
-        "sourceKind": "skill",
-        "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
-      }
-    },
-    {
-      "from": "n3",
-      "to": "n4",
-      "kind": "sequence",
-      "condition": null,
+      "condition": "when it is not clean and fewer than 3 cycles have run",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-cicd/SKILL.md",
         "startLine": 106,
         "endLine": 106,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "when the verify is clean",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-cicd/SKILL.md",
+        "startLine": 106,
+        "endLine": 106,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
     },
     {
@@ -199,6 +202,7 @@
   ],
   "exits": [
     "n1",
+    "n3",
     "n5"
   ],
   "sources": [

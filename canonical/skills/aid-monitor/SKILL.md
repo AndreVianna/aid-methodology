@@ -219,7 +219,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 |-------|--------|--------|---------|
 | OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |
 | CLASSIFY | `references/state-classify.md` | `aid-researcher` | CHAIN → ROUTE |
-| ROUTE | `references/state-route.md` | `inline` (main conversation) | ASK then HALT (hand-offs to `/aid-orchestrate`) |
+| ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |
 | DONE | _(inline — see Re-run below)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

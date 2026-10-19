@@ -41,6 +41,12 @@ tool-limit stop.
 locally. The only write it ever performs is the single host-MCP mutation call at `WRITE`, and only
 after an explicit confirm. An attached file is read here for its preview; it is never copied.
 
+**Its questions.** This skill can ask up to four questions, one at a time and inline: the connector
+pick on the ladder (RESOLVE-CONNECTOR), a missing attachment file (LOAD-CONTEXT), the attachment-limit
+choice (COMPOSE or WRITE) and the confirmation (CONFIRM). It has no shell, so it cannot run the work
+record's writer and records none of them (`question-protocol.md` § Where each record lives): each is
+asked through the question protocol, answered inline, and the step goes on with the answer.
+
 ---
 
 ## Pre-flight
@@ -178,7 +184,8 @@ The stop, for every case:
 A single in-invocation confirm, asked and answered inline before WRITE — the skill never exits
 mid-run to collect this answer (`ticket-resolution.md` § "Write Preview + Confirm Gate";
 [`skill-steps.md`](../../aid/templates/skill-steps.md) § "The step procedure" part 3 — the user decides
-here, so the question pauses the step where it stands, and the step then branches on the answer). Show the
+here, so the question pauses the step where it stands, and the step then branches on the answer; this skill
+runs none of that part's writer calls, since it has no shell). Show the
 **exact** change for whichever PART is being mutated:
 
 - **`description`** → the before/after pair from COMPOSE.

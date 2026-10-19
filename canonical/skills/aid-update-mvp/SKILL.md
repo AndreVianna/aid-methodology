@@ -144,7 +144,7 @@ MVP section in this same dispatch.
 defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation
 to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
@@ -170,7 +170,7 @@ Assert:
 
 ## State: DONE
 
-Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 
 **Advance:** HALT.
 
@@ -199,4 +199,4 @@ Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `
 - **C-3 compliance**: writes no `## Change Log`, no `## Revision History`, no
   `changelog:` frontmatter field, no work id, and no work-folder path into `roadmap.md`.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the lifecycle through the writer (`--pipeline --field Lifecycle`) at every transition.

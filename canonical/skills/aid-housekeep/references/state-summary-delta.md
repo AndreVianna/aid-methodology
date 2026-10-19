@@ -265,7 +265,7 @@ Print:
 ✓ SUMMARY-DELTA: summary regenerated and approved — committed.
 ```
 
-**Advance:** **CHAIN** → [State: CLEANUP] (continue inline).
+Next, inside this step: Branch A is done; this step's one **Advance:** line is at the end of this file.
 
 ---
 
@@ -308,7 +308,7 @@ Print:
 
 (If a migration commit was made, print it before the above line.)
 
-**Advance:** **CHAIN** → [State: CLEANUP] (continue inline).
+Next, inside this step: Branch B is done; this step's one **Advance:** line is at the end of this file.
 
 ---
 
@@ -341,16 +341,15 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 
-Print the resume banner, then WAIT:
+Print the resume banner, then end the run:
 
 ```
 ⏸  /aid-housekeep paused at SUMMARY-DELTA — <stall-reason>.
    Fix: <actionable instruction, e.g. "correct the failing diagram and re-run /aid-summarize,
         or re-run /aid-housekeep to retry from SUMMARY-DELTA">.
-   Resume: re-run /aid-housekeep — it will pick up at SUMMARY-DELTA (not job 1).
+   Resume: the next /aid-housekeep run picks up at SUMMARY-DELTA (not job 1).
 ```
 
 **No commit** is made in this branch.
 
-**Advance:** **WAIT** (re-run resumes at SUMMARY-DELTA via
-`SKILL.md § State Detection` row 4).
+**Advance:** **CHAIN** → [State: CLEANUP] when the stage did not stall; **HALT** when it stalled (Branch C).

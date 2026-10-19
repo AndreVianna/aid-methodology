@@ -29,7 +29,7 @@ flowchart TB
   n2["INTAKE-ASK<br/>only when a question must be put"]
   n3["ALLOCATE"]
   n4["REVIEW"]
-  n5["VERIFY<br/>who reviews the reviewer"]
+  n5(["VERIFY<br/>who reviews the reviewer"])
   n6["PRESENT-FINDINGS<br/>always a hard stop -- human final say"]
   n7["PUBLISH<br/>only on approval"]
   n8(["DONE"])
@@ -38,15 +38,15 @@ flowchart TB
   n2 --> n3
   n3 --> n4
   n4 --> n5
-  n5 -.-> n4
-  n5 --> n6
+  n5 -. "when it is not clean and fewer than 3 cycles have run" .-> n4
+  n5 -->|"when the grade is clean"| n6
   n6 --> n7
   n7 --> n8
   class n1 aidEntry
   class n2 aidStep
   class n3 aidStep
   class n4 aidStep
-  class n5 aidLoopBack
+  class n5 aidExit
   class n6 aidStep
   class n7 aidStep
   class n8 aidExit
@@ -103,7 +103,7 @@ Purpose: gather evidence and produce the grounded findings ledger.
 
 [Source: `canonical/skills/aid-review/SKILL.md#L131-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L131-L133) · [full step: `canonical/skills/aid-review/SKILL.md#L131-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L131-L152)
 
-<a id="fragment-n5"></a>**5 · `VERIFY`** — who reviews the reviewer · _loop-back_
+<a id="fragment-n5"></a>**5 · `VERIFY`** — who reviews the reviewer · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L156-L158" wrap
 ## State: VERIFY  (who reviews the reviewer)

@@ -35,7 +35,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "the override is supplied; when a question is unresolved and no override is supplied (the refusal above)"
+        "handoff": "when the gate refuses"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
@@ -49,7 +49,7 @@
         "startLine": 67,
         "endLine": 77,
         "sourceKind": "skill",
-        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved question\n  **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave\n  seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above)."
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved question\n  **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave\n  seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses."
       }
     },
     {
@@ -60,21 +60,21 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on the route case (the question above stays open and the run ends)"
+        "handoff": "filled; when the route case applies and its question has been answered"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
         "startLine": 81,
-        "endLine": 84,
+        "endLine": 85,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:"
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE. The worker never asks the user: the route question below is\nasked by the main conversation."
       },
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
         "startLine": 81,
-        "endLine": 136,
+        "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and REGISTER and VERIFY are not called. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml\n---\nkb-category: primary\nsource: hand-authored\nobjective: Present commitment and future direction for {project} — what it has decided to do next, why, and what it deliberately did not choose.\nsummary: Read this to know where the project is going and what the first committed slice is; specific defined-and-prioritized items live in backlog.md and shipped work in release-tracking.md.\nsources: []\ntags: [D, roadmap, commitment, direction, mvp]\nsee_also: [backlog.md, decisions.md, release-tracking.md]\nowner: architect\naudience: [architect, pm, developer]\n---\n```\n\n`source: hand-authored` -- no as-built counterpart exists for the Conformance Lane to\ncompare a direction entry against (`decisions.md` carries the same value for the same\nreason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).\n\n**Advance:** CHAIN -> [State: REGISTER] (creation or fill path); HALT on the route case (the question above stays open and the run ends)."
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE. The worker never asks the user: the route question below is\nasked by the main conversation.\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and REGISTER and VERIFY are not called. On a yes, name the skill's command to run, in one plain line. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml\n---\nkb-category: primary\nsource: hand-authored\nobjective: Present commitment and future direction for {project} — what it has decided to do next, why, and what it deliberately did not choose.\nsummary: Read this to know where the project is going and what the first committed slice is; specific defined-and-prioritized items live in backlog.md and shipped work in release-tracking.md.\nsources: []\ntags: [D, roadmap, commitment, direction, mvp]\nsee_also: [backlog.md, decisions.md, release-tracking.md]\nowner: architect\naudience: [architect, pm, developer]\n---\n```\n\n`source: hand-authored` -- no as-built counterpart exists for the Conformance Lane to\ncompare a direction entry against (`decisions.md` carries the same value for the same\nreason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).\n\n**Advance:** CHAIN -> [State: REGISTER] when the document was created or filled; HALT when the route case applies and its question has been answered."
       }
     },
     {
@@ -86,15 +86,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 140,
-        "endLine": 143,
+        "startLine": 141,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):"
       },
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 140,
-        "endLine": 155,
+        "startLine": 141,
+        "endLine": 156,
         "sourceKind": "skill",
         "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):\n\n1. **`.aid/settings.yml` `knowledge.doc_set`** -- append exactly one line:\n   `    - roadmap.md|skill-self|required`\n   using the R13 append-block idiom (append to the existing `doc_set:` list; never rewrite\n   the block; never touch `term_exclusions`).\n2. **`.aid/knowledge/README.md` Completeness table** -- append exactly one row:\n   `Concern` = `D`, `Owner` = `skill-self`, `Status` = `Created (skill-self)`;\n   and increment the `**Doc-set:** N documents` count line by 1.\n\nBoth writes must succeed in the same run. If either fails, report and halt.\n\n**Advance:** CHAIN -> [State: VERIFY]."
       }
@@ -104,21 +104,24 @@
       "order": 5,
       "name": "VERIFY",
       "label": "VERIFY",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the 3-cycle circuit breaker has tripped"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 159,
-        "endLine": 163,
+        "startLine": 160,
+        "endLine": 164,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 159,
-        "endLine": 165,
+        "startLine": 160,
+        "endLine": 166,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -130,15 +133,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 169,
-        "endLine": 171,
+        "startLine": 170,
+        "endLine": 172,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document clearly. Assert:"
       },
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 169,
-        "endLine": 178,
+        "startLine": 170,
+        "endLine": 179,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document clearly. Assert:\n\n- `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).\n- On the creation path: both registration surfaces were written.\n- To revise horizon entries later, use `/aid-update-roadmap`.\n- To draw the MVP line, use `/aid-create-mvp`.\n\n**Advance:** ASK -> [State: DONE]."
       }
@@ -155,17 +158,17 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 182,
-        "endLine": 184,
+        "startLine": 183,
+        "endLine": 185,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 182,
-        "endLine": 184,
+        "startLine": 183,
+        "endLine": 185,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer."
       }
     }
   ],
@@ -188,28 +191,28 @@
       "from": "n2",
       "to": "n3",
       "kind": "branch",
-      "condition": "when no question is unresolved",
+      "condition": "when the gate passes",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
         "startLine": 77,
         "endLine": 77,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above)."
+        "excerpt": "**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses."
       }
     },
     {
       "from": "n3",
       "to": "n4",
       "kind": "branch",
-      "condition": "creation or fill path",
+      "condition": "when the document was created",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 136,
-        "endLine": 136,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: REGISTER] (creation or fill path); HALT on the route case (the question above stays open and the run ends)."
+        "excerpt": "**Advance:** CHAIN -> [State: REGISTER] when the document was created or filled; HALT when the route case applies and its question has been answered."
       }
     },
     {
@@ -220,8 +223,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 155,
-        "endLine": 155,
+        "startLine": 156,
+        "endLine": 156,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
       }
@@ -230,28 +233,28 @@
       "from": "n5",
       "to": "n3",
       "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "condition": "when it is not clean and fewer than 3 cycles have run",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 162,
-        "endLine": 162,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
-        "excerpt": "defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation"
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
       "from": "n5",
       "to": "n6",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "when the verify is clean",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 165,
-        "endLine": 165,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
     },
     {
@@ -262,8 +265,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
-        "startLine": 178,
-        "endLine": 178,
+        "startLine": 179,
+        "endLine": 179,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
@@ -275,6 +278,7 @@
   "exits": [
     "n2",
     "n3",
+    "n5",
     "n7"
   ],
   "sources": [

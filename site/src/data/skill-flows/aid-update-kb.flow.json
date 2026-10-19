@@ -342,7 +342,7 @@
       "from": "n7",
       "to": "n3",
       "kind": "branch",
-      "condition": "when it needs an out-of-scope addition (1b",
+      "condition": "when it needs an out-of-scope addition (1b)",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-kb/references/state-done.md",
@@ -356,7 +356,7 @@
       "from": "n7",
       "to": "n4",
       "kind": "branch",
-      "condition": "when the closure gap is fixable within Confirmed Scope (1a",
+      "condition": "when the closure gap is fixable within Confirmed Scope (1a)",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-kb/references/state-done.md",

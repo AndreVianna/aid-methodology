@@ -35,9 +35,9 @@ flowchart TB
   n6(["CONFIRM"])
   n7["FILE"]
   n8(["RETURN-REF"])
-  n1 --> n2
-  n2 -->|"when two"| n3
-  n2 -->|"when the connector resolves silently (explicit stem, sole match, or host MCP"| n4
+  n1 -->|"when the arguments parse"| n2
+  n2 -->|"when several connectors match"| n3
+  n2 -->|"when the connector resolves silently"| n4
   n3 -. "otherwise" .- n3
   n3 -->|"once the user has picked the connector"| n4
   n4 --> n5
@@ -45,7 +45,7 @@ flowchart TB
   n6 -. "on [2] Edit , with the user's requested change folded into the payload" .-> n4
   n6 -->|"once the user has chosen [1] File it"| n7
   n7 --> n8
-  class n1 aidEntry
+  class n1 aidExit
   class n2 aidExit
   class n3 aidLoopBack
   class n4 aidExit
@@ -66,7 +66,7 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
+<a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L69" wrap
 ### State 1 — PARSE-ARGS

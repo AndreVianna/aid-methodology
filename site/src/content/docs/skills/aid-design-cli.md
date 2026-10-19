@@ -27,17 +27,17 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["DESIGN"]
-  n3["VERIFY"]
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -83,7 +83,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 
 [Source: `canonical/skills/aid-design-cli/SKILL.md#L55-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L55-L63) · [full step: `canonical/skills/aid-design-cli/SKILL.md#L55-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L55-L65)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-cli/SKILL.md#L69-L72" wrap
 ## State: VERIFY
@@ -110,7 +110,7 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cli`).
 ~~~~plaintext title="canonical/skills/aid-design-cli/SKILL.md#L87-L90" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/cli.md`; consumption happens at `/aid-create-cli`.
 ~~~~
 

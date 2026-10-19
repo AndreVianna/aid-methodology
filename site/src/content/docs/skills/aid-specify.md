@@ -26,21 +26,24 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INITIALIZE<br/>First run for this feature; load context, determine…"])
-  n2["CONTINUE<br/>The work STATE.yml's features: entry for this feature shows…"]
-  n3(["SPIKE<br/>&gt; Source: references/handling-outcomes.md §&quot;Spike Needed…"])
-  n4(["BLOCKED<br/>&gt; Source: references/handling-outcomes.md §&quot;Blocked (State…"])
-  n5["REVIEW<br/>All sections complete; re-review entire spec against…"]
+  n2{"CONTINUE"}
+  n3["SPIKE<br/>&gt; Source: references/handling-outcomes.md §&quot;Spike Needed…"]
+  n4["BLOCKED<br/>&gt; Source: references/handling-outcomes.md §&quot;Blocked (State…"]
+  n5(["REVIEW<br/>All sections complete; re-review entire spec against…"])
   n6(["DONE<br/>Spec is Ready and has met the minimum grade; this feature's…"])
   n1 --> n2
-  n2 --> n5
+  n2 -->|"when a spike is needed"| n3
+  n2 -->|"when a loopback blocks the feature"| n4
+  n2 -->|"when all sections are Complete"| n5
   n3 --> n2
   n4 --> n2
-  n5 --> n6
+  n5 -->|"when the grade is below minimum and sections are fixable"| n2
+  n5 -->|"when the spec stays Ready"| n6
   class n1 aidEntry
-  class n2 aidStep
-  class n3 aidEntry
-  class n4 aidEntry
-  class n5 aidStep
+  class n2 aidDecision
+  class n3 aidStep
+  class n4 aidStep
+  class n5 aidExit
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -56,20 +59,20 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n1"></a>**1 · `INITIALIZE`** — First run for this feature; load context, determine… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L231" wrap
-| INITIALIZE | `references/state-initialize.md` | `aid-architect` | ASK → CONTINUE |
+| INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L231) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L145)
+[Source: `canonical/skills/aid-specify/SKILL.md#L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L231) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L146)
 
-<a id="fragment-n2"></a>**2 · `CONTINUE`** — The work STATE.yml's features: entry for this feature shows… · _step_
+<a id="fragment-n2"></a>**2 · `CONTINUE`** — The work STATE.yml's features: entry for this feature shows… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L232" wrap
-| CONTINUE | `references/state-continue.md` | `aid-architect` | ASK → REVIEW |
+| CONTINUE | `references/state-continue.md` | `aid-architect` | CHAIN → REVIEW when every section is Complete; CHAIN → SPIKE when a spike is needed; CHAIN → BLOCKED when a loopback blocks it |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L232`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L232) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L116)
+[Source: `canonical/skills/aid-specify/SKILL.md#L232`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L232) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L122)
 
-<a id="fragment-n3"></a>**3 · `SPIKE`** — > Source: references/handling-outcomes.md §"Spike Needed… · _entry_
+<a id="fragment-n3"></a>**3 · `SPIKE`** — > Source: references/handling-outcomes.md §"Spike Needed… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L233" wrap
 | SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |
@@ -77,7 +80,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-specify/SKILL.md#L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L233) · [full step: `canonical/skills/aid-specify/references/state-spike.md#L1-L22`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-spike.md#L1-L22)
 
-<a id="fragment-n4"></a>**4 · `BLOCKED`** — > Source: references/handling-outcomes.md §"Blocked (State… · _entry_
+<a id="fragment-n4"></a>**4 · `BLOCKED`** — > Source: references/handling-outcomes.md §"Blocked (State… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L234" wrap
 | BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |
@@ -85,13 +88,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-specify/SKILL.md#L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L234) · [full step: `canonical/skills/aid-specify/references/state-blocked.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-blocked.md#L1-L19)
 
-<a id="fragment-n5"></a>**5 · `REVIEW`** — All sections complete; re-review entire spec against… · _step_
+<a id="fragment-n5"></a>**5 · `REVIEW`** — All sections complete; re-review entire spec against… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L235" wrap
-| REVIEW | `references/state-review.md` | `aid-reviewer` | ASK → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L235`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L235) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L93)
+[Source: `canonical/skills/aid-specify/SKILL.md#L235`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L235) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L95)
 
 <a id="fragment-n6"></a>**6 · `DONE`** — Spec is Ready and has met the minimum grade; this feature's… · _exit_ · HALT
 

@@ -99,6 +99,13 @@ non-`none` result — the `secret_reference` FORM (default `file:.aid/connectors
 `tags` / `audience` are **never prompted** — auto-derived exactly as ELICIT does: the preset row's
 `tags` column when present, else `[connector, <type>]`; `audience` always `[developer, architect]`.
 
+**Recording.** This skill keeps no work record, so each question it asks is recorded in the project
+file `.aid/STATE.yml` (`question-protocol.md` § Where each record lives). Before a question is shown:
+`bash .aid/runtime/scripts/execute/writeback-state.sh --project --ask --category Connections --impact <High|Medium|Low> --context '<the question>' --suggested '<the recommendation>' --asked-by aid-set-connector`,
+which prints the question's id. Right after the answer:
+`bash .aid/runtime/scripts/execute/writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'connector <stem>'`.
+Never put a secret value in either call. A non-zero exit stops the skill at once.
+
 Hold the resolved `auth_method` in `$NEW_AUTH` (forced `none` for `mcp`/`ssh`/`cli`, chosen for
 `api` only) — Step 5b's decision procedure compares `$TYPE`/`$NEW_AUTH` (this run's result) against
 `$OLD_TYPE`/`$OLD_AUTH` (Step 3, on-disk).
@@ -215,6 +222,8 @@ write a secret value):
 ```
 
 Exit 0.
+
+**Advance:** **HALT**.
 
 ---
 

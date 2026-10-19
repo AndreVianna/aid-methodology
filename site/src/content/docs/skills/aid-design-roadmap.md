@@ -27,17 +27,17 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["DESIGN"]
-  n3["VERIFY"]
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -82,7 +82,7 @@ sequencing rationale; the alternatives being rejected and why.**
 
 [Source: `canonical/skills/aid-design-roadmap/SKILL.md#L62-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L62-L67) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L62-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L62-L74)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L78-L82" wrap
 ## State: VERIFY
@@ -111,7 +111,7 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 ~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L98-L102" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 stays at `.aid/design/roadmap.md` -- consumption happens at `/aid-create-roadmap`, not
 here.
 ~~~~

@@ -27,17 +27,17 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["DESIGN"]
-  n3["VERIFY"]
+  n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
   n1 --> n2
   n2 --> n3
-  n3 -.-> n2
-  n3 --> n4
+  n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
+  n3 -->|"when the verify is clean"| n4
   n4 --> n5
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidLoopBack
+  class n3 aidExit
   class n4 aidStep
   class n5 aidExit
   class n1 aidNode
@@ -73,44 +73,44 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L61-L67" wrap
 ## State: DESIGN
 
-Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
+Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
 `.aid/design/stack.md` in the seed shape the contract fixes (`design-seed.md`;
 feature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read
 in INTAKE. What this artifact's seed must settle: **the languages, runtimes, frameworks and
 build/test tooling WITH VERSIONS, plus the alternatives rejected and why**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L61-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L61-L81)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L61-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L61-L83)
 
-<a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L85-L88" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L87-L90" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L85-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L85-L88) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L85-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L85-L90)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L87-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L87-L92)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L94-L97" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L96-L99" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-stack`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L94-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L94-L97) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L94-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L94-L99)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L96-L101)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L103-L106" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L105-L108" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/stack.md`; consumption happens at `/aid-create-stack`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L103-L106) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L103-L106)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L105-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L105-L108) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L105-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L105-L108)

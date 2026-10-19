@@ -733,10 +733,14 @@ describe('aid-review — 8 inline states, loop-back, ASK hard stop, DONE exit', 
     expect(pf.kind).toBe('step');
   });
 
-  it('VERIFY.kind === loop-back (has outgoing loop-back edge)', () => {
+  it('VERIFY has the loop-back edge to REVIEW and is an exit (the circuit-breaker HALT case)', () => {
     // Mutant: body scan misses the REVIEW back-reference → VERIFY has no loop-back out.
+    // VERIFY's line ends the run on the circuit-breaker, so the node kind is `exit`, which
+    // takes precedence over `loop-back`; the loop-back is still drawn as an edge.
     const verify = chart.nodes.find((n) => n.name === 'VERIFY');
-    expect(verify.kind).toBe('loop-back');
+    const review = chart.nodes.find((n) => n.name === 'REVIEW');
+    expect(verify.kind).toBe('exit');
+    expect(chart.edges.some((e) => e.from === verify.id && e.to === review.id && e.kind === 'loop-back')).toBe(true);
   });
 
   it('provenance.excerpt matches live allLines slice for every node', () => {
