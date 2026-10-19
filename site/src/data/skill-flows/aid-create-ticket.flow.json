@@ -40,70 +40,86 @@
     {
       "id": "n3",
       "order": 3,
-      "name": "COMPOSE",
-      "label": "COMPOSE",
+      "name": "PICK-CONNECTOR",
+      "label": "PICK-CONNECTOR",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 124,
-        "endLine": 124,
+        "startLine": 118,
+        "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — COMPOSE"
+        "excerpt": "### State 2a — PICK-CONNECTOR"
       },
       "detail": null
     },
     {
       "id": "n4",
       "order": 4,
-      "name": "LEVEL-RESOLVE",
-      "label": "LEVEL-RESOLVE",
+      "name": "COMPOSE",
+      "label": "COMPOSE",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 142,
-        "endLine": 142,
+        "startLine": 127,
+        "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "### State 4 — LEVEL-RESOLVE"
+        "excerpt": "### State 3 — COMPOSE"
       },
       "detail": null
     },
     {
       "id": "n5",
       "order": 5,
-      "name": "CONFIRM",
-      "label": "CONFIRM",
+      "name": "LEVEL-RESOLVE",
+      "label": "LEVEL-RESOLVE",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 168,
-        "endLine": 168,
+        "startLine": 155,
+        "endLine": 155,
         "sourceKind": "skill",
-        "excerpt": "### State 5 — CONFIRM"
+        "excerpt": "### State 4 — LEVEL-RESOLVE"
       },
       "detail": null
     },
     {
       "id": "n6",
       "order": 6,
-      "name": "FILE",
-      "label": "FILE",
+      "name": "CONFIRM",
+      "label": "CONFIRM",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 197,
-        "endLine": 197,
+        "startLine": 181,
+        "endLine": 181,
         "sourceKind": "skill",
-        "excerpt": "### State 6 — FILE"
+        "excerpt": "### State 5 — CONFIRM"
       },
       "detail": null
     },
     {
       "id": "n7",
       "order": 7,
+      "name": "FILE",
+      "label": "FILE",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-ticket/SKILL.md",
+        "startLine": 210,
+        "endLine": 210,
+        "sourceKind": "skill",
+        "excerpt": "### State 6 — FILE"
+      },
+      "detail": null
+    },
+    {
+      "id": "n8",
+      "order": 8,
       "name": "RETURN-REF",
       "label": "RETURN-REF",
       "kind": "exit",
@@ -113,8 +129,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 214,
-        "endLine": 214,
+        "startLine": 227,
+        "endLine": 227,
         "sourceKind": "skill",
         "excerpt": "### State 7 — RETURN-REF"
       },
@@ -158,10 +174,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 124,
-        "endLine": 124,
+        "startLine": 118,
+        "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — COMPOSE"
+        "excerpt": "### State 2a — PICK-CONNECTOR"
       }
     },
     {
@@ -172,10 +188,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 142,
-        "endLine": 142,
+        "startLine": 127,
+        "endLine": 127,
         "sourceKind": "skill",
-        "excerpt": "### State 4 — LEVEL-RESOLVE"
+        "excerpt": "### State 3 — COMPOSE"
       }
     },
     {
@@ -186,10 +202,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 168,
-        "endLine": 168,
+        "startLine": 155,
+        "endLine": 155,
         "sourceKind": "skill",
-        "excerpt": "### State 5 — CONFIRM"
+        "excerpt": "### State 4 — LEVEL-RESOLVE"
       }
     },
     {
@@ -200,8 +216,22 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 197,
-        "endLine": 197,
+        "startLine": 181,
+        "endLine": 181,
+        "sourceKind": "skill",
+        "excerpt": "### State 5 — CONFIRM"
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-create-ticket/SKILL.md",
+        "startLine": 210,
+        "endLine": 210,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       }
@@ -211,7 +241,7 @@
     "n1"
   ],
   "exits": [
-    "n7"
+    "n8"
   ],
   "sources": [
     "canonical/skills/aid-create-ticket/SKILL.md"

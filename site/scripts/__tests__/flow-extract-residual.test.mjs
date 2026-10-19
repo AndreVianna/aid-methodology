@@ -366,7 +366,7 @@ description: only one state
 
 // ── R2 real skills ────────────────────────────────────────────────────────────
 
-describe('R2 — aid-create-ticket (7 states)', () => {
+describe('R2 — aid-create-ticket (8 states)', () => {
   const params = loadSkill('aid-create-ticket');
   const chart = extractResidual(params);
 
@@ -402,7 +402,7 @@ describe('R2 — aid-create-ticket (7 states)', () => {
   });
 });
 
-describe('R2 — aid-read-ticket (4 states)', () => {
+describe('R2 — aid-read-ticket (5 states)', () => {
   const params = loadSkill('aid-read-ticket');
   const chart = extractResidual(params);
 

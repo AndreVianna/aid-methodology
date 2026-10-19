@@ -80,9 +80,7 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
 - **No explicit stem, one catalogued match.** The ladder's Step 2 scan finds exactly one `mcp` +
   `issue-tracker` connector → use it silently → State 3.
 - **No explicit stem, two or more catalogued matches.** The ladder's Step 2 scan finds two or
-  more → `AskUserQuestion` lists the candidate stems (this skill's **only** use of
-  `AskUserQuestion` — a connector pick, never a write confirm, since read has no write to
-  confirm) → State 3 once answered.
+  more → State 2a (PICK-CONNECTOR), which asks the user which.
 - **Nothing catalogued.** The ladder's Step 3 → request the host tool's own issue-tracker MCP →
   State 3 if one is available.
 - **Neither available.** The ladder's Step 4 → notify the user, verbatim:
@@ -91,9 +89,17 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
   ```
   and exit (AC-6).
 
-**Advance:** CHAIN → State 3 (FETCH) once a connector resolves; ASK → State 3 (FETCH) on the
-two-or-more branch, once the user picks the connector; HALT on the unknown-stem or notify branches
-above.
+**Advance:** **CHAIN** → State 3 (FETCH) once a connector resolves without asking (explicit stem,
+single match, or host MCP); **CHAIN** → State 2a (PICK-CONNECTOR) on the two-or-more branch;
+**HALT** on the unknown-stem or notify branches above.
+
+### State 2a — PICK-CONNECTOR
+
+Reached only on the two-or-more branch of State 2. `AskUserQuestion` lists the candidate stems (this
+skill's **only** use of `AskUserQuestion` — a connector pick, never a write confirm, since read has
+no write to confirm). The picked stem is the connector for State 3.
+
+**Advance:** **ASK** → State 3 (FETCH) once the user has picked the connector.
 
 ### State 3 — FETCH
 
@@ -144,7 +150,7 @@ The advance words of each state are read per [`skill-steps.md`](../../aid/templa
 | Explicit `<connector>:` stem given | State 2, explicit-stem branch | Validated stem used, or STOP on an unknown/ineligible stem |
 | Zero catalogued `issue-tracker` connectors | State 2, host-MCP / notify branches | Host tool's own tracker MCP attempted; else the notify string, then exit |
 | Exactly one catalogued `issue-tracker` connector | State 2, single-match branch | Used silently |
-| Two or more catalogued `issue-tracker` connectors | State 2, multi-match branch | `AskUserQuestion` asks which |
+| Two or more catalogued `issue-tracker` connectors | State 2 → State 2a, PICK-CONNECTOR | `AskUserQuestion` asks which |
 | Fetch succeeds | State 3 → 4 | Fields displayed |
 | Fetch fails (not-found / unauthorized / unavailable) | State 3 | Tracker's error surfaced verbatim; exit |
 
@@ -157,7 +163,7 @@ The advance words of each state are read per [`skill-steps.md`](../../aid/templa
   `allowed-tools: Read Glob Grep AskUserQuestion` is the complete set; the host-MCP fetch tool
   itself is requested at runtime per `consumption-protocol.md`, never statically declared here.
 - **No confirmation prompt, ever.** `AskUserQuestion` fires only for the 2+-connector "which
-  connector" branch in State 2; it never gates the fetch — there is nothing to confirm, because
+  connector" branch in State 2a; it never gates the fetch — there is nothing to confirm, because
   read never writes.
 - **No ladder/grammar/confirm re-description.** Everything about resolving a connector, parsing
   `[<connector>:]<ticket-id>`, or the write-preview/confirm convention is owned by
@@ -181,8 +187,8 @@ The advance words of each state are read per [`skill-steps.md`](../../aid/templa
   stem `jira`, id `PROJ-123`; State 2 validates `jira` is catalogued and tagged `issue-tracker`
   (overriding any scan) → State 3 fetches → State 4 displays.
 - **Two catalogued trackers.** With `linear` and `jira-mcp` both catalogued `issue-tracker`
-  connectors and no explicit stem → State 2 asks via `AskUserQuestion` which to use; once
-  answered, State 3/4 proceed exactly as above.
+  connectors and no explicit stem → State 2 hands to State 2a, which asks via `AskUserQuestion`
+  which to use; once answered, State 3/4 proceed exactly as above.
 - **Not found.** `/aid-read-ticket PROJ-999`, where `PROJ-999` does not exist on the resolved
   tracker → State 3's fetch returns a not-found error → the tracker's error is surfaced verbatim
   and the skill exits; no fields are displayed, nothing is retried.

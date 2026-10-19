@@ -29,24 +29,27 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PARSE-ARGS"])
   n2["RESOLVE-CONNECTOR"]
-  n3["COMPOSE"]
-  n4["LEVEL-RESOLVE"]
-  n5["CONFIRM"]
-  n6["FILE"]
-  n7(["RETURN-REF"])
+  n3["PICK-CONNECTOR"]
+  n4["COMPOSE"]
+  n5["LEVEL-RESOLVE"]
+  n6["CONFIRM"]
+  n7["FILE"]
+  n8(["RETURN-REF"])
   n1 --> n2
   n2 --> n3
   n3 --> n4
   n4 --> n5
   n5 --> n6
   n6 --> n7
+  n7 --> n8
   class n1 aidEntry
   class n2 aidStep
   class n3 aidStep
   class n4 aidStep
   class n5 aidStep
   class n6 aidStep
-  class n7 aidExit
+  class n7 aidStep
+  class n8 aidExit
   class n1 aidNode
   class n2 aidNode
   class n3 aidNode
@@ -54,6 +57,7 @@ flowchart TB
   class n5 aidNode
   class n6 aidNode
   class n7 aidNode
+  class n8 aidNode
 ```
 ## Source fragments
 
@@ -75,42 +79,50 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-ticket/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L102)
 
-<a id="fragment-n3"></a>**3 · `COMPOSE`** · _step_
+<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L124" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L118" wrap
+### State 2a — PICK-CONNECTOR
+~~~~
+
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L118)
+
+<a id="fragment-n4"></a>**4 · `COMPOSE`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L127" wrap
 ### State 3 — COMPOSE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L124)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L127)
 
-<a id="fragment-n4"></a>**4 · `LEVEL-RESOLVE`** · _step_
+<a id="fragment-n5"></a>**5 · `LEVEL-RESOLVE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L142" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L155" wrap
 ### State 4 — LEVEL-RESOLVE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L142`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L142)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L155)
 
-<a id="fragment-n5"></a>**5 · `CONFIRM`** · _step_
+<a id="fragment-n6"></a>**6 · `CONFIRM`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L168" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L181" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L168)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L181)
 
-<a id="fragment-n6"></a>**6 · `FILE`** · _step_
+<a id="fragment-n7"></a>**7 · `FILE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L197" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L210" wrap
 ### State 6 — FILE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L197`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L197)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L210`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L210)
 
-<a id="fragment-n7"></a>**7 · `RETURN-REF`** · _exit_ · UNSPECIFIED
+<a id="fragment-n8"></a>**8 · `RETURN-REF`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L214" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L227" wrap
 ### State 7 — RETURN-REF
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L214`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L214)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L227)

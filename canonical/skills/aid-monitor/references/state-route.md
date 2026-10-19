@@ -57,4 +57,4 @@ If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print
 consider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,
 never auto-invoked; silent (no output) if no issue-tracker connector is catalogued.
 
-**Advance:** **ASK** → [State: DONE] once the user has approved or adjusted the routes in Step 4 (continue inline).
+**Advance:** **ASK** then **HALT** once the user has approved or adjusted the routes in Step 4. The fix and new-work requests of Step 5 go back to `/aid-orchestrate`, the intake, as plain requests; this run ends after Step 6.

@@ -40,22 +40,38 @@
     {
       "id": "n3",
       "order": 3,
-      "name": "FETCH",
-      "label": "FETCH",
+      "name": "PICK-CONNECTOR",
+      "label": "PICK-CONNECTOR",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 96,
+        "endLine": 96,
         "sourceKind": "skill",
-        "excerpt": "### State 3 — FETCH"
+        "excerpt": "### State 2a — PICK-CONNECTOR"
       },
       "detail": null
     },
     {
       "id": "n4",
       "order": 4,
+      "name": "FETCH",
+      "label": "FETCH",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 104,
+        "endLine": 104,
+        "sourceKind": "skill",
+        "excerpt": "### State 3 — FETCH"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
       "name": "DISPLAY",
       "label": "DISPLAY",
       "kind": "exit",
@@ -65,8 +81,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 112,
-        "endLine": 112,
+        "startLine": 118,
+        "endLine": 118,
         "sourceKind": "skill",
         "excerpt": "### State 4 — DISPLAY"
       },
@@ -110,8 +126,22 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 96,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "### State 2a — PICK-CONNECTOR"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 104,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "### State 3 — FETCH"
       }
@@ -121,7 +151,7 @@
     "n1"
   ],
   "exits": [
-    "n4"
+    "n5"
   ],
   "sources": [
     "canonical/skills/aid-read-ticket/SKILL.md"

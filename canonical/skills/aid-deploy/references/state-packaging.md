@@ -16,7 +16,7 @@ Follow what infrastructure.md § Deployment prescribes. This step varies by proj
 
 Record what was produced in the package file (Deployment section).
 
-If the project type isn't clear from KB → ask the user, route answer to `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
+The project type comes from the KB and from any packaging answer recorded at SELECTING. Do not ask here.
 
 **PR description format (when applicable):**
 ```markdown
@@ -95,4 +95,4 @@ Print what was done:
    KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
-**Advance:** **ASK** → [State: DONE] when the project type is unclear, once the user answers; **CHAIN** → [State: DONE] otherwise (see `references/state-done.md`).
+**Advance:** **CHAIN** → [State: DONE] (continue inline; see `references/state-done.md`).

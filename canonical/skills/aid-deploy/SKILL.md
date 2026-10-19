@@ -139,6 +139,14 @@ aid-deploy  ▸ you are here
   [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
 ```
 
+**FIX-DECISION and RE-VERIFY** (inside VERIFYING, Status stays Verifying):
+```
+[State: FIX-DECISION] — Checks failed; the user decides whether to fix here or loop back to aid-execute.
+[State: RE-VERIFY] — Fixing the failed checks here, then running them again.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
+```
+
 **PACKAGING:**
 ```
 [State: PACKAGING] — Producing release artifacts per infrastructure.md § Deployment.
@@ -177,12 +185,14 @@ dispatch in this skill.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |
-| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
-| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
-| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
-| DONE | `references/state-done.md` | `inline` | → halt |
-| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+| IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
+| SELECTING | `references/state-selecting.md` | `aid-operator` | ASK → VERIFYING; ASK then HALT on cancel |
+| VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
+| FIX-DECISION | `references/state-fix-decision.md` | `inline` | ASK → RE-VERIFY; ASK then HALT on loop back |
+| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |
+| PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |
+| DONE | `references/state-done.md` | `inline` | HALT |
+| RE-RUN | `references/state-re-run.md` | `inline` | ASK → IDLE; ASK then HALT on review |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

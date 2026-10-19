@@ -24,83 +24,107 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1{"IDLE"}
+  n1["IDLE<br/>No active release; assess eligible deliveries and…"]
   n2(["SELECTING<br/>Eligible deliveries are presented to the user for inclusion…"])
-  n3(["VERIFYING<br/>Full build, tests, and lint are run against the combined…"])
-  n4{"PACKAGING"}
-  n5(["DONE<br/>Release complete."])
-  n6(["RE-RUN<br/>When work STATE.md ## Deploy State is Done and the user…"])
-  n1 -->|"otherwise"| n2
-  n1 -->|"when infrastructure.md has no Deployment section, once the user answers"| n2
+  n3{"VERIFYING"}
+  n4(["FIX-DECISION<br/>The checks failed in VERIFYING."])
+  n5{"RE-VERIFY"}
+  n6["PACKAGING<br/>Release artifacts are produced, release notes generated, KB…"]
+  n7(["DONE<br/>Release complete."])
+  n8(["RE-RUN<br/>When work STATE.md ## Deploy State is Done and the user…"])
+  n1 --> n2
   n2 -. "otherwise" .- n2
-  n2 -->|"once the user has chosen the deliveries and given the version and package name"| n3
-  n3 -->|"after a failure, once the user chooses to fix here and the re-verification…"| n4
-  n3 -->|"when every check passes"| n4
-  n4 -->|"otherwise"| n5
-  n4 -->|"when the project type is unclear, once the user answers"| n5
-  n6 -->|"on [1] New release"| n1
-  n6 -. "otherwise" .- n6
-  class n1 aidDecision
+  n2 -->|"once the user has chosen the deliveries, given the version and package name…"| n3
+  n3 -->|"when any check fails"| n4
+  n3 -->|"when every check passes"| n6
+  n4 -. "otherwise" .- n4
+  n4 -->|"when the user chooses to fix here, once answered"| n5
+  n5 -->|"otherwise"| n4
+  n5 -->|"when every check passes"| n6
+  n6 --> n7
+  n8 -->|"on [1] New release"| n1
+  n8 -. "otherwise" .- n8
+  class n1 aidStep
   class n2 aidExit
-  class n3 aidExit
-  class n4 aidDecision
-  class n5 aidExit
-  class n6 aidExit
+  class n3 aidDecision
+  class n4 aidExit
+  class n5 aidDecision
+  class n6 aidStep
+  class n7 aidExit
+  class n8 aidExit
   class n1 aidNode
   class n2 aidNode
   class n3 aidNode
   class n4 aidNode
   class n5 aidNode
   class n6 aidNode
+  class n7 aidNode
+  class n8 aidNode
 ```
 ## Source fragments
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `IDLE`** — No active release; assess eligible deliveries and… · _decision_
+<a id="fragment-n1"></a>**1 · `IDLE`** — No active release; assess eligible deliveries and… · _step_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L180" wrap
-| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L188" wrap
+| IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L180) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L35)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L188) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L34)
 
 <a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L181" wrap
-| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L189" wrap
+| SELECTING | `references/state-selecting.md` | `aid-operator` | ASK → VERIFYING; ASK then HALT on cancel |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L181) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L39)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L43)
 
-<a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _exit_ · HALT
+<a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L182" wrap
-| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L190" wrap
+| VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L182) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L53)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L190) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L47)
 
-<a id="fragment-n4"></a>**4 · `PACKAGING`** — Release artifacts are produced, release notes generated, KB… · _decision_
+<a id="fragment-n4"></a>**4 · `FIX-DECISION`** — The checks failed in VERIFYING. · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L183" wrap
-| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L191" wrap
+| FIX-DECISION | `references/state-fix-decision.md` | `inline` | ASK → RE-VERIFY; ASK then HALT on loop back |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L183) · [full step: `canonical/skills/aid-deploy/references/state-packaging.md#L1-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-packaging.md#L1-L99)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L191) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L15`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L15)
 
-<a id="fragment-n5"></a>**5 · `DONE`** — Release complete. · _exit_ · HALT
+<a id="fragment-n5"></a>**5 · `RE-VERIFY`** — The user chose to fix the failed checks here. · _decision_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L184" wrap
-| DONE | `references/state-done.md` | `inline` | → halt |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L192" wrap
+| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L184) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L192) · [full step: `canonical/skills/aid-deploy/references/state-re-verify.md#L1-L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-verify.md#L1-L17)
 
-<a id="fragment-n6"></a>**6 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · HALT
+<a id="fragment-n6"></a>**6 · `PACKAGING`** — Release artifacts are produced, release notes generated, KB… · _step_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L185" wrap
-| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L193" wrap
+| PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L185`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L185) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L19)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L193`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L193) · [full step: `canonical/skills/aid-deploy/references/state-packaging.md#L1-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-packaging.md#L1-L99)
+
+<a id="fragment-n7"></a>**7 · `DONE`** — Release complete. · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L194" wrap
+| DONE | `references/state-done.md` | `inline` | HALT |
+~~~~
+
+[Source: `canonical/skills/aid-deploy/SKILL.md#L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L194) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
+
+<a id="fragment-n8"></a>**8 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L195" wrap
+| RE-RUN | `references/state-re-run.md` | `inline` | ASK → IDLE; ASK then HALT on review |
+~~~~
+
+[Source: `canonical/skills/aid-deploy/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L195) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L19)

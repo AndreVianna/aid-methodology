@@ -129,27 +129,28 @@ assert_output_contains "$L10_LINE" "finding classified Change Request" "DMR05d p
 echo ""
 echo "--- Part 2: pipeline-role no-regression (AC-9) ---"
 
-# DMR-10: aid-deploy Dispatch table -- all 6 original rows present, byte-unchanged shape.
-assert_file_contains "$DEPLOY_SKILL" "| IDLE | \`references/state-idle.md\` | \`aid-operator\` | → SELECTING |" \
-    "DMR10a aid-deploy Dispatch: IDLE row unchanged"
-assert_file_contains "$DEPLOY_SKILL" "| SELECTING | \`references/state-selecting.md\` | \`aid-operator\` | → VERIFYING |" \
-    "DMR10b aid-deploy Dispatch: SELECTING row unchanged"
-assert_file_contains "$DEPLOY_SKILL" "| VERIFYING | \`references/state-verifying.md\` | \`aid-operator\` | → PACKAGING |" \
-    "DMR10c aid-deploy Dispatch: VERIFYING row unchanged"
-assert_file_contains "$DEPLOY_SKILL" "| PACKAGING | \`references/state-packaging.md\` | \`aid-operator\` | → DONE |" \
-    "DMR10d aid-deploy Dispatch: PACKAGING row unchanged"
+# DMR-10: aid-deploy Dispatch table -- all 6 original rows present; their advance words are
+# the step-table words of skill-steps.md (the step names and the pipeline spine are unchanged).
+assert_file_contains "$DEPLOY_SKILL" "| IDLE | \`references/state-idle.md\` | \`aid-operator\` | CHAIN → SELECTING |" \
+    "DMR10a aid-deploy Dispatch: IDLE row advance is CHAIN → SELECTING"
+assert_file_contains "$DEPLOY_SKILL" "| SELECTING | \`references/state-selecting.md\` | \`aid-operator\` | ASK → VERIFYING;" \
+    "DMR10b aid-deploy Dispatch: SELECTING row advance is ASK → VERIFYING"
+assert_file_contains "$DEPLOY_SKILL" "| VERIFYING | \`references/state-verifying.md\` | \`aid-operator\` | CHAIN → PACKAGING when every check passes" \
+    "DMR10c aid-deploy Dispatch: VERIFYING row advance is CHAIN → PACKAGING"
+assert_file_contains "$DEPLOY_SKILL" "| PACKAGING | \`references/state-packaging.md\` | \`aid-operator\` | CHAIN → DONE |" \
+    "DMR10d aid-deploy Dispatch: PACKAGING row advance is CHAIN → DONE"
 assert_file_contains "$DEPLOY_SKILL" "State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE." \
     "DMR10e aid-deploy frontmatter State machine line unchanged"
 
-# DMR-11: aid-monitor Dispatch table -- all 4 original rows present, byte-unchanged shape
-# (routing TARGETS changed inside state-route.md's body -- Part 1 -- but the classification
-# vocabulary + Dispatch spine are unchanged).
-assert_file_contains "$MONITOR_SKILL" "| OBSERVE | \`references/state-observe.md\` | \`aid-researcher\` | → CLASSIFY |" \
-    "DMR11a aid-monitor Dispatch: OBSERVE row unchanged"
-assert_file_contains "$MONITOR_SKILL" "| CLASSIFY | \`references/state-classify.md\` | \`aid-researcher\` | → ROUTE |" \
-    "DMR11b aid-monitor Dispatch: CLASSIFY row unchanged"
-assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`inline\` (main conversation) | → DONE |" \
-    "DMR11c aid-monitor Dispatch: ROUTE row runs inline in the main conversation"
+# DMR-11: aid-monitor Dispatch table -- all 4 original rows present; their advance words are
+# the step-table words of skill-steps.md (routing TARGETS changed inside state-route.md's body --
+# Part 1 -- but the classification vocabulary + Dispatch spine are unchanged).
+assert_file_contains "$MONITOR_SKILL" "| OBSERVE | \`references/state-observe.md\` | \`aid-researcher\` | CHAIN → CLASSIFY |" \
+    "DMR11a aid-monitor Dispatch: OBSERVE row advance is CHAIN → CLASSIFY"
+assert_file_contains "$MONITOR_SKILL" "| CLASSIFY | \`references/state-classify.md\` | \`aid-researcher\` | CHAIN → ROUTE |" \
+    "DMR11b aid-monitor Dispatch: CLASSIFY row advance is CHAIN → ROUTE"
+assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`inline\` (main conversation) | ASK then HALT" \
+    "DMR11c aid-monitor Dispatch: ROUTE row runs inline in the main conversation and ends in ASK then HALT"
 assert_file_contains "$MONITOR_SKILL" "State machine: OBSERVE → CLASSIFY → ROUTE → DONE." \
     "DMR11d aid-monitor frontmatter State machine line unchanged"
 

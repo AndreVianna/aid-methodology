@@ -29,19 +29,23 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PARSE-ARGS"])
   n2["RESOLVE-CONNECTOR"]
-  n3["FETCH"]
-  n4(["DISPLAY"])
+  n3["PICK-CONNECTOR"]
+  n4["FETCH"]
+  n5(["DISPLAY"])
   n1 --> n2
   n2 --> n3
   n3 --> n4
+  n4 --> n5
   class n1 aidEntry
   class n2 aidStep
   class n3 aidStep
-  class n4 aidExit
+  class n4 aidStep
+  class n5 aidExit
   class n1 aidNode
   class n2 aidNode
   class n3 aidNode
   class n4 aidNode
+  class n5 aidNode
 ```
 ## Source fragments
 
@@ -63,18 +67,26 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L71)
 
-<a id="fragment-n3"></a>**3 · `FETCH`** · _step_
+<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L98" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L96" wrap
+### State 2a — PICK-CONNECTOR
+~~~~
+
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L96)
+
+<a id="fragment-n4"></a>**4 · `FETCH`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L104" wrap
 ### State 3 — FETCH
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L98)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L104)
 
-<a id="fragment-n4"></a>**4 · `DISPLAY`** · _exit_ · UNSPECIFIED
+<a id="fragment-n5"></a>**5 · `DISPLAY`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L112" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L118" wrap
 ### State 4 — DISPLAY
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L112)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L118)

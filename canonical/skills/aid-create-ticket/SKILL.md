@@ -32,11 +32,11 @@ it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of i
 directly by name.
 
 **Step advance:** each `/aid-create-ticket` invocation runs the state machine —
-`PARSE-ARGS → RESOLVE-CONNECTOR → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
-advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). CONFIRM is an
-**ASK** advance: the user decides there, through one `AskUserQuestion` exchange answered inline,
-so a single invocation still runs every state through to `RETURN-REF` (or an earlier stop or
-cancel) without exiting mid-run.
+`PARSE-ARGS → RESOLVE-CONNECTOR → [PICK-CONNECTOR] → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
+advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). The connector pick
+(`PICK-CONNECTOR`, only when two or more match) and CONFIRM are **ASK** advances: the user decides
+there, through one `AskUserQuestion` exchange answered inline, so a single invocation still runs
+every state through to `RETURN-REF` (or an earlier stop or cancel) without exiting mid-run.
 
 **Read-only until CONFIRM.** `RESOLVE-CONNECTOR`, `COMPOSE`, and `LEVEL-RESOLVE` only ever read —
 the tracker's issue-type list is queried (a non-destructive read), never written. Nothing about
@@ -108,20 +108,33 @@ Resolve which connector to use via the shared
 silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent) or an
 `AskUserQuestion` among two-or-more → the host tool's own issue-tracker MCP → the verbatim
 `no issue-tracker connector found.` notify-and-exit. This state does not re-describe the ladder
-further than that; `$CONNECTOR` now holds whichever stem it resolves to, for every later state.
+further than that. When a connector resolves silently, `$CONNECTOR` holds its stem for every later
+state; when two or more match, State 2a settles it.
 
-**Cross-tracker parent check (fold-in of Parent Resolution's same-connector rule).** If
-`PARSE-ARGS` captured a `--parent <stem>:<ref>` whose `<stem>` names a **different** catalogued
-connector than `$CONNECTOR` just resolved to, this is a cross-tracker link the skill cannot make
-(ticket-resolution.md § "Parent Resolution (create only)"): surface **"parent must be on the same tracker as the
-new ticket"** and stop here — before `COMPOSE`, before `CONFIRM` — `--parent`'s stem is never
-treated as a `--connector` override, and `$CONNECTOR` is never silently switched to match it. A
-bare `--parent <external-id>` (no stem), or one whose stem matches `$CONNECTOR`, has no ambiguity
-and proceeds.
+**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole
+match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on the
+unknown-stem or notify exit above.
 
-**Advance:** → State: COMPOSE (continue inline).
+### State 2a — PICK-CONNECTOR
+
+Reached only when two or more catalogued `issue-tracker` connectors match. One `AskUserQuestion`
+lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
+`$CONNECTOR` for every later state. This is a connector choice, never a write confirm, and nothing
+is sent to any tracker here.
+
+**Advance:** **ASK** → State: COMPOSE once the user has picked the connector (continue inline).
 
 ### State 3 — COMPOSE
+
+**Cross-tracker parent check (fold-in of Parent Resolution's same-connector rule).** Run this first,
+once `$CONNECTOR` is settled (resolved silently or picked in State 2a). If `PARSE-ARGS` captured a
+`--parent <stem>:<ref>` whose `<stem>` names a **different** catalogued connector than `$CONNECTOR`,
+this is a cross-tracker link the skill cannot make
+(ticket-resolution.md § "Parent Resolution (create only)"): surface **"parent must be on the same tracker as the
+new ticket"** and stop here — before the payload is composed and before `CONFIRM` — `--parent`'s
+stem is never treated as a `--connector` override, and `$CONNECTOR` is never silently switched to
+match it. A bare `--parent <external-id>` (no stem), or one whose stem matches `$CONNECTOR`, has no
+ambiguity and proceeds.
 
 Build the new-ticket payload from `<description>`. Fix two attributes by precedence, **defaulting
 neither silently**:
@@ -130,14 +143,14 @@ neither silently**:
   description-inferred level is only a *candidate* here — it is surfaced for explicit confirmation
   at `CONFIRM`, never silently applied.
 - **Parent:** `--parent <ref>` › description-inferred ("under PROJ-123") › **none**. Resolved on
-  `$CONNECTOR` (the same-tracker rule was already enforced in `RESOLVE-CONNECTOR` above — see
+  `$CONNECTOR` (the same-tracker rule was already enforced at the start of `COMPOSE` above — see
   [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Parent
   Resolution (create only)" for the full rationale).
 
 Assemble the draft payload: a title/summary derived from `<description>`, the level (a tier, a
 quoted literal, or unset), and the parent ref (or none). Nothing is sent anywhere yet.
 
-**Advance:** → State: LEVEL-RESOLVE (continue inline).
+**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline); **HALT** on the cross-tracker stop above.
 
 ### State 4 — LEVEL-RESOLVE
 

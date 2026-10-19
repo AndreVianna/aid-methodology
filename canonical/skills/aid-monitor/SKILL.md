@@ -217,10 +217,10 @@ them more informative by adding mid-wait check-ins + structured progress.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |
-| CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |
-| ROUTE | `references/state-route.md` | `inline` (main conversation) | → DONE |
-| DONE | _(inline — see Re-run below)_ | `inline` | → halt |
+| OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |
+| CLASSIFY | `references/state-classify.md` | `aid-researcher` | CHAIN → ROUTE |
+| ROUTE | `references/state-route.md` | `inline` (main conversation) | ASK then HALT (hand-offs to `/aid-orchestrate`) |
+| DONE | _(inline — see Re-run below)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

@@ -14,7 +14,7 @@
 // Heuristic ladder (first rung yielding ≥ 2 nodes wins):
 //   R1  ASCII state map — fenced/indented block with `->` / `→` tokens, or a
 //       `State machine:` line.
-//   R2  `^###\s+State\s+\d+\s*[—-]\s*(NAME)` headings (ticket skills).
+//   R2  `^###\s+State\s+\d+[a-z]?\s*[—-]\s*(NAME)` headings (ticket skills).
 //   R3  `^###\s+Step\s+\d+` headings; `## Mode N` ancestor starts a separate lane.
 //   R4  Top-level ordered list whose items begin with a verb.
 //   R5  Three-node spine `Entry → "Run <skill>" → Exit`, labelled from frontmatter.
@@ -31,7 +31,7 @@ const CONFIDENCE = 'approximate';
 const SHAPE = 'residual';
 
 // R2: ### State N — NAME  (em-dash U+2014 or plain hyphen)
-const R2_STATE_RE = /^###\s+State\s+(\d+)\s*[\u2014\-]+\s*(.+)/;
+const R2_STATE_RE = /^###\s+State\s+(\d+[a-z]?)\s*[\u2014\-]+\s*(.+)/;
 
 // R3: ## Mode N heading
 const R3_MODE_RE = /^##\s+Mode\s+(\d+)\s*[\u2014\-:]*\s*(.*)/;
