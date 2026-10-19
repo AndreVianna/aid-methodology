@@ -452,8 +452,8 @@ absence is a visible signal that the step did not run.
 **Why it is written this way.** An earlier version mandated the `record` call separately
 from rendering. That mandate was satisfiable by doing nothing: with the brief composed
 inline there was no file to point at and no step that failed when `record` was skipped, so
-an entire delivery's measurements were silently never taken. That is the failure class
-`tech-debt.md` `W5-5` documents — fourteen mandated state-writes that every call site failed
+an entire delivery's measurements were silently never taken. That is the silent-write failure
+class — fourteen mandated state-writes that every call site failed
 to make work, invisibly, for as long as nobody looked. A mandate an agent can satisfy by
 doing nothing will be satisfied by doing nothing; binding the write to the artifact the work
 already produces is what closes it.

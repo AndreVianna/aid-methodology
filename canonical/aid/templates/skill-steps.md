@@ -106,8 +106,9 @@ The writer finds the record itself: the file `AID_STATE_FILE` names when it is s
 A skill passes no path. This holds for every mode that writes the work's record, `--pipeline`
 (lifecycle, phase, pause and block reasons) included, and the task and delivery modes (`--task-id
 --field`, `--findings`, `--block`, `--lifecycle`, `--gate-field`, `--append-issue`) too; those find
-the work the same way unless the caller names the work root or the file itself with `AID_WORK_DIR`,
-`AID_DELIVERY_DIR` or `AID_TASK_STATE_FILE`/`AID_DELIVERY_STATE_FILE`. When none of these finds exactly one work, the
+the work the same way unless the caller names where the work lives: `AID_WORK_DIR` for all of them,
+or the mode's own override (`AID_TASK_STATE_FILE`, `AID_DELIVERY_STATE_FILE`, `AID_DELIVERY_DIR`, and
+`AID_DELIVERY_ISSUES_DIR` for `--append-issue`). When none of these finds exactly one work, the
 writer exits 1 and says so; the third way needs git, and the message says when git is the cause.
 
 ### Before a work exists
@@ -122,6 +123,29 @@ while building the Knowledge Base, the project file `.aid/STATE.yml` with `--pro
 skill that keeps no work record and can run the writer: setting up the project, chat). The ticket
 skills cannot run the writer; they ask their own questions (the connector pick, and the confirmation
 before a ticket is filed or changed), and record nothing.
+
+### Acting on an existing work (`/aid-orchestrate`)
+
+`/aid-orchestrate` is the one skill whose steps may act on a work that already exists (a continued
+work, a cancel, a close) without being that work's skill. Its steps for such a work write no `--step`,
+no pause and no `--handoff`: the work's record keeps its saved skill, step and `step_detail`, because
+those belong to the skill that is running the work, and a write of its own would overwrite them. The
+only writes are:
+
+- each answer to an open question of that work, with `--answer`, and the lifecycle back to `Running`
+  through the writer once none is left open (part 3 of the step procedure), also for a paused work
+  that had none open;
+- the cancel or close the user confirmed, through the writer.
+
+The questions it asks of such a work (which work the request continues, the work's open questions, the
+cancel confirmation) pause the step where it stands, as any blocking question does, but write no pause:
+the work's record is not touched until they are answered. The cancel confirmation is an intake question
+(`question-protocol.md`, The intake-question exception), and is not recorded with `--ask`.
+
+Its `PASS` for a continued work runs no `--handoff` (part 4 of the step procedure does not apply): the
+record already names the skill and the step the work continues at, so the skill is started, in the same
+turn, from the record. A `PASS` to start a new work's first phase skill, and every start of a new work,
+follow the procedure unchanged.
 
 ### When the record is written
 

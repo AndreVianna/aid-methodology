@@ -250,8 +250,10 @@
 # --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask or --answer
 # without --project, and the task and delivery modes --task-id --field, --findings,
 # --block, --lifecycle, --gate-field, --append-issue; the task and delivery modes skip
-# it when AID_WORK_DIR, AID_DELIVERY_DIR or their own file override is set). The
-# record is the first of these that applies:
+# it when the caller names where the work lives: AID_WORK_DIR for all of them, or the
+# mode's own override, AID_TASK_STATE_FILE (--field, --findings), AID_DELIVERY_STATE_FILE
+# (--block, --lifecycle, --gate-field), AID_DELIVERY_DIR (all but --append-issue) or
+# AID_DELIVERY_ISSUES_DIR (--append-issue)). The record is the first of these that applies:
 #   1. AID_STATE_FILE, when set;
 #   2. the STATE.yml of the work folder (.aid/works/work-NNN-*/) the current
 #      directory is in or under;
@@ -2909,8 +2911,8 @@ case "$MODE" in
     pipeline|step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
     ask|answer) if [[ "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
     # The task and delivery modes find the record the same way, unless the caller has
-    # already named where the work lives (AID_WORK_DIR, AID_DELIVERY_DIR or the
-    # file/dir override for that mode).
+    # already named where the work lives (AID_WORK_DIR, or the mode's own
+    # file/dir override).
     field|findings)
         if [[ -z "$WORK_DIR" && -z "$TASK_STATE_FILE" && -z "$DELIVERY_DIR_BASE" ]]; then wb_find_state_file; fi ;;
     delivery-block|delivery-lifecycle|gate-field)

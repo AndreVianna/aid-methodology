@@ -190,7 +190,9 @@ written to the Knowledge Base state file instead, in the same states, until that
 
 Questions asked **while starting or choosing a work** are not written with `--ask`, because no work
 record exists yet. They are: the question "what do you want?" on a bare start, which skill fits when
-the reading is unsure, whether to start new work or continue an existing one, and a work's short name.
+the reading is unsure, whether to start new work or continue an existing one, a work's short name, and the
+confirmation to cancel a named work (`/aid-orchestrate`; the work's own record is not paused or touched, and
+the answer is acted on at once).
 They are asked by the orchestrator, by the work-initiation gate (`.aid/runtime/templates/work-initiation-gate.md`),
 or by a starter before the gate creates the work.
 

@@ -56,8 +56,8 @@ state machine below starts:
   with the writer before it works (see the state-entry paragraph under State Machine), so a
   session that stops mid-run has its place in the record. Continuing a work is the Work
   Initiation Gate's job: on "continuation" it runs the skill the record names, at its saved
-  step (gate § 3b), and a halted Lite work resumes at APPROVAL-HALT, which asks for the
-  pending approval again. Re-running the shortcut never re-enters this engine's states.
+  step (gate § 3b), and a halted Lite work resumes at APPROVAL-HALT, which asks the
+  approval while it is still open (and, once it was given, only tells the user to run `/aid-execute`). Re-running the shortcut never re-enters this engine's states.
 - **Forward-compatible with incremental family landings.** Family features 005-013
   land `shortcut-scaffolding/<family>.md` references incrementally. Every state below
   degrades gracefully to the generic minimal-capture / single-task default when a
@@ -85,13 +85,13 @@ to directly.
 
 | State | Detail | Worker | Advance |
 |---|---|---|---|
-| INTAKE | below | inline | CHAIN -> CAPTURE |
-| CAPTURE | below | `aid-architect` (Large) | CHAIN -> SPEC |
-| SPEC | below | `aid-architect` (Large) | CHAIN -> PLAN |
-| PLAN | below | `aid-architect` (Large) | CHAIN -> DETAIL |
-| DETAIL | below | `aid-architect` (Large) | CHAIN -> GATE |
-| GATE | below | `aid-reviewer` (Large) | CHAIN -> APPROVAL-HALT |
-| APPROVAL-HALT | below | inline | ASK then HALT |
+| INTAKE | below | inline | CHAIN → CAPTURE |
+| CAPTURE | below | `aid-architect` (Large) | CHAIN → SPEC |
+| SPEC | below | `aid-architect` (Large) | CHAIN → PLAN |
+| PLAN | below | `aid-architect` (Large) | CHAIN → DETAIL |
+| DETAIL | below | `aid-architect` (Large) | CHAIN → GATE |
+| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and fewer than 3 cycles have run; HALT when the circuit breaker has blocked the work |
+| APPROVAL-HALT | below | inline | CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set must change; HALT when approved or dropped |
 
 Print the state-entry line on entry to each state (`[State: NAME] -- {one-line
 purpose}`), matching the convention every other AID skill uses. On entry, before its work,
@@ -99,9 +99,9 @@ each state saves its own step: `bash .aid/runtime/scripts/execute/writeback-stat
 --skill {name} --name <STATE>` (`.aid/runtime/templates/skill-steps.md`, the step procedure).
 INTAKE is the exception: the work does not exist until its Step 4 creates it, with
 `--step INTAKE`. Route each completed state's `**Advance:**` per
-`.aid/runtime/templates/skill-steps.md`. Every transition below is CHAIN except APPROVAL-HALT,
-which asks the approval and then halts. A question that comes up in INTAKE or CAPTURE pauses
-that state where it stands, and the state goes on once it is answered (skill-steps.md,
+`.aid/runtime/templates/skill-steps.md`. Every transition below is a CHAIN except APPROVAL-HALT,
+which asks the approval, reads the answer, and then either loops back or halts. A question that
+comes up in INTAKE or CAPTURE pauses that state where it stands, and the state goes on once it is answered (skill-steps.md,
 "Questions, at any point").
 
 **Agent dispatch (C-2).** Authoring states (CAPTURE/SPEC/PLAN/DETAIL) dispatch
@@ -363,7 +363,7 @@ allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work 
 a CONTINUATION invocation never reaches this state, because the gate's § 3b runs instead. No
 idempotency check is needed.
 
-**Advance:** CHAIN -> CAPTURE.
+**Advance:** CHAIN → CAPTURE.
 
 ---
 
@@ -458,7 +458,7 @@ single-writer convention as every other entry below):
   notes: '/{name} CAPTURE'
 ```
 
-**Advance:** CHAIN -> SPEC.
+**Advance:** CHAIN → SPEC.
 
 ---
 
@@ -522,7 +522,7 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} SPEC'
 ```
 
-**Advance:** CHAIN -> PLAN.
+**Advance:** CHAIN → PLAN.
 
 ---
 
@@ -595,7 +595,7 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} PLAN'
 ```
 
-**Advance:** CHAIN -> DETAIL.
+**Advance:** CHAIN → DETAIL.
 
 ---
 
@@ -692,14 +692,14 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} DETAIL'
 ```
 
-**Advance:** CHAIN -> GATE.
+**Advance:** CHAIN → GATE.
 
 <!-- ============================================================
      GATE / APPROVAL-HALT INSERTION POINT (task-011, feature-004)
      Append the "## State: GATE" and "## State: APPROVAL-HALT" sections HERE,
      immediately after this comment and before the "Worked example" section below.
      Do not insert new states between INTAKE and DETAIL above -- DETAIL's own
-     "**Advance:** CHAIN -> GATE." line already names the target.
+     "**Advance:** CHAIN → GATE." line already names the target.
      ============================================================ -->
 
 ## State: GATE
@@ -834,8 +834,10 @@ content:
    `Pending`/`Recurred` row from the pass's ledger. The architect addresses
    each row's cited `Doc`/`Line` in place; it does **not** touch the
    ledger's `Status` column -- that is the next REVIEW cycle's job
-   (`reviewer-ledger-schema.md § Authoring rules for the fixer`). Loop back
-   to Step 1 (REVIEW) for a fresh, clean-context reviewer pass.
+   (`reviewer-ledger-schema.md § Authoring rules for the fixer`). Then the
+   pass is reviewed again by a fresh, clean-context reviewer (Step 1): the
+   `CHAIN → GATE` case of this state's **Advance** line, which resumes at the pass
+   not yet cleared.
 
    **Circuit breaker.** If the pass's grade has not improved across 3
    consecutive cycles, STOP (mirrors
@@ -849,7 +851,8 @@ content:
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-gate-{pass}.md"
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
-   and surface it to the user instead of looping further.
+   and surface it to the user instead of looping further; the state ends on the `HALT`
+   case of its **Advance** line.
 
 ### Step 5: Record the cleared grades
 
@@ -881,7 +884,7 @@ rm -f .aid/.temp/review-pending/shortcut-{work}-defn.md .aid/.temp/review-pendin
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 
-**Advance:** CHAIN -> APPROVAL-HALT.
+**Advance:** CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and fewer than 3 cycles have run; HALT when the circuit breaker has blocked the work.
 
 ---
 
@@ -917,18 +920,25 @@ Nothing has executed. Review the documents above.
 
 ### Step 2: Record the approval, pause, and ask
 
-Record the approval before it is shown (`.aid/runtime/templates/question-protocol.md`; an approval
-cannot be skipped, so it stays open until the user approves or declines):
+On a resume, read the step detail first. If it says the approval is already recorded as `Q<n>`, do
+not run `--ask` again: ask that open question first (Step 3). If it says the approval was given,
+tell the user to run `/aid-execute {name-or-work-id}` and end the run (**Advance** below, the
+approve case).
+
+Otherwise record the approval before it is shown (`.aid/runtime/templates/question-protocol.md`; an
+approval cannot be skipped, so it stays open until the user approves or declines). The call prints
+the question's id, `Q<n>`:
 
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Approve the flattened work so /aid-execute can start?" --suggested "Yes, once you have reviewed the documents above"
 ```
 
-Then pause the pipeline:
+Then keep the same step saved with the open question in its detail, and pause the pipeline:
 
 ```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill {name} --name APPROVAL-HALT --detail 'done: GATE cleared and approval recorded as Q<n>; waiting for Q<n>'
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Paused-Awaiting-Input
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "GATE cleared; awaiting user approval before /aid-execute"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Waiting for the user: Q<n>"
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -938,12 +948,29 @@ entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
 is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
 `Executing`).
 
-Then ask the approval, in the question protocol's form. The user's answer is recorded with
-`--answer`, and the lifecycle goes back to `Running` only when `/aid-execute` takes the work up;
-`/aid-execute {name-or-work-id}` is a separate, user-initiated run this engine never triggers on its
-own. A resumed session offers the approval again first (skill-steps.md, "Questions, at any point").
+Then ask the approval, in the question protocol's form.
 
-**Advance:** ASK then HALT. No branch is created; no `tasks_lifecycle` entry
+### Step 3: Read the answer
+
+The answer is read in this conversation, or by the session that resumes later and asks `Q<n>` first.
+Record it with `--answer --id Q<n> --state Answered`, with the user's words as `--value`, and set the
+lifecycle back to `Running` (`--pipeline --field Lifecycle --value Running`, which also clears the
+pause reason). Then branch on the answer:
+
+- **Approved.** Save the detail so a resume does not ask twice:
+  `--step --skill {name} --name APPROVAL-HALT --detail 'approved as Q<n>; next: /aid-execute {name-or-work-id}'`.
+  The lifecycle stays `Running` so that `/aid-execute` can take the work up (it stops on any other
+  value). Tell the user to run `/aid-execute {name-or-work-id}`; this engine never starts it.
+- **Declined, with a change to the requirements** (the user wants the work reshaped): CAPTURE runs
+  again with the change the user asked for, and the later states follow, so GATE clears both passes
+  again before a new approval is asked. CAPTURE saves its own step on entry.
+- **Declined, with a change to the task set only**: the same, from DETAIL.
+- **Declined, the user drops the work**: set `--pipeline --field Lifecycle --value Canceled`
+  (the writer clears the saved skill and step); nothing has executed, so nothing else is undone.
+
+**Advance:** CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set
+must change; HALT when the work is approved (the run ends; `/aid-execute` is a separate,
+user-initiated run) or the user drops it. No branch is created; no `tasks_lifecycle` entry
 advances past `Pending` (the halt-proof fixture in feature-004's testing
 strategy asserts both).
 
