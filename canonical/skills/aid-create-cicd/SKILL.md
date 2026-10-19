@@ -38,6 +38,18 @@ line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -56,7 +68,7 @@ line on each state.
    unless the user asks in this run.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CREATE.
+**Advance:** CHAIN -> [State: CREATE].
 
 ---
 
@@ -94,7 +106,7 @@ to `/aid-update-cicd`. The seed is deleted only when everything its `## Destinat
 was written; otherwise it stays in place carrying just the unrealized parts, which
 `/aid-update-cicd` then consumes.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -103,7 +115,7 @@ was written; otherwise it stays in place carrying just the unrealized parts, whi
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -113,7 +125,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert
 workflow file was emitted and that it was asked for; on the creation path both registration
 surfaces were written; and anything routed to `/aid-update-cicd` is named.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

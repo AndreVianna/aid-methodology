@@ -30,6 +30,18 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
@@ -48,7 +60,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** GUARD.
+**Advance:** CHAIN -> [State: GUARD].
 
 ---
 
@@ -62,7 +74,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
   seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** REALIZE.
+**Advance:** CHAIN -> [State: REALIZE].
 
 ---
 
@@ -165,7 +177,7 @@ audience: [developer, architect, pm]
 ---
 ```
 
-**Advance:** REGISTER (creation or fill path). Route path: advance to DONE directly.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: CHAIN -> [State: DONE] directly.
 
 ---
 
@@ -184,7 +196,7 @@ in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 
 Both writes must succeed in the same run. If either fails, report and halt.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -194,7 +206,7 @@ Both writes must succeed in the same run. If either fails, report and halt.
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -207,7 +219,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. A
 - Every promoted row was deleted from `tech-debt.md` in this run.
 - To revise items later, use `/aid-update-backlog`.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

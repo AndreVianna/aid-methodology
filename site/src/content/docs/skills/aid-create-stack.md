@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L39-L53" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L51-L65" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -70,32 +70,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L39-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L39-L53) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L39-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L39-L55)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L51-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L51-L65) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L51-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L51-L67)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L59-L61" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L71-L73" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L59-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L59-L61) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L59-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L59-L93)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L71-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L71-L73) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L71-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L71-L105)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L97-L100" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L109-L112" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L97-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L97-L102)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L109-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L109-L112) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L109-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L109-L114)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L106-L111" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L118-L123" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed
@@ -104,14 +104,14 @@ written; the rejected alternatives went to the D document; and anything routed t
 `/aid-update-stack` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L106-L111) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L106-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L106-L113)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L118-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L118-L123) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L118-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L118-L125)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L117-L119" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L129-L131" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L117-L119) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L117-L119)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L129-L131) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L129-L131)

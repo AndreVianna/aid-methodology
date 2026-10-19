@@ -35,6 +35,18 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What direction
@@ -51,7 +63,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** GUARD.
+**Advance:** CHAIN -> [State: GUARD].
 
 ---
 
@@ -65,7 +77,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
   seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** REALIZE.
+**Advance:** CHAIN -> [State: REALIZE].
 
 ---
 
@@ -124,7 +136,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** REGISTER (creation or fill path). Route path: advance to DONE directly.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: CHAIN -> [State: DONE] directly.
 
 ---
 
@@ -143,7 +155,7 @@ in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 
 Both writes must succeed in the same run. If either fails, report and halt.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -153,7 +165,7 @@ Both writes must succeed in the same run. If either fails, report and halt.
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -166,7 +178,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. A
 - To revise horizon entries later, use `/aid-update-roadmap`.
 - To draw the MVP line, use `/aid-create-mvp`.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

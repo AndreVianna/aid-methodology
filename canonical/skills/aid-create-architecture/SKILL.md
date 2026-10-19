@@ -36,6 +36,18 @@ line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -53,7 +65,7 @@ line on each state.
 4. **Read the whole destination** if it exists, and note its `source:` field.
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CREATE.
+**Advance:** CHAIN -> [State: CREATE].
 
 ---
 
@@ -91,7 +103,7 @@ to `/aid-update-architecture`. The seed is deleted only when everything its `## 
 named was written; otherwise it stays in place carrying just the unrealized parts, which
 `/aid-update-architecture` then consumes.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -100,7 +112,7 @@ named was written; otherwise it stays in place carrying just the unrealized part
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -110,7 +122,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert
 was consumed only for what was written; on the creation path both registration surfaces were
 written; and anything routed to `/aid-update-architecture` is named.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

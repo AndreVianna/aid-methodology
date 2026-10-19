@@ -40,6 +40,18 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
@@ -59,7 +71,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** GUARD.
+**Advance:** CHAIN -> [State: GUARD].
 
 ---
 
@@ -75,7 +87,7 @@ found in INTAKE.
 - **No seed present** → advance (gate does not apply).
 - **Seed present, no unresolved questions, or override supplied** → advance.
 
-**Advance:** UPDATE.
+**Advance:** CHAIN -> [State: UPDATE].
 
 ---
 
@@ -118,7 +130,7 @@ belongs to `/aid-create-roadmap`. The byte-range discipline makes this structura
 **User-named outputs.** For each output the user named in INTAKE: update it alongside the
 MVP section in this same dispatch.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -128,7 +140,7 @@ MVP section in this same dispatch.
 defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation
 to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -148,7 +160,7 @@ Assert:
 - No tracking metadata was written to any output.
 - To revise the direction entries outside MVP, use `/aid-update-roadmap`.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

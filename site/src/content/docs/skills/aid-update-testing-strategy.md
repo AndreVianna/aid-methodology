@@ -48,7 +48,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L38-L58" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70" wrap
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
@@ -72,11 +72,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L38-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L38-L58) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L38-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L38-L60)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L72)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L64-L74" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86" wrap
 ## State: UPDATE
 
 1. **Apply only the change the user named in this run**, to the owned C6 content, per the
@@ -90,26 +90,26 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **`source: generated` refuses.** A registered build script owns that content.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L64-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L64-L74) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L64-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L64-L76)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L88)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L80-L83" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L92-L95" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L80-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L80-L85)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L92-L95) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L92-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L92-L97)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _exit_ · UNSPECIFIED
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _exit_ · CHAIN
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L89-L92" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L101-L104" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say which C6 half each change
 went to, name every output touched, and assert that a consumed seed is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L89-L92) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L89-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L89-L94)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L101-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L101-L106)

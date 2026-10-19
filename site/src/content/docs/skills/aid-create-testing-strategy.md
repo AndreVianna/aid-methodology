@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L51-L64" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -69,32 +69,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L54)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L51-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L51-L64) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L51-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L51-L66)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L70-L72" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L92)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L70-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L70-L72) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L70-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L70-L104)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L108-L111" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L101)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L108-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L108-L111) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L108-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L108-L113)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L117-L121" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present both realized documents and assert: which
@@ -102,14 +102,14 @@ half went where; on a creation path both registration surfaces were written; and
 routed to `/aid-update-testing-strategy` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L111)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L117-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L117-L121) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L117-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L117-L123)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L127-L129" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L127-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L127-L129) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L127-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L127-L129)

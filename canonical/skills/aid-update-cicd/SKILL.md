@@ -38,6 +38,18 @@ line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
@@ -61,7 +73,7 @@ line on each state.
    the user asks in this run.
 7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** UPDATE.
+**Advance:** CHAIN -> [State: UPDATE].
 
 ---
 
@@ -77,7 +89,7 @@ line on each state.
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -86,7 +98,7 @@ line on each state.
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -96,7 +108,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a work
 touched and that it was asked for, name every output touched, and assert that a consumed seed
 is gone.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

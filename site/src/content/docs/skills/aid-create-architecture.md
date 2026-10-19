@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L39-L54" wrap
+~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L51-L66" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -71,32 +71,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-architecture/SKILL.md#L39-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L39-L54) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L39-L56`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L39-L56)
+[Source: `canonical/skills/aid-create-architecture/SKILL.md#L51-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L51-L66) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L51-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L51-L68)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L60-L62" wrap
+~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L72-L74" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-architecture/SKILL.md#L60-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L60-L62) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L60-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L60-L94)
+[Source: `canonical/skills/aid-create-architecture/SKILL.md#L72-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L72-L74) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L72-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L72-L106)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L98-L101" wrap
+~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L110-L113" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-architecture/SKILL.md#L98-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L98-L101) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L98-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L98-L103)
+[Source: `canonical/skills/aid-create-architecture/SKILL.md#L110-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L110-L113) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L110-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L110-L115)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L107-L111" wrap
+~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L119-L123" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed
@@ -104,14 +104,14 @@ was consumed only for what was written; on the creation path both registration s
 written; and anything routed to `/aid-update-architecture` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-architecture/SKILL.md#L107-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L107-L111) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L107-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L107-L113)
+[Source: `canonical/skills/aid-create-architecture/SKILL.md#L119-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L119-L123) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L119-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L119-L125)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L117-L119" wrap
+~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L129-L131" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-architecture/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L117-L119) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L117-L119)
+[Source: `canonical/skills/aid-create-architecture/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L129-L131) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L129-L131)
