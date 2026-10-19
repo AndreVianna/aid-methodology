@@ -1,9 +1,9 @@
 # Start or Resume a Work
 
-Use this from SKILL.md step 1 onward. In order, it answers a project question, finds the work
-the request belongs to, creates one only when none exists, reads its resume point, handles a
-cancel, and records the intent. The reading is checked, sized and shown first (SKILL.md steps 2
-to 4). An action-skill reading never reaches this file: its skill's START creates the work.
+Use this from SKILL.md step 1 onward. In order, it answers a project question, finds the work,
+creates one only when none exists, reads its resume point, handles a cancel and records the
+intent. The reading is checked, sized and shown first (SKILL.md steps 2 to 4); an action-skill
+reading never reaches this file, since its skill's START creates the work.
 
 ## 1. Project question
 
@@ -18,31 +18,36 @@ says, where something stands -- starts no work. Answer it with `/aid-ask`:
 
 Then stop. The flow does not continue to the next step.
 
+**Advance:** **HALT**.
+
 ## 2. Check, size and show the reading
 
-Any other request is checked first: `references/check-intent.md` steps 1 to 5 read the
-Knowledge Base and the code and classify the reading. Then SKILL.md steps 3 and 4 size it
-(`size-and-route.md`) and show it, and the flow waits for the user's answer. Nothing below
-runs before that answer.
+Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
+reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
+action-skill reading goes to SKILL.md step 5 and creates no work here.
 
-An action-skill reading (`size-and-route.md` section 1) is handed to that skill now (SKILL.md step
-5). No work is created here. Otherwise carry the reading into step 3.
+**Advance:** **CHAIN** → SKILL step 6.
 
 ## 3. Find the work
 
-Look for an existing work before creating one. List every work of the project, across the main
-tree and each git worktree, with `.aid/runtime/scripts/works/enumerate-works.sh`. The work
-initiation gate, `.aid/runtime/templates/work-initiation-gate.md`, decides whether the request
-continues one of those works or needs a new one. Follow the gate as written.
+Look for an existing work before creating one: list every work across the main tree and each git
+worktree with `.aid/runtime/scripts/works/enumerate-works.sh`, then follow the work initiation
+gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 
 - A matching work is continued. Its `STATE.yml` already holds the `intent:` block, which stands
   unless the check found a new fact.
-- No match: the gate's § 3a runs `writeback-state.sh --create`, which writes the new work's
-  `STATE.yml` in one write. This is the first write the flow makes; the flow creates no work
-  by hand.
-- Several plausible works: ask one question -- which work the request continues. Give its reason
-  (the request could fit more than one), your recommendation (the work whose phase fits best),
-  the plausible works by name plus "a new work", and a free-text answer.
+- No match: the gate's § 3a runs `writeback-state.sh --create`, the flow's first write. The flow
+  creates no work by hand.
+- Several plausible works: section 3a asks which one.
+
+**Advance:** **CHAIN** → SKILL step 7, or SKILL step 6a when several works plausibly match.
+
+## 3a. Ask which work
+
+Ask one question -- which work the request continues: its reason, your recommendation (the work
+whose phase fits best), the plausible works by name plus "a new work", and a free-text answer.
+
+**Advance:** **ASK** → SKILL step 7.
 
 ## 4. Read the resume point
 
@@ -61,7 +66,9 @@ groups (FR-17), before the work goes on. A `Skipped` question is offered again h
 
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
 that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
-`Canceled` is finished: say so and stop.
+`Canceled` is finished: say so and stop, with no advance.
+
+**Advance:** **CHAIN** → SKILL step 6a, which asks the open questions before the work goes on.
 
 ## 5. Cancel a named work
 
@@ -77,6 +84,9 @@ the user's confirmed answer, and in this order:
 3. **Confirm once.** Ask one question: whether to cancel the work, named with its id and phase.
    Give the reason (a canceled work stops for good), your recommendation (keep it paused when
    the user is unsure), the options "cancel" and "keep", and a free-text answer.
+
+**Advance:** **ASK** → 4.
+
 4. **Write.** When the user confirms, run:
 
 ```bash
@@ -84,7 +94,10 @@ AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/ex
 ```
 
 The writer also clears the saved skill and step. The cancel creates no new work and writes
-nothing else. When the user answers "keep", nothing is written.
+nothing else. When the user answers "keep", nothing is written. Either way, one plain line says
+what happened and that no new work was created.
+
+**Advance:** **HALT**.
 
 ## 6. Record the intent
 
@@ -102,3 +115,5 @@ authored, so write it in block style and keep its keys to the three levels the r
 
 A resumed work keeps its `intent:` block. Change it only through a re-route, and append the
 re-route to `changes`.
+
+**Advance:** **CHAIN** → SKILL step 10.

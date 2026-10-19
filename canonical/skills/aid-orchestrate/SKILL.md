@@ -10,8 +10,7 @@ argument-hint: "[request]  -- what you want to do, in your own words"
 
 `/aid-orchestrate` is the on-demand intake behind a plain request. It runs in the main
 conversation and dispatches no sub-agent: only the main conversation can talk with the user.
-The skill guide in `.aid/runtime/rules.md` sends a plain request here; a typed command for
-another skill never runs here.
+The skill guide in `.aid/runtime/rules.md` sends a plain request here; a typed command never does.
 
 ## Steps
 
@@ -20,38 +19,39 @@ each reference when its step comes up. No work is created before step 6.
 
 1. **Project question.** `references/check-intent.md` step 0 spots a question about the
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
-   sources. The flow stops there, and no work is created.
+   sources. No work is created. **Advance:** **HALT**.
 2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with
    the Knowledge Base and the code, and classify it by its observable effect. A request that
-   names a work to cancel or close is an action on that work: it goes to step 8 or step 9.
+   names a work to cancel or close goes to step 8 or step 9. **Advance:** **CHAIN** → 3.
 3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth. When the project has no Knowledge Base, offer Preparation too
-   (`references/size-and-route.md` section 5).
+   (`references/size-and-route.md` section 5). **Advance:** **CHAIN** → 4.
 4. **Show the reading.** One line with its reason, the phases and the depth, in the same
-   message as the first real question or approval. Then wait for the answer. It is never a
-   turn of its own.
+   message as the first real question or approval. Then wait for the answer; it is never a
+   turn of its own. **Advance:** **ASK** → 5.
 5. **Hand over an action-skill reading.** Once the user approves, a reading that matches an
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
-   `/aid-test`, `/aid-prototype`) is handed to that skill. Pass the block as an `intent:` line
-   with its keys indented two spaces beneath it (`request`, `reading`, `reason`, `depth`,
-   `phases` as `- <phase>` lines, `changes`), as in `.aid/runtime/templates/work-state-template.yml`.
-   The skill's START creates the work through the gate and writes that block into it
-   (`shortcut-engine.md` INTAKE Step 5). No work is created here, and this skill is done.
-6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work
-   is continued from its resume point and keeps its reading; otherwise the gate creates the
-   work. This is the first write the flow makes.
-7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block
-   into the new work's `STATE.yml` at once.
-8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
+   `/aid-test`, `/aid-prototype`) goes to that skill with the block as an `intent:` line (see
+   `.aid/runtime/templates/work-state-template.yml`); its START creates the work. **Advance:**
+   **ASK** then **HALT**: ask the user to confirm the hand-over, then start that skill; this skill is done.
+6. **Find or create the work.** `references/start-or-resume.md` section 3. A matching work is
+   continued from its resume point and keeps its reading; otherwise the gate creates the work,
+   the flow's first write. **Advance:** **CHAIN** → 7, or 6a when several works plausibly match.
+6a. **Ask before going on.** Ask one question when several works plausibly match
+   (`references/start-or-resume.md` section 3a), and ask every open `qa:` question of a resumed
+   work (section 4). Skip this step when neither applies. **Advance:** **ASK** → 7.
+7. **Record the intent.** `references/start-or-resume.md` section 6. Write the `intent:` block
+   into the new work's `STATE.yml` at once. **Advance:** **CHAIN** → 10.
+8. **Cancel a named work.** `references/start-or-resume.md` section 5: one confirmation question,
+   then the writer on a confirmed cancel. No new work is created. **Advance:** **ASK** then **HALT**.
 9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an
    investigation, when nothing was to land), set `phase` to `Building` and `lifecycle` to
-   `Completed`. The flow stops there.
-10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
-    name its slash command instead and let the user run it.
-11. **During the work.** Load `references/external-sources.md` when a source is pulled in,
-    applied or written back. Load `references/feedback-routing.md` when feedback arrives. A new
-    fact or source triggers a re-check; a re-route is said in one line and added to
-    `intent.changes`.
+   `Completed`. The flow stops there. **Advance:** **HALT**.
+10. **Hand over.** Ask the user to go ahead, then start the first phase skill yourself, or name
+    its slash command where the tool cannot. **Advance:** **ASK** then **HALT**.
+11. **During the work.** Load `references/external-sources.md` when a source is pulled in, applied
+    or written back, and `references/feedback-routing.md` when feedback arrives. A re-route is said
+    in one line and added to `intent.changes`. **Advance:** **CHAIN** → 2 on a new fact.
 
 ## Rules
 

@@ -33,10 +33,10 @@ flowchart TB
   n4["STEP-4<br/>**Show the reading.** One line with its reason, the phases…"]
   n5["STEP-5<br/>**Hand over an action-skill reading.** Once the user…"]
   n6["STEP-6<br/>**Find or create the work.** references/start-or-resume.md…"]
-  n7["STEP-7<br/>**Record the intent.** references/start-or-resume.md step…"]
-  n8["STEP-8<br/>**Cancel a named work.** references/start-or-resume.md step…"]
+  n7["STEP-7<br/>**Record the intent.** references/start-or-resume.md…"]
+  n8["STEP-8<br/>**Cancel a named work.** references/start-or-resume.md…"]
   n9["STEP-9<br/>**Close a work.** references/size-and-route.md section 3…"]
-  n10["STEP-10<br/>**Hand over.** Start the first phase skill yourself. Where…"]
+  n10["STEP-10<br/>**Hand over.** Ask the user to go ahead, then start the…"]
   n11(["STEP-11<br/>**During the work.** Load references/external-sources.md…"])
   n1 --> n2
   n2 --> n3
@@ -77,88 +77,88 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `STEP-1`** — \*\*Project question.\*\* references/check-intent.md step 0… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L21" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L20" wrap
 1. **Project question.** `references/check-intent.md` step 0 spots a question about the
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L21)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L20`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L20)
 
 <a id="fragment-n2"></a>**2 · `STEP-2`** — \*\*Check the reading.\*\* references/check-intent.md steps 1… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L24" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L23" wrap
 2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L24)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L23`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L23)
 
 <a id="fragment-n3"></a>**3 · `STEP-3`** — \*\*Size the reading.\*\* references/size-and-route.md sections… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L27" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L26" wrap
 3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L27`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L27)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L26`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L26)
 
 <a id="fragment-n4"></a>**4 · `STEP-4`** — \*\*Show the reading.\*\* One line with its reason, the phases… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L30" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L29" wrap
 4. **Show the reading.** One line with its reason, the phases and the depth, in the same
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L30`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L30)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L29`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L29)
 
 <a id="fragment-n5"></a>**5 · `STEP-5`** — \*\*Hand over an action-skill reading.\*\* Once the user… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L33" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L32" wrap
 5. **Hand over an action-skill reading.** Once the user approves, a reading that matches an
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L33)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L32`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L32)
 
 <a id="fragment-n6"></a>**6 · `STEP-6`** — \*\*Find or create the work.\*\* references/start-or-resume.md… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L40" wrap
-6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L37" wrap
+6. **Find or create the work.** `references/start-or-resume.md` section 3. A matching work is
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L40)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L37`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L37)
 
-<a id="fragment-n7"></a>**7 · `STEP-7`** — \*\*Record the intent.\*\* references/start-or-resume.md step… · _step_
+<a id="fragment-n7"></a>**7 · `STEP-7`** — \*\*Record the intent.\*\* references/start-or-resume.md… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L43" wrap
-7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block
+7. **Record the intent.** `references/start-or-resume.md` section 6. Write the `intent:` block
 ~~~~
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L43)
 
-<a id="fragment-n8"></a>**8 · `STEP-8`** — \*\*Cancel a named work.\*\* references/start-or-resume.md step… · _step_
+<a id="fragment-n8"></a>**8 · `STEP-8`** — \*\*Cancel a named work.\*\* references/start-or-resume.md… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L45" wrap
-8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
+8. **Cancel a named work.** `references/start-or-resume.md` section 5: one confirmation question,
 ~~~~
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L45)
 
 <a id="fragment-n9"></a>**9 · `STEP-9`** — \*\*Close a work.\*\* references/size-and-route.md section 3… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L46" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L47" wrap
 9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L46)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L47)
 
-<a id="fragment-n10"></a>**10 · `STEP-10`** — \*\*Hand over.\*\* Start the first phase skill yourself. Where… · _step_
+<a id="fragment-n10"></a>**10 · `STEP-10`** — \*\*Hand over.\*\* Ask the user to go ahead, then start the… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L49" wrap
-10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L50" wrap
+10. **Hand over.** Ask the user to go ahead, then start the first phase skill yourself, or name
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L49)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L50)
 
 <a id="fragment-n11"></a>**11 · `STEP-11`** — \*\*During the work.\*\* Load references/external-sources.md… · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L51" wrap
-11. **During the work.** Load `references/external-sources.md` when a source is pulled in,
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L52" wrap
+11. **During the work.** Load `references/external-sources.md` when a source is pulled in, applied
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L51)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L52)

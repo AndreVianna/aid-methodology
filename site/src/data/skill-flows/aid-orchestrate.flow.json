@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 21,
-        "endLine": 21,
+        "startLine": 20,
+        "endLine": 20,
         "sourceKind": "skill",
         "excerpt": "1. **Project question.** `references/check-intent.md` step 0 spots a question about the"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 24,
-        "endLine": 24,
+        "startLine": 23,
+        "endLine": 23,
         "sourceKind": "skill",
         "excerpt": "2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 27,
-        "endLine": 27,
+        "startLine": 26,
+        "endLine": 26,
         "sourceKind": "skill",
         "excerpt": "3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 30,
-        "endLine": 30,
+        "startLine": 29,
+        "endLine": 29,
         "sourceKind": "skill",
         "excerpt": "4. **Show the reading.** One line with its reason, the phases and the depth, in the same"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 33,
-        "endLine": 33,
+        "startLine": 32,
+        "endLine": 32,
         "sourceKind": "skill",
         "excerpt": "5. **Hand over an action-skill reading.** Once the user approves, a reading that matches an"
       },
@@ -94,10 +94,10 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 40,
-        "endLine": 40,
+        "startLine": 37,
+        "endLine": 37,
         "sourceKind": "skill",
-        "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work"
+        "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` section 3. A matching work is"
       },
       "detail": null
     },
@@ -105,7 +105,7 @@
       "id": "n7",
       "order": 7,
       "name": "STEP-7",
-      "label": "**Record the intent.** references/start-or-resume.md step…",
+      "label": "**Record the intent.** references/start-or-resume.md…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -113,7 +113,7 @@
         "startLine": 43,
         "endLine": 43,
         "sourceKind": "skill",
-        "excerpt": "7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block"
+        "excerpt": "7. **Record the intent.** `references/start-or-resume.md` section 6. Write the `intent:` block"
       },
       "detail": null
     },
@@ -121,7 +121,7 @@
       "id": "n8",
       "order": 8,
       "name": "STEP-8",
-      "label": "**Cancel a named work.** references/start-or-resume.md step…",
+      "label": "**Cancel a named work.** references/start-or-resume.md…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -129,7 +129,7 @@
         "startLine": 45,
         "endLine": 45,
         "sourceKind": "skill",
-        "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there."
+        "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` section 5: one confirmation question,"
       },
       "detail": null
     },
@@ -142,8 +142,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 46,
-        "endLine": 46,
+        "startLine": 47,
+        "endLine": 47,
         "sourceKind": "skill",
         "excerpt": "9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an"
       },
@@ -153,15 +153,15 @@
       "id": "n10",
       "order": 10,
       "name": "STEP-10",
-      "label": "**Hand over.** Start the first phase skill yourself. Where…",
+      "label": "**Hand over.** Ask the user to go ahead, then start the…",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 49,
-        "endLine": 49,
+        "startLine": 50,
+        "endLine": 50,
         "sourceKind": "skill",
-        "excerpt": "10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
+        "excerpt": "10. **Hand over.** Ask the user to go ahead, then start the first phase skill yourself, or name"
       },
       "detail": null
     },
@@ -177,10 +177,10 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 51,
-        "endLine": 51,
+        "startLine": 52,
+        "endLine": 52,
         "sourceKind": "skill",
-        "excerpt": "11. **During the work.** Load `references/external-sources.md` when a source is pulled in,"
+        "excerpt": "11. **During the work.** Load `references/external-sources.md` when a source is pulled in, applied"
       },
       "detail": null
     }
@@ -194,8 +194,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 21,
-        "endLine": 21,
+        "startLine": 20,
+        "endLine": 20,
         "sourceKind": "skill",
         "excerpt": "1. **Project question.** `references/check-intent.md` step 0 spots a question about the"
       }
@@ -208,8 +208,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 24,
-        "endLine": 24,
+        "startLine": 23,
+        "endLine": 23,
         "sourceKind": "skill",
         "excerpt": "2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with"
       }
@@ -222,8 +222,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 27,
-        "endLine": 27,
+        "startLine": 26,
+        "endLine": 26,
         "sourceKind": "skill",
         "excerpt": "3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the"
       }
@@ -236,8 +236,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 30,
-        "endLine": 30,
+        "startLine": 29,
+        "endLine": 29,
         "sourceKind": "skill",
         "excerpt": "4. **Show the reading.** One line with its reason, the phases and the depth, in the same"
       }
@@ -250,8 +250,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 33,
-        "endLine": 33,
+        "startLine": 32,
+        "endLine": 32,
         "sourceKind": "skill",
         "excerpt": "5. **Hand over an action-skill reading.** Once the user approves, a reading that matches an"
       }
@@ -264,10 +264,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 40,
-        "endLine": 40,
+        "startLine": 37,
+        "endLine": 37,
         "sourceKind": "skill",
-        "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work"
+        "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` section 3. A matching work is"
       }
     },
     {
@@ -281,7 +281,7 @@
         "startLine": 43,
         "endLine": 43,
         "sourceKind": "skill",
-        "excerpt": "7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block"
+        "excerpt": "7. **Record the intent.** `references/start-or-resume.md` section 6. Write the `intent:` block"
       }
     },
     {
@@ -295,7 +295,7 @@
         "startLine": 45,
         "endLine": 45,
         "sourceKind": "skill",
-        "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there."
+        "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` section 5: one confirmation question,"
       }
     },
     {
@@ -306,8 +306,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 46,
-        "endLine": 46,
+        "startLine": 47,
+        "endLine": 47,
         "sourceKind": "skill",
         "excerpt": "9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an"
       }
@@ -320,10 +320,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 49,
-        "endLine": 49,
+        "startLine": 50,
+        "endLine": 50,
         "sourceKind": "skill",
-        "excerpt": "10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
+        "excerpt": "10. **Hand over.** Ask the user to go ahead, then start the first phase skill yourself, or name"
       }
     }
   ],
