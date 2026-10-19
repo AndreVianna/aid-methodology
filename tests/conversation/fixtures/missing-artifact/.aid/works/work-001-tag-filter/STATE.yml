@@ -7,7 +7,7 @@ lifecycle: Running
 phase: Specification
 active_skill: aid-specify
 step: REVIEW
-step_detail: 'the technical specification of feature 001 was saved to tech-spec.md and is up for review'
+step_detail: 'the technical specification of feature 001 was saved to REQUIREMENTS.md section 11 and is up for review'
 handoffs: []
 updated: '2026-10-16T09:00:00Z'
 pause_reason: --
@@ -32,5 +32,17 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: 'Opened from a plain request'
-features: []
+features:
+  - id: '001'
+    name: tag-filter
+    state: Ready
+    started: '2026-10-14'
+    updated: '2026-10-16'
+    grade: A
+    qa_count: 0
+    sections:
+      - name: Technical approach
+        state: Complete
+      - name: Interfaces
+        state: Complete
 qa: []

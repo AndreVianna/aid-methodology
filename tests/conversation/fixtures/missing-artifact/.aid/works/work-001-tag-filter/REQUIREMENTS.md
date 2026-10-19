@@ -27,3 +27,9 @@ Let a user list only the notes that carry a given tag, so a long list can be nar
 
 - The listing keeps the columns it prints today.
 
+## 11. Features
+
+### Feature 001 — Tag filter
+
+Covers FR-1, FR-2 and FR-3: the `--tag` option on `list` and on `add`, and the unchanged listing without it.
+
