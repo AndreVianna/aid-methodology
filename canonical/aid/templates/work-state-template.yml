@@ -124,7 +124,8 @@ active_skill: none
 step: --
 # [W] where inside the step, in plain words; -- when none
 step_detail: --
-# [W] append-only, newest last; one entry per hand-off
+# [W] append-only, newest last; one entry per hand-off:
+#   at / from / from_step / from_detail / to / why / returns (yes = a call, no = a pass) / returned
 handoffs: []
 # [W]
 updated: '2026-01-01T00:00:00Z'
@@ -334,7 +335,8 @@ delivery_gate:
 
 # [W] every question and answer, newest last; one entry per question:
 #   - id / category (e.g. Architecture, Requirements, Security) /
-#     impact: High | Medium | Low | Required /
-#     state: Pending | Answered | Skipped /
-#     context / suggested / answer / applied_to
+#     impact: High | Medium | Low /
+#     state: Pending | Answered | Skipped | Assumed /
+#     asked_by / step / context / suggested / answer / answered_by / applied_to /
+#     covers (set by --ask or --answer) / commit (set by --answer)
 qa: []

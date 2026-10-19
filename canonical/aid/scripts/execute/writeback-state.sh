@@ -210,6 +210,30 @@
 #       entry naming the old and the new record. Used only after the user confirms.
 #       --reading is required (exit 5) when the record has no intent.reading.
 #
+#   writeback-state.sh --handoff --to S --step N --why W --returns yes|no [--phase P]
+#       Hands the work to skill S at its entry step N, in one write. The caller's own
+#       active_skill, step and step_detail are recorded as the entry's from, from_step
+#       and from_detail; then active_skill (S), step (N) and step_detail (`--`) are set.
+#       --returns yes is a call: it stays open until --handoff-return. --returns no is a
+#       pass: no call is left open, and --phase P (validated) sets the phase when given.
+#       Without --phase the phase stays. --phase with --returns yes is refused (exit 4).
+#
+#   writeback-state.sh --handoff-return
+#       Ends the newest open call: sets its returned to the current time, and restores
+#       active_skill, step and step_detail from it. Exit 7 when there is no open call.
+#
+#   writeback-state.sh --ask --category C --impact High|Medium|Low --context T --suggested T
+#                       [--asked-by S] [--step N] [--covers X] [--project]
+#       Appends a Pending question to the qa list of the work STATE.yml, or with
+#       --project of .aid/STATE.yml, which is created from project-state-template.yml
+#       when missing. Prints the new id (the next free Q<n>) and nothing else.
+#
+#   writeback-state.sh --answer --id Q<n> --state Answered|Skipped|Assumed [--value T]
+#                       [--by B] [--applied-to T] [--covers X] [--commit C] [--project]
+#       Updates that question's state, answer, answered_by, applied_to, covers and commit.
+#       answered_by is --by, else git config user.name, else `--`. Exit 4 when the file
+#       holds no question with that id.
+#
 #   writeback-state.sh -h | --help
 #
 # Flattened single-delivery layout (feature-001) detection: `pipeline.path: lite`
@@ -267,7 +291,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,226p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,255p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -561,6 +585,24 @@ STEP_VALUE=""
 REROUTE_FLAG=0
 CHECK_FLAG=0
 REPAIR_FLAG=0
+HANDOFF_FLAG=0
+HANDOFF_RETURN_FLAG=0
+ASK_FLAG=0
+ANSWER_FLAG=0
+PROJECT_FLAG=0
+TO_ARG=""
+RETURNS_ARG=""
+CATEGORY_ARG=""
+IMPACT_ARG=""
+CONTEXT_ARG=""
+SUGGESTED_ARG=""
+ASKED_BY_ARG=""
+COVERS_ARG=""
+QID_ARG=""
+STATE_ANSWER_ARG=""
+BY_ARG=""
+APPLIED_TO_ARG=""
+COMMIT_ARG=""
 NEW_WORK_DIR=""
 READING_ARG=""
 REQUEST_ARG=""
@@ -626,6 +668,24 @@ while [[ $# -gt 0 ]]; do
         --check)      CHECK_FLAG=1; shift ;;
         --repair)     REPAIR_FLAG=1; shift ;;
         --reroute)    REROUTE_FLAG=1; shift ;;
+        --handoff)    HANDOFF_FLAG=1; shift ;;
+        --handoff-return) HANDOFF_RETURN_FLAG=1; shift ;;
+        --ask)        ASK_FLAG=1; shift ;;
+        --answer)     ANSWER_FLAG=1; shift ;;
+        --project)    PROJECT_FLAG=1; shift ;;
+        --to)         [[ $# -lt 2 ]] && die "--to requires a value" 5; TO_ARG="$2"; shift 2 ;;
+        --returns)    [[ $# -lt 2 ]] && die "--returns requires a value" 5; RETURNS_ARG="$2"; shift 2 ;;
+        --category)   [[ $# -lt 2 ]] && die "--category requires a value" 5; CATEGORY_ARG="$2"; shift 2 ;;
+        --impact)     [[ $# -lt 2 ]] && die "--impact requires a value" 5; IMPACT_ARG="$2"; shift 2 ;;
+        --context)    [[ $# -lt 2 ]] && die "--context requires a value" 5; CONTEXT_ARG="$2"; shift 2 ;;
+        --suggested)  [[ $# -lt 2 ]] && die "--suggested requires a value" 5; SUGGESTED_ARG="$2"; shift 2 ;;
+        --asked-by)   [[ $# -lt 2 ]] && die "--asked-by requires a value" 5; ASKED_BY_ARG="$2"; shift 2 ;;
+        --covers)     [[ $# -lt 2 ]] && die "--covers requires a value" 5; COVERS_ARG="$2"; shift 2 ;;
+        --id)         [[ $# -lt 2 ]] && die "--id requires a value" 5; QID_ARG="$2"; shift 2 ;;
+        --state)      [[ $# -lt 2 ]] && die "--state requires a value" 5; STATE_ANSWER_ARG="$2"; shift 2 ;;
+        --by)         [[ $# -lt 2 ]] && die "--by requires a value" 5; BY_ARG="$2"; shift 2 ;;
+        --applied-to) [[ $# -lt 2 ]] && die "--applied-to requires a value" 5; APPLIED_TO_ARG="$2"; shift 2 ;;
+        --commit)     [[ $# -lt 2 ]] && die "--commit requires a value" 5; COMMIT_ARG="$2"; shift 2 ;;
         --step)
             # A bare --step is the step mode; --step N names the first step of --create.
             if [[ $# -ge 2 && "$2" != --* ]]; then
@@ -654,16 +714,22 @@ done
 # ---------------------------------------------------------------------------
 # Determine mode from parsed arguments
 # ---------------------------------------------------------------------------
-NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG ))
-if [[ "$STEP_FLAG" -eq 1 || ( -n "$STEP_VALUE" && "$CREATE_FLAG" -eq 0 ) ]]; then
-    NEW_MODE_COUNT=$(( NEW_MODE_COUNT + 1 ))
+# --step is a mode of its own only when no other record mode names it: with
+# --create, --handoff, --ask or --answer it is that mode's own option.
+STEP_MODE=0
+if [[ "$STEP_FLAG" -eq 1 || -n "$STEP_VALUE" ]]; then
+    if [[ $(( CREATE_FLAG + HANDOFF_FLAG + ASK_FLAG + ANSWER_FLAG )) -eq 0 ]]; then
+        STEP_MODE=1
+    fi
 fi
+NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG ))
+NEW_MODE_COUNT=$(( NEW_MODE_COUNT + HANDOFF_FLAG + HANDOFF_RETURN_FLAG + ASK_FLAG + ANSWER_FLAG + STEP_MODE ))
 if [[ "$NEW_MODE_COUNT" -gt 1 ]]; then
-    die "one record mode per call: use one of --create, --step, --reroute, --check, --repair" 5
+    die "one record mode per call: use one of --create, --step, --reroute, --check, --repair, --handoff, --handoff-return, --ask, --answer" 5
 fi
 if [[ "$CREATE_FLAG" -eq 1 ]]; then
     MODE="create"
-elif [[ "$STEP_FLAG" -eq 1 || -n "$STEP_VALUE" ]]; then
+elif [[ "$STEP_MODE" -eq 1 ]]; then
     MODE="step"
 elif [[ "$REROUTE_FLAG" -eq 1 ]]; then
     MODE="reroute"
@@ -671,6 +737,14 @@ elif [[ "$CHECK_FLAG" -eq 1 ]]; then
     MODE="check"
 elif [[ "$REPAIR_FLAG" -eq 1 ]]; then
     MODE="repair"
+elif [[ "$HANDOFF_FLAG" -eq 1 ]]; then
+    MODE="handoff"
+elif [[ "$HANDOFF_RETURN_FLAG" -eq 1 ]]; then
+    MODE="handoff-return"
+elif [[ "$ASK_FLAG" -eq 1 ]]; then
+    MODE="ask"
+elif [[ "$ANSWER_FLAG" -eq 1 ]]; then
+    MODE="answer"
 elif [[ "$PIPELINE_FLAG" -eq 1 && -n "$FIELD" ]]; then
     MODE="pipeline"
     [[ -z "$FIELD_VALUE" ]] && die "--value is required with --pipeline --field" 5
@@ -2376,6 +2450,273 @@ mode_check() {
 
 
 # ---------------------------------------------------------------------------
+# Hand-off, question and project modes (--handoff, --handoff-return, --ask,
+# --answer). Each is one locked, staged write like the record modes above.
+# ---------------------------------------------------------------------------
+PROJECT_STATE_FILE=".aid/STATE.yml"
+
+# wb_stage_filter PROGRAM [awk -v OPTION...]: run an awk PROGRAM over the staged
+# copy and stage its output. The program exits non-zero when the entry it edits
+# is not found; then nothing is staged and the target is preserved.
+wb_stage_filter() {
+    local program="$1" t
+    shift
+    t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
+    if ! awk "$@" "$program" "$STAGED" > "$t"; then
+        rm -f "$t"
+        die "writeback sanity check failed: the entry was not found in $STAGE_TARGET; it is preserved" 3
+    fi
+    if [[ "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+    STAGED="$t"
+}
+
+# wb_qa_next_id FILE: the next free question id, Q<n> after the highest one in
+# the file. Question ids are never reused, so the highest one is what counts.
+wb_qa_next_id() {
+    awk '/^  - id: Q[0-9]+$/ { n = substr($3, 2) + 0; if (n > m) m = n }
+         END { printf "Q%d\n", m + 1 }' "$1"
+}
+
+# WB_HANDOFF_OPEN_AWK -- prints "<index>\037<from>\037<from_step>\037<from_detail>"
+# for the newest handoffs entry that is an open call (returns yes, returned --),
+# and exits 7 when there is none. Values are unquoted from their block form.
+WB_HANDOFF_OPEN_AWK='
+function unq(v) {
+    if (length(v) >= 2 && substr(v, 1, 1) == Q && substr(v, length(v), 1) == Q) {
+        v = substr(v, 2, length(v) - 2)
+        gsub(Q Q, Q, v)
+    }
+    return v
+}
+/^handoffs:[ \t]*$/ { inh = 1; next }
+inh && /^[^ \t#]/ { inh = 0 }
+inh && /^  - / { idx++ }
+inh && /^    from:/ { v = $0; sub(/^    from:[ \t]*/, "", v); fr[idx] = unq(v) }
+inh && /^    from_step:/ { v = $0; sub(/^    from_step:[ \t]*/, "", v); fs[idx] = unq(v) }
+inh && /^    from_detail:/ { v = $0; sub(/^    from_detail:[ \t]*/, "", v); fd[idx] = unq(v) }
+inh && /^    returns:/ { v = $0; sub(/^    returns:[ \t]*/, "", v); rt[idx] = unq(v) }
+inh && /^    returned:/ { v = $0; sub(/^    returned:[ \t]*/, "", v); rd[idx] = unq(v) }
+END {
+    open = 0
+    for (i = 1; i <= idx; i++)
+        if (rt[i] == "yes" && (rd[i] == "--" || rd[i] == "")) open = i
+    if (open == 0) exit 7
+    printf "%d\037%s\037%s\037%s\n", open, fr[open], fs[open], fd[open]
+}
+'
+
+# WB_HANDOFF_RETURNED_AWK -- sets the returned line of handoffs entry `target`
+# to rv (already quoted). Exits 3 when that entry has no returned line.
+WB_HANDOFF_RETURNED_AWK='
+/^handoffs:[ \t]*$/ { inh = 1; print; next }
+inh && /^[^ \t#]/ { inh = 0 }
+inh && /^  - / { idx++ }
+inh && idx == target && /^    returned:/ { print "    returned: " rv; done = 1; next }
+{ print }
+END { if (!done) exit 3 }
+'
+
+# WB_QA_UPDATE_AWK -- sets the keys of question `id` in the qa list. The new
+# values come in WB_QA_KV, one `key<TAB>block-value` per line; a key the entry
+# lacks is added at its end. Exits 3 when the file holds no question `id`.
+WB_QA_UPDATE_AWK='
+BEGIN {
+    n = split(ENVIRON["WB_QA_KV"], lines, "\n")
+    for (i = 1; i <= n; i++) {
+        p = index(lines[i], "\t")
+        k = substr(lines[i], 1, p - 1)
+        want[k] = substr(lines[i], p + 1)
+        order[++nk] = k
+    }
+}
+function flush(   i) {
+    if (!intarget) return
+    for (i = 1; i <= nk; i++)
+        if (!(order[i] in done)) print "    " order[i] ": " want[order[i]]
+    intarget = 0
+}
+/^qa:/ { inqa = 1; print; next }
+/^[^ \t#]/ { flush(); inqa = 0; print; next }
+inqa && /^  - / {
+    flush()
+    if ($0 == "  - id: " id) { intarget = 1; found++ }
+    print; next
+}
+inqa && intarget && /^    [A-Za-z_]+:/ {
+    k = $0; sub(/:.*/, "", k); sub(/^ +/, "", k)
+    if (k in want) { print "    " k ": " want[k]; done[k] = 1; next }
+}
+{ print }
+END { flush(); if (found != 1) exit 3 }
+'
+
+mode_handoff() {
+    [[ -n "$TO_ARG" ]] || die "--handoff requires --to" 5
+    [[ -n "$STEP_VALUE" ]] || die "--handoff requires --step" 5
+    [[ -n "$WHY_ARG" ]] || die "--handoff requires --why" 5
+    [[ -n "$RETURNS_ARG" ]] || die "--handoff requires --returns yes or no" 5
+    wb_valid_skill "$TO_ARG" || die "invalid --to '$TO_ARG'; must match aid-{skill}" 4
+    wb_valid_step_name "$STEP_VALUE" || die "invalid --step '$STEP_VALUE'" 4
+    case "$RETURNS_ARG" in
+        yes|no) ;;
+        *) die "invalid --returns '$RETURNS_ARG'; must be yes or no" 4 ;;
+    esac
+    if [[ -n "$PHASE_ARG" ]]; then
+        [[ "$RETURNS_ARG" == "no" ]] || die "--phase applies to a pass (--returns no) only" 4
+        case "$PHASE_ARG" in
+            Definition|Specification|Planning|Building|CI) ;;
+            *) die "invalid --phase '$PHASE_ARG'; must be one of: Definition | Specification | Planning | Building | CI" 4 ;;
+        esac
+    fi
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    local from from_step from_detail now entry
+    from=$(wb_read_scalar "$STATE_FILE" "active_skill")
+    from_step=$(wb_read_scalar "$STATE_FILE" "step")
+    from_detail=$(wb_read_scalar "$STATE_FILE" "step_detail")
+    [[ -n "$from" ]] || from="none"
+    [[ -n "$from_step" ]] || from_step="--"
+    [[ -n "$from_detail" ]] || from_detail="--"
+    now=$(wb_now)
+    entry="  - at: $(wb_sq "$now")
+    from: $(wb_sq "$from")
+    from_step: $(wb_sq "$from_step")
+    from_detail: $(wb_sq "$from_detail")
+    to: $(wb_sq "$TO_ARG")
+    why: $(wb_sq "$WHY_ARG")
+    returns: $(wb_sq "$RETURNS_ARG")
+    returned: --"
+
+    wb_stage_begin "$STATE_FILE"
+    wb_stage "active_skill" "$TO_ARG"
+    wb_stage "step" "$STEP_VALUE"
+    wb_stage "step_detail" "--"
+    if [[ -n "$PHASE_ARG" ]]; then wb_stage "phase" "$PHASE_ARG"; fi
+    wb_stage "updated" "$now"
+    wb_stage_append "handoffs" "$entry"
+    wb_stage_commit
+}
+
+mode_handoff_return() {
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    local out rc=0 idx fr fs fd now
+    out=$(awk -v Q="'" "$WB_HANDOFF_OPEN_AWK" "$STATE_FILE") || rc=$?
+    if [[ "$rc" -eq 7 ]]; then
+        die "no open call to return to in $STATE_FILE" 7
+    fi
+    [[ "$rc" -eq 0 ]] || die "cannot read the handoffs of $STATE_FILE" 3
+    IFS=$'\037' read -r idx fr fs fd <<< "$out"
+    [[ -n "$fr" ]] || fr="none"
+    [[ -n "$fs" ]] || fs="--"
+    [[ -n "$fd" ]] || fd="--"
+    now=$(wb_now)
+
+    wb_stage_begin "$STATE_FILE"
+    wb_stage "active_skill" "$fr"
+    wb_stage "step" "$fs"
+    wb_stage "step_detail" "$fd"
+    wb_stage "updated" "$now"
+    wb_stage_filter "$WB_HANDOFF_RETURNED_AWK" -v target="$idx" -v rv="$(wb_sq "$now")"
+    wb_stage_commit
+}
+
+mode_ask() {
+    [[ -n "$CATEGORY_ARG" ]] || die "--ask requires --category" 5
+    [[ -n "$IMPACT_ARG" ]] || die "--ask requires --impact" 5
+    [[ -n "$CONTEXT_ARG" ]] || die "--ask requires --context" 5
+    [[ -n "$SUGGESTED_ARG" ]] || die "--ask requires --suggested" 5
+    case "$IMPACT_ARG" in
+        High|Medium|Low) ;;
+        *) die "invalid --impact '$IMPACT_ARG'; must be one of: High | Medium | Low" 4 ;;
+    esac
+    local asked_by="${ASKED_BY_ARG:---}" step="${STEP_VALUE:---}"
+    if [[ "$asked_by" != "--" ]]; then
+        wb_valid_skill "$asked_by" || die "invalid --asked-by '$asked_by'; must match aid-{skill}" 4
+    fi
+    if [[ "$step" != "--" ]]; then
+        wb_valid_step_name "$step" || die "invalid --step '$step'" 4
+    fi
+
+    local target="$STATE_FILE" base project_tpl
+    project_tpl="$(dirname "${BASH_SOURCE[0]}")/../../templates/project-state-template.yml"
+    if [[ "$PROJECT_FLAG" -eq 1 ]]; then
+        target="$PROJECT_STATE_FILE"
+        mkdir -p "$(dirname "$target")"
+    else
+        [[ -f "$target" ]] || die "$target does not exist" 1
+    fi
+
+    init_lock_file "$target"
+    acquire_lock
+    base="$target"
+    if [[ "$PROJECT_FLAG" -eq 1 && ! -e "$target" ]]; then
+        [[ -f "$project_tpl" ]] || die "project state template not found: $project_tpl" 1
+        base="$project_tpl"
+    fi
+
+    local id entry
+    id=$(wb_qa_next_id "$base")
+    entry="  - id: $id
+    category: $(wb_sq "$CATEGORY_ARG")
+    impact: $IMPACT_ARG
+    state: Pending
+    asked_by: $(wb_sq "$asked_by")
+    step: $(wb_sq "$step")
+    context: $(wb_sq "$CONTEXT_ARG")
+    suggested: $(wb_sq "$SUGGESTED_ARG")
+    answer: --
+    answered_by: --
+    applied_to: --"
+    if [[ -n "$COVERS_ARG" ]]; then
+        entry="$entry
+    covers: $(wb_sq "$COVERS_ARG")"
+    fi
+
+    wb_stage_begin "$base" "$target"
+    wb_stage_append "qa" "$entry"
+    wb_stage_commit
+    printf '%s\n' "$id"
+}
+
+mode_answer() {
+    [[ -n "$QID_ARG" ]] || die "--answer requires --id" 5
+    [[ "$QID_ARG" =~ ^Q[0-9]+$ ]] || die "invalid --id '$QID_ARG'; must be Q<n>" 4
+    [[ -n "$STATE_ANSWER_ARG" ]] || die "--answer requires --state" 5
+    case "$STATE_ANSWER_ARG" in
+        Answered|Skipped|Assumed) ;;
+        *) die "invalid --state '$STATE_ANSWER_ARG'; must be one of: Answered | Skipped | Assumed" 4 ;;
+    esac
+
+    local target="$STATE_FILE"
+    if [[ "$PROJECT_FLAG" -eq 1 ]]; then target="$PROJECT_STATE_FILE"; fi
+    [[ -f "$target" ]] || die "$target does not exist" 1
+    [[ "$(grep -cxF -- "  - id: $QID_ARG" "$target")" -ge 1 ]] || die "no question $QID_ARG in $target" 4
+
+    local by="$BY_ARG" tab=$'\t' nl=$'\n' kv
+    if [[ -z "$by" ]]; then by="$(git config user.name 2>/dev/null || true)"; fi
+    if [[ -z "$by" ]]; then by="--"; fi
+    kv="state${tab}${STATE_ANSWER_ARG}${nl}answered_by${tab}$(wb_sq "$by")"
+    if [[ -n "$FIELD_VALUE" ]]; then kv+="${nl}answer${tab}$(wb_sq "$FIELD_VALUE")"; fi
+    if [[ -n "$APPLIED_TO_ARG" ]]; then kv+="${nl}applied_to${tab}$(wb_sq "$APPLIED_TO_ARG")"; fi
+    if [[ -n "$COVERS_ARG" ]]; then kv+="${nl}covers${tab}$(wb_sq "$COVERS_ARG")"; fi
+    if [[ -n "$COMMIT_ARG" ]]; then kv+="${nl}commit${tab}$(wb_sq "$COMMIT_ARG")"; fi
+    export WB_QA_KV="$kv"
+
+    init_lock_file "$target"
+    acquire_lock
+    wb_stage_begin "$target"
+    wb_stage_filter "$WB_QA_UPDATE_AWK" -v id="$QID_ARG"
+    wb_stage_commit
+}
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 case "$MODE" in
@@ -2391,5 +2732,9 @@ case "$MODE" in
     reroute)             mode_reroute ;;
     check)               mode_check ;;
     repair)              mode_repair ;;
+    handoff)             mode_handoff ;;
+    handoff-return)      mode_handoff_return ;;
+    ask)                 mode_ask ;;
+    answer)              mode_answer ;;
     *) die "internal error: unknown mode '$MODE'" 1 ;;
 esac

@@ -16,7 +16,8 @@
 # comments above it, never on the key's own line.
 
 # [W] every question and answer, newest last; one entry per question:
-#   - id / category / impact: High | Medium | Low | Required /
-#     state: Pending | Answered | Skipped /
-#     context / suggested / answer / applied_to
+#   - id / category / impact: High | Medium | Low /
+#     state: Pending | Answered | Skipped | Assumed /
+#     asked_by / step / context / suggested / answer / answered_by / applied_to /
+#     covers (set by --ask or --answer) / commit (set by --answer)
 qa: []
