@@ -109,6 +109,7 @@ export HOME="$T/home" TMPDIR="$T/tmp" AID_NO_UPDATE_CHECK=1
 export PYTHONDONTWRITEBYTECODE=1  # no __pycache__ of the runner or of its mutant copies inside the tree
 export PATH="$BIN:$PATH"
 unset AID_CONV_MODEL  # the default model is asserted; a maintainer's override must not leak in
+unset AID_CODEX_MODEL CODEX_HOME  # likewise the Codex model and folder: run.py copies the sign-in from CODEX_HOME when set
 
 # --- the stub claude ----------------------------------------------------------
 cat > "$BIN/claude" <<'PYSTUB'
@@ -260,10 +261,17 @@ if not argv or argv[0] != "exec":
     raise SystemExit("expected codex exec")
 last = argv[argv.index("--output-last-message") + 1]
 with open(os.environ["CODEX_STUB_LOG"], "a", encoding="utf-8") as f:
-    f.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME")}) + "\n")
+    f.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME"),
+                        "auth_copied": os.path.isfile(os.path.join(os.environ.get("HOME", ""), ".codex", "auth.json"))}) + "\n")
 if "resume" not in argv:
     with open("changed.txt", "w", encoding="utf-8") as f:
         f.write("hello from the stub\n")
+    # the Codex CLI refreshes its sign-in file during a start turn, as a token refresh does: the file
+    # then changes under HOME during the run (CX26 reads that the change is not captured)
+    auth = os.path.join(os.environ.get("HOME", ""), ".codex", "auth.json")
+    os.makedirs(os.path.dirname(auth), exist_ok=True)
+    with open(auth, "w", encoding="utf-8") as f:
+        f.write('{"tokens": {"access_token": "AUTH-MARK-7731-refreshed"}}\n')
 with open(last, "w", encoding="utf-8") as f:
     f.write("Codex reply " + ("2" if "resume" in argv else "1"))
 if "resume" not in argv:
@@ -622,7 +630,7 @@ need_cap() {
 need_m1() {
     started m1 && return 0
     make_mutant m1 \
-        'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")' 'HOME_SETUP_DIRS = ()' \
+        'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws", ".codex")' 'HOME_SETUP_DIRS = ()' \
         'HOME_SETUP_FILES = (".boto",)' 'HOME_SETUP_FILES = ()' \
         'f"{END_FIRST_RULE}\n\n"' '""' \
         '"--model", self.model,' '' \
@@ -1388,6 +1396,23 @@ group_cap() {
 # ---------------------------------------------------------------- CODEX
 group_codex() {
     echo "--- CODEX"
+    # the throwaway HOME's source holds a Codex sign-in file; the marker stands in for its token
+    local auth_mark="AUTH-MARK-7731"
+    mkdir -p "$T/home/.codex"
+    printf '{"tokens": {"access_token": "%s"}}\n' "$auth_mark" > "$T/home/.codex/auth.json"
+    has_text() {  # FILE TEXT: 0 when FILE holds TEXT
+        grep -qF -- "$2" "$1"
+    }
+    auth_leaks() {  # LOG RUN-DIR...: the files that carry the marker: the claude stub log (it records every
+        local d       # helper prompt, so the judge's too) and the capture files of each run folder
+        grep -lF -- "$auth_mark" "$1" 2>/dev/null
+        shift
+        for d in "$@"; do
+            [ -n "$d" ] && grep -lF -- "$auth_mark" "$d"/* 2>/dev/null
+        done
+        return 0
+    }
+    auth_clean() { [ -z "$(auth_leaks "$@")" ]; }  # 0 when no file carries the marker
     invoke codex two-turns clean --hosts codex --sample s-pass --runs 1
     local out="$T/log/codex.out" dir calls
     dir="$(sed -n 's/^PASS codex s-pass run 1\/1 -> //p' "$out" | head -1)"
@@ -1440,7 +1465,6 @@ group_codex() {
         bash -c 'grep -q "PASS codex s-pass: 1/1 runs passed" "$1"' _ "$T/log/codex-mut.out"
 
     invoke_no_codex missing-codex end-after-one clean --hosts codex --sample s-pass --runs 1
-    assert_exit_eq "$(cat "$T/log/missing-codex.rc")" 0 "CX21 a missing Codex CLI leaves Claude helpers and the run operational"
     assert_output_contains "$(cat "$T/log/missing-codex.out")" \
         "NOTICE: codex CLI is not on PATH; codex host skipped" "CX16 a missing Codex CLI produces a NOTICE and skips the host"
     assert_output_contains "$(cat "$T/log/missing-codex.out")" "PASS claude-code s-pass: 1/1 runs passed" \
@@ -1457,6 +1481,76 @@ group_codex() {
     INVOKE_RUNNER="$MUT_PATH" invoke_no_codex missing-mut end-after-one clean --hosts codex --sample s-pass --runs 1
     expect_fail "CX20 omitting the missing-CLI check fails CX16" \
         bash -c 'grep -q "NOTICE: codex CLI is not on PATH; codex host skipped" "$1"' _ "$T/log/missing-mut.out"
+    assert_exit_eq "$(cat "$T/log/missing-codex.rc")" 0 "CX21 a missing Codex CLI leaves Claude helpers and the run operational"
+
+    make_mutant codex-sandbox 'args += ["--sandbox", "workspace-write", "--approve-for-me"]' 'args += ["--approve-for-me"]'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-sandbox-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX22 removing the Codex sandbox flag fails CX05" \
+        has_text "$T/log/codex-sandbox-mut.codex.jsonl" '"--sandbox", "workspace-write"'
+
+    make_mutant codex-approval 'args += ["--sandbox", "workspace-write", "--approve-for-me"]' 'args += ["--sandbox", "workspace-write"]'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-approval-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX23 removing the Codex approval flag fails CX06" \
+        has_text "$T/log/codex-approval-mut.codex.jsonl" '"--approve-for-me"'
+
+    make_mutant codex-signed-out \
+        'if proc.returncode != 0 or not re.search(r"(?m)^\s*logged in(?:\s|$)", status):' 'if False:'
+    STUB_CODEX_SIGNED_IN=0 INVOKE_RUNNER="$MUT_PATH" invoke signed-out-mut end-after-one clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX24 removing the signed-out check fails CX18" \
+        has_text "$T/log/signed-out-mut.out" "NOTICE: codex is not signed in; codex host skipped"
+
+    # the sign-in file is copied in and refreshed during the start turn; its marker must reach no capture
+    # file and no helper prompt (the judge's included, read from the stub log)
+    assert_output_contains "$(head -1 "$calls")" '"auth_copied": true' \
+        "CX25 the Codex sign-in file is copied into the throwaway HOME before the start turn"
+    local claude_dir
+    claude_dir="$(sed -n 's/^[A-Z]* claude-code s-pass run 1\/1 -> //p' "$out" | head -1)"
+    assert_eq "$(auth_leaks "$T/log/codex.jsonl" "$dir" "$claude_dir")" "" \
+        "CX26 the Codex sign-in file's bytes are in no capture file and no judge prompt"
+
+    make_mutant codex-auth-home 'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws", ".codex")' \
+        'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-auth-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    local mut_codex_dir mut_claude_dir
+    mut_codex_dir="$(sed -n 's/^[A-Z]* codex s-pass run 1\/1 -> //p' "$T/log/codex-auth-mut.out" | head -1)"
+    mut_claude_dir="$(sed -n 's/^[A-Z]* claude-code s-pass run 1\/1 -> //p' "$T/log/codex-auth-mut.out" | head -1)"
+    expect_fail "CX27 dropping .codex from the HOME set-up folders fails CX26" \
+        auth_clean "$T/log/codex-auth-mut.jsonl" "$mut_codex_dir" "$mut_claude_dir"
+
+    # the model named by AID_CODEX_MODEL reaches the Codex CLI through the model the runner passes it
+    AID_CODEX_MODEL=gpt-test-model invoke codex-model two-turns clean --hosts codex --sample s-pass --runs 1
+    assert_file_contains "$T/log/codex-model.codex.jsonl" '"--model", "gpt-test-model"' \
+        "CX28 the Codex host runs with the model AID_CODEX_MODEL names"
+
+    make_mutant codex-model-arg 'model = ctx["codex_model"] if host == "codex" else ctx["model"]' 'model = ctx["model"]'
+    AID_CODEX_MODEL=gpt-test-model INVOKE_RUNNER="$MUT_PATH" invoke codex-model-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX29 handing Codex the Claude model instead of its own fails CX28" \
+        has_text "$T/log/codex-model-mut.codex.jsonl" '"--model", "gpt-test-model"'
+
+    # the 12-user-turn cap, for the Codex host: a stub simulated user that never ends the conversation
+    invoke codex-cap never clean --hosts codex --sample s-pass --runs 1
+    assert_output_contains "$(sed -n '/^FAIL codex s-pass run/,$p' "$T/log/codex-cap.out")" \
+        "conversation: no <<END>> within 12 user turns (turn cap)" "CX30 the Codex host fails at the 12-user-turn cap"
+    assert_eq "$(wc -l < "$T/log/codex-cap.codex.jsonl" | tr -d ' ')" 12 "CX31 Codex is called once per turn, 12 times, to the cap"
+
+    make_mutant codex-no-copy 'shutil.copy2(codex_auth, home / ".codex" / "auth.json")' 'pass'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-copy-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX32 not copying the Codex sign-in file fails CX25" \
+        bash -c 'head -1 "$1" | grep -qF -- "\"auth_copied\": true"' _ "$T/log/codex-copy-mut.codex.jsonl"
+
+    make_mutant codex-cap-short 'for turn in range(1, TURN_CAP + 1):' 'for turn in range(1, TURN_CAP):'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-cap-mut never clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX33 ending the turns one short of the cap fails CX31" \
+        bash -c '[ "$(wc -l < "$1" | tr -d " ")" = 12 ]' _ "$T/log/codex-cap-mut.codex.jsonl"
+
+    make_mutant codex-cap-msg 'raise RunError(f"no {END_MARK} within {TURN_CAP} user turns (turn cap)")' \
+        'raise RunError(f"no {END_MARK} within {TURN_CAP} user turns")'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-cap-msg-mut never clean --hosts codex --sample s-pass --runs 1
+    cap_named_in() {  # OUT-FILE: the Codex host's failure reason names the turn cap
+        sed -n '/^FAIL codex s-pass run/,$p' "$1" | grep -qF -- "(turn cap)"
+    }
+    expect_fail "CX34 dropping the turn cap's name from the reason fails CX30" \
+        cap_named_in "$T/log/codex-cap-msg-mut.out"
 }
 
 want EXIT && group_exit

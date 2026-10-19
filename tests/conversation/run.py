@@ -56,7 +56,12 @@ tool" with a `subagent_type` input, so Task is confirmed, but the same text also
 tool": a newer alias may exist, and a live run should confirm the name in use.
 Simulated user and judge: `claude -p --tools "" --safe-mode --strict-mcp-config --system-prompt
 <brief>` from an empty temporary folder, the prompt on stdin.
-Limits: 12 user turns (the run fails when no <<END>> comes within them); 600 s per claude call.
+Driver (Codex): the first turn is `codex exec --json --model <model, when set> --sandbox workspace-write
+--approve-for-me --output-last-message <file> -` in the fixture, the prompt on stdin; the thread id comes
+from the thread.started event, and each later turn is `codex exec resume <thread-id>` with --json,
+--model and --output-last-message only (the resume help lists no sandbox or approval option). Codex
+output is not normalized to tool calls, so the tool-call checks read NOT RUN on that host.
+Limits: 12 user turns (the run fails when no <<END>> comes within them); 600 s per claude or codex call.
 Other hosts: a start/send/read adapter per host (ADAPTERS). Claude Code and Codex have adapters;
 hosts without an adapter are skipped with a NOTICE.
 """
@@ -113,9 +118,9 @@ ENV_DROP_NAMES = (
 )
 # every CLAUDE_CODE_REMOTE* variable (the remote-session wiring); no auth or provider name starts with it
 ENV_DROP_PREFIXES = ("CLAUDE_CODE_REMOTE",)
-# the sandbox's own set-up and credential files under HOME, never recorded in files.diff
-HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")
-HOME_SETUP_DIRS += (".codex",)
+# the sandbox's own set-up files, and the Codex CLI's folder (its sign-in file), under HOME: never recorded
+# in files.diff, in a transcript or in the judge's prompt
+HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws", ".codex")
 HOME_SETUP_FILES = (".boto",)
 # a worktree the agent creates under the fixture: its files are diffed against the fixture's own files
 WORKTREES_PREFIX = "fixture/.claude/worktrees/"
@@ -314,10 +319,12 @@ def read_stream(stdout: str, base: str = "") -> tuple[str | None, str, list[dict
     return session, "\n\n".join(t for t in texts if t).strip(), tools
 
 
-def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
+def run_cli(cli: str, args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
+    """One call of an agent CLI (claude or codex) with the prompt on stdin; returns its stdout.
+    A timeout, a start failure or a non-zero exit raises RunError, naming the CLI."""
     try:
         proc = subprocess.run(
-            ["claude", *args],
+            [cli, *args],
             cwd=cwd,
             env=env,
             input=stdin,
@@ -328,29 +335,23 @@ def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
             timeout=TURN_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
-        raise RunError(f"claude call timed out after {TURN_TIMEOUT} s")
+        raise RunError(f"{cli} call timed out after {TURN_TIMEOUT} s")
     except OSError as exc:
-        raise RunError(f"claude could not start: {exc}")
+        raise RunError(f"{cli} could not start: {exc}")
     if proc.returncode != 0:
         tail = (proc.stderr or proc.stdout or "").strip()[-400:]
-        raise RunError(f"claude exited {proc.returncode}: {tail}")
+        raise RunError(f"{cli} exited {proc.returncode}: {tail}")
     return proc.stdout
+
+
+def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
+    """One `claude` call (the agent's turns and the simulated user and judge): see run_cli."""
+    return run_cli("claude", args, cwd=cwd, env=env, stdin=stdin)
 
 
 def run_codex(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
-    try:
-        proc = subprocess.run(
-            ["codex", *args], cwd=cwd, env=env, input=stdin, capture_output=True,
-            text=True, encoding="utf-8", errors="replace", timeout=TURN_TIMEOUT,
-        )
-    except subprocess.TimeoutExpired:
-        raise RunError(f"codex call timed out after {TURN_TIMEOUT} s")
-    except OSError as exc:
-        raise RunError(f"codex could not start: {exc}")
-    if proc.returncode != 0:
-        tail = (proc.stderr or proc.stdout or "").strip()[-400:]
-        raise RunError(f"codex exited {proc.returncode}: {tail}")
-    return proc.stdout
+    """One `codex` call (the Codex agent's turns): see run_cli."""
+    return run_cli("codex", args, cwd=cwd, env=env, stdin=stdin)
 
 
 class ClaudeCodeAgent:
@@ -389,21 +390,27 @@ class ClaudeCodeAgent:
 
 
 class CodexAgent:
-    """start/send/read adapter: one non-interactive `codex exec` call per turn."""
+    """start/send/read adapter for the Codex host: one non-interactive `codex exec` call per turn.
+
+    The first turn starts a thread (`codex exec --json`, its thread id read from the `thread.started`
+    event); each later turn resumes that thread with `codex exec resume <thread-id>`. The prompt goes
+    on stdin ("-") and the reply is read from the --output-last-message file. An empty model leaves
+    the CLI's default model in place. CODEX_HOME points at the throwaway HOME's .codex folder.
+    """
 
     def __init__(self, fixture: Path, env: dict, model: str):
         self.fixture = fixture
         self.env = env
-        self.model = os.environ.get("AID_CODEX_MODEL", "")
+        self.model = model
         self.session_id: str | None = None
+        self.env["CODEX_HOME"] = str(Path(self.env["HOME"]) / ".codex")
 
     def start(self) -> None:
         self.session_id = None
 
     def send(self, message: str) -> tuple[str, list[dict]]:
-        # Confirmed by `codex exec --help`: --json, --model (when configured), --sandbox,
-        # --approve-for-me and --output-last-message; the prompt is read from stdin.
-        # `codex exec resume <thread-id>` is the CLI's own conversation-resume option.
+        # Options as `codex exec --help` lists them: --json, --model, --sandbox, --approve-for-me and
+        # --output-last-message; the prompt is read from stdin ("-").
         with tempfile.TemporaryDirectory(prefix="aid-codex-turn-") as turn_dir:
             last_message = Path(turn_dir) / "last-message.txt"
             args = ["exec"]
@@ -413,9 +420,15 @@ class CodexAgent:
             if self.model:
                 args += ["--model", self.model]
             if not self.session_id:
+                # The resume subcommand's help (`codex exec resume --help`) lists only --json, --model
+                # and --output-last-message: the usage is "codex exec resume [OPTIONS] [SESSION_ID]
+                # [PROMPT]", and it shows no --sandbox and no --approve-for-me. So the resumed turn is
+                # not given them, and runs under the CLI's own sandbox and approval defaults, which may
+                # differ from the start turn's; a live run has not confirmed which. The start help
+                # describes --sandbox as the policy for model-generated shell commands and does not say
+                # it confines reads, so the fixture is not a read boundary.
                 args += ["--sandbox", "workspace-write", "--approve-for-me"]
             args += ["--output-last-message", str(last_message), "-"]
-            self.env["CODEX_HOME"] = str(Path(self.env["HOME"]) / ".codex")
             out = run_codex(args, cwd=self.fixture, env=self.env, stdin=message)
             thread_id = None
             for line in out.splitlines():
@@ -437,6 +450,8 @@ class CodexAgent:
 
     @staticmethod
     def available() -> tuple[bool, str]:
+        """Whether the Codex host can run: the CLI is on PATH and `codex login status` reports a sign-in.
+        Returns (True, "") or (False, reason); main prints the reason in its NOTICE and skips the host."""
         if shutil.which("codex") is None:
             return False, "codex CLI is not on PATH"
         try:
@@ -1000,6 +1015,7 @@ def ledger_status(text: str) -> tuple[bool, int]:
 def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "claude-code") -> list[str]:
     run_dir.mkdir(parents=True, exist_ok=True)
     reasons: list[str] = []
+    model = ctx["codex_model"] if host == "codex" else ctx["model"]  # the model this host's agent runs with
     work = Path(tempfile.mkdtemp(prefix="aid-conv-run-"))
     transcript: list[dict] = []
     checks_txt = ""
@@ -1015,7 +1031,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         before, dirs_before = capture(fixture, home)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
-        agent = ADAPTERS[host](fixture, agent_env, ctx["model"])
+        agent = ADAPTERS[host](fixture, agent_env, model)
         try:
             run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env)
         except RunError as exc:
@@ -1051,8 +1067,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         (run_dir / "files.diff").write_text(diff, encoding="utf-8")
         (run_dir / "checks.txt").write_text(checks_txt, encoding="utf-8")
         (run_dir / "ledger.md").write_text(ledger.rstrip("\n") + "\n" if ledger else "", encoding="utf-8")
-        recorded_model = (os.environ.get("AID_CODEX_MODEL") or "Codex CLI default") if host == "codex" else ctx["model"]
-        (run_dir / "model.txt").write_text(recorded_model + "\n", encoding="utf-8")
+        (run_dir / "model.txt").write_text((model or "Codex CLI default") + "\n", encoding="utf-8")
         shutil.rmtree(work, ignore_errors=True)
     return reasons
 
@@ -1142,6 +1157,7 @@ def main(argv: list[str] | None = None) -> int:
             "user_brief": user_brief,
             "judge_brief": judge_brief,
             "model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,
+            "codex_model": os.environ.get("AID_CODEX_MODEL") or "",  # empty: the Codex CLI's default model
         }
         any_failed = False
         for host in hosts:
