@@ -2605,10 +2605,19 @@ assert_file_contains "$S29A" "phase: Building" "29a: phase written"
 assert_file_contains "$S29A" "lifecycle: Running" "29a: lifecycle written as Running"
 assert_file_contains "$S29A" "minimum_grade: B+" "29a: minimum grade written"
 assert_file_contains "$S29A" "started: '$(date -u +%Y-%m-%d)'" "29a: started written"
+assert_file_contains "$S29A" "updated: '$(date -u +%Y-%m-%d)" "29a: updated written"
 assert_file_contains "$S29A" "event: 'Work created by aid-fix'" "29a: the creation entry names the creating skill"
 assert_file_not_contains "$S29A" "Initial scaffold by aid-config" "29a: the template's seed entry is replaced"
 assert_eq "$(ls -A "$W29_DIR")" "STATE.yml" "29a: no staging file is left beside the record"
 w29_readers_clean "$W29_ROOT" "29a"
+
+# 29a2: --create without --phase writes phase as -- and still writes updated
+w29_new create-no-phase
+S29A2="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --create --work-dir . --reading 'bug fix' --request 'the request' --skill aid-fix --step s1
+assert_eq "$RC29" "0" "29a2: --create without --phase exits 0"
+assert_file_contains "$S29A2" "phase: --" "29a2: phase written as -- when --phase is omitted"
+assert_file_contains "$S29A2" "updated: '$(date -u +%Y-%m-%d)" "29a2: updated written when --phase is omitted"
 
 # --- 29b: --create refusals --------------------------------------------------
 echo ""
@@ -2807,6 +2816,10 @@ assert_file_contains "$S29G" "writing the plan" "29g: --step sets step_detail"
 w29 "$W29_DIR" --check
 assert_eq "$RC29" "0" "29g: the record after --step passes --check"
 w29_readers_clean "$W29_ROOT" "29g"
+w29 "$W29_DIR" --step --skill aid-plan --name p3
+assert_eq "$RC29" "0" "29g: --step without --detail exits 0"
+assert_file_contains "$S29G" "step: p3" "29g: --step without --detail sets the step"
+assert_file_contains "$S29G" "step_detail: --" "29g: --step without --detail writes step_detail as --"
 w29 "$W29_DIR" --step --skill aid-plan --name
 assert_eq "$RC29" "5" "29g: --step without a step name exits 5"
 w29 "$W29_DIR" --step --name p3
@@ -2826,6 +2839,7 @@ assert_eq "$RC29" "0" "29h: --reroute exits 0"
 assert_file_contains "$S29H" "  reading: 'new capability'" "29h: --reroute sets intent.reading"
 assert_file_contains "$S29H" "  depth: full" "29h: --reroute sets intent.depth"
 assert_file_contains "$S29H" "      from: 'bug fix'" "29h: the change entry records the old reading"
+assert_file_contains "$S29H" "    - at: '" "29h: the change entry carries its at key"
 assert_file_contains "$S29H" "      to: 'new capability'" "29h: the change entry records the new reading"
 assert_file_contains "$S29H" "      why: 'scope grew'" "29h: the change entry records the reason"
 w29_readers_clean "$W29_ROOT" "29h"
