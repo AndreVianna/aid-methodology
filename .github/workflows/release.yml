@@ -161,8 +161,13 @@ jobs:
           command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
           echo "node $(node --version) | $(pwsh --version)"
 
+      # AID_RELEASE_CHECK=1 turns on the release checks of the suites (DT-02, the
+      # shared skill-steps exempt list and the SG-04 description exempt list): a
+      # release is not gated while any of those lists is non-empty.
       - name: Run all canonical suites
         shell: bash
+        env:
+          AID_RELEASE_CHECK: '1'
         run: bash tests/run-all.sh
 
       # generator self-tests — mirror test.yml's generator-selftests job.

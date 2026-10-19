@@ -191,6 +191,25 @@ if [[ "$STAGE_ONLY" -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Step 2b: Release checks (live publish only; --dry-run and --stage-only skip them)
+#
+# Each suite runs with AID_RELEASE_CHECK=1, which turns on its release assertion:
+# the deferred-tests list must be empty (DT-02), and so must the shared skill-steps
+# exempt list and the SG-04 description exempt list. A non-empty list stops the
+# release before anything is staged.
+# ---------------------------------------------------------------------------
+
+if [[ "$STAGE_ONLY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
+    echo "release.sh: running the release checks (AID_RELEASE_CHECK=1) ..."
+    for _release_check in test-deferred-tests test-skill-steps test-skill-guide; do
+        if ! AID_RELEASE_CHECK=1 bash "tests/canonical/${_release_check}.sh" </dev/null; then
+            die "release check ${_release_check} failed; nothing was staged." 1
+        fi
+    done
+    echo "release.sh: release checks passed."
+fi
+
+# ---------------------------------------------------------------------------
 # Step 3: Stage
 # ---------------------------------------------------------------------------
 
