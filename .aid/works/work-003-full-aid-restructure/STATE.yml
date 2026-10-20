@@ -534,6 +534,10 @@ review_history:
     event: 'Delivery-003 resync'
     outcome: 'Committed alone as 9250547e; test-dogfood-byte-identity, test-release, test-release-install-e2e, test-skill-guide and test-aid-migrate now pass'
     notes: 'next: the maintainer runs /reload-skills, then the gate: samples 002-01..04 and 002-14..19 (3 of 3), the protocol checks, then G0'
+  - date: '2026-10-20'
+    event: 'Delivery-003 gate, first attempt (samples)'
+    outcome: 'Static gate (test-skill-steps 67/0), dashboard fixtures and parity, SS-07, the scratch generator match, the KB index, the tracking proof and installer CI (run 2240) pass; cost baseline re-recorded. Samples: 002-15 3/3; 002-01..04 and 002-14, 16..19 fail (002-14..19 re-run after a usage-limit abort). Top failing checks: PC-10 record before shown, PC-11 importance label, PC-5 options, PC-2 Why I ask, EO-1, EO-3'
+    notes: 'Root-cause analysis under way; then the one sample fix round of Q166'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
