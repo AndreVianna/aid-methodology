@@ -9382,7 +9382,7 @@ test-writeback-state.sh	30h: --answer Answered exits 0	1
 test-writeback-state.sh	30h: --answer Skipped exits 0	1
 test-writeback-state.sh	30h: --answer for a question that does not exist exits 4	1
 test-writeback-state.sh	30h: --answer with a state outside Answered | Skipped | Assumed exits 4	1
-test-writeback-state.sh	30h: --by sets answered_by	1
+test-writeback-state.sh	30h: answered_by is set by the writer (git user.name, else --)	1
 test-writeback-state.sh	30h: Answered sets the answer	1
 test-writeback-state.sh	30h: Answered sets the state	1
 test-writeback-state.sh	30h: Assumed takes the value as the answer	1

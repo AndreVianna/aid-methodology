@@ -3043,7 +3043,7 @@ assert_eq "$code" "0" "30g: a second --ask --project exits 0"
 assert_eq "$OUT30" "Q2" "30g: the second project question is Q2"
 code=0
 OUT30="$(cd "$P30" && HOME="$R29_HOME" AID_LOCK_TIMEOUT=1 bash "$SCRIPT" --answer --project --id Q1 \
-    --state Answered --value 'project answer' --by 'Ada' 2>&1)" || code=$?
+    --state Answered --value 'project answer' 2>&1)" || code=$?
 assert_eq "$code" "0" "30g: --answer --project exits 0"
 assert_eq "$(w30_qa_field "$P30/.aid/STATE.yml" Q1 state)" "Answered" "30g: --answer --project sets the project question's state"
 assert_eq "$(w30_qa_field "$P30/.aid/STATE.yml" Q2 state)" "Pending" "30g: the other project question stays Pending"
@@ -3056,19 +3056,21 @@ S30H="$W29_DIR/STATE.yml"
 w29 "$W29_DIR" --ask --category Scope --impact High --context 'q one' --suggested 'a'
 w29 "$W29_DIR" --ask --category Scope --impact High --context 'q two' --suggested 'b'
 w29 "$W29_DIR" --ask --category Approval --impact High --context 'approve the result' --suggested 'approve'
-w29 "$W29_DIR" --answer --id Q1 --state Answered --value 'yes, go ahead' --by 'Ada'
+w29 "$W29_DIR" --answer --id Q1 --state Answered --value 'yes, go ahead'
 assert_eq "$RC29" "0" "30h: --answer Answered exits 0"
 assert_eq "$(w30_qa_field "$S30H" Q1 state)" "Answered" "30h: Answered sets the state"
 assert_eq "$(w30_qa_field "$S30H" Q1 answer)" "'yes, go ahead'" "30h: Answered sets the answer"
-assert_eq "$(w30_qa_field "$S30H" Q1 answered_by)" "'Ada'" "30h: --by sets answered_by"
+W30H_NAME="$(HOME="$R29_HOME" git config user.name 2>/dev/null || true)"
+if [[ -n "$W30H_NAME" ]]; then W30H_WANT="'${W30H_NAME}'"; else W30H_WANT="--"; fi
+assert_eq "$(w30_qa_field "$S30H" Q1 answered_by)" "$W30H_WANT" "30h: answered_by is set by the writer (git user.name, else --)"
 w29 "$W29_DIR" --answer --id Q2 --state Skipped
 assert_eq "$RC29" "0" "30h: --answer Skipped exits 0"
 assert_eq "$(w30_qa_field "$S30H" Q2 state)" "Skipped" "30h: Skipped sets the state"
 assert_eq "$(w30_qa_field "$S30H" Q2 answer)" "--" "30h: Skipped without --value leaves the answer --"
-w29 "$W29_DIR" --answer --id Q2 --state Assumed --value 'assume the default' --by 'Ada'
+w29 "$W29_DIR" --answer --id Q2 --state Assumed --value 'assume the default'
 assert_eq "$(w30_qa_field "$S30H" Q2 state)" "Assumed" "30h: a later --answer may set Assumed"
 assert_eq "$(w30_qa_field "$S30H" Q2 answer)" "'assume the default'" "30h: Assumed takes the value as the answer"
-w29 "$W29_DIR" --answer --id Q3 --state Answered --value 'approved' --by 'Ada' \
+w29 "$W29_DIR" --answer --id Q3 --state Answered --value 'approved' \
     --covers 'final result' --commit 'abc1234'
 assert_eq "$RC29" "0" "30h: an approval answer with --covers and --commit exits 0"
 assert_eq "$(w30_qa_field "$S30H" Q3 state)" "Answered" "30h: the approval is Answered"
@@ -3307,6 +3309,157 @@ assert_eq "$RC31" "0" "31r: --gate-field on the flat layout finds the work's own
 w31x "$R31S" --delivery-id 1 --lifecycle Gated
 assert_eq "$RC31" "0" "31r: --lifecycle on the flat layout exits 0"
 assert_file_contains "${R31S}/.aid/works/work-001-demo/STATE.yml" "delivery_state: Gated" "31r: the flat delivery lifecycle is written to the work record"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 32: design documents (--design, --seed) and --by removed ==="
+
+R32="${TMPDIR_BASE}/unit32"
+R32_HOME="${R32}/home"
+mkdir -p "$R32_HOME"
+git config --file "${R32_HOME}/.gitconfig" user.name 'Ada'
+R32_HOME_NONE="${R32}/home-none"
+mkdir -p "$R32_HOME_NONE"
+
+# w32 DIR ARGS...: one writer call in DIR (a project root, with no work record found
+# and none needed). Sets RC32 and OUT32. HOME carries a git user.name of Ada.
+w32() {
+    local d="$1"
+    shift
+    RC32=0
+    OUT32="$(cd "$d" && env -u AID_STATE_FILE HOME="$R32_HOME" AID_LOCK_TIMEOUT=1 \
+        bash "$SCRIPT" "$@" 2>&1)" || RC32=$?
+}
+
+# --- 32a: --ask --design creates the file and section, ids increment ----------
+echo ""
+echo "--- 32a: --ask --design creates the document and its Questions table; D ids increment ---"
+P32="${R32}/proj"
+mkdir -p "$P32"
+D32="${P32}/.aid/design/my-thing.md"
+w32 "$P32" --ask --design .aid/design/my-thing.md --category Scope --impact High \
+    --context 'What do you want to design?' --suggested 'a CLI'
+assert_eq "$RC32" "0" "32a: --ask --design exits 0 when the file does not exist"
+assert_eq "$OUT32" "D1" "32a: the first question is D1 and nothing else is printed"
+assert_file_exists "$D32" "32a: the design document is created"
+assert_file_contains "$D32" "status: draft" "32a: the new document has status: draft frontmatter"
+assert_file_contains "$D32" "## Questions" "32a: the Questions section is created"
+assert_file_contains "$D32" "| id | question | answer | state | answered_by |" "32a: the table header is written"
+assert_file_contains "$D32" "| D1 | What do you want to design? | -- | Pending | -- |" "32a: a Pending row is appended"
+w32 "$P32" --ask --design .aid/design/my-thing.md --category Scope --impact Low \
+    --context 'Second | with a pipe' --suggested 'x'
+assert_eq "$OUT32" "D2" "32a: the next question is D2"
+assert_eq "$(grep -c '^| D[0-9]' "$D32")" "2" "32a: the table holds exactly the two rows"
+assert_file_contains "$D32" 'Second \| with a pipe' "32a: a pipe in the question is escaped"
+assert_eq "$(ls -A "${P32}/.aid/design")" "my-thing.md" "32a: no lock or temporary file is left in .aid/design"
+assert_eq "$(find "$P32" -name 'STATE.yml' | wc -l | tr -d ' ')" "0" "32a: no work record is created or needed"
+
+# --- 32b: --answer --design -----------------------------------------------------
+echo ""
+echo "--- 32b: --answer --design updates the row; answered_by is the git user name, else -- ---"
+w32 "$P32" --answer --design .aid/design/my-thing.md --id D1 --state Answered --value 'a CLI tool'
+assert_eq "$RC32" "0" "32b: --answer --design exits 0"
+assert_file_contains "$D32" "| D1 | What do you want to design? | a CLI tool | Answered | Ada |" "32b: the row takes the answer, the state and the git user name"
+assert_file_contains "$D32" "| D2 | Second \\| with a pipe | -- | Pending | -- |" "32b: the other row is unchanged"
+RC32=0
+OUT32="$(cd "$P32" && env -u AID_STATE_FILE HOME="$R32_HOME_NONE" GIT_CONFIG_NOSYSTEM=1 AID_LOCK_TIMEOUT=1 \
+    bash "$SCRIPT" --answer --design .aid/design/my-thing.md --id D2 --state Skipped 2>&1)" || RC32=$?
+assert_eq "$RC32" "0" "32b: --answer --design Skipped exits 0"
+if [[ -z "$(HOME="$R32_HOME_NONE" git config user.name 2>/dev/null || true)" ]]; then
+    assert_file_contains "$D32" "| D2 | Second \\| with a pipe | -- | Skipped | -- |" "32b: with no git user name, answered_by is --"
+fi
+w32 "$P32" --answer --design .aid/design/my-thing.md --id D9 --state Answered --value x
+assert_eq "$RC32" "4" "32b: --answer --design for a missing id exits 4"
+w32 "$P32" --answer --design .aid/design/my-thing.md --id Q1 --state Answered --value x
+assert_eq "$RC32" "4" "32b: --answer --design with a Q id exits 4"
+w32 "$P32" --answer --design .aid/design/none.md --id D1 --state Answered --value x
+assert_eq "$RC32" "1" "32b: --answer --design on a missing file exits 1"
+
+# --- 32c: --step --design -------------------------------------------------------
+echo ""
+echo "--- 32c: --step --design writes step and step_detail into the frontmatter ---"
+w32 "$P32" --step INTAKE --design .aid/design/my-thing.md --detail 'naming the seed'
+assert_eq "$RC32" "0" "32c: --step --design exits 0"
+assert_file_contains "$D32" "step: INTAKE" "32c: step is written to the frontmatter"
+assert_file_contains "$D32" "step_detail: 'naming the seed'" "32c: step_detail is written"
+assert_file_contains "$D32" "status: draft" "32c: the other frontmatter keys are kept"
+w32 "$P32" --step PRESENT --design .aid/design/my-thing.md
+assert_eq "$RC32" "0" "32c: a second --step --design exits 0"
+assert_eq "$(grep -c '^step:' "$D32")" "1" "32c: step is replaced, not repeated"
+assert_file_contains "$D32" "step: PRESENT" "32c: the new step replaces the old"
+assert_file_contains "$D32" "step_detail: --" "32c: without --detail, step_detail is --"
+assert_eq "$(sed -n 1p "$D32")" "---" "32c: the frontmatter still opens the file"
+assert_file_contains "$D32" "| D1 | What do you want to design?" "32c: the Questions table is untouched"
+w32 "$P32" --step DESIGN --design .aid/design/fresh.md
+assert_eq "$RC32" "0" "32c: --step --design on a missing file exits 0"
+assert_file_contains "${P32}/.aid/design/fresh.md" "step: DESIGN" "32c: the missing file is created with the step"
+
+# --- 32d: paths outside .aid/design are refused --------------------------------
+echo ""
+echo "--- 32d: a --design path outside .aid/design is refused with exit 5 ---"
+w32 "$P32" --ask --design notes/other.md --category Scope --impact High --context 'q' --suggested 's'
+assert_eq "$RC32" "5" "32d: --ask --design outside .aid/design exits 5"
+w32 "$P32" --ask --design .aid/design/../other.md --category Scope --impact High --context 'q' --suggested 's'
+assert_eq "$RC32" "5" "32d: a .. path that leaves .aid/design exits 5"
+w32 "$P32" --answer --design /etc/hosts --id D1 --state Answered --value x
+assert_eq "$RC32" "5" "32d: --answer --design outside .aid/design exits 5"
+w32 "$P32" --step X --design STATE.yml
+assert_eq "$RC32" "5" "32d: --step --design outside .aid/design exits 5"
+assert_eq "$(w29_absent "${P32}/notes")" "absent" "32d: a refused path writes nothing"
+w32 "$P32" --pipeline --field x --value y --design .aid/design/my-thing.md
+assert_eq "$RC32" "5" "32d: --design with a mode that does not take it exits 5"
+
+# --- 32e: --create --seed --------------------------------------------------------
+echo ""
+echo "--- 32e: --create --seed adds the document to sources and copies its questions into qa ---"
+S32="${R32}/seeded"
+mkdir -p "${S32}/.aid/works/work-001-seeded" "${S32}/.aid/design"
+cp "$D32" "${S32}/.aid/design/my-thing.md"
+SEED32="${S32}/.aid/design/my-thing.md"
+SUM32_BEFORE="$(cksum < "$SEED32")"
+w32 "$S32" --create --work-dir .aid/works/work-001-seeded --reading 'new capability' --request 'build it' \
+    --skill aid-create --step s1 --seed .aid/design/my-thing.md
+assert_eq "$RC32" "0" "32e: --create --seed exits 0"
+ST32="${S32}/.aid/works/work-001-seeded/STATE.yml"
+assert_file_contains "$ST32" "ref: '.aid/design/my-thing.md'" "32e: the design document is added to sources"
+assert_file_contains "$ST32" "kind: document" "32e: the source is a document"
+assert_eq "$(grep -c '^  - id: Q' "$ST32")" "2" "32e: each Questions row becomes a Q entry"
+assert_eq "$(w30_qa_field "$ST32" Q1 state)" "Answered" "32e: Q1 keeps the state of D1"
+assert_eq "$(w30_qa_field "$ST32" Q1 answer)" "'a CLI tool'" "32e: Q1 keeps the answer of D1"
+assert_eq "$(w30_qa_field "$ST32" Q1 answered_by)" "'Ada'" "32e: Q1 keeps answered_by of D1"
+assert_eq "$(w30_qa_field "$ST32" Q2 state)" "Skipped" "32e: Q2 keeps the state of D2"
+case "$(w30_qa_field "$ST32" Q1 context)" in
+    *".aid/design/my-thing.md"*"D1"*"What do you want to design?"*) _c=ok ;;
+    *) _c="no: $(w30_qa_field "$ST32" Q1 context)" ;;
+esac
+assert_eq "$_c" "ok" "32e: the context names the source document, its D id and the question"
+assert_eq "$(cksum < "$SEED32")" "$SUM32_BEFORE" "32e: the design document is left unchanged"
+w32 "$S32" --create --work-dir .aid/works/work-002-none --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed .aid/design/my-thing.md
+assert_eq "$RC32" "1" "32e: --create into a missing work folder still exits 1"
+mkdir -p "${S32}/.aid/works/work-003-bad"
+w32 "$S32" --create --work-dir .aid/works/work-003-bad --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed .aid/design/missing.md
+assert_eq "$RC32" "5" "32e: --seed for a file that does not exist exits 5"
+w32 "$S32" --create --work-dir .aid/works/work-003-bad --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed README.md
+assert_eq "$RC32" "5" "32e: --seed outside .aid/design exits 5"
+assert_eq "$(w29_absent "${S32}/.aid/works/work-003-bad/STATE.yml")" "absent" "32e: a refused --seed creates no record"
+w32 "$S32" --seed .aid/design/my-thing.md --step s2 --skill aid-fix --name s2
+assert_eq "$RC32" "5" "32e: --seed with a mode other than --create exits 5"
+
+# --- 32f: --by is removed --------------------------------------------------------
+echo ""
+echo "--- 32f: --by is an unknown argument ---"
+w32 "$P32" --answer --design .aid/design/my-thing.md --id D1 --state Answered --value x --by 'Bob'
+assert_eq "$RC32" "5" "32f: --answer --by exits 5"
+assert_output_contains "$OUT32" "unknown argument: --by" "32f: the refusal names --by as an unknown argument"
+w32 "$P32" --help
+assert_eq "$RC32" "0" "32f: --help exits 0"
+assert_eq "$(printf '%s\n' "$OUT32" | grep -c -- '--by')" "0" "32f: the help text no longer mentions --by"
+assert_output_contains "$OUT32" "--design FILE" "32f: the help text documents --design"
+assert_output_contains "$OUT32" "--seed FILE" "32f: the help text documents --seed"
+assert_output_contains "$OUT32" "9  --check found a problem" "32f: the help text ends with the last exit code"
 
 test_summary
 exit $?

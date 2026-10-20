@@ -183,7 +183,7 @@
 #
 #   writeback-state.sh --create --work-dir DIR --reading R --request T --skill S --step N
 #                       [--phase P] [--depth lite|full] [--path lite|full] [--minimum-grade G]
-#                       [--reason R] [--phases P1,P2,...]
+#                       [--reason R] [--phases P1,P2,...] [--seed FILE]
 #       Run only by the work-initiation gate. Copies work-state-template.yml into DIR
 #       and fills the work record in one write: intent.reading, intent.request,
 #       intent.depth, active_skill (S), step (N), pipeline.initiator (S), phase (P,
@@ -191,10 +191,20 @@
 #       DIR already holds a STATE.yml. Exits 5 when a required option is missing.
 #       The template's seed lifecycle_history entry is replaced by one entry for the
 #       creation itself (today's date, an event naming S).
+#       --seed FILE takes a design document into the work: its repo-relative path is added
+#       to sources, and every row of its `## Questions` table is copied into qa as a new
+#       Q<n> entry (context names the document and its D id; state, answer and answered_by
+#       are kept). The design document is left unchanged. FILE must be inside .aid/design/
+#       and exist (exit 5 otherwise).
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
 #       write, on the work record (see "Work record discovery" below).
+#
+#   writeback-state.sh --step N --design FILE [--detail D]
+#       Writes step (N) and step_detail (D, or `--`) into the frontmatter of the design
+#       document FILE, so a design skill can resume. FILE must be inside .aid/design/;
+#       the frontmatter is created when missing, and no work record is read or written.
 #
 #   writeback-state.sh --intent [--reason R] [--phases P1,P2,...]
 #       Sets intent.reason and/or intent.phases on an existing work record, in one
@@ -238,17 +248,31 @@
 #       --project of .aid/STATE.yml, which is created from project-state-template.yml
 #       when missing. Prints the new id (the next free Q<n>) and nothing else.
 #
+#   writeback-state.sh --ask --design FILE --category C --impact H|M|L --context T --suggested T
+#                       [--asked-by S]
+#       The question comes before any work exists. Appends a Pending row to the
+#       `## Questions` table of the design document FILE (id, question, answer, state,
+#       answered_by), creating the section, and the file with minimal frontmatter
+#       (`status: draft`), when missing. The question is --context. Prints the new id
+#       (the next free D<n>) and nothing else. FILE must be inside .aid/design/ (exit 5).
+#
 #   writeback-state.sh --answer --id Q<n> --state Answered|Skipped|Assumed [--value T]
-#                       [--by B] [--applied-to T] [--covers X] [--commit C] [--project]
+#                       [--applied-to T] [--covers X] [--commit C] [--project]
 #       Updates that question's state, answer, answered_by, applied_to, covers and commit.
-#       answered_by is --by, else git config user.name, else `--`. Exit 4 when the file
-#       holds no question with that id.
+#       answered_by is set by the writer: git config user.name, else `--`. Exit 4 when
+#       the file holds no question with that id.
+#
+#   writeback-state.sh --answer --design FILE --id D<n> --state Answered|Skipped|Assumed
+#                       [--value T]
+#       Updates that row of the design document's `## Questions` table: state, answer
+#       (when --value is given) and answered_by (git config user.name, else `--`). Exit 4
+#       when the table holds no question with that id.
 #
 #   writeback-state.sh -h | --help
 #
 # Work record discovery (every mode that writes the work's record: --pipeline, --step,
 # --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask or --answer
-# without --project, and the task and delivery modes --task-id --field, --findings,
+# without --project or --design, and the task and delivery modes --task-id --field, --findings,
 # --block, --lifecycle, --gate-field, --append-issue; the task and delivery modes skip
 # it when the caller names where the work lives: AID_WORK_DIR for all of them, or the
 # mode's own override, AID_TASK_STATE_FILE (--field, --findings), AID_DELIVERY_STATE_FILE
@@ -316,7 +340,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,278p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,304p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -628,7 +652,8 @@ ASKED_BY_ARG=""
 COVERS_ARG=""
 QID_ARG=""
 STATE_ANSWER_ARG=""
-BY_ARG=""
+DESIGN_ARG=""
+SEED_ARG=""
 APPLIED_TO_ARG=""
 COMMIT_ARG=""
 NEW_WORK_DIR=""
@@ -714,7 +739,8 @@ while [[ $# -gt 0 ]]; do
         --covers)     [[ $# -lt 2 ]] && die "--covers requires a value" 5; COVERS_ARG="$2"; shift 2 ;;
         --id)         [[ $# -lt 2 ]] && die "--id requires a value" 5; QID_ARG="$2"; shift 2 ;;
         --state)      [[ $# -lt 2 ]] && die "--state requires a value" 5; STATE_ANSWER_ARG="$2"; shift 2 ;;
-        --by)         [[ $# -lt 2 ]] && die "--by requires a value" 5; BY_ARG="$2"; shift 2 ;;
+        --design)     [[ $# -lt 2 ]] && die "--design requires a value" 5; DESIGN_ARG="$2"; shift 2 ;;
+        --seed)       [[ $# -lt 2 ]] && die "--seed requires a value" 5; SEED_ARG="$2"; shift 2 ;;
         --applied-to) [[ $# -lt 2 ]] && die "--applied-to requires a value" 5; APPLIED_TO_ARG="$2"; shift 2 ;;
         --commit)     [[ $# -lt 2 ]] && die "--commit requires a value" 5; COMMIT_ARG="$2"; shift 2 ;;
         --step)
@@ -797,6 +823,18 @@ elif [[ -n "$DELIVERY_ID" && -n "$ISSUE_ROW" ]]; then
     MODE="append-issue"
 else
     die "no valid mode detected; use --help for usage" 5
+fi
+
+# --design belongs to --ask, --answer and --step; --seed to --create alone.
+if [[ -n "$DESIGN_ARG" ]]; then
+    case "$MODE" in
+        ask|answer|step) ;;
+        *) die "--design is an option of --ask, --answer and --step only" 5 ;;
+    esac
+    [[ "$PROJECT_FLAG" -eq 0 ]] || die "--design and --project cannot be used together" 5
+fi
+if [[ -n "$SEED_ARG" && "$MODE" != "create" ]]; then
+    die "--seed is an option of --create only" 5
 fi
 
 # --reason and --phases belong to --create and --intent alone.
@@ -2395,6 +2433,13 @@ mode_create() {
     fi
     [[ -d "$NEW_WORK_DIR" ]] || die "work folder does not exist: $NEW_WORK_DIR" 1
     if [[ -n "$PHASES_ARG" ]]; then wb_phase_list "$PHASES_ARG"; fi
+    local seed_abs="" seed_rel=""
+    if [[ -n "$SEED_ARG" ]]; then
+        wb_design_path "$SEED_ARG" "--seed"
+        seed_abs="$DESIGN_ABS"
+        seed_rel="$DESIGN_REL"
+        [[ -f "$seed_abs" ]] || die "--seed file does not exist: $SEED_ARG" 5
+    fi
 
     local template
     template="$(dirname "${BASH_SOURCE[0]}")/../../templates/work-state-template.yml"
@@ -2431,11 +2476,13 @@ mode_create() {
     grade: --
     notes: $(wb_sq "intent.reading $READING_ARG; step $STEP_VALUE")"
     wb_stage_append "lifecycle_history" "$created"
+    if [[ -n "$seed_abs" ]]; then wb_stage_seed "$seed_abs" "$seed_rel" "$phase"; fi
     wb_stage_commit
     echo "OK: created $STATE_FILE"
 }
 
 mode_step() {
+    if [[ -n "$DESIGN_ARG" ]]; then mode_design_step; return; fi
     [[ -n "$SKILL_ARG" ]] || die "--step requires --skill" 5
     local name="${NAME_ARG:-$STEP_VALUE}"
     [[ -n "$name" ]] || die "--step requires --name" 5
@@ -2693,6 +2740,274 @@ inqa && intarget && /^    [A-Za-z_]+:/ {
 END { flush(); if (found != 1) exit 3 }
 '
 
+# ---------------------------------------------------------------------------
+# Design documents (--ask, --answer and --step with --design; --create --seed).
+# A question asked before any work exists is recorded in the `## Questions`
+# table of a design document under .aid/design/, so it is still made by this
+# script, still before it is shown. The table is one markdown table:
+#   | id | question | answer | state | answered_by |
+# ids are D1, D2, ...; `|` inside a cell is written `\|`.
+# ---------------------------------------------------------------------------
+WB_DESIGN_HEADER='| id | question | answer | state | answered_by |'
+WB_DESIGN_SEP='|---|---|---|---|---|'
+
+# wb_answered_by: who answers, set by the writer alone: git config user.name, else `--`.
+wb_answered_by() {
+    local by
+    by="$(git config user.name 2>/dev/null || true)"
+    if [[ -z "$by" ]]; then by="--"; fi
+    printf '%s' "$by"
+}
+
+# wb_design_path FILE OPTION: sets DESIGN_ABS (the normalised absolute path) and
+# DESIGN_REL (the path from .aid/design/ on, as written to sources). Exits 5 when
+# FILE is not inside a .aid/design/ folder.
+wb_design_path() {
+    local raw="$1" opt="$2" abs part out="" parts
+    abs="$raw"
+    [[ "$abs" == /* ]] || abs="$PWD/$abs"
+    IFS=/ read -ra parts <<< "$abs"
+    for part in "${parts[@]}"; do
+        case "$part" in
+            ''|.) ;;
+            ..) out="${out%/*}" ;;
+            *) out="$out/$part" ;;
+        esac
+    done
+    [[ "$out" == */.aid/design/?* ]] || die "$opt '$raw' must be a file inside .aid/design/" 5
+    DESIGN_ABS="$out"
+    DESIGN_REL=".aid/design/${out##*/.aid/design/}"
+}
+
+# wb_design_cell VALUE: VALUE as one table cell: line breaks become spaces, `|` is escaped.
+wb_design_cell() {
+    local v="$1"
+    v="${v//$'\r'/ }"
+    v="${v//$'\n'/ }"
+    v="${v//|/\\|}"
+    printf '%s' "$v"
+}
+
+# wb_design_skeleton FILE: the minimal design document written when FILE is missing.
+wb_design_skeleton() {
+    local title
+    title="$(basename "$1")"
+    title="${title%.md}"
+    title="${title//-/ }"
+    printf -- '---\nstatus: draft\n---\n\n# %s\n' "$title"
+}
+
+# wb_design_rewrite FILE PROGRAM [awk -v OPTION...]: run an awk PROGRAM over FILE (over a
+# new skeleton when FILE is missing) and replace FILE with its output. The program exits
+# non-zero when it cannot make its edit; then FILE is preserved. The caller holds the lock.
+wb_design_rewrite() {
+    local file="$1" program="$2" src t skel=""
+    shift 2
+    src="$file"
+    if [[ ! -f "$file" ]]; then
+        skel=$(wb_mktemp_beside "$file") || die "cannot create a temporary file beside $file" 1
+        wb_design_skeleton "$file" > "$skel"
+        src="$skel"
+    fi
+    t=$(wb_mktemp_beside "$file") || { rm -f "$skel"; die "cannot create a temporary file beside $file" 1; }
+    if ! awk "$@" "$program" "$src" > "$t" || [[ ! -s "$t" ]]; then
+        rm -f "$t" "$skel"
+        die "writeback sanity check failed: the edit did not apply to $file; it is preserved" 3
+    fi
+    rm -f "$skel"
+    mv "$t" "$file" || { rm -f "$t"; die "cannot replace $file; it is preserved" 1; }
+}
+
+# wb_design_next_id FILE: the next free question id, D<n> after the highest one in FILE.
+wb_design_next_id() {
+    if [[ ! -f "$1" ]]; then echo "D1"; return; fi
+    awk '/^\| D[0-9]+ \|/ { n = substr($2, 2) + 0; if (n > m) m = n }
+         END { printf "D%d\n", m + 1 }' "$1"
+}
+
+# WB_DESIGN_ASK_AWK -- appends the row in WB_ROW to the `## Questions` table, creating
+# the table (and the section) when missing. WB_HDR and WB_SEP are the table's head.
+WB_DESIGN_ASK_AWK='
+{ L[NR] = $0 }
+END {
+    row = ENVIRON["WB_ROW"]; hdr = ENVIRON["WB_HDR"]; sep = ENVIRON["WB_SEP"]
+    sec = 0
+    for (i = 1; i <= NR; i++) if (L[i] ~ /^## Questions[ \t]*$/) { sec = i; break }
+    if (!sec) {
+        for (i = 1; i <= NR; i++) print L[i]
+        if (NR > 0 && L[NR] != "") print ""
+        print "## Questions"; print ""; print hdr; print sep; print row
+        exit 0
+    }
+    stop = NR
+    for (i = sec + 1; i <= NR; i++) if (L[i] ~ /^#[ \t]/ || L[i] ~ /^##[ \t]/) { stop = i - 1; break }
+    last = 0
+    for (i = sec + 1; i <= stop; i++) if (L[i] ~ /^\|/) last = i
+    for (i = 1; i <= NR; i++) {
+        print L[i]
+        if (last && i == last) print row
+        if (!last && i == sec) { print ""; print hdr; print sep; print row }
+    }
+}
+'
+
+# WB_DESIGN_ANSWER_AWK -- sets state, answered_by (and answer, when WB_ANS is set) of the
+# row `id`. Exits 3 when the table holds no such row.
+WB_DESIGN_ANSWER_AWK='
+BEGIN { sub_ = "\001" }
+$0 ~ ("^\\| " id " \\|") {
+    line = $0
+    gsub(/\\\|/, sub_, line)
+    n = split(line, c, "|")
+    ans = c[4]
+    if (ENVIRON["WB_ANS_SET"] == "1") ans = " " ENVIRON["WB_ANS"] " "
+    out = "|" c[2] "|" c[3] "|" ans "| " ENVIRON["WB_ST"] " | " ENVIRON["WB_BY"] " |"
+    gsub(sub_, "\\|", out)
+    print out
+    found++
+    next
+}
+{ print }
+END { if (found != 1) exit 3 }
+'
+
+# WB_DESIGN_STEP_AWK -- sets step and step_detail in the frontmatter, creating the
+# frontmatter when the document has none. The values come in WB_STEP and WB_DETAIL.
+WB_DESIGN_STEP_AWK='
+{ L[NR] = $0 }
+END {
+    close_at = 0
+    if (L[1] == "---") for (i = 2; i <= NR; i++) if (L[i] == "---") { close_at = i; break }
+    if (!close_at) {
+        print "---"; print "step: " ENVIRON["WB_STEP"]; print "step_detail: " ENVIRON["WB_DETAIL"]; print "---"
+        for (i = 1; i <= NR; i++) print L[i]
+        exit 0
+    }
+    print "---"
+    for (i = 2; i < close_at; i++) if (L[i] !~ /^step:/ && L[i] !~ /^step_detail:/) print L[i]
+    print "step: " ENVIRON["WB_STEP"]; print "step_detail: " ENVIRON["WB_DETAIL"]; print "---"
+    for (i = close_at + 1; i <= NR; i++) print L[i]
+}
+'
+
+# WB_DESIGN_ROWS_AWK -- the rows of the `## Questions` table as
+# id US question US answer US state US answered_by (US is the unit separator).
+WB_DESIGN_ROWS_AWK='
+BEGIN { sub_ = "\001" }
+/^## Questions[ \t]*$/ { insec = 1; next }
+insec && (/^#[ \t]/ || /^##[ \t]/) { insec = 0 }
+insec && /^\| D[0-9]+ \|/ {
+    line = $0
+    gsub(/\\\|/, sub_, line)
+    n = split(line, c, "|")
+    for (i = 2; i <= 6; i++) { gsub(/^ +| +$/, "", c[i]); gsub(sub_, "|", c[i]) }
+    printf "%s\037%s\037%s\037%s\037%s\n", c[2], c[3], c[4], c[5], c[6]
+}
+'
+
+mode_design_ask() {
+    [[ -n "$CATEGORY_ARG" ]] || die "--ask requires --category" 5
+    [[ -n "$IMPACT_ARG" ]] || die "--ask requires --impact" 5
+    [[ -n "$CONTEXT_ARG" ]] || die "--ask requires --context" 5
+    [[ -n "$SUGGESTED_ARG" ]] || die "--ask requires --suggested" 5
+    case "$IMPACT_ARG" in
+        High|Medium|Low|H|M|L) ;;
+        *) die "invalid --impact '$IMPACT_ARG'; must be one of: High | Medium | Low" 4 ;;
+    esac
+    if [[ -n "$ASKED_BY_ARG" && "$ASKED_BY_ARG" != "--" ]]; then
+        wb_valid_skill "$ASKED_BY_ARG" || die "invalid --asked-by '$ASKED_BY_ARG'; must match aid-{skill}" 4
+    fi
+    wb_design_path "$DESIGN_ARG" "--design"
+    local file="$DESIGN_ABS" id
+    mkdir -p "$(dirname "$file")" || die "cannot create $(dirname "$file")" 1
+
+    init_lock_file "$file"
+    acquire_lock
+    id=$(wb_design_next_id "$file")
+    export WB_ROW="| $id | $(wb_design_cell "$CONTEXT_ARG") | -- | Pending | -- |"
+    export WB_HDR="$WB_DESIGN_HEADER" WB_SEP="$WB_DESIGN_SEP"
+    wb_design_rewrite "$file" "$WB_DESIGN_ASK_AWK"
+    printf '%s\n' "$id"
+}
+
+mode_design_answer() {
+    [[ -n "$QID_ARG" ]] || die "--answer requires --id" 5
+    [[ "$QID_ARG" =~ ^D[0-9]+$ ]] || die "invalid --id '$QID_ARG'; must be D<n> for a design document" 4
+    [[ -n "$STATE_ANSWER_ARG" ]] || die "--answer requires --state" 5
+    case "$STATE_ANSWER_ARG" in
+        Answered|Skipped|Assumed) ;;
+        *) die "invalid --state '$STATE_ANSWER_ARG'; must be one of: Answered | Skipped | Assumed" 4 ;;
+    esac
+    wb_design_path "$DESIGN_ARG" "--design"
+    local file="$DESIGN_ABS" by
+    [[ -f "$file" ]] || die "$file does not exist" 1
+    [[ "$(grep -c -- "^| $QID_ARG |" "$file")" -ge 1 ]] || die "no question $QID_ARG in $file" 4
+    by="$(wb_answered_by)"
+
+    init_lock_file "$file"
+    acquire_lock
+    if [[ -n "$FIELD_VALUE" ]]; then
+        export WB_ANS_SET=1 WB_ANS="$(wb_design_cell "$FIELD_VALUE")"
+    else
+        export WB_ANS_SET=0 WB_ANS=""
+    fi
+    export WB_ST="$STATE_ANSWER_ARG" WB_BY="$(wb_design_cell "$by")"
+    wb_design_rewrite "$file" "$WB_DESIGN_ANSWER_AWK" -v id="$QID_ARG"
+}
+
+mode_design_step() {
+    local name="${NAME_ARG:-$STEP_VALUE}"
+    [[ -n "$name" ]] || die "--step requires a step name" 5
+    wb_valid_step_name "$name" || die "invalid step '$name'" 4
+    wb_design_path "$DESIGN_ARG" "--design"
+    local file="$DESIGN_ABS" detail="--"
+    if [[ -n "$DETAIL_ARG" ]]; then detail="$DETAIL_ARG"; fi
+    mkdir -p "$(dirname "$file")" || die "cannot create $(dirname "$file")" 1
+
+    init_lock_file "$file"
+    acquire_lock
+    export WB_STEP="$name" WB_DETAIL="$(wb_sq "$detail")"
+    wb_design_rewrite "$file" "$WB_DESIGN_STEP_AWK"
+}
+
+# wb_stage_seed FILE REL PHASE: stage the design document FILE into the new work record:
+# one sources entry for REL, and one qa entry for each row of its `## Questions` table.
+# The document itself is not touched.
+wb_stage_seed() {
+    local file="$1" rel="$2" phase="$3" rows did dq da ds dby id n=0 qa="" src now
+    rows=$(awk "$WB_DESIGN_ROWS_AWK" "$file")
+    id=$(wb_qa_next_id "$STAGED")
+    n="${id#Q}"
+    while IFS=$'\037' read -r did dq da ds dby; do
+        [[ -n "$did" ]] || continue
+        case "$ds" in Pending|Answered|Skipped|Assumed) ;; *) ds="Pending" ;; esac
+        [[ -n "$da" ]] || da="--"
+        [[ -n "$dby" ]] || dby="--"
+        [[ -z "$qa" ]] || qa="$qa
+"
+        qa="${qa}  - id: Q$n
+    category: 'Design'
+    impact: Medium
+    state: $ds
+    asked_by: --
+    step: --
+    context: $(wb_sq "Design document $rel, question $did: $dq")
+    suggested: --
+    answer: $(wb_sq "$da")
+    answered_by: $(wb_sq "$dby")
+    applied_to: --"
+        n=$(( n + 1 ))
+    done <<< "$rows"
+    now=$(wb_now)
+    src="  - ref: $(wb_sq "$rel")
+    kind: document
+    added: $(wb_sq "$now")
+    phase: $(wb_sq "$phase")
+    effect: 'design document taken into the work'"
+    wb_stage_append "sources" "$src"
+    if [[ -n "$qa" ]]; then wb_stage_append "qa" "$qa"; fi
+}
+
 mode_handoff() {
     [[ -n "$TO_ARG" ]] || die "--handoff requires --to" 5
     [[ -n "$STEP_VALUE" ]] || die "--handoff requires --step" 5
@@ -2769,6 +3084,7 @@ mode_handoff_return() {
 }
 
 mode_ask() {
+    if [[ -n "$DESIGN_ARG" ]]; then mode_design_ask; return; fi
     [[ -n "$CATEGORY_ARG" ]] || die "--ask requires --category" 5
     [[ -n "$IMPACT_ARG" ]] || die "--ask requires --impact" 5
     [[ -n "$CONTEXT_ARG" ]] || die "--ask requires --context" 5
@@ -2827,6 +3143,7 @@ mode_ask() {
 }
 
 mode_answer() {
+    if [[ -n "$DESIGN_ARG" ]]; then mode_design_answer; return; fi
     [[ -n "$QID_ARG" ]] || die "--answer requires --id" 5
     [[ "$QID_ARG" =~ ^Q[0-9]+$ ]] || die "invalid --id '$QID_ARG'; must be Q<n>" 4
     [[ -n "$STATE_ANSWER_ARG" ]] || die "--answer requires --state" 5
@@ -2840,9 +3157,8 @@ mode_answer() {
     [[ -f "$target" ]] || die "$target does not exist" 1
     [[ "$(grep -cxF -- "  - id: $QID_ARG" "$target")" -ge 1 ]] || die "no question $QID_ARG in $target" 4
 
-    local by="$BY_ARG" tab=$'\t' nl=$'\n' kv
-    if [[ -z "$by" ]]; then by="$(git config user.name 2>/dev/null || true)"; fi
-    if [[ -z "$by" ]]; then by="--"; fi
+    local by tab=$'\t' nl=$'\n' kv
+    by="$(wb_answered_by)"
     kv="state${tab}${STATE_ANSWER_ARG}${nl}answered_by${tab}$(wb_sq "$by")"
     if [[ -n "$FIELD_VALUE" ]]; then kv+="${nl}answer${tab}$(wb_sq "$FIELD_VALUE")"; fi
     if [[ -n "$APPLIED_TO_ARG" ]]; then kv+="${nl}applied_to${tab}$(wb_sq "$APPLIED_TO_ARG")"; fi
@@ -2908,8 +3224,9 @@ wb_find_state_file() {
 # Dispatch
 # ---------------------------------------------------------------------------
 case "$MODE" in
-    pipeline|step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
-    ask|answer) if [[ "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
+    step|ask|answer)
+        if [[ -z "$DESIGN_ARG" && "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
+    pipeline|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
     # The task and delivery modes find the record the same way, unless the caller has
     # already named where the work lives (AID_WORK_DIR, or the mode's own
     # file/dir override).
