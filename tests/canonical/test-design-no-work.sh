@@ -164,7 +164,7 @@ run_fixture no-works no
 proj="${TMP}/proj-reject"
 mkdir -p "${proj}/.aid/works/work-001-x"
 (cd "$proj" && bash "$WRITER" --ask --design .aid/works/work-001-x/STATE.yml --category Scope --impact High \
-    --context c --suggested s --asked-by t >/dev/null 2>&1); code=$?
+    --context c --suggested s --asked-by aid-design >/dev/null 2>&1); code=$?
 assert_exit_eq "$code" 5 "DN-07: --design outside .aid/design/ is refused (exit 5)"
 
 test_summary
