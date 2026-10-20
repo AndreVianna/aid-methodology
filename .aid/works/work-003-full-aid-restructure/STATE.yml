@@ -514,6 +514,10 @@ review_history:
     event: 'Delivery-002 gate fixes (Q164) and third resync'
     outcome: 'Fixes in 7603cd14; resync committed alone as 7e87c5f0'
     notes: 'next: the full suite, /reload-skills, then samples 002-05, 002-20, 002-21 and 002-21b at 3 runs each'
+  - date: '2026-10-20'
+    event: 'Delivery-002 gate, third attempt (samples)'
+    outcome: 'Full suite: 166 of 175 pass, only the 9 machine-limit suites fail. Samples: 002-05 3/3; 002-21b 3/3; 002-21 2/3 (one run gave no recommendation, as in attempt 2); 002-20 0/3 (a different flaw each run: a --step write before the yes; a banner and a second question after the repair; once no aid-specify call at all)'
+    notes: 'Waiting on the maintainer: pass with a known issue, or another round'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
