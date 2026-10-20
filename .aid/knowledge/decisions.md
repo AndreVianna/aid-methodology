@@ -51,7 +51,7 @@ review-criteria:
 - [D12 — CLI install scope: cwd-driven, no scan, CODE/STATE split](#d12--cli-install-scope-cwd-driven-no-scan-codestate-split)
 - [D13 — Per-repo `format_version` stamp (git model)](#d13--per-repo-format_version-stamp-git-model)
 - [D14 — Lite path + description-first TRIAGE](#d14--lite-path--description-first-triage)
-- [D15 — Eight agents in three tiers (role consolidation)](#d15--eight-agents-in-three-tiers-role-consolidation)
+- [D15 — Seven agents in three tiers (role consolidation)](#d15--seven-agents-in-three-tiers-role-consolidation)
 - [D16 — PowerShell 5.1 compatibility floor](#d16--powershell-51-compatibility-floor)
 - [D17 — Prose over scripts in skill definitions](#d17--prose-over-scripts-in-skill-definitions)
 - [D18 — KB forbids diagrams; the HTML summary embraces them](#d18--kb-forbids-diagrams-the-html-summary-embraces-them)
@@ -92,7 +92,7 @@ review-criteria:
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
 | D13 | Per-repo `format_version` stamp | Settled | `bin/aid` (`AID_SUPPORTED_FORMAT`) |
 | D14 | Lite path + description-first TRIAGE | Superseded by D20/D24/D32 | `docs/aid-methodology.md` §4 |
-| D15 | 8 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster; amended by D32) | `docs/aid-methodology.md` §5 |
+| D15 | 7 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster; amended by D32 and D33) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted (amended by D33) | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `canonical/aid/scripts/summarize/assemble.sh` |
@@ -324,9 +324,9 @@ review-criteria:
   removed (D22). The current entry model is documented in D20/D24/D32 and `docs/aid-methodology.md`
   §4 "The Lite Path: Direct-Entry Shortcuts".
 
-## D15 — Eight agents in three tiers (role consolidation)
+## D15 — Seven agents in three tiers (role consolidation)
 
-- **What:** 8 specialist agents across Large/Medium/Small tiers, mapped per profile to
+- **What:** 7 specialist agents across Large/Medium/Small tiers, mapped per profile to
   concrete models. The orchestrator is no longer an agent (D32), so it is not counted.
 - **Why:** Match model cost to task stakes; one mechanical Small-tier `aid-clerk` avoids
   Large-tier overhead for glob/extract work.
@@ -336,8 +336,8 @@ review-criteria:
   `aid-architect` absorbed the former ux-designer advisory work. CONFIRMED
   `docs/aid-methodology.md` §5 (search: "replaces the former five separate discovery-* agents"
   and "absorbs former data-engineer and devops roles").
-- **Status:** Accepted (supersedes the prior agent roster). Amended by D32: the agent count is
-  eight, because the orchestrator sub-agent retired.
+- **Status:** Accepted (supersedes the prior agent roster). Amended by D32 and D33: the agent count is
+  seven, because the orchestrator sub-agent retired (D32) and the question-asking agent retired (D33).
 
 ## D16 — PowerShell 5.1 compatibility floor
 
@@ -758,7 +758,7 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
 - **Amends:** D14, whose pointer to D21 now points here; D15, whose agent count is now eight.
 - **Status:** Accepted. CONFIRMED `canonical/aid/rules.md` § Handling a request;
   `canonical/skills/aid-orchestrate/SKILL.md` (its opening paragraph: "runs in the main
-  conversation and dispatches no sub-agent"); and the `canonical/agents/` folder, which holds eight
+  conversation and dispatches no sub-agent"); and the `canonical/agents/` folder, which holds seven
   agent directories and none for the orchestrator.
 
 ## D33 — One question protocol run by the main conversation; saved steps; pass and call
@@ -788,9 +788,7 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   still holds for every other step.
 - **Status:** Accepted. CONFIRMED `canonical/aid/templates/question-protocol.md`,
   `canonical/aid/templates/skill-steps.md` (the advance words and the writer modes) and the writer modes in
-  `canonical/aid/scripts/execute/writeback-state.sh`. NOT YET IN FORCE in every skill: the
-  `canonical/agents/aid-interviewer/` agent still exists and `canonical/skills/aid-describe/SKILL.md`
-  dispatches it, `canonical/skills/aid-config/SKILL.md` still names `AskUserQuestion`, and most skills
-  do not yet cite `question-protocol.md`. Those are the open conversion work; the rule above is the
-  target they are converted to.
+  `canonical/aid/scripts/execute/writeback-state.sh`. IN FORCE in the canonical tree: `canonical/agents/`
+  holds no agent that asks questions, no skill names `AskUserQuestion`, and the skills that ask questions
+  cite `question-protocol.md`.
 

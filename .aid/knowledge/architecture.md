@@ -194,7 +194,7 @@ shortcut doorways plus 60 hand-authored `repurpose` skills):
 | Workflow label | Skill(s) | Work phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
 | Discover | `aid-discover` | No (KB preparation, before the work phases) | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Describe | `aid-describe` | **Definition** | Definition, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It does not triage or emit lite work. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
+| Describe | `aid-describe` | **Definition** | Definition, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It does not triage or emit lite work. Driven by the seasoned-analyst engine; the main conversation asks the questions through the question protocol. |
 | Define | `aid-define` | **Specification** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to `aid-specify`. |
 | Specify | `aid-specify` | **Specification** | Full path only. |
 | Plan | `aid-plan` | **Planning** | Full path only. |
@@ -254,9 +254,9 @@ gravitational center in practice.
 ### The Definition and Specification Skills
 
 `aid-describe` and `aid-define` are **two chained skills**, not one. The former
-`aid-interview` SKILL was split; the `aid-interviewer` AGENT keeps its name (only the skill
-split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and no
-`aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
+`aid-interview` SKILL was split into them, and no agent does the dialogue: the main conversation
+asks the questions through the question protocol. CONFIRMED: `canonical/skills/` has `aid-describe/`
+and `aid-define/` and no `aid-interview/`; `canonical/agents/` holds only the seven agents listed below.
 
 - **`aid-describe` (Definition)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
   **full path only** (no TRIAGE, no lite states — the plain-request intake lives in `/aid-orchestrate`).
@@ -351,14 +351,14 @@ target of an advance line.
 ## Agent / Sub-Agent Dispatch Model
 
 A skill (driven by the host tool) dispatches **specialist sub-agents** to do the work. AID
-defines **8 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 8
-(aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator,
+defines **7 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 7
+(aid-architect, aid-clerk, aid-developer, aid-operator,
 aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5. The orchestrator sub-agent is retired: the main conversation orchestrates, guided by the skill guide in `rules.md` and `/aid-orchestrate`, and has no agent row.
 
 | Tier | Agents | Role |
 |------|--------|------|
 | Large (1) | aid-architect | Highest-stakes reasoning where depth pays off: architecture, design decomposition, task breakdown. |
-| Medium (6) | aid-developer, aid-operator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, document, interview, research/KB authoring, adversarial review. |
+| Medium (5) | aid-developer, aid-operator, aid-tech-writer, aid-researcher, aid-reviewer | Workhorses: implement, release, document, research/KB authoring, adversarial review. |
 | Small (1) | aid-clerk | Mechanical extract/format/glob. |
 
 These are **default** tiers, not fixed ceilings. A dispatch site picks the
@@ -367,7 +367,7 @@ model tier **and** reasoning effort from the task's difficulty via
 hard minority to `large` + `high`/`xhigh`. Effort is a second, independent lever
 (often better than switching tiers) and defaults below the host `high` for routine and
 retrieval-heavy work; `aid-researcher` in particular runs at `low` effort (research
-depth does not aid retrieval). `aid-interviewer`, `aid-researcher`, and `aid-reviewer`
+depth does not aid retrieval). `aid-researcher` and `aid-reviewer`
 default to Medium; escalation restores Large where the executor or the review
 genuinely needs it.
 

@@ -530,7 +530,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   and `grep -c '^  - name:' canonical/aid/templates/shortcut-catalog.yml`. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
-  recipes" count drift is closed. Agents (8) and KB doc types (14) are the other counts.
+  recipes" count drift is closed. Agents (7) and KB doc types (14) are the other counts.
 
 ---
 
