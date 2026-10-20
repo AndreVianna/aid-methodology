@@ -494,6 +494,10 @@ review_history:
     event: 'Delivery-002 verification (Opus review, Q143)'
     outcome: 'Cycle 1 81 open rows (1 CRITICAL, 26 HIGH) -> cycle 2 53 -> cycle 3 42 -> cycle 4 31 -> cycle 5 verify 9 -> cycle 6 verify 2 -> cycle 7 verify A+ (0 open); new MEDIUM/LOW filed as OOS in the KB backlog (Q162): W7-22, W7-25..W7-28'
     notes: 'Ledgers in analysis/delivery-002-review-c1-a1..c7.md; full suite: only the known machine-limit and resync-lag suites fail (test-chat-node-federation passed alone); next: the resync, committed alone, then /reload-skills, the samples and the gate'
+  - date: '2026-10-20'
+    event: 'Delivery-002 resync'
+    outcome: 'Committed alone as bc450aa1; test-dogfood-byte-identity, test-release and test-release-install-e2e now pass'
+    notes: 'next: the maintainer runs /reload-skills, then samples 002-05, 002-20 and 002-21b live, then the gate'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
