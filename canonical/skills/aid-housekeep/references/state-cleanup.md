@@ -66,7 +66,7 @@ non-zero exit print the error and abort:
 
 ```
 ⚠️  cleanup-classify.sh failed (exit $CLASSIFY_EXIT). See stderr above.
-    Cannot continue CLEANUP — re-run /aid-housekeep after resolving the issue.
+    Cannot continue CLEANUP until the issue is resolved.
 ```
 
 `$CANDIDATES` is newline-separated; each line is a pipe-delimited candidate
@@ -164,11 +164,13 @@ Tier-2 — review: hand-authored files (unchecked):
   [ ] .aid/some-loose-file.md  (tracked)  — review: Tier-2: loose .aid/ file (hand-authored, not in a known scan root)
 ```
 
-Ask the user, in plain text through `.aid/runtime/templates/question-protocol.md`, to toggle the items. Show the rendered checklist with this question:
+Ask the user, in plain text through `.aid/runtime/templates/question-protocol.md`, to toggle the items. Housekeeping keeps no work record, so record each cleanup question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --project --category Cleanup --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-housekeep` before it is shown, and its reply with `--answer --project --id Q<n> --state Answered --value '<the reply>'`. Show the rendered checklist with this question:
 
 ```
 Stale .aid/ artifacts -- importance: high
 Which of these stale artifacts should be deleted?
+Why I ask: deleting an untracked item cannot be undone.
+My recommendation: keep the Tier-0 items checked, and check a Tier-1/2 item only after reviewing it.
 
 <RENDERED CHECKLIST>
 
@@ -178,8 +180,6 @@ Which of these stale artifacts should be deleted?
   (recoverable from git history). Items marked (untracked) will be deleted
   with rm -rf (not in git history).
 
-Why I ask: deleting an untracked item cannot be undone.
-My recommendation: keep the Tier-0 items checked, and check a Tier-1/2 item only after reviewing it.
 Reply with your final confirmed list of items to delete, or 'cancel' to skip all deletions.
 You may also ask me to explain, or skip this question.
 ```
@@ -197,8 +197,8 @@ that states the specific discrepancy (why signal (ii) disagrees). Use the `GATE`
 Example question (one per explicit-confirm folder):
 
 ```
-Work folder '.aid/works/work-003-example' -- importance: high
-It shows a discrepancy:
+Stale work folders -- question {n} of {m} -- importance: high
+Work folder '.aid/works/work-003-example' shows a discrepancy:
 
   Signal (i) — merged to master: PASS (PR is MERGED)
   Signal (ii) — STATE.md concluded: FAIL — <why: e.g. STATUS is 'Executing', no merged Deploy row>
@@ -207,11 +207,12 @@ This folder's PR appears merged, but its STATE.md does not show a Deployed
 + merged-PR terminal state. This could mean in-flight work was merged, or the
 STATE.md was not updated.
 
-Which should happen to this folder?
-  1. No -- skip this folder, leave it on disk (recommended: the work is not confirmed finished)
-  2. Yes -- add '.aid/works/work-003-example' to the deletion set (git rm)
+Should this folder be deleted?
 Why I ask: the discrepancy may mean in-flight work was merged.
-You may also ask me to explain, or skip this question.
+My recommendation: no -- the work is not confirmed finished, so leave it on disk.
+  1. No -- skip this folder, leave it on disk (recommended)
+  2. Yes -- add '.aid/works/work-003-example' to the deletion set (git rm)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Populate `CONFIRMED_EXPLICIT[]` with any folders the user says "yes" to.
@@ -328,6 +329,7 @@ Ask a **separate** question, through the protocol, for each folder that reaches 
 (i.e., every Tier-1 folder with a branch or worktree present):
 
 ```
+Worktree cleanup -- question {n} of {m} -- importance: high
 '.aid/works/work-099-done' is confirmed for deletion. It also has an isolated worktree:
 
   Worktree : <WT_PATH>            (status: <WT_STATUS>)
@@ -336,12 +338,13 @@ Ask a **separate** question, through the protocol, for each folder that reaches 
   [ if dirty ]  ⚠ the worktree has UNCOMMITTED changes.
   [ if ahead ]  ⚠ branch work-099 has commits NOT on master (unmerged).
 
-Also remove this worktree and prune branch work-099? -- importance: high
-  1. Keep -- leave the worktree and branch intact (recommended).
+Also remove this worktree and prune branch work-099?
+Why I ask: removing the worktree is the only step here that discards work.
+My recommendation: keep it -- nothing is lost by leaving the worktree and branch intact.
+  1. Keep -- leave the worktree and branch intact (recommended)
   2. Remove -- git worktree remove + prune the work-099 branch.
      [ if dirty/ahead ]  Removing DISCARDS the uncommitted/unmerged work above.
-Why I ask: removing the worktree is the only step here that discards work.
-You may also ask me to explain, or skip this question.
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Semantics:
@@ -518,8 +521,8 @@ Omit the `Worktrees removed:` block entirely when `WT_RESULTS[]` is empty (no
 teardown was offered or confirmed for this run). `Cleanup Stage: passed` still
 reflects the folder deletions/commit in Steps 5–6 (unaffected by a worktree
 teardown failure) — a `failed`/`wt-only` entry is a reported worktree-teardown
-outcome, not a Cleanup-stage failure; the user re-runs `/aid-housekeep` (or
-handles the leftover worktree/branch manually) to retry teardown separately.
+outcome, not a Cleanup-stage failure; the leftover worktree/branch is handled
+manually.
 
 **D2 coordination note:** This stage sweeps any residual
 `verify-deterministic-report.json` / `verify-advisory-report.json` under

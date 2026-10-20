@@ -149,15 +149,15 @@ When a state completes, its `**Advance:**` line decides the next move, as
 [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an
 open call returns to the caller.
 
-**DONE (inline):** When DONE is detected, print the closing line: "Plan is approved and up to date. Run /aid-plan again with --reset to restart."
+**DONE (inline):** When DONE is detected, print one plain closing line: "Plan is approved and up to date."
 
 ---
 
 ## Feedback Loops
 
 - **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Specify:** SPEC ambiguous → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the ambiguity>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol
-- **→ Interview:** Priority unclear → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Priority --impact <High|Medium|Low> --context '<the priority question>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol
+- **→ Specify:** SPEC ambiguous → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the ambiguity>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol and record the reply with `bash .aid/runtime/scripts/execute/writeback-state.sh --answer --id Q<n> --state Answered --value '<the reply>'`
+- **→ Priority:** Priority unclear → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Priority --impact <High|Medium|Low> --context '<the priority question>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol and record the reply with `bash .aid/runtime/scripts/execute/writeback-state.sh --answer --id Q<n> --state Answered --value '<the reply>'`
 
 ## Output
 

@@ -90,7 +90,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table (per-delivery), or
   in the task row's review history (per-task). Do NOT count toward severity totals
   or the grade. Note the routing destination (KB, SPEC, TASK) in Description/Evidence
-  so the orchestrator can write the loopback Q&A.
+  so the orchestrator can record the question in the work's `qa`.
 
 DELIVERABLES:
   - BEFORE dispatching: render this brief to

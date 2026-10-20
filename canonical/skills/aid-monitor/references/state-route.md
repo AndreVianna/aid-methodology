@@ -24,8 +24,19 @@ Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
   Evidence: 3 occurrences in 7 days, all self-resolved < 30s
   → Proposed: Document, no action
 
-[1] Approve all routes
-[2] Adjust — change routing for specific findings
+```
+
+Then ask one approval question in the question form (`.aid/runtime/templates/question-protocol.md`),
+recorded with `--ask` before it is shown, the reply with `--answer`:
+
+```text
+Routing -- question 1 of 1 -- importance: high
+Shall I route the findings as proposed above?
+Why I ask: routing sends each finding back as a request, so you approve it first.
+My recommendation: yes -- each route follows the finding's classification and evidence.
+  1. Approve all routes (recommended)
+  2. Adjust the routing for specific findings
+Or answer in your own words, ask me to explain, or decline.
 ```
 
 ### Step 5: Act

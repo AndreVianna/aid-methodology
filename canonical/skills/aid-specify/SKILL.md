@@ -85,19 +85,19 @@ entered — the feature glob below runs only after that.
    feature subsection, check the work STATE.yml's `features:` entry (the one whose id is that
    feature) and show status.
    Exit.
-4. **Multiple works** → present the work list:
+4. **Multiple works** → show the work list, then ask which work in the question form
+   (`.aid/runtime/templates/question-protocol.md`; no work is chosen yet, so nothing is
+   recorded with `--ask`). Why I ask: the features belong to one work. My recommendation: the
+   work named in the user's request, or the most recently updated one. The run waits for the
+   answer; once chosen, normalize + `locate`+enter it exactly as step 3, then list its features
+   the same way and exit.
    ```
    Usage: /aid-specify work-001/feature-001
 
    Available works:
      work-001-user-auth
      work-002-reporting
-
-   [1] work-001-user-auth
-   [2] work-002-reporting
    ```
-   Ask which work. Once chosen, normalize + `locate`+enter it exactly as step 3, then
-   list its features the same way. Exit.
 
 **Shortcut:** If only one work exists, accept bare `feature-001` and resolve
 automatically — this is step 3 above; the single-work case already enters the work

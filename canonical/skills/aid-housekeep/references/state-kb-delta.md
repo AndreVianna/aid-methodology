@@ -452,8 +452,8 @@ persists in `.aid/.temp/conformance/` beyond the transient shadow files.
 
 If the filtered set is non-empty, CL-Step 2 (task-031's reconciliation flow) consumes it.
 Retain the shadow root and transient files under `.aid/.temp/conformance/` until CL-Step 2
-completes (the evidence must be available for the Required Q&A entries and the present-the-
-choice gate). Clean up the shadow tree after CL-Step 2 finishes:
+completes (the evidence must be available for the Pending Q&A entries and the divergence
+questions). Clean up the shadow tree after CL-Step 2 finishes:
 
 ```bash
 rm -rf .aid/.temp/conformance/as-built/
@@ -467,17 +467,17 @@ rm -f  .aid/.temp/conformance/as-built-terms.md \
 ### CL-Step 2 -- Reconciliation flow
 
 **Invariant -- flag, never overwrite.** This step NEVER writes `.aid/knowledge/*.md`. Its
-only outputs are the Required Q&A entry (Sub-step 2b) and, for "Fix the code" choices, a
+only outputs are the Pending Q&A entries (Sub-step 2b) and, for "Fix the code" choices, a
 code task. The forward-authored doc's bytes, its `source: forward-authored` marker, and
 its f007 `current` verdict are UNCHANGED by this step. The default for every unresolved
 divergence is to FLAG it for the human, never to silently change the design. Authority
 stays design->code until the human explicitly reconciles.
 
-#### Sub-step 2a -- Present the divergence set (ASK)
+#### Sub-step 2a -- Present the divergence set, then ask one divergence at a time (ASK)
 
-Present the classified divergence set from CL-Step 1, grouped by class, and pause for the
-user to supply a per-item choice (NFR3 transparency -- no silent KB edits). State that the
-design stays authoritative until reconciled:
+Present the classified divergence set from CL-Step 1, grouped by class, as a plain summary
+(NFR3 transparency -- no silent KB edits). State that the design stays authoritative until
+reconciled. The summary asks nothing; each divergence is then asked as its own question (below).
 
 ```
 Code<->design conformance: <N> divergence(s) between forward-authored design and as-built code.
@@ -487,77 +487,80 @@ Authority stays design->code -- no design doc is modified until you choose.
   <i>. <concern> | <element>
       Design declares: "<seed-excerpt>"
       Code pins it to: "<as-built-excerpt>"
-      Suggested [3]: the design left this open; the code's pin is low-friction to adopt or defer.
-      [1] Evolve the design  -- adopt the pinned value into the design doc (deliberate update)
-      [2] Fix the code       -- raise a code task; design doc held untouched
-      [3] Accept / defer     -- record as known divergence; revisit later
 
 [code-ahead] -- load-bearing element at seed altitude in code, not declared in design:
   <j>. <concern> | <element>
       Code introduces: "<as-built-excerpt>"
       Not declared in design.
-      Suggested [2]: the design is the contract; if this element should exist, declare it first.
-      [1] Evolve the design  -- add the element to the design doc (deliberate declaration)
-      [2] Fix the code       -- raise a code task to align code to design; doc untouched
-      [3] Accept / defer     -- record as known divergence; revisit later
 
 [contradiction] -- code violates or reverses a declared invariant, rule, or decision:
   <k>. <concern> | <element>
       Design: "<seed-excerpt>"
       Code:   "<as-built-excerpt>"
-      Suggested [2]: authority stays design->code; the code must conform unless intent changed.
-      [1] Evolve the design  -- explicitly update the design to reflect the code's intent
-      [2] Fix the code       -- raise a code task; design stays authoritative; doc untouched
-      [3] Accept / defer     -- record as known divergence; revisit later
-
-For each item, state your choice: e.g. "<i>:[3] <j>:[2] <k>:[1]"
 ```
 
-- `[1] Evolve the design` -- the ONLY path by which a forward-authored doc is edited from
-  as-built code, and only with explicit human approval (Sub-step 2c). Suggested rationale:
-  the divergence reflects a deliberate decision made during execution -- the design intent
+Before any question is shown, record each divergence as its own `Pending` entry (Sub-step 2b).
+Then ask the divergences one per message, most important first (contradiction, then code-ahead,
+then placeholder-resolved), in the question form of `.aid/runtime/templates/question-protocol.md`:
+
+```text
+Conformance -- question <n> of <m> -- importance: <high|medium|low>
+<i>. <concern> | <element>: what should happen to this divergence?
+Why I ask: the design stays authoritative until you decide, so I change nothing on my own.
+My recommendation: <the suggested option, and why>
+  1. <recommended option> (recommended)
+  2. <next option>
+  3. <last option>
+Or answer in your own words, ask me to explain, or skip this question.
+```
+
+The options, with the recommendation by class:
+
+- `Evolve the design` -- the ONLY path by which a forward-authored doc is edited from
+  as-built code, and only with explicit human approval (Sub-step 2c). Recommended when the
+  divergence reflects a deliberate decision made during execution -- the design intent
   has genuinely changed and the doc should record it.
-- `[2] Fix the code` -- the design IS still the intent; the code deviated. A code task is
-  raised; the design doc is held untouched. Suggested for contradictions and code-ahead items
-  where the declared constraint should be enforced.
-- `[3] Accept / defer` -- records the divergence as a known delta for later reconciliation.
-  Suggested for low-friction `placeholder-resolved` items where neither side is wrong -- the
+- `Fix the code` -- the design IS still the intent; the code deviated. A code task is
+  raised; the design doc is held untouched. Recommended for `contradiction` and `code-ahead`
+  items, where the declared constraint should be enforced (the design is the contract; if the
+  element should exist, declare it first).
+- `Accept / defer` -- records the divergence as a known delta for later reconciliation.
+  Recommended for low-friction `placeholder-resolved` items where neither side is wrong -- the
   design left the value open and the code's concrete choice is uncontroversial.
 
-If the user defers the entire set (all `[3]`), all forward-authored docs remain byte-
-unchanged. The lane records the full set in the Q&A entry and proceeds to cleanup.
+A divergence the user skips stays `Pending` and is offered again on the next run. If the user
+defers the entire set, all forward-authored docs remain byte-unchanged. The lane proceeds to
+cleanup.
 
-#### Sub-step 2b -- Write Required Q&A entry (Style A)
+#### Sub-step 2b -- Record each divergence as a Pending Q&A entry (Style A)
 
-After the user supplies per-item choices, append one Q&A entry to
+Before its question is shown, append one Q&A entry per divergence to
 `.aid/knowledge/STATE.md ## Q&A (Pending)` (Style A -- `### Q{N}` + sub-bullets,
 `coding-standards.md S12`). `{N}` is the next integer after the highest existing
-`### Q{N}` (`grep '### Q[0-9]\+'`). Populate with the full divergence set + per-item
-choices:
+`### Q{N}` (`grep '### Q[0-9]\+'`). When the user answers, update that entry's `Status` to
+`Answered` and its `User choice`:
 
 ```markdown
 ### Q{N}
 - **Category:** Housekeep / Conformance Reconciliation
-- **Impact:** Required
+- **Impact:** High
 - **Status:** Pending
-- **Context:** /aid-housekeep conformance check found <N> divergence(s) between
-  forward-authored design doc(s) and as-built code:
-    <i>. <concern> | <element> [placeholder-resolved] -- <evidence-excerpt>
-         User choice: [<choice>]
-    <j>. <concern> | <element> [code-ahead] -- <evidence-excerpt>
+- **Context:** /aid-housekeep conformance check found a divergence between a
+  forward-authored design doc and as-built code:
+    <i>. <concern> | <element> [<class>] -- <evidence-excerpt>
          User choice: [<choice>]
   Forward-authored design docs are byte-unchanged. The check flagged; it did not reconcile.
-- **Suggested:** Apply each user choice: "[1] Evolve the design" items -> invoke
+- **Suggested:** <the recommended option for this class>. "Evolve the design" -> invoke
   /aid-discover targeted re-entry naming that doc (the only approved edit path for a
-  forward-authored doc); "[2] Fix the code" items -> raise a code task per item;
-  "[3] Accept / defer" items -> already recorded above as known divergences, no action.
+  forward-authored doc); "Fix the code" -> raise a code task;
+  "Accept / defer" -> already recorded above as a known divergence, no action.
 ```
 
-`**Impact:** Required` is what routes `/aid-discover`'s targeted re-entry to the named
-doc(s) for any "[1] Evolve the design" items -- the same `Impact: Required` ->
-targeted-re-entry path KB-DELTA Step 4 already drives (Step 4 / `state-generate.md`
-targeted re-entry state). You do not resolve owners yourself; `/aid-discover`'s re-entry
-resolves each named doc to its owning sub-agent via its `owns-<agent>` accessor.
+Any Pending entry routes `/aid-discover`'s targeted re-entry to the named doc(s) for an
+"Evolve the design" answer -- the same path KB-DELTA Step 4 already drives (Step 4 /
+`state-generate.md` targeted re-entry state). You do not resolve owners yourself;
+`/aid-discover`'s re-entry resolves each named doc to its owning sub-agent via its
+`owns-<agent>` accessor.
 
 The entry carries the reconciliation record. It never auto-applies an edit. Until the
 entry is actioned, every forward-authored doc is byte-unchanged.
@@ -566,7 +569,7 @@ entry is actioned, every forward-authored doc is byte-unchanged.
 
 For each item, apply the user's choice exactly -- no auto-resolution, no default rewrite:
 
-- **[1] Evolve the design:** Invoke `/aid-discover` targeted re-entry naming the affected
+- **Evolve the design:** Invoke `/aid-discover` targeted re-entry naming the affected
   forward-authored doc. This is the ONLY path by which a forward-authored doc is edited
   from as-built code, and only after the user has explicitly chosen this option. The
   re-entry drives REVIEW -> Q-AND-A -> FIX -> APPROVAL; the doc is updated only after
@@ -581,16 +584,16 @@ For each item, apply the user's choice exactly -- no auto-resolution, no default
   (ADR immutability; consistent with flag-not-overwrite invariant; state-describe-seed.md
   decisions element).
 
-- **[2] Fix the code:** Raise one code task per item. Record the divergence description
+- **Fix the code:** Raise one code task per item. Record the divergence description
   (concern, element, evidence) as the task's scope. The forward-authored doc is untouched;
   authority stays design->code. The task enters the project pipeline via the normal task
   mechanism.
 
-- **[3] Accept / defer:** The divergence is already recorded in the Q&A entry (Sub-step
+- **Accept / defer:** The divergence is already recorded in the Q&A entry (Sub-step
   2b). No doc edit. No code task. The item is a known accepted delta; the conformance lane
   will re-surface it on the next /aid-housekeep run if the relevant doc or code changes.
 
-Until all "[1] Evolve the design" targeted re-entries reach APPROVAL, every affected
+Until all "Evolve the design" targeted re-entries reach APPROVAL, every affected
 forward-authored doc is byte-unchanged. The check has flagged; it has not reconciled.
 Authority stays design->code.
 
@@ -638,26 +641,28 @@ Proposed KB refresh scope:
   architecture.md   -- suspect: <suspect_sources_csv> drifted
   module-map.md     -- suspect: <suspect_sources_csv> drifted
   test-landscape.md -- content drift (current-verdict doc; summary no longer matches repo -- AC1 catch)
-[1] Confirm -- refresh this scope
-[2] Adjust  -- add/remove docs: ___
-[3] Cancel  -- stall this stage
 ```
 
-- `[1]` -> carry the confirmed doc list to Step 4.
-- `[2]` -> the user adds or drops docs; recompute the confirmed list.
-- `[3]` -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
+Then ask the scope as one approval question in the form of
+`.aid/runtime/templates/question-protocol.md` (Why I ask: nothing in the KB changes before you
+agree; My recommendation: refresh the whole proposed scope, because each listed doc drifted),
+recorded `Pending` before it is shown. The options are: refresh this scope (recommended), adjust
+the docs (the user adds or drops docs), or cancel and stall this stage.
+
+- Refresh -> carry the confirmed doc list to Step 4.
+- Adjust -> the user adds or drops docs; recompute the confirmed list.
+- Cancel -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
   cancelled` and HALT (stalled exit below).
 
-The scope question is asked inside this step: `[1]` or `[2]` continues it at Step 4 once answered;
-`[3]` writes the stall fields and HALTs (the stalled exit below).
+The scope question is asked inside this step: refresh or adjust continues it at Step 4 once answered;
+cancel writes the stall fields and HALTs (the stalled exit below).
 
-## Step 4 -- Synthesize an `Impact: Required` Q&A entry + invoke `/aid-discover` (AC3)
+## Step 4 -- Synthesize a Pending Q&A entry + invoke `/aid-discover` (AC3)
 
 You do **not** duplicate the review/approval machinery -- you reuse
 `/aid-discover`'s **existing** Targeted Discovery re-entry
 (`.agents/skills/aid-discover/SKILL.md S Targeted Discovery (Re-entry)`),
-which runs *only* the affected sub-agents when a Pending Q&A entry with
-`**Impact:** Required` names what needs refreshing (entered from `/aid-discover`'s
+which runs *only* the affected sub-agents when a Pending Q&A entry naming what needs refreshing (entered from `/aid-discover`'s
 State Detection State 3). Drive it by **writing exactly such an entry**.
 
 Append one Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` in the
@@ -668,7 +673,7 @@ canonical Style A schema (`### Q{N}` + sub-bullets -- `coding-standards.md S12`)
 ```markdown
 ### Q{N}
 - **Category:** Housekeep / KB Delta Refresh
-- **Impact:** Required
+- **Impact:** High
 - **Status:** Pending
 - **Context:** /aid-housekeep reconciled the repo against the KB and found drift in:
   <architecture.md, module-map.md, ...>. Corrections: <one line per doc>. These docs
@@ -677,7 +682,7 @@ canonical Style A schema (`### Q{N}` + sub-bullets -- `coding-standards.md S12`)
   then REVIEW -> APPROVAL.
 ```
 
-`**Impact:** Required` is what forces `/aid-discover` into Q-AND-A -> targeted
+A Pending entry is what forces `/aid-discover` into Q-AND-A -> targeted
 re-entry regardless of the current grade. `/aid-discover`'s re-entry resolves
 each named doc to its owning sub-agent via its own `owns-<agent>` accessor -- you
 do not resolve owners yourself.
@@ -808,7 +813,7 @@ Append one Q&A entry to `.aid/knowledge/STATE.md ## Q&A (Pending)` (Style A;
 ```markdown
 ### Q{N}
 - **Category:** Closure / Standing Invariant Break
-- **Impact:** Required
+- **Impact:** High
 - **Status:** Pending
 - **Context:** A KB change by /aid-housekeep (KB-DELTA refresh) left native term(s) undefined
   in the spine: <ungrounded-term @ doc:anchor, ...> (closure-check.sh output (a)). The KB is
@@ -817,7 +822,7 @@ Append one Q&A entry to `.aid/knowledge/STATE.md ## Q&A (Pending)` (Style A;
   targeted re-entry naming domain-glossary.md + the using-doc, then re-verify closure.
 ```
 
-The `Impact: Required` routes `/aid-discover`'s targeted re-entry to
+The Pending entry routes `/aid-discover`'s targeted re-entry to
 `domain-glossary.md` (the spine) and the using-doc -- the same escalation
 mechanism KB-DELTA Step 4 already uses. No new routing is introduced.
 
@@ -828,7 +833,7 @@ Then take the **stalled exit** (below) with:
 ```
 
 The staged KB refresh is **left uncommitted** -- the KB hole is never committed
-to the housekeep branch. Re-running `/aid-housekeep` resumes at KB-DELTA; once
+to the housekeep branch. The work resumes at KB-DELTA; once
 the term is grounded and `closure-check.sh` output (a) is empty, the stage
 advances and then commits.
 
@@ -861,7 +866,7 @@ Next, inside this step: the stage was skipped; this step's one **Advance:** line
 
 ## Exit -- stalled (scope cancelled, re-approval declined, or closure broken)
 
-Reached when Step 3 was cancelled (`[3]`), Step 5 found no fresh approval
+Reached when Step 3 was cancelled, Step 5 found no fresh approval
 (declined / still below grade with no resolution), or Step 6d detected a
 closure invariant break (refresh uncommitted):
 
@@ -874,12 +879,11 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 
-Print the resume banner, then end the run:
+Print the stall line, then end the run:
 
 ```
 [!] /aid-housekeep paused at KB-DELTA -- <reason>.
    Fix: <actionable instruction>.
-   Resume: the next /aid-housekeep run picks up at KB-DELTA (not job 1).
 ```
 
 **Advance:** CHAIN → SUMMARY-DELTA when the stage did not stall; HALT when it stalled.

@@ -30,7 +30,7 @@ Print:
 ✅ kb.html is already up-to-date with the current KB.
    Last summary: {date} (grade {grade})
    Last KB review: {date}
-   Nothing to do. Re-run with --reset to force regeneration.
+   Nothing to do.
 ```
 
 Exit with success. `.aid/knowledge/STATE.md` `## Knowledge Summary Status` and `## Summarization History` are NOT modified.

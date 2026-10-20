@@ -16,13 +16,13 @@ instruction/Impact Map/recorded field. Read-only over the KB; SCOPE never
 edits a file (that is APPLY's job, after CONFIRM).
 
 **Authorized input vs. forbidden input (HL-8).** The user's explicit
-gate-time `**Adjustments:**` (written by `state-confirm.md`'s `[2] Adjust`)
-or `**Consideration:**` (written by `state-approval.md`'s `[2]`) is part of
+gate-time `**Adjustments:**` (written by `state-confirm.md`'s Adjust)
+or `**Consideration:**` (written by `state-approval.md`'s Additional consideration) is part of
 the instruction dialogue -- given directly AT a gate, recorded to disk, and
 read back here verbatim. It is **authorized, first-class scoping input**,
 not the ambient session transcript / prior-work conversation HL-8 actually
 forbids. Conflating the two would defeat the very re-plan mechanisms
-(`state-confirm.md § Step 3 [2]`, `state-approval.md § Step 3 [2]`,
+(`state-confirm.md § Step 3`, `state-approval.md § Step 3`,
 `state-review.md § 4(b)` "accept") that route back here expecting the
 adjustment to change the Scope Plan.
 
@@ -38,10 +38,10 @@ The dispatch prompt contains ONLY:
 - The full Impact Map from `<STATE_FILE>` (`**Understanding:**`,
   `**Impact Findings:**`, `**Contradictions & open questions:**`).
 - **On a re-plan loop-back** (this SCOPE entry follows `state-confirm.md`'s
-  `[2] Adjust`, `state-approval.md`'s `[2]`, or `state-review.md`'s 4(b)
+  Adjust, `state-approval.md`'s Additional consideration, or `state-review.md`'s 4(b)
   "accept" -- detectable by a `**Adjustments:**` or `**Consideration:**`
   field already present in `<STATE_FILE>` with a `Q{N}` value, not the bare
-  `--` that CONFIRM's `[1]` writes): that field verbatim, PLUS its full
+  `--` that CONFIRM's Confirm writes): that field verbatim, PLUS its full
   `Q{N}` entry read from `.aid/knowledge/STATE.md ## Q&A (Pending)` (already
   covered by the read access below -- no new grant needed) for complete
   context, including the disputed doc's identity when the loop-back
@@ -96,8 +96,8 @@ For each Impact Finding, decide whether it becomes a Scope Plan item:
 - A `LIKELY`/`UNCERTAIN`-confidence Impact Finding is NEVER promoted to a
   Scope Plan item on SCOPE's own authority (HL-3) -- it becomes a CONFIRM
   question instead (Step 4); only if the user's answer confirms it does it
-  become a Scope Plan item, on the next SCOPE pass after a CONFIRM `[2]
-  Adjust` loop-back.
+  become a Scope Plan item, on the next SCOPE pass after a CONFIRM Adjust
+  loop-back.
 
 Write:
 
@@ -169,7 +169,7 @@ If the Scope Plan is empty (every Impact Finding was `No change needed` or
 excluded to Not-Changing), print:
 
 ```
-[SCOPE] No KB update needed -- every location the instruction concerns
+No KB update needed -- every location the instruction concerns
 already reflects it, or falls outside the instruction's scope (see
 Not-Changing). No edit will be made.
 ```

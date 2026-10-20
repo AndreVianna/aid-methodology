@@ -54,10 +54,10 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 
-1. **Empty argument** -> the bootstrapping question ("What direction do you want to validate, and
-   what would tell you it works?"). The answer is the direction; the path and complexity are then
+1. **Empty argument** -> the bootstrapping question ("What direction do you want to validate?").
+   The answer is the direction; the path and complexity are then
    set from it.
-2. **Guided path** -> scope the direction, the success signal and the fidelity.
+2. **Guided path** -> scope the success signal (what would tell you it works) and the fidelity, one question at a time.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
 **Advance:** ASK → [State: ALLOCATE].

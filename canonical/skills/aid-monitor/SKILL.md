@@ -202,9 +202,9 @@ When prior findings exist (from conversation context or referenced findings list
 
 1. Show active findings and their current status.
 2. Show observation history (last runs).
-3. Ask: **[1] New observation** (fresh run) or **[2] Review finding-N** (check if resolved)?
-4. If [1] → re-enter the OBSERVE state with a new window (previous run end → now); router exits and user re-invokes `/aid-monitor`.
-5. If [2] → Re-check evidence for that specific finding, update status.
+3. Ask one question in the question form (`.aid/runtime/templates/question-protocol.md`): a new observation (a fresh run), or review of finding-N (check whether it is resolved)? Why I ask: the two take different paths. My recommendation: a new observation when the last run is old, otherwise review the open finding. Record it with `--ask` before it is shown and the answer with `--answer`.
+4. If a new observation → go on to OBSERVE in the same run, with a new window (previous run end → now).
+5. If review of finding-N → Re-check evidence for that specific finding, update status.
 
 ## Quality Checklist
 

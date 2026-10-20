@@ -26,7 +26,6 @@ non-zero:
 ```
 ⚠️  SUMMARY-DELTA requires **KB Stage:** to be 'passed' or 'skipped'.
     Current value: <$KB_STAGE>
-    Re-run /aid-housekeep — it will route to the correct stage automatically.
 ```
 
 This is a defensive restatement of the C1 ordering invariant (feature-001 SPEC
@@ -333,13 +332,11 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 
-Print the resume banner, then end the run:
+Print the stall line, then end the run:
 
 ```
 ⏸  /aid-housekeep paused at SUMMARY-DELTA — <stall-reason>.
-   Fix: <actionable instruction, e.g. "correct the failing diagram and re-run /aid-summarize,
-        or re-run /aid-housekeep to retry from SUMMARY-DELTA">.
-   Resume: the next /aid-housekeep run picks up at SUMMARY-DELTA (not job 1).
+   Fix: <actionable instruction, e.g. "correct the failing diagram">.
 ```
 
 **No commit** is made in this branch.

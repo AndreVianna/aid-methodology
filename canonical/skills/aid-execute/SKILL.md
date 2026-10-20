@@ -222,7 +222,7 @@ dispatch in this skill.
       known-issues.md         ← issues to watch for
       deliveries/
         delivery-NNN/
-          STATE.yml              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
+          STATE.yml              ← delivery lifecycle (SD-8, AUTHORED) + gate + derived task rollup
           tasks/
             task-NNN/
               DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)

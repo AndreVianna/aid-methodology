@@ -506,7 +506,7 @@ assert_file_contains "$SKILL_MD" "skill-run's own instruction + confirmation dia
 assert_file_contains "$SKILL_MD" '`**Consideration:**` | APPROVAL' \
   "UK110 SKILL.md's Run-state schema table now has a **Consideration:** row"
 
-assert_file_contains "$SKILL_MD" '`**Consideration:**` | APPROVAL (`[2]`, Step 3)' \
+assert_file_contains "$SKILL_MD" '`**Consideration:**` | APPROVAL (Additional consideration, Step 3)' \
   "UK111 SKILL.md's **Consideration:** schema row correctly names APPROVAL's [2] (Step 3) as the writer"
 
 assert_file_contains "$SKILL_MD" '`**Scope-diff:**` | REVIEW' \

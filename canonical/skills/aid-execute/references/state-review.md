@@ -22,7 +22,7 @@ A lightweight single-pass reviewer catches obvious `[CRITICAL]` and `[HIGH]` iss
 early. No grade is computed, no loop
 runs — this is a fast filter only.
 
-**Before dispatching, print:** `[Step 1.5] Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
+**Before dispatching, print:** `Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
 
 Dispatch metadata is narrated via the closing `✓ ... done` bracket below (always); this task's own `dispatch_log` entry (full path: this task's
 `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) is what the work-level
@@ -77,7 +77,7 @@ For each `[CRITICAL]` finding:
 
 1. Apply **one immediate fix** using the same executor agent type as Step 1
    (do not dispatch the reviewer — the reviewer ≠ executor invariant is preserved).
-   Print: `[Quick-Check] CRITICAL found — applying fix-on-spot: {description}`.
+   Print: `CRITICAL found — applying fix-on-spot: {description}`.
 2. Re-verify build/lint/test gates after the fix.
 3. If the critical persists after the fix → **STOP.** The step ends here with **HALT**
    (see the advance line): the terminal `Done` write below does not run, and the task

@@ -5,16 +5,16 @@ that arise during the propose→discuss→write→review loop.
 
 ## KB is Wrong or Incomplete
 
-**Simple fix:** Fix the KB document directly, note in the `qa` sequence (STATE.yml).
+**Simple fix:** Fix the KB document directly, note it in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Knowledge --impact Low --context '<the fix>' --suggested '<the fix made>' --asked-by aid-specify`, then record it with `--answer --id Q<n> --state Assumed --value '<the fix made>'`.
 
-**Needs re-discovery:** Add Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`,
+**Needs re-discovery:** Record the question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Knowledge --impact <High|Medium|Low> --context '<the gap>' --suggested '<the recommendation>' --asked-by aid-specify`, ask it through the question protocol, and record the reply with `--answer --id Q<n> --state Answered --value '<the reply>'`;
 note the loopback in this feature's `features:` entry (work STATE.yml), continue with non-blocked sections.
 
 ## Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md directly — both the upstream section and the feature's own §11 subsection live there.
 
-**Needs re-interview:** Add Q&A entry to the `qa` sequence (`.aid/works/{work}/STATE.yml`),
+**Needs a requirements answer:** Record the question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Requirements --impact <High|Medium|Low> --context '<the gap>' --suggested '<the recommendation>' --asked-by aid-specify`, ask it through the question protocol, and record the reply with `--answer --id Q<n> --state Answered --value '<the reply>'`;
 note the loopback in this feature's `features:` entry (work STATE.yml).
 
 ## Spike Needed (State 3)

@@ -4,14 +4,14 @@ APPROVAL is the explicit human gate before the KB change is committed. It is
 selected when the run-state file records `**State:** APPROVAL`.
 
 **Human-gated (NFR-6/C4/AC13).** Detection and grading are automatic; the
-change to KB content cannot proceed to DONE without an explicit human `[1]`.
+change to KB content cannot proceed to DONE without an explicit human approval.
 No auto-apply path exists -- DONE is unreachable from this state without a
-human `[1] Approved`.
+human approval.
 
 **Pattern reuse.** This state reuses `aid-discover`'s approval-gate pattern
-(`.agents/skills/aid-discover/references/state-approval.md`: `[1]`/`[2]`
-prompt, consideration loop), scoped to the `aid-update-kb` context -- with one
-deliberate deviation: `[2]` here re-scopes back to CONFIRM/SCOPE, not APPLY
+(`.agents/skills/aid-discover/references/state-approval.md`: one approval
+question, consideration loop), scoped to the `aid-update-kb` context -- with one
+deliberate deviation: an additional consideration here re-scopes back to CONFIRM/SCOPE, not APPLY
 (see Step 3).
 
 ---
@@ -37,7 +37,7 @@ result and a **real diff pointer** -- an actual command the user can run to
 see the edits, not merely a doc list:
 
 ```
-[APPROVAL] KB update summary
+KB update summary
 Prompt : <prompt>
 Scope-diff : PASS -- disk-derived edited set == Confirmed Scope (REVIEW Step 0)
 Docs changed (Confirmed Scope):
@@ -59,12 +59,17 @@ above) to verify the edits.
 ## Step 2: Ask for explicit user approval
 
 ```
-The KB update has passed the review gate (Scope-diff: PASS, Grade: {grade},
-Teach-back: {verdict}, Act-back: {verdict}).
+Follow `.aid/runtime/templates/question-protocol.md`: one approval question, recorded `Pending` in
+`.aid/knowledge/STATE.md ## Q&A (Pending)` before it is shown and updated when it is answered.
 
-[1] Approved -- commit the changes on <Branch> (created at Pre-flight; no
-    new branch is created here)
-[2] Additional consideration / re-scope: ___
+```text
+KB update approval -- question 1 of 1 -- importance: high
+The KB update has passed the review gate (Scope-diff: PASS, Grade: {grade}, Teach-back: {verdict}, Act-back: {verdict}). Do you approve it?
+Why I ask: nothing is committed to the KB without your approval.
+My recommendation: approve -- the review gate passed and the edits stay inside the confirmed scope.
+  1. Approved -- commit the changes on <Branch> (created at Pre-flight; no new branch is created here) (recommended)
+  2. Additional consideration -- you tell me what to change, and the scope is re-planned
+Or answer in your own words, or ask me to explain. This approval cannot be skipped.
 ```
 
 Wait for the user's explicit response. This approval cannot be skipped: the question
@@ -74,7 +79,7 @@ pauses the step where it stands, and the step does not go on until the user answ
 
 ## Step 3: Process the response
 
-### [1] Approved
+### Approved
 
 Update the run-state file:
 
@@ -90,7 +95,7 @@ The step ends with CHAIN to DONE (see the Advance line at the end of this file).
 
 ---
 
-### [2] Additional consideration / re-scope
+### Additional consideration / re-scope
 
 This does **not** loop blindly back to APPLY (the prior gap). It is a
 **re-scope**: the consideration may add, drop, or change a doc in scope, so
@@ -121,8 +126,8 @@ Update the run-state file:
 
 If the consideration challenges the **Understanding** itself (not merely the
 scope of the change) -- set `**State:** ANALYZE` instead of `SCOPE`,
-mirroring CONFIRM's own `[2] Adjust` conditional
-(`state-confirm.md § Step 3 [2]`) so the researcher re-reads the instruction
+mirroring CONFIRM's own Adjust conditional
+(`state-confirm.md § Step 3`, Adjust) so the researcher re-reads the instruction
 against the corrected understanding before SCOPE re-plans.
 
 **Re-scope revert (HL-7/AC-5).** APPLY already wrote edits before this
@@ -143,7 +148,7 @@ before making any new edit.
 Print:
 
 ```
-[APPROVAL] Consideration recorded as Q{N} in .aid/knowledge/STATE.md --
+Consideration recorded as Q{N} in .aid/knowledge/STATE.md --
 re-scoping via SCOPE/CONFIRM (not a blind return to APPLY).
 ```
 

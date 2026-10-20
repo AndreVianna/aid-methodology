@@ -198,24 +198,34 @@ runs none of that part's writer calls, since it has no shell). Show the
 - **`attachment`** → each file's name, size and preview from LOAD-CONTEXT, so the user sees exactly
   what will be attached.
 
-Close with the shared reference's confirm-gate button row, reused **verbatim**
-(`ticket-resolution.md` § "Write Preview + Confirm Gate"):
+Close with one confirmation question in the question form (`question-protocol.md` § One question), shown
+after the preview (`ticket-resolution.md` § "Write Preview + Confirm Gate" names the gate; this is its form):
 
-```
-[1] File it · [2] Edit · [3] Cancel
+```text
+Ticket update -- question 1 of 1 -- importance: high
+Shall I make this change to <REF> now?
+Why I ask: a change to the ticket is visible to everyone who follows it, so you confirm it first.
+My recommendation: file it -- the preview above is exactly what will be sent.
+  1. File it (recommended)
+  2. Edit -- you give me a revised change
+  3. Cancel -- make no change
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-- **`[1] File it`** → proceed to WRITE.
-- **`[2] Edit`** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run
+This is a pause inside the step, not an `ASK` advance: the write follows the answer, in the same invocation,
+and the step ends with `CHAIN`. Nothing is written before the answer; a skip is treated as Cancel.
+
+- **File it** → proceed to WRITE.
+- **Edit** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run
   COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline.
   For `attachment`, a revised CONTENT re-runs LOAD-CONTEXT's preview as well.
-- **`[3] Cancel`** → exit. No MCP call is made.
+- **Cancel** → exit. No MCP call is made.
 
 **Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels.
 
 ### State 6 — WRITE
 
-Only after an explicit `[1] File it` — perform the single mutation call through the connector
+Only after an explicit File it — perform the single mutation call through the connector
 resolved at RESOLVE-CONNECTOR, per
 [`consumption-protocol.md`](../../aid/templates/connectors/consumption-protocol.md)'s MCP-first
 recipe: request the connection from the host tool's own MCP/plugin; AID resolves no credential and
@@ -240,7 +250,7 @@ Validation branch above, which can already have stopped the run before CONFIRM w
   reproduces."` → PARSE-ARGS: PART=`comment`, REF=`jira:PROJ-9`, CONTENT=`"Retested on staging,
   still reproduces."` → RESOLVE-CONNECTOR: explicit `jira:` stem, validated `issue-tracker` →
   LOAD-CONTEXT: none (comment needs no read) → COMPOSE: append payload = CONTENT → CONFIRM shows
-  the exact comment text + `[1] File it · [2] Edit · [3] Cancel` → confirmed → WRITE posts the
+  the exact comment text + the confirmation question → confirmed → WRITE posts the
   comment.
 - **Description replace.** `/aid-update-ticket description PROJ-12 "Pagination now uses
   cursor-based paging; see PROJ-9 for the root cause."` with exactly one catalogued
@@ -262,7 +272,7 @@ Validation branch above, which can already have stopped the run before CONFIRM w
 - **Attachment, workable.** `/aid-update-ticket attachment jira:PROJ-9 REQUIREMENTS.md` → PARSE-ARGS:
   PART=`attachment`, CONTENT=`REQUIREMENTS.md` → LOAD-CONTEXT reads the file and previews its name,
   size and first lines → the tool check passes → CONFIRM shows that preview and
-  `[1] File it · [2] Edit · [3] Cancel` → confirmed → WRITE attaches the file.
+  the confirmation question → confirmed → WRITE attaches the file.
 - **Attachment, tool limit.** The same invocation against a tracker whose MCP cannot hold
   attachments → the run stops before CONFIRM, names the limit, and offers options (a), (b) and (c)
   with the recommendation; the user picks one, and nothing is written until that choice runs.
@@ -295,7 +305,7 @@ by this skill.
 - **Only the named part is mutated.** `description` REPLACES, `comment` APPENDS, `status` SETS,
   `attachment` ATTACHES — COMPOSE never touches any other part of the ticket.
 - **No silent write.** CONFIRM is mandatory for all four parts; WRITE never runs without an
-  explicit `[1] File it`.
+  explicit File it.
 - **Status is validated when it can be.** A `status` target is checked against the tracker's
   available transitions whenever the MCP can enumerate them; a mismatch stops the run before
   CONFIRM. When transitions cannot be enumerated, the attempt proceeds and any rejection is

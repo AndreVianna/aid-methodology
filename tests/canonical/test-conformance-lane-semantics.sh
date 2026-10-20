@@ -140,17 +140,17 @@ else
 fi
 
 # CL05 -- Present-the-choice gate: [1] Evolve / [2] Fix / [3] Accept
-if echo "$PROSE" | grep -qF "[1] Evolve"; then
+if echo "$PROSE" | grep -qF "Evolve the design"; then
     pass "CL05 present-the-choice: '[1] Evolve' option documented"
 else
     fail "CL05 present-the-choice: '[1] Evolve' not found in prose"
 fi
-if echo "$PROSE" | grep -qF "[2] Fix the code"; then
+if echo "$PROSE" | grep -qF "Fix the code"; then
     pass "CL05 present-the-choice: '[2] Fix the code' option documented"
 else
     fail "CL05 present-the-choice: '[2] Fix the code' not found in prose"
 fi
-if echo "$PROSE" | grep -qF "[3] Accept / defer"; then
+if echo "$PROSE" | grep -qF "Accept / defer"; then
     pass "CL05 present-the-choice: '[3] Accept / defer' option documented"
 else
     fail "CL05 present-the-choice: '[3] Accept / defer' not found in prose"

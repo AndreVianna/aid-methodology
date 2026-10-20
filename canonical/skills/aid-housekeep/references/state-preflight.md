@@ -58,7 +58,7 @@ Plan Mode prevents writes. Check whether the current environment is Plan Mode
 non-zero:
 ```
 ⚠️  /aid-housekeep cannot run in Plan Mode — stages need write access.
-    Press Shift+Tab to exit Plan Mode, then re-run /aid-housekeep.
+    Press Shift+Tab to exit Plan Mode.
 ```
 
 ### Check 4 — Git repository present and clean enough to branch
@@ -70,7 +70,7 @@ git rev-parse --git-dir > /dev/null 2>&1 || exit 1
 If not in a git repository, print and exit non-zero:
 ```
 ⚠️  /aid-housekeep requires a git repository.
-    Initialise git (git init) and make at least one commit, then re-run.
+    Initialise git (git init) and make at least one commit.
 ```
 
 Check that the current branch is either `master` or an existing
@@ -85,7 +85,7 @@ exit non-zero:
 ```
 ⚠️  /aid-housekeep must start from 'master' or resume from an 'aid/housekeep-*'
     branch. Currently on: <CURRENT_BRANCH>.
-    Switch to master (git checkout master) and re-run, or push and merge the
+    Switch to master (git checkout master), or push and merge the
     current branch first.
 ```
 
@@ -100,7 +100,7 @@ If the working tree has uncommitted changes and the current branch is `master`
 ```
 ⚠️  /aid-housekeep requires a clean working tree on 'master' before creating
     an aid/housekeep-* branch.
-    Commit or stash your changes (git stash), then re-run.
+    Commit or stash your changes (git stash).
 ```
 
 If the current branch is already an `aid/housekeep-*` branch (resume case),
