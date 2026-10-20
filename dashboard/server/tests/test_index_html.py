@@ -1150,7 +1150,7 @@ class TestFeature006CardRework(unittest.TestCase):
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1, "_renderWorkCard function not found")
         # Read the full function body (enough to cover both badge and phase blocks)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         badge_pos = snippet.find('makeLifecycleBadge(work.lifecycle)')
         phase_pos = snippet.find("phaseLine")
         self.assertNotEqual(badge_pos, -1, "makeLifecycleBadge(work.lifecycle) not found in _renderWorkCard")
@@ -1162,7 +1162,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # The phase label text must be 'Phase' (not 'Current Phase' or something else)
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertIn("phaseLabel.textContent = 'Phase'", snippet,
                       "Phase label textContent must be exactly 'Phase'")
 
@@ -1176,7 +1176,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # currentIdx is only used in renderStagePills (work detail view), not in _renderWorkCard
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertNotIn('currentIdx + 1', snippet,
                          "The per-card currentIdx+1 progress counter must not appear in _renderWorkCard")
 
@@ -1308,14 +1308,14 @@ class TestFeature006CardRework(unittest.TestCase):
     def test_f6rw8_footer_created_label(self):
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertIn("'Created: '", snippet,
                       "_renderWorkCard footer must use 'Created: ' label")
 
     def test_f6rw8_footer_last_update_label(self):
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertIn("'Last Update: '", snippet,
                       "_renderWorkCard footer must use 'Last Update: ' label")
 
@@ -1323,7 +1323,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # _fmtLocalDateTime must wrap work.created before push
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertIn('_fmtLocalDateTime(work.created)', snippet,
                       "_fmtLocalDateTime must be called on work.created in _renderWorkCard")
 
@@ -1331,7 +1331,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # _fmtLocalDateTime must wrap work.updated before push
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         self.assertIn('_fmtLocalDateTime(work.updated)', snippet,
                       "_fmtLocalDateTime must be called on work.updated in _renderWorkCard")
 
@@ -1340,7 +1340,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # (task count moved to the path-summary line)
         idx = self.src.find('function _renderWorkCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 5200]
+        snippet = self.src[idx:idx + 7200]
         # Isolate the var metaParts block (from its declaration to end of function region)
         meta_start = snippet.rfind("var metaParts")
         self.assertNotEqual(meta_start, -1, "var metaParts declaration not found in _renderWorkCard")
@@ -1488,6 +1488,58 @@ class TestFeature007SuspectMarker(unittest.TestCase):
                          "dashboard/index.html (CLI home) must NOT contain kb-suspect-badge (O5)")
         self.assertNotIn('doc_freshness', cli_src,
                          "dashboard/index.html (CLI home) must NOT contain doc_freshness (O5)")
+
+
+class TestFeature002WorkCardLines(unittest.TestCase):
+    """
+    Static-source assertions for the work card lines and the record warning
+    (work-003 Feature 002 section 6, task-073).
+
+    CL-1: the step_detail line is rendered from work.step_detail.
+    CL-2: "Waiting for your answer (N)" counts work.pending_inputs.
+    CL-3: "Away in /<to> -- back to <phase> after" reads work.open_call.
+    CL-4: the record warning text is verbatim and shown for record_status other than ok.
+    CL-5: the card names no step names and no maps (no step table, no step map).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        assert _INDEX_HTML.is_file(), f"home.html not found at {_INDEX_HTML}"
+        cls.src = _INDEX_HTML.read_text(encoding="utf-8")
+        start = cls.src.find("function _renderWorkCard(work)")
+        assert start != -1, "_renderWorkCard not found in home.html"
+        end = cls.src.find("// Triage-path progress pipeline", start)
+        assert end != -1, "card-line block marker not found in _renderWorkCard"
+        cls.card_snippet = cls.src[start:end]
+
+    def test_cl1_step_detail_line(self):
+        self.assertIn("work.step_detail", self.card_snippet,
+                      "card must render work.step_detail as one plain line")
+
+    def test_cl2_waiting_for_answer_line(self):
+        self.assertIn("'Waiting for your answer (' + openQuestions + ')'", self.card_snippet,
+                      "card must read 'Waiting for your answer (N)' from pending_inputs")
+        self.assertIn("work.pending_inputs", self.card_snippet,
+                      "open-question count must come from work.pending_inputs")
+
+    def test_cl3_away_line(self):
+        self.assertIn("work.open_call", self.card_snippet,
+                      "card must read the open call")
+        self.assertIn("'Away in ' + awaySkill + ' -- back to ' + awayPhase + ' after'",
+                      self.card_snippet,
+                      "card must read 'Away in /aid-<skill> -- back to <phase> after'")
+
+    def test_cl4_record_warning_verbatim(self):
+        self.assertIn("work.record_status !== 'ok'", self.card_snippet,
+                      "record warning must show for any record_status other than ok")
+        self.assertIn("This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes",
+                      self.card_snippet,
+                      "record warning text must be verbatim from the spec")
+
+    def test_cl5_no_step_names_or_maps(self):
+        for banned in ("step_map", "STEP_", "stepMap", "STEP_NAMES", "steps.forEach"):
+            self.assertNotIn(banned, self.card_snippet,
+                             f"work card must show no step names or maps ({banned})")
 
 
 if __name__ == "__main__":

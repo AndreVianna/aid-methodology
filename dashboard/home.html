@@ -2138,6 +2138,45 @@ footer {
       card.appendChild(phaseLine);
     }
 
+    // One plain line from step_detail (work-003 Feature 002 section 6)
+    if (work.step_detail) {
+      var stepLine = document.createElement('p');
+      stepLine.className = 'meta';
+      stepLine.style.margin = '0.25rem 0';
+      stepLine.textContent = work.step_detail;
+      card.appendChild(stepLine);
+    }
+
+    // Open questions: "Waiting for your answer (N)"
+    var openQuestions = Array.isArray(work.pending_inputs) ? work.pending_inputs.length : 0;
+    if (openQuestions > 0) {
+      var waitLine = document.createElement('p');
+      waitLine.className = 'meta';
+      waitLine.style.margin = '0.25rem 0';
+      waitLine.textContent = 'Waiting for your answer (' + openQuestions + ')';
+      card.appendChild(waitLine);
+    }
+
+    // An open call: where the work went, and the phase it returns to
+    if (work.open_call) {
+      var awayLine = document.createElement('p');
+      awayLine.className = 'meta';
+      awayLine.style.margin = '0.25rem 0';
+      var awaySkill = work.open_call.to ? '/' + work.open_call.to : 'a skill';
+      var awayPhase = work.open_call.returns_to || 'the current phase';
+      awayLine.textContent = 'Away in ' + awaySkill + ' -- back to ' + awayPhase + ' after';
+      card.appendChild(awayLine);
+    }
+
+    // Record warning: any record_status other than ok
+    if (work.record_status !== 'ok') {
+      var recordLine = document.createElement('p');
+      recordLine.className = 'meta';
+      recordLine.style.margin = '0.25rem 0';
+      recordLine.textContent = "This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes";
+      card.appendChild(recordLine);
+    }
+
     // Triage-path progress pipeline -- progressively disclosed by what's been produced so far.
     // Full: features -> deliveries -> tasks; Lite: recipe -> tasks. A bracketed [stage] marks
     // the step currently in progress; "[Identifying path]" before triage has run.
