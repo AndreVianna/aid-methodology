@@ -13,4 +13,6 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **PAUSE-FOR-USER-ACTION** → blocker resolution happens outside /aid-specify (Discovery loopback, requirement clarification, or upstream phase fix). Re-run `/aid-specify` after the blocker clears to continue to [State: CONTINUE].
+The blocker is resolved outside /aid-specify (a Discovery loopback, a requirement clarification, or an upstream phase fix); the step stays saved until it clears.
+
+**Advance:** **WAIT** → [State: CONTINUE].

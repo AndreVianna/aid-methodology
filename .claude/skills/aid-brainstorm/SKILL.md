@@ -26,9 +26,16 @@ State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> 
 `design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
 entry line on each state.
 
+Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
+this skill keeps only its own step table.
+
 ---
 
 ## State: INTAKE
+
+**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
+on resume; it never routes. Which skill and step a work continues at come from its work record
+(`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What problem
    or theme do you want to explore?") and wait. The subject may be fuzzy -- an unformed
@@ -41,11 +48,11 @@ entry line on each state.
    `.aid/design/<slug>.md`.
 3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where
+   `--skill aid-brainstorm` given to the gate's `--create`. `phase` is not driven. The `work-NNN` folder is where
    `STATE.md` and the review gate live, even though the seed is the deliverable.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** DESIGN.
+**Advance:** CHAIN → DESIGN when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -59,30 +66,33 @@ worth pursuing. The seed's `## Destination` is **optional** here: brainstorm has
 destination until the user promotes the seed. **Never writes `.aid/knowledge/` and never
 writes production code** -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → VERIFY.
 
 ---
 
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → PRESENT when the verify is clean; CHAIN → DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 
-**Advance:** DONE.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-brainstorm --step PRESENT --covers 'the seed .aid/design/<slug>.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/<slug>.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.

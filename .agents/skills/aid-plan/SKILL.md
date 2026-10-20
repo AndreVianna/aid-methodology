@@ -103,8 +103,23 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks below to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+**Saving the step.** Every step saves itself on entry, before any work, with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-plan --name <STEP> --detail '<where>'`,
+where `<STEP>` is one of FIRST-RUN, CONFIRM, REVIEW or DONE. The detail holds what the step has settled: the work
+id, the deliveries agreed so far and any concern the user raised at CONFIRM. When the work record does not already
+name `aid-plan` (the user typed `/aid-plan`; no skill handed the work on), the first step first records the typed
+start: `--handoff --to aid-plan --step FIRST-RUN --why 'user ran the command' --returns no`, with no `--phase`.
+
 - No PLAN.md → **FIRST-RUN**
-- PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
+- PLAN.md exists, grade below minimum or not yet graded → **CONFIRM** (the step asks if anything specific should be re-examined, then **REVIEW**)
 - PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -146,15 +161,15 @@ aid-plan  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |
-| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |
-| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | → halt |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW when the user approves the sequence; HALT when the user declines the plan |
+| CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
+| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE when the grade meets minimum and all delivery folders are created; CHAIN → FIRST-RUN when the grade is below minimum and the deliverables are fixable; HALT when the sequence is invalidated |
+| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as
+[`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an
+open call returns to the caller.
 
 **DONE (inline):** When DONE is detected, print:
 

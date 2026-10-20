@@ -15,12 +15,12 @@ Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures):
 ```
 [State: DELIVERY-GATE] — Per-delivery quality gate running.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● DELIVERY-GATE ]
+  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● DELIVERY-GATE ]
 ```
 
 Print this state-entry banner before proceeding to Step 0.
 
-Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
+Advance delivery lifecycle to Gated (silent state-write -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
@@ -84,7 +84,7 @@ from SPEC Data Model "Parallel-write coordination").**
 
    List each row from the file (task-id / description / status) for the user.
 
-**Advance:** **CHAIN** → Step 1 (SCORE).
+**Next, inside this step:** Step 1 (SCORE).
 
 ---
 
@@ -146,7 +146,7 @@ Complexity score: {N}  (tasks={T}, depth={D}, risk={R}, consults={C})
 Gate reviewer tier: {Small | Medium | Large}
 ```
 
-**Advance:** **CHAIN** → Step 2 (REVIEW).
+**Next, inside this step:** Step 2 (REVIEW).
 
 ---
 
@@ -174,7 +174,7 @@ of per-task reviews. The package wrapper is the universal brief at
 `references/reviewer-brief.md` rendered with:
 - `{{MODE}}` = `per-delivery`
 - `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the delivery's criteria (its `PLAN.md` stanza on the full path; `REQUIREMENTS.md § 9` on the flat/Lite path)
-- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
+- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate for the delivery.`
 
 Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/execute-delivery-NNN.md`
@@ -237,7 +237,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 ▶ aid-reviewer (gate, {tier}) starting (~{ETA from rough-time-hints})
 ✓ aid-reviewer (gate) done (record actual time) — or ✗ gate reviewer failed: {reason}
 
-**Advance:** **CHAIN** → Step 3 (GRADE).
+**Next, inside this step:** Step 3 (GRADE).
 
 ---
 
@@ -263,16 +263,27 @@ on PASS):
 Gate grade: {grade}   Minimum: {min}   Cycle: {N}
 ```
 
-**Advance:** **CHAIN** → Step 4 (ROUTE).
+**Next, inside this step:** Step 4 (ROUTE).
 
 ---
 
 ## Step 4: ROUTE (Pass or Fix)
 
+A check only: it shows nothing to the user and asks nothing.
+
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ Minimum Grade | Gate PASS → proceed to Step 6 (RECORD) |
-| Grade < Minimum Grade | → proceed to Step 5 (FIX) |
+| Grade ≥ Minimum Grade | Gate PASS → Step 6 (RECORD) |
+| Grade < Minimum Grade, CODE issues remain | → Step 4A (PRESENT) |
+| Grade < Minimum Grade, only non-CODE issues remain | → Step 4B (UPSTREAM) |
+
+**Next, inside this step:** Step 6 (RECORD) when grade ≥ minimum; Step 4A (PRESENT) when grade < minimum and CODE issues remain; Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
+
+---
+
+## Step 4A: PRESENT (Ask Before Fixing CODE Issues)
+
+Reached only when grade < minimum and CODE issues remain.
 
 **Present all issues to the user:**
 
@@ -290,12 +301,8 @@ Deferred [HIGH]s from quick checks (from delivery-NNN-issues.md):
 | Source task | Severity | Description | Status |
 | task-NNN    | [HIGH]   | ...         | Open   |
 
-{If grade ≥ minimum:}
-✅ Gate PASS. Grade meets minimum. Proceeding to RECORD.
-
-{If grade < minimum:}
 Gate grade below minimum. Next steps:
-- CODE issues (#1, #3): I'll fix these automatically.
+- CODE issues (#1, #3): I'll fix these once you approve.
 - TASK issues (#2): Task spec update needed. {explain}
 - SPEC issues: Would require re-running /aid-specify.
 - KB issues: Would require re-running /aid-discover.
@@ -310,9 +317,23 @@ Gate grade below minimum. Next steps:
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 
-**If ONLY non-CODE issues remain:** **STOP.** The delivery is as good as it
-can be -- the problem is upstream. Present what needs to change and where.
-Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
+Ask the user, through the question protocol, whether to fix the CODE issues now, recommending yes.
+The question is blocking: this step pauses on it, and the same step continues once it is answered.
+The TASK, SPEC and KB issues stay with the user.
+
+**Next, inside this step:** Step 5 (FIX) when the user approves the CODE fixes. When the user declines,
+the CODE issues stay with the user too: set the lifecycle to `Paused-Awaiting-Input` and the pause reason to
+'Delivery gate below the minimum grade -- CODE issues left with the user' through the writer, and the run ends at this step (HALT).
+
+---
+
+## Step 4B: UPSTREAM (Hand-Off for Non-CODE Issues Only)
+
+Reached only when grade < minimum and every remaining issue is TASK, SPEC or KB. The non-CODE
+issue handling in Step 4A applies here too.
+
+**STOP.** The delivery is as good as it can be -- the problem is upstream. Present what needs to change and where.
+Emit delivery and pipeline pause signals (silent state-writes -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
@@ -320,7 +341,9 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
+Ask the user, through the question protocol, to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB
+issues), and to update the TASK issues, before re-running `/aid-execute`. The question is blocking and stays
+open. **Next, inside this step:** the run ends here with the question open (the step's ending, below).
 
 ---
 
@@ -335,7 +358,7 @@ the tasks — if mixed, use `aid-developer` as the default). Do NOT dispatch the
 reviewer ≠ executor invariant applies here too.
 
 **Executor fixes CODE issues only.** Non-CODE issues (TASK, SPEC, KB) were
-surfaced to the user in Step 4 and do not reach this step.
+surfaced to the user in Step 4A and do not reach this step.
 
 **Do NOT modify the ledger during FIX.** Status updates happen in the next REVIEW cycle
 when the reviewer re-verifies.
@@ -360,7 +383,7 @@ Options:
 ```
 
 Write impediment to `.aid/works/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
-is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
+is written, emit the delivery and pipeline block signals (silent state-writes -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
@@ -369,7 +392,7 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block A
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
+**Next, inside this step:** back to Step 2 (REVIEW) — fresh reviewer, clean context.
 
 ---
 
@@ -480,7 +503,11 @@ delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 | task-NNN | TEST | Done | none | — |
 ```
 
-**Advance:** **HALT** (DELIVERY-GATE is the terminal state for a delivery).
+DELIVERY-GATE is the terminal state for a delivery. This one ending closes the step in every case: the gate
+passed (Step 6), the user declined the CODE fixes (Step 4A), or upstream issues wait on the user (Step 4B,
+question open).
+
+**Advance:** **HALT**.
 
 ---
 

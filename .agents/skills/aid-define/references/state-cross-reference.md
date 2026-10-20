@@ -16,9 +16,11 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
   `bash .aid/runtime/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
   and include the grade in your return message."
 
-Then append the cross-reference process body from `references/cross-reference.md`
-(load context, cross-reference, grade, present findings, create Q&A, wrap up) so
-the subagent has the per-step execution detail.
+Then append the reviewer's share of the process body from `references/cross-reference.md`
+(sections 6a to 6c: load context, cross-reference, grade) so the subagent has the per-step execution
+detail. Sections 6d to 6f are the main conversation's: it presents the findings, creates the Q&A entries
+and asks them through the question protocol, and wraps up. The subagent never asks; it lists its open
+questions in its report.
 
 Print before dispatch: `[State 6] Dispatching aid-reviewer for Cross-Reference validation.`
 
@@ -38,4 +40,8 @@ contradiction between two of them is visible. Run it on cycle 1 only -- that mak
 once per phase by construction. Definition:
 `reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
-**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).
+The cross-reference questions pause this step where it stands (a blocking question). After each answer the step
+applies it (`cross-reference.md` § 6e) and, once every question is answered or skipped, records the cross-reference
+(§ 6f); only then does the step end.
+
+**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied.

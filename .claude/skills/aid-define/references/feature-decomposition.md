@@ -32,6 +32,8 @@ to understand existing features/modules that may influence decomposition.
 
 ## Step 2: Propose Feature List
 
+The worker builds the table and returns it; the main conversation shows it and puts the question below.
+
 ```
 Based on the functional requirements, I've identified {N} features:
 
@@ -109,8 +111,4 @@ Print:
   002 — {Title}    §5 FR-3          AC-2          Must
 
 Every §5 requirement is mapped; every §9 criterion is owned exactly once.
-
-Next steps:
-- Review §11 in REQUIREMENTS.md if desired
-- Run /aid-specify feature-001 to begin technical specification
 ```

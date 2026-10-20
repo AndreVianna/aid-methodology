@@ -6,7 +6,8 @@ worktree-aware, and implemented once, so no starter silently assumes either
 branch. This is the Concern B counterpart to Concern A's `.aid/works/` container
 (the enumeration target below).
 
-Consulted by: the direct-entry shortcut engine's INTAKE
+Consulted by: `/aid-orchestrate` (its start-or-resume flow creates each new work
+through § 3a), the direct-entry shortcut engine's INTAKE
 (`.aid/runtime/templates/shortcut-engine.md`), `aid-describe`, and the
 collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
 `aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
@@ -16,7 +17,7 @@ than re-implementing the logic.
 > **Where the gate sits.** It runs at the exact point a starter would otherwise
 > allocate `work-NNN` (scan `.aid/works/`, pick the next number, create the
 > folder). The gate either lets the starter proceed with that allocation (NEW)
-> or steps aside and routes the user to an existing work's own resume door
+> or steps aside and hands the chosen work to the skill its record names
 > (CONTINUATION). It is a thin front-door: it never authors artifacts, and on
 > continuation it allocates nothing.
 
@@ -54,34 +55,38 @@ project root.) The helper emits one TAB-separated record per work:
 ## Step 2 -- Branch on empty vs non-empty
 
 - **Empty (no works across any root) -> NEW, no prompt.** Do not ask anything.
-  Return control to the starter, which allocates exactly as it does today (see
-  Step 3a). This is the common first-work case.
+  Continue with Step 3a. This is the common first-work case.
 - **One or more works exist -> ASK.** Present the enumerated list and ask a
-  single question (the project's one-question-at-a-time convention -- never
-  silently assume either branch):
+  single question under the question protocol (`.aid/runtime/templates/question-protocol.md`;
+  one topic at a time, never silently assume either branch):
 
-  ```
-  Works already exist. Is this a NEW work, or a CONTINUATION of an existing one?
+  ```text
+  Works -- question 1 of 1 -- importance: high
+  Is this a NEW work, or a CONTINUATION of an existing one?
+  Why I ask: an existing work may already hold this request, and a new work would duplicate it.
+  My recommendation: NEW, unless the request names one of these works.
 
   Existing works:
-    work-016-numberless-work-folder   [Specify · Paused-Awaiting-Input]   (worktree: work-016)
-    work-017-orders-read-api          [Execute · Running]                 (main)
-    work-018-billing-report           [Plan · Running]                    (main)
+    work-016-numberless-work-folder   [Specification · Paused-Awaiting-Input]   (worktree: work-016)
+    work-017-orders-read-api          [Building · Running]                      (main)
+    work-018-billing-report           [Planning · Running]                      (main)
 
-  [N] New work
-  [1] Continue work-016-numberless-work-folder
-  [2] Continue work-017-orders-read-api
-  [3] Continue work-018-billing-report
+    1. New work (recommended)
+    2. Continue work-016-numberless-work-folder
+    3. Continue work-017-orders-read-api
+    4. Continue work-018-billing-report
+  Or answer in your own words, ask me to explain, or skip this question.
   ```
 
   Compose the bracketed `[phase · lifecycle]` and `(worktree: <label>)` from the
-  helper's record columns. Wait for the answer before doing anything else.
+  helper's record columns. Wait for the answer before doing anything else. A
+  skipped question creates no work and leaves every existing one as it is.
 
 ## Step 3 -- Act on the answer
 
-### 3a. NEW -> hand back to the starter
+### 3a. NEW -> create the record, then hand back to the starter
 
-The gate hands back to the starter, which now performs, in this order:
+The gate performs the steps below in this order, and only then hands the new work back to the starter:
 
 1. **Resolve `<work-id>`** as `work-{NNN+1}`, where `NNN` is the **maximum
    `work-NNN` numeric prefix across every record Step 1's `enumerate-works.sh`
@@ -115,115 +120,101 @@ The gate hands back to the starter, which now performs, in this order:
    subsequent file operations and surfaces it to the user (`Working in
    worktree: <path>` -- FR4 fallback).
 
-3. **Only now**, inside the entered worktree, allocate and scaffold: create
-   `.aid/works/<work-id>-<name>/` (reusing the `<work-id>` resolved in step 1
-   above -- do **not** re-derive it from the fresh worktree's own, still-empty
-   `.aid/works/`) and scaffold `STATE.yml`, exactly as the starter did before
-   this worktree automation existed.
+3. **Read the work's type** with `/aid-orchestrate`'s `references/check-intent.md`, from the user's words. The calling skill's own kind is only a hint (FR-4).
 
-The gate changed nothing about the allocation mechanics; it only gated the
-decision to allocate, and now also gates *where* that allocation lands.
+4. **Create the folder, then scaffold `STATE.yml` through the writer**, inside the entered worktree. Create `.aid/works/<work-id>-<name>/` (reusing the `<work-id>` from step 1 -- do **not** re-derive it from the fresh worktree's own, still-empty `.aid/works/`), then make the work record in one locked write:
 
-### 3b. CONTINUATION -> route to the chosen work's resume entry point, then STOP
+   ```bash
+   bash .aid/runtime/scripts/execute/writeback-state.sh --create \
+     --work-dir .aid/works/<work-id>-<name> \
+     --reading <type from step 3> --request '<the user's words>' \
+     --skill <calling skill> --step <its first step> \
+     [--phase <phase>] [--depth lite|full] [--path lite|full] [--minimum-grade <grade>] \
+     [--reason '<why the reading holds>'] [--phases <P1,P2,...>]
+   ```
 
-The gate allocates **nothing**. It reads the chosen work's `STATE.yml`
-frontmatter (`pipeline.path`, `phase`, `lifecycle`, and -- for flattened works --
-`delivery_state`) and routes the user to that work's correct existing resume
-door, per this decision (first match wins):
+   A caller that was handed an intent (the reason and the phases it chose) passes `--reason` and `--phases` here, so the work starts with them; the writer's `--intent` sets them later.
 
-| Chosen work's state | Resume entry point |
-|---|---|
-| Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) | `/aid-execute <work>` |
-| Deploy in progress (`active_skill: aid-deploy` -- an interrupted `/aid-deploy`; Deploy is a separate path, no longer a `phase:`) | `/aid-deploy <work>` |
-| Mid-Execute or beyond (`phase: Execute`, or `delivery_state` is `Executing`/`Gated`/`Done`) | `/aid-execute <work>` |
-| Partial full-path work still in a definition phase -- route to the skill matching `STATE.yml` `phase` | `Describe` -> `/aid-describe <work>`; `Define` -> `/aid-define <work>`; `Specify` -> `/aid-specify <work>`; `Plan` -> `/aid-plan <work>`; `Detail` -> `/aid-detail <work>` |
-| Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a NEW work if they meant to start fresh |
+   `--create` copies `work-state-template.yml` and fills the record in that one write: `intent.reading`, `intent.request`, `active_skill`, `step`, `pipeline.initiator` (the calling skill), `lifecycle: Running`, `started` and `updated`. It exits 8 when the folder already holds a `STATE.yml`. A skill started by a bare slash command with no words takes its request from its first question (`.aid/runtime/templates/question-protocol.md`); if the user does not answer, no work is created.
 
-**If the resolved route resumes in THIS SAME invocation** (today this is only
-`aid-describe`, when the chosen work's `phase` is `Describe` -- the gate hands
-control back to the very skill the user already invoked rather than routing to
-a different command), the starter locates and enters the chosen work's
-isolated worktree before resuming:
+   A non-zero exit stops the gate at once: tell the user in one plain line what failed, and that nothing more runs until it is fixed.
 
-1. **Normalize** the chosen work's id to its **bare** `work-NNN` branch name
-   first: `[[ "$chosen_work" =~ ^(work-[0-9]+) ]] && work_id="${BASH_REMATCH[1]}"`.
-   Step 1's enumeration supplies the **full folder slug** (e.g.
-   `work-016-numberless-work-folder`), but `worktree-lifecycle.sh locate` keys
-   on the **bare `work-NNN` branch name** -- passing the full slug would match
-   no branch, drop the resolution ladder to its rung-3 fallback, and fabricate
-   a wrongly-named duplicate worktree. Idempotent if the id is already bare
-   (identical normalization to feature-003 § 3.3 "Work-id normalization").
+5. **Hand back** to the starter with this one line: "`STATE.yml` was created by the gate; skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand; set other keys through the writer." The starter then adds only its own keys, through the writer.
 
-2. **Locate:**
+The gate changed nothing about the allocation mechanics; it only gated the decision to allocate, and now also gates *where* that allocation lands and who writes the work record.
+
+### 3b. CONTINUATION -> the work's record decides where it resumes
+
+The gate allocates **nothing**. The work's record -- `intent.reading`, `active_skill`, `step` and `step_detail` in its `STATE.yml` -- is the only thing that decides where the work resumes. The gate reads that record; it never reads a phase name to decide.
+
+1. **Normalize** the chosen work's id to its **bare** `work-NNN` branch name first: `[[ "$chosen_work" =~ ^(work-[0-9]+) ]] && work_id="${BASH_REMATCH[1]}"`. Step 1's enumeration supplies the **full folder slug** (e.g. `work-016-numberless-work-folder`), but `worktree-lifecycle.sh locate` keys on the **bare `work-NNN` branch name** -- passing the full slug would match no branch, drop the resolution ladder to its rung-3 fallback, and fabricate a wrongly-named duplicate worktree. Idempotent if the id is already bare.
+
+2. **Locate** the work's worktree, without entering it:
 
    ```bash
    bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work-id>
    ```
 
-   `locate` resolves via its 4-rung "most-intact-state-first" ladder and
-   **exits 0 on every resolution** (`registered | recreated | created |
-   current`), printing one TAB-separated line `<abs-path>\t<status>` -- split
-   on the TAB, never on space (a worktree path can contain spaces). On an
-   unrecoverable git state it **degrades** to `<cwd-abs>\tcurrent` (a
-   **non-empty** path, still exit 0); it **never** fails the caller and is
-   **not** a fail-closed / exit-1 contract.
+   `locate` resolves via its 4-rung "most-intact-state-first" ladder and **exits 0 on every resolution** (`registered | recreated | created | current`), printing one TAB-separated line `<abs-path>\t<status>` -- split on the TAB, never on space (a worktree path can contain spaces). On an unrecoverable git state it **degrades** to `<cwd-abs>\tcurrent` (a **non-empty** path, still exit 0); it **never** fails the caller and is **not** a fail-closed / exit-1 contract.
 
-3. **Defensive backstop (NOT fail-closed):** still check non-zero exit **or**
-   empty path -> surface the error and STOP. Because the real helper always
-   returns a non-empty path at exit 0, this check is a **backstop that cannot
-   fire against the real helper** -- it guards only a mis-behaving or
-   not-yet-built helper, never the normal path. The genuine NFR1 protection on
-   this branch is that a work only reaches this in-invocation resume because
-   Step 1's enumeration already listed it as an existing work, so `locate`
-   resolves it onto its own isolated `work-NNN` tree (rung 1, or a rung-2/3
-   recreate) whenever git is functional -- not this guard. The degrade to
-   `current` fires only in a pathological git-broken state where no tool could
-   isolate anyway.
+3. **Defensive backstop (NOT fail-closed):** still check non-zero exit **or** empty path -> surface the error and STOP. Because the real helper always returns a non-empty path at exit 0, this check is a **backstop that cannot fire against the real helper** -- it guards only a mis-behaving or not-yet-built helper. The genuine protection is that a work reaches this point only because Step 1's enumeration already listed it, so `locate` resolves it onto its own isolated `work-NNN` tree whenever git is functional.
 
-4. **Enter** (rungs 1-3 -- `registered | recreated | created`), unless
-   `<status>` is `current` (the rung-4 already-inside no-op, or the
-   git-broken degrade -- both mean stay put, skip the enter): per
-   `.aid/runtime/templates/worktree-lifecycle.md § Step 2`, invoke the
-   host-native `EnterWorktree` tool where available, else treat the resolved
-   path as the working directory and surface it (FR4 fallback).
+4. **Check the record** in the located worktree. The check writes nothing:
 
-Only then does the starter proceed into its own resumed state machine (e.g.
-`aid-describe`'s State Detection) for `<work_id>`.
+   ```bash
+   AID_STATE_FILE=<abs-path>/.aid/works/<work-folder>/STATE.yml \
+     bash .aid/runtime/scripts/execute/writeback-state.sh --check
+   ```
 
-**Every other route** (a route-and-halt target naming a different command the
-user must run next) gets none of the above in this invocation. Print the
-resolved command (e.g. `Continuing work-016 -- run: /aid-execute
-work-016-numberless-work-folder`) and **HALT**. Do not allocate, do not
-author, do not enter the starter's own state machine here -- the locate+enter
-for that target happens inside the routed command's own run (feature-003),
-not in this gate.
+   It prints one `PROBLEM` line for each missing or inconsistent part of the record, and exits 9 when there is any; 0 otherwise.
 
-> **Why route, not resume.** A shortcut is a one-shot INTAKE->DETAIL producer
-> whose engine carries an explicit *"Accepted limitation -- no cross-session
-> resume"* and *"One run, one work"* design note. Routing keeps that single
-> responsibility intact -- the engine only ever authors a fresh work -- while
-> still honoring "keep working on that one" by handing the user the door that
-> already knows how to resume it. It also uniformly handles the common case
-> where the chosen work is a **full-path** work the flattened engine could never
-> resume anyway: routing to the matching phase skill is the only coherent
-> continuation for those.
+5. **Route by the record**, first match wins:
 
-**Rejected alternative.** *Teach the shortcut engine to resume its own
-INTAKE->DETAIL pipeline over the chosen existing work* (re-enter at the state
-matching which artifacts already exist on disk). Rejected because (a) it directly
-contradicts the engine's committed "no cross-session resume" / "one run, one
-work" invariants; (b) it would require per-state idempotency/re-entry machinery
-the engine deliberately does not build speculatively (no FR/AC requires it); (c)
-existing works are frequently full-path works the flattened engine structurally
-cannot drive; (d) re-running authoring states over a partially-executed work
-risks corrupting it. Routing avoids all four.
+   | # | Chosen work's state | Resume entry point |
+   |---|---|---|
+   | 1 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh |
+   | 2 | `--check` reports the record missing or inconsistent | The recovery below; once the user confirms and `--repair` has written, continue at row 3 |
+   | 3 | The record (every other open work) | `active_skill` at its saved `step`; with an open call, inside the called skill. A halted Lite work resumes at its doorway skill's APPROVAL-HALT step, which asks the approval while it is still open; once it was given, the step only tells the user to run `/aid-execute` |
+
+   **Recovery (row 2), never silent.** The agent tells the user, in plain words, which parts of the record are missing or inconsistent, and proposes the **whole** repaired record -- skill, step and, when `intent.reading` is missing, the type -- as **one** confirmation question under the question protocol (`.aid/runtime/templates/question-protocol.md`), with its recommendation:
+
+   - **skill and step**: from the skill's own detection; for a work not yet migrated, from the legacy block below;
+   - **type** (only when `intent.reading` is missing): proposed from the evidence on disk -- the request or objective in `REQUIREMENTS.md` § 1, an idea draft in `.aid/design/`, or `pipeline.initiator` (e.g. a `/aid-fix` work is a bug fix) -- read the same way as `check-intent.md`.
+
+   Only after the user confirms (or corrects any part, in the same answer) does the agent run `--repair`, which writes the whole repaired record in one write, appends a `lifecycle_history` entry, and requires `--reading` when the record has none:
+
+   ```bash
+   AID_STATE_FILE=<abs-path>/.aid/works/<work-folder>/STATE.yml \
+     bash .aid/runtime/scripts/execute/writeback-state.sh --repair --skill <skill> --name <step> [--detail <step detail>] [--reading <type>]
+   ```
+
+   After one confirmed repair the record is complete and `--check` passes, so row 2 never fires twice for the same problem; the work continues at row 3. A saved step whose artifact is not on disk is found by the resumed skill's own validation and takes this same recovery path (`.aid/runtime/templates/skill-steps.md`, The work record).
+
+6. **Enter and run** (row 3, and row 2 after its repair): enter the located worktree per `.aid/runtime/templates/worktree-lifecycle.md § Step 2` -- invoke the host-native `EnterWorktree` tool where available, else treat the path as the working directory and surface it (`Working in worktree: <path>` -- FR4 fallback). Skip the enter only when `locate` printed `current`. Then run the skill the record names (`active_skill`, itself or another skill) at its saved `step`, under `.aid/runtime/templates/skill-steps.md`. There is no special case for a resume in the same invocation.
+
+<!-- legacy-phase-map: begin -->
+
+**Legacy map (never routes).** A work started before the record existed has no `active_skill`, so its phase and file names are the only evidence. Recovery reads this block only to propose a skill and step for such a work; its type comes from the evidence named above. Nothing here routes a work.
+
+The proposed step is the skill's entry step, or the step the old record's state names. When the work is further along, the user corrects the step in the same confirmation.
+
+| Old record | Proposed skill | Proposed step |
+|---|---|---|
+| `phase: Describe` | `/aid-describe <work>` | `FIRST-RUN` |
+| `phase: Define` | `/aid-define <work>` | `FEATURE-DECOMPOSITION` |
+| `phase: Specify` | `/aid-specify <work>` | `INITIALIZE` |
+| `phase: Plan` | `/aid-plan <work>` | `FIRST-RUN` |
+| `phase: Detail` | `/aid-detail <work>` | `FIRST-RUN` |
+| `phase: Execute` | `/aid-execute <work>` | `EXECUTE` |
+| `lifecycle: Paused-Awaiting-Input` with `delivery_state: Specified` (a flattened Lite work halted at APPROVAL-HALT) | `/aid-execute <work>` | `EXECUTE` |
+| `delivery_state: Executing` | `/aid-execute <work>` | `EXECUTE` |
+| `delivery_state: Gated` or `Done` | `/aid-execute <work>` | `DELIVERY-GATE` |
+| `active_skill: aid-deploy` (an interrupted deploy) | `/aid-deploy <work>` | `IDLE` |
+
+<!-- legacy-phase-map: end -->
 
 ---
 
 ## Invariant preserved
 
-The gate **routes**; it does not teach the flattened INTAKE->DETAIL engine (or
-any collapse starter) to resume its own partial run. The shortcut engine's
-"no cross-session resume" invariant is untouched -- a starter that is handed
-back control on NEW still allocates a brand-new work exactly as before, and on
-CONTINUATION the gate steps aside entirely.
+The gate creates each work's record through the writer, and it routes nothing by phase: a continuation enters the chosen work's worktree and runs the skill its record names, at its saved step. A continuation allocates nothing, and only the writer changes the record.

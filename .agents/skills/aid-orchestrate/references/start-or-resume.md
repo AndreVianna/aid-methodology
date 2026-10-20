@@ -1,9 +1,9 @@
 # Start or Resume a Work
 
-Use this from SKILL.md step 1 onward. In order, it answers a project question, finds the work
-the request belongs to, creates one only when none exists, reads its resume point, handles a
-cancel, and records the intent. The reading is checked, sized and shown first (SKILL.md steps 2
-to 4). An action-skill reading never reaches this file: its skill's START creates the work.
+Use this from PROJECT-QUESTION onward. In order, it answers a project question, finds the work,
+creates one only when none exists, reads its resume point, handles a cancel and records the
+intent. The reading is checked, sized and shown first (SKILL.md steps CHECK-READING to SHOW-READING); an
+action-skill reading never reaches this file, since its skill's START creates the work.
 
 ## 1. Project question
 
@@ -16,44 +16,72 @@ says, where something stands -- starts no work. Answer it with `/aid-ask`:
 - Create no `.aid/works/` folder and write nothing into a work.
 - Say so plainly when the sources cannot answer. Do not guess.
 
-Then stop. The flow does not continue to the next step.
+Then stop. A request that is not a project question goes on to the check (section 2).
+
+**Advance:** **CHAIN** → CHECK-READING when the request is not a project question; **HALT** when it is a project question.
 
 ## 2. Check, size and show the reading
 
-Any other request is checked first: `references/check-intent.md` steps 1 to 5 read the
-Knowledge Base and the code and classify the reading. Then SKILL.md steps 3 and 4 size it
-(`size-and-route.md`) and show it, and the flow waits for the user's answer. Nothing below
-runs before that answer.
-
-An action-skill reading (`size-and-route.md` section 1) is handed to that skill now (SKILL.md step
-5). No work is created here. Otherwise carry the reading into step 3.
+Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
+reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
+action-skill reading goes to START-ACTION and creates no work here. Every other reading goes on to
+section 3.
 
 ## 3. Find the work
 
-Look for an existing work before creating one. List every work of the project, across the main
-tree and each git worktree, with `.aid/runtime/scripts/works/enumerate-works.sh`. The work
-initiation gate, `.aid/runtime/templates/work-initiation-gate.md`, decides whether the request
-continues one of those works or needs a new one. Follow the gate as written.
+Look for an existing work before creating one: list every work across the main tree and each git
+worktree with `.aid/runtime/scripts/works/enumerate-works.sh`, then follow the work initiation
+gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 
 - A matching work is continued. Its `STATE.yml` already holds the `intent:` block, which stands
   unless the check found a new fact.
-- No match: the gate creates the work. This is the first write the flow makes.
-- Several plausible works: ask one question -- which work the request continues. Give its reason
-  (the request could fit more than one), your recommendation (the work whose phase fits best),
-  the plausible works by name plus "a new work", and a free-text answer.
+- No match: the gate's § 3a runs `writeback-state.sh --create` with `--skill aid-orchestrate --step
+  RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing),
+  and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading.
+  The flow creates no work by hand.
+- Several plausible works: section 3a asks which one.
+
+**Advance:** **CHAIN** → ASK-FIRST when several works plausibly match; otherwise **CHAIN** → RECORD-INTENT.
+
+## 3a. Ask which work
+
+Ask one question -- which work the request continues: its reason, your recommendation (the work
+whose phase fits best), the plausible works by name plus "a new work", and a free-text answer. The
+question pauses the step where it stands. On "a new work", the gate creates it as in section 3,
+with `--step RECORD-INTENT`; on an existing work, that work is continued and its record is not
+written by this step.
+
+**Advance:** **CHAIN** → RECORD-INTENT.
 
 ## 4. Read the resume point
 
-Read the work's `STATE.yml` and take the resume point from these keys:
+Resume reads the work record only: the work's `STATE.yml`. Take the resume point from these keys,
+and from no other file or folder. `phase:` is a display label and never routes.
 
 - `lifecycle:` -- `Running`, `Paused-Awaiting-Input`, `Blocked`, `Completed` or `Canceled`.
-- `phase:` and `active_skill:` -- the phase and the skill that was running.
+- `active_skill:`, `step:` and `step_detail:` -- the skill and the step that were running. An open
+  call means the work continues inside the called skill.
 - `pause_reason:` and `block_reason:` -- why the work stopped, when it did.
 - `intent.phases` -- the phases the work runs, in order.
-- `qa:` -- the open questions, when the work is in Specification or later.
+- `qa:` -- the open questions.
+
+Ask the open questions first: every `qa:` entry in state `Pending` or `Skipped`, in the usual
+groups (FR-17), before the work goes on. A `Skipped` question is offered again here.
+
+Record each answer with `--answer`, and then set the lifecycle back to `Running` through the writer,
+aimed at that work as in section 5 step 2 (`AID_STATE_FILE` and `AID_WORK_DIR`):
+`bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running`.
+Do this once every open question is answered or skipped, and also for a `Paused-Awaiting-Input` work that had none, so the
+skill started by HAND-OVER finds the work `Running` and runs it. An approval is never skipped: it stays
+open, and the work stays paused, until the user approves or declines.
 
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
-that is `Blocked` says what blocks it before anything else runs.
+that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
+`Canceled` is finished: say so and end the run.
+
+A continued work resumes at the skill and step its record names, which HAND-OVER starts once the open
+questions above are asked (ASK-FIRST). This flow writes no `--step` and no `--handoff` into a continued
+work, so the record keeps its saved step and `step_detail`.
 
 ## 5. Cancel a named work
 
@@ -68,26 +96,32 @@ the user's confirmed answer, and in this order:
    folder, so the write lands on that work and on no other.
 3. **Confirm once.** Ask one question: whether to cancel the work, named with its id and phase.
    Give the reason (a canceled work stops for good), your recommendation (keep it paused when
-   the user is unsure), the options "cancel" and "keep", and a free-text answer.
+   the user is unsure), the options "cancel" and "keep", and a free-text answer. The question
+   pauses this step where it stands; once it is answered, the step goes on to the write.
 4. **Write.** When the user confirms, run:
 
 ```bash
 AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Canceled
 ```
 
+The writer also clears the saved skill and step. The cancel creates no new work and writes
+nothing else. When the user answers "keep", nothing is written. Either way, one plain line says
+what happened and that no new work was created.
+
+**Advance:** **HALT**.
+
 ## 6. Record the intent
 
-The reading was sized and shown before this step (SKILL.md steps 3 and 4), and the user has
-approved it. Write the `intent:` block into the new work's `STATE.yml` at once. The block is
-authored, so write it in block style and keep its keys to the three levels the readers allow:
+The reading was sized and shown before this step (SKILL.md steps SIZE-READING and SHOW-READING), and
+the user has approved it. The record's keys are set through the writer only, never by hand:
 
-- `request` -- the user's words, short.
-- `reading` -- one of: bug fix, refactor, change, new capability, document, operational,
-  knowledge update, investigation.
-- `reason` -- why the reading fits, in a short phrase.
-- `depth` -- `lite` or `full`.
-- `phases` -- one `- <phase>` line each, in order.
-- `changes` -- starts as `[]`; one entry per re-route, with `at`, `from`, `to` and `why`.
+- The gate's `--create` (section 3) has already written `intent.request`, `intent.reading` and
+  `intent.depth`, from the user's words, the reading and the depth. Nothing else writes them.
+- The same `--create` wrote `intent.reason` and `intent.phases`, from `--reason` and `--phases`. If
+  either is missing from the record, set it with `writeback-state.sh --intent --reason '<reason>'
+  --phases <P1,P2,...>`; a non-zero exit stops the flow, as the fail-closed rule in `skill-steps.md`
+  requires.
+- A resumed work keeps its `intent:` block. Change it only through a re-route (`--reroute`), which
+  appends the re-route to `changes`.
 
-A resumed work keeps its `intent:` block. Change it only through a re-route, and append the
-re-route to `changes`.
+**Advance:** **CHAIN** → HAND-OVER.

@@ -2,10 +2,10 @@
 
 The single shared engine every thin shortcut doorway (`.agents/skills/aid-<name>/
 SKILL.md`) delegates to. Implements the state machine **INTAKE -> CAPTURE -> SPEC ->
-PLAN -> DETAIL** -- the definition phases (Describe -> Define -> Specify -> Plan ->
-Detail) collapsed into one fast, mostly-autonomous run. It produces
+PLAN -> DETAIL** -- the definition work (the Describe, Define, Specify, Plan and Detail
+steps) collapsed into one fast, mostly-autonomous run. It produces
 the **full** flattened artifact set (feature-001 shape); it never skips a phase, it
-collapses the information capture within each phase. It never executes -- Execute is a
+collapses the information capture within each phase. It never builds -- Building is a
 separate, user-initiated `/aid-execute`.
 
 > **Maintenance note:** the states in order are INTAKE -> CAPTURE -> SPEC -> PLAN ->
@@ -27,7 +27,7 @@ state machine below starts:
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
-| `{intent}` | the hand-over's `intent:` line followed by its indented keys (`request`, `reading`, `reason`, `depth`, `phases`, `changes`) | absent for a typed `/aid-<skill>`; written by INTAKE Step 5 |
+| `{intent}` | the hand-over's `intent:` line followed by its indented keys (`request`, `reading`, `reason`, `depth`, `phases`, `changes`) | absent for a typed `/aid-<skill>`; set on the record by INTAKE Steps 4 and 5 |
 
 ## Design Notes
 
@@ -42,27 +42,22 @@ state machine below starts:
 - **One run, one work -- gated at the front door.** INTAKE consults the shared Work
   Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`) *before* it
   allocates (INTAKE Step 3): when no works exist it proceeds and allocates a brand-new
-  `work-NNN`; when works already exist it asks the user new-vs-continuation, and on
-  "continuation" the gate routes to the chosen work's own resume door and this engine
-  never runs at all. So the engine still only ever **authors one fresh work per run**
-  (it carries no `work-NNN` resume argument -- contrast `aid-plan`/`aid-detail`, which
-  accept one); the gate supersedes the old "always allocate a brand-new work" rule with
+  `work-NNN`; when works already exist it asks the user new-vs-continuation. On
+  "continuation", follow the gate's § 3b: enter the chosen work's worktree and run the skill
+  its record names, at its saved step. So the engine still only ever **authors one fresh
+  work per run** (it carries no `work-NNN` resume argument -- contrast `aid-plan`/`aid-detail`,
+  which accept one); the gate supersedes the old "always allocate a brand-new work" rule with
   an explicit gate. The common-case NEW run drives INTAKE all the way to the terminal
   halt in one continuous invocation
-  (`.aid/runtime/templates/state-machine-chaining.md` CHAIN), pausing only for the
+  (`.aid/runtime/templates/skill-steps.md` CHAIN), pausing only for the
   gate's question (when works exist), CAPTURE's rare inline question, and the terminal
   halt.
-- **Accepted limitation -- no cross-session resume (the engine does not resume itself).**
-  This engine has no re-entry point of its own: an interrupted run (a crashed session,
-  not a normal CAPTURE question) is never resumed *by re-running the shortcut*. Instead,
-  continuing a partial work is the Work Initiation Gate's job -- on "continuation" it
-  reads the chosen work's `STATE.yml` and routes the user to the correct existing resume
-  door (`/aid-execute` for a halted shortcut work; the `phase`-matched skill for a
-  partial full-path work), rather than re-entering this engine's own INTAKE->DETAIL
-  states. This keeps the engine a one-shot producer (INTAKE through DETAIL only, task-008
-  scope); the per-state idempotency/re-entry machinery a self-resume would need is
-  deliberately not built speculatively (no FR/AC requires it) -- see the gate's
-  "Rejected alternative".
+- **Resuming a halted run (the engine is not re-entered).** Each state saves its own step
+  with the writer before it works (see the state-entry paragraph under State Machine), so a
+  session that stops mid-run has its place in the record. Continuing a work is the Work
+  Initiation Gate's job: on "continuation" it runs the skill the record names, at its saved
+  step (gate § 3b), and a halted Lite work resumes at APPROVAL-HALT, which asks the
+  approval while it is still open (and, once it was given, only tells the user to run `/aid-execute`). Re-running the shortcut never re-enters this engine's states.
 - **Forward-compatible with incremental family landings.** Family features 005-013
   land `shortcut-scaffolding/<family>.md` references incrementally. Every state below
   degrades gracefully to the generic minimal-capture / single-task default when a
@@ -90,19 +85,24 @@ to directly.
 
 | State | Detail | Worker | Advance |
 |---|---|---|---|
-| INTAKE | below | inline | CHAIN -> CAPTURE |
-| CAPTURE | below | `aid-architect` (Large) | CHAIN -> SPEC |
-| SPEC | below | `aid-architect` (Large) | CHAIN -> PLAN |
-| PLAN | below | `aid-architect` (Large) | CHAIN -> DETAIL |
-| DETAIL | below | `aid-architect` (Large) | CHAIN -> GATE |
-| GATE | below | `aid-reviewer` (Large) | CHAIN -> APPROVAL-HALT |
-| APPROVAL-HALT | below | inline | HALT |
+| INTAKE | below | inline | CHAIN → CAPTURE |
+| CAPTURE | below | `aid-architect` (Large) | CHAIN → SPEC |
+| SPEC | below | `aid-architect` (Large) | CHAIN → PLAN |
+| PLAN | below | `aid-architect` (Large) | CHAIN → DETAIL |
+| DETAIL | below | `aid-architect` (Large) | CHAIN → GATE |
+| GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work |
+| APPROVAL-HALT | below | inline | CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set must change; HALT when approved or dropped |
 
 Print the state-entry line on entry to each state (`[State: NAME] -- {one-line
-purpose}`), matching the convention every other AID skill uses. Route each completed
-state's `**Advance:**` per `.aid/runtime/templates/state-machine-chaining.md` -- every
-transition below is CHAIN (no PAUSE) except CAPTURE's own optional inline question,
-which is answered on the same turn and does not exit the invocation.
+purpose}`), matching the convention every other AID skill uses. On entry, before its work,
+each state saves its own step: `bash .aid/runtime/scripts/execute/writeback-state.sh --step
+--skill {name} --name <STATE>` (`.aid/runtime/templates/skill-steps.md`, the step procedure).
+INTAKE is the exception: the work does not exist until its Step 4 creates it, with
+`--step INTAKE`. Route each completed state's `**Advance:**` per
+`.aid/runtime/templates/skill-steps.md`. Every transition below is a CHAIN except APPROVAL-HALT,
+which asks the approval, reads the answer, and then either loops back or halts. A question that
+comes up in INTAKE or CAPTURE pauses that state where it stands, and the state goes on once it is answered (skill-steps.md,
+"Questions, at any point").
 
 **Agent dispatch (C-2).** Authoring states (CAPTURE/SPEC/PLAN/DETAIL) dispatch
 `aid-architect` (Large tier -- design work, mirroring how `aid-describe`'s former
@@ -126,7 +126,7 @@ load-bearing gap escalates to CAPTURE's single inline question (CAPTURE Step 3).
 
 | REQUIREMENTS.md section | Default source | Escalates only when |
 |---|---|---|
-| §1 Objective / §2 Problem Statement | `{description}` (verbatim or lightly restated) | `{description}` is empty (CAPTURE's bootstrapping question, Step 1) |
+| §1 Objective / §2 Problem Statement | `{description}` (verbatim or lightly restated) | `{description}` is empty (INTAKE Step 2's bootstrapping question) |
 | §3 Users & Stakeholders | Inferred (typically "the requesting developer/maintainer"; a KB module owner if named) | description names a distinct external user group not inferable from context |
 | §4 Scope | `{verb, artifact}` + `{description}` bound the scope by construction | description leaves the "in scope" boundary genuinely ambiguous (e.g. touches multiple unrelated artifacts) |
 | §5 Functional Requirements | `{description}` + family scaffolding guidance | **load-bearing** -- cannot be stated concretely without more information |
@@ -238,10 +238,20 @@ Read `.aid/runtime/templates/shortcut-catalog.yml`. Find the row whose `name` eq
 ### Step 2: Resolve the description
 
 If `{description}` is present and non-empty, keep it as-is. If it is empty (the user
-invoked the shortcut with no argument), leave it empty for now -- CAPTURE Step 1 asks
-the single bootstrapping question before any content is authored. INTAKE does not block
-on an empty description (allocating the work folder does not need real content yet;
-only a slug does -- Step 3).
+invoked the shortcut with no argument), ask the single bootstrapping question now, under
+`.aid/runtime/templates/question-protocol.md`, before anything is allocated:
+
+```
+Work -- question 1 of 1 -- importance: High
+What do you want to {verb}{ optional artifact suffix, e.g. " (api)" when artifact != ""}?
+Briefly describe it -- one or two sentences is enough.
+Why I ask: the work record keeps your own words as its request, and nothing can be planned without them.
+My recommendation: describe it in one or two sentences; a free answer is fine.
+Or answer in your own words, ask me to explain, or skip this question.
+```
+
+The answer becomes `{description}`. The work record's request is the user's own words and the
+writer refuses an empty one, so when the user does not answer, nothing is allocated.
 
 ### Step 3: Consult the Work Initiation Gate, then allocate work-NNN
 
@@ -256,13 +266,10 @@ bash .aid/runtime/scripts/works/enumerate-works.sh
 - **No works exist anywhere (empty output)** -> proceed with the allocation below, no
   prompt (the common first-work case).
 - **One or more works exist** -> ask the gate's single new-vs-continuation question,
-  showing the enumerated list (main tree + every git worktree). On **continuation**, the
-  gate routes to the chosen work's own resume door (`/aid-execute <work>` for a halted
-  shortcut work; the `phase`-matched skill for a partial full-path work) and **this engine
-  HALTS -- it allocates nothing and does not run** (no worktree create/enter happens here
-  either -- this engine never resumes itself, so it never reaches the gate's in-invocation
-  locate+enter case; the routed command's own run resolves the worktree, gate § 3b). On
-  **new work**, proceed with the allocation below.
+  showing the enumerated list (main tree + every git worktree). On **new work**, proceed with
+  the allocation below. On **continuation**, follow the gate's § 3b: enter the chosen work's
+  worktree and run the skill its record names, at its saved step. This engine allocates
+  nothing and this run ends there.
 
 **Resolve `<work-id>` (only on the NEW branch).** The new work is `work-{NNN+1}`, where
 `NNN` is the **maximum `work-NNN` numeric prefix across every record the enumeration above
@@ -273,14 +280,9 @@ its `SKILL.md § Task Routing`). **Never** re-scan a local `.aid/works/` glob fo
 number: the worktree about to be created is freshly branched off `master`, which tracks no
 `.aid/works/` at all, so a fresh local glob inside it would find nothing and re-allocate a
 colliding `work-001` (`work-initiation-gate.md § 3a`, "Next-work-NNN derivation").
-Derive a short kebab-case slug:
-
-- From `{description}` when it is non-empty (first few salient words, kebab-cased,
-  the same style as any other AID work-folder name).
-- Otherwise from `{verb}-{artifact}` (or just `{verb}` for a bare verb) -- e.g. an
-  argument-less `/aid-fix` allocates `work-NNN-fix` provisionally. The slug is a
-  cosmetic identifier only; it is never renamed after the fact even if CAPTURE's
-  bootstrapping question later reveals a more specific subject.
+Derive a short kebab-case slug from `{description}` (first few salient words, kebab-cased,
+the same style as any other AID work-folder name). The slug is a cosmetic identifier only;
+it is never renamed after the fact.
 
 **Create and enter the worktree, BEFORE authoring anything:**
 
@@ -291,107 +293,93 @@ bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>
 Idempotent (a no-op re-print if the worktree already exists, keyed on the `<work-id>`
 branch); prints the worktree's **absolute path** on success/no-op; exits 0 on
 success/no-op, non-zero with **empty stdout** on failure. **Create-failure guard
-(fail-closed):** on a non-zero exit **or** an empty path, surface the error and **STOP**
--- do **not** fall through to allocate the new work on the current (possibly `master`)
-tree. On success, **enter** the resolved path per
+(fail-closed):** on a non-zero exit **or** an empty path, surface the error and **STOP** --
+do **not** fall through to allocate the new work on the current (possibly `master`) tree. On
+success, **enter** the resolved path per
 `.aid/runtime/templates/worktree-lifecycle.md § Step 2` (host-native `EnterWorktree` tool
 where available, else treat the resolved path as the working directory for all subsequent
 file operations and surface it to the user -- FR4 fallback).
 
-**Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
-the `<work-id>` resolved above -- do **not** re-derive it from the fresh worktree's own,
-still-empty `.aid/works/`).
+### Step 4: Scaffold STATE.yml through the gate
 
-### Step 4: Scaffold STATE.yml (frontmatter keys only)
+Allocate through the gate's § 3a (its steps 3 to 5), inside the entered worktree:
 
-Copy `.aid/runtime/templates/work-state-template.yml` to
-`.aid/works/work-NNN-<slug>/STATE.yml` (the same template the full path uses -- the flattened
-engine needs no template of its own; it fills a different subset of the same file's
-keys over time). Then, in the same step, directly replace the frontmatter-zone
-top-level keys' placeholder values at the top of the file with the real opening values (direct
-field write -- the same convention `aid-describe` FIRST-RUN uses for its own opening
-frontmatter seed -- see `.agents/skills/aid-describe/references/state-first-run.md §
-1b-ii`; this is a scaffold-time direct edit, distinct from the runtime
-`writeback-state.sh --pipeline` calls CAPTURE/SPEC/PLAN/DETAIL make below for
-subsequent phase/state transitions -- both target the SAME frontmatter block, just at
-different times by different means). Resolve this shortcut's own minimum grade first:
+1. **The work's type.** When `{intent}` is bound, it is the `reading` of `{intent}`. Otherwise
+   read it from the user's words with `/aid-orchestrate`'s `references/check-intent.md`. The
+   catalog row's `default_type` names a task type, not a reading, and is not used here.
+2. **The folder.** Create `.aid/works/<work-id>-<slug>/`, reusing the `<work-id>` resolved in
+   Step 3 (do **not** re-derive it from the fresh worktree's own, still-empty `.aid/works/`).
+3. **The record.** Resolve this shortcut's own minimum grade, then make the work record in one
+   locked write:
 
 ```bash
 bash .aid/runtime/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
+bash .aid/runtime/scripts/execute/writeback-state.sh --create \
+  --work-dir .aid/works/<work-id>-<slug> \
+  --reading <type> --request '{description}' \
+  --skill {name} --step INTAKE --phase Definition \
+  --path lite --minimum-grade <resolved value>
 ```
 
-then write the frontmatter-zone keys (replacing every placeholder value shown in
-`work-state-template.yml`, all in the one pass):
+When `{intent}` gives a `depth`, add `--depth <that depth>` to the command, so the record holds
+it; with none recorded, full applies.
 
-```yaml
-pipeline:
-  path: lite
-  initiator: {name}
-started: "{today, YYYY-MM-DD}"
-minimum_grade: "{resolved value from the read-setting.sh call above}"
-user_approved: no
-lifecycle: Running
-phase: Describe
-active_skill: {name}
-updated: "{YYYY-MM-DDTHH:MM:SSZ}"
-pause_reason: --
-block_reason: --
-block_artifact: --
+`--create` fills the record from `work-state-template.yml` in that one write:
+`intent.reading`, `intent.request`, `active_skill` (`{name}`), `step` (`INTAKE`),
+`pipeline.initiator` (`{name}`), `phase` (`Definition`), `pipeline.path` (`lite`, always: this
+engine only ever produces the flattened, single-delivery, no-`deliveries/`-wrapper shape),
+`minimum_grade`, `lifecycle: Running`, `started` and `updated`. It refuses an existing
+`STATE.yml` (exit 8). A non-zero exit stops this state at once: tell the user, in one plain
+line, what failed, and that nothing more runs until it is fixed.
+
+Every other key keeps its template value. The template's STATE ADVANCEMENT ORDERING `#` comment
+block is static and never rewritten; the `interview` key is an `aid-describe`-only structure
+and stays at its scaffolded Pending defaults, unused, for shortcut-generated works;
+`delivery_lifecycle` / `tasks_lifecycle` / `delivery_gate` keep their template placeholder values
+until PLAN/DETAIL fill them for real; the flattened-only `delivery_state`, `gate_tier`,
+`gate_grade` and `gate_timestamp` keep their placeholders until PLAN/DETAIL (`delivery_state`)
+and the GATE state (`gate_tier`/`gate_grade`/`gate_timestamp`) fill them; and the DERIVED views
+that carry no key at all are, by construction, never written by this engine.
+
+### Step 5: Write the hand-over `reason` and `phases` (only when `{intent}` was passed)
+
+When `{intent}` is bound (Invocation Contract), Step 4 has already written its `request`,
+`reading` and `depth` on the record, and `--reroute` is the only later way to change them. This
+step sets `reason` and `phases` through the writer, in one write:
+
+```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --intent \
+  --reason '<reason of {intent}>' --phases <P1,P2,...>
 ```
 
-(`pipeline.path` is always `lite` for this engine -- it only ever produces the
-flattened, single-delivery, no-`deliveries/`-wrapper shape; `pipeline.initiator` is the
-invoking doorway's own skill name, e.g. `aid-create-api`.) The flattened-only
-`delivery_state`/`gate_tier`/`gate_grade`/`gate_timestamp` group keeps its template
-placeholder text until PLAN/DETAIL (`delivery_state`) and the GATE state
-(`gate_tier`/`gate_grade`/`gate_timestamp`) fill it for real.
+`--phases` is the comma-separated phase names of `{intent}` (Preparation, Definition,
+Specification, Planning, Building, CI); the writer stores them as a block list. A work whose
+`--create` call already carried `--reason` and `--phases` needs no second write. `changes` is
+never copied from `{intent}`: only `--reroute` appends to it. When `{intent}` is not bound (a
+typed `/aid-<skill>`), write nothing; the rest values stay.
 
-Leave every other key of the copied template untouched at this point (the template's
-own STATE ADVANCEMENT ORDERING `#` comment block is static and never rewritten; the
-`interview` key is an `aid-describe`-only structure and stays at its scaffolded
-Pending defaults, unused, for shortcut-generated works; `delivery_lifecycle` /
-`tasks_lifecycle` / `delivery_gate` keep their template placeholder values until
-PLAN/DETAIL fill them for real; the DERIVED views that carry no key at all are, by
-construction, never written by this engine).
+**Idempotency:** this state never re-runs within an invocation -- an invocation that reaches
+allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work (Design Notes);
+a CONTINUATION invocation never reaches this state, because the gate's § 3b runs instead. No
+idempotency check is needed.
 
-### Step 5: Write the hand-over `intent:` block (only when one was passed)
-
-When `{intent}` is bound (Invocation Contract), replace the copied template's `intent:`
-block in the new `STATE.yml` with it, in block style, keys as passed (`request`,
-`reading`, `reason`, `depth`, `phases` as one `- <phase>` line each, `changes`). This is
-a direct edit of the `[A]` key, made after Step 4's copy, which would otherwise restore the
-template's rest value. When `{intent}` is not bound (a typed `/aid-<skill>`), write
-nothing; the rest value stays.
-
-**Idempotency:** this state never re-runs within an invocation -- an invocation that
-reaches allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work
-(Design Notes); a CONTINUATION invocation halts at the gate before this state's
-allocation ever runs. No idempotency check is needed.
-
-**Advance:** CHAIN -> CAPTURE.
+**Advance:** CHAIN → CAPTURE.
 
 ---
 
 ## State: CAPTURE
 
-Collapses **Describe**. Authors the work-root `REQUIREMENTS.md` (all 10 numbered
+Collapses the Describe work. Authors the work-root `REQUIREMENTS.md` (all 10 numbered
 sections, terse but complete) with the minimum information the already-known
 `{verb, artifact}` binding leaves genuinely open. FR-1, FR-3, FR-7.
 
 ### Step 1: Bootstrapping question (only when `{description}` is empty)
 
-If `{description}` is empty (INTAKE Step 2), ask exactly one inline question before
-anything else:
-
-```
-What do you want to {verb}{ optional artifact suffix, e.g. " (api)" when artifact != ""}?
-Briefly describe it -- one or two sentences is enough.
-```
-
-Wait for the answer; that becomes `{description}` for every subsequent step. This is
-the engine's own minimal analogue of `aid-describe`'s D1 opener -- narrower, because
-`{verb, artifact}` already answers what `aid-describe`'s opener has to draw out from
-scratch.
+INTAKE Step 2 asks the bootstrapping question before the work record exists, because the
+record's request is the user's own answer. CAPTURE asks nothing here: `{description}` is
+non-empty by the time this state runs. (The question is the engine's own minimal analogue of
+`aid-describe`'s D1 opener -- narrower, because `{verb, artifact}` already answers what
+`aid-describe`'s opener has to draw out from scratch.)
 
 ### Step 2: Read context
 
@@ -470,13 +458,13 @@ single-writer convention as every other entry below):
   notes: '/{name} CAPTURE'
 ```
 
-**Advance:** CHAIN -> SPEC.
+**Advance:** CHAIN → SPEC.
 
 ---
 
 ## State: SPEC
 
-Collapses **Define + Specify**. Writes the single `### Feature 001` section into
+Collapses the Define and Specify work. Writes the single `### Feature 001` section into
 `REQUIREMENTS.md § 11` -- no separate spec document, no feature decomposition, no
 cross-reference state (single feature; `aid-define`'s CROSS-REFERENCE is a
 full-path-only concern). FR-3, FR-5, AC-4.
@@ -491,14 +479,15 @@ exists to remove.
 ### Step 1: Emit pipeline phase
 
 ```
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value {name}
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-(Silent state-write only -- no output, no gate; the same convention every other skill
-uses for per-state phase emission, e.g. `aid-detail`'s
-`.agents/skills/aid-detail/references/first-run.md § Step 0`.)
+(No output beyond the writes; the same convention every other skill uses for per-state phase
+emission, e.g. `aid-detail`'s `.agents/skills/aid-detail/references/first-run.md § Step 0`. A
+non-zero exit from any of these writes stops the run at once, as skill-steps.md "Fail-closed"
+says.)
 
 ### Step 2: Dispatch aid-architect to author the feature section
 
@@ -533,13 +522,13 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} SPEC'
 ```
 
-**Advance:** CHAIN -> PLAN.
+**Advance:** CHAIN → PLAN.
 
 ---
 
 ## State: PLAN
 
-Collapses **Plan**. Writes NO artifact. FR-3.
+Collapses the Plan work. Writes NO artifact. FR-3.
 
 A plan records a SEQUENCING DECISION -- which delivery goes first, what each depends
 on. This path has exactly one feature and one delivery, so there is no sequencing
@@ -562,13 +551,13 @@ Both derivations are implemented once, in
 dashboard readers mirror in-process and which
 `complexity-score.sh` / `compute-block-radius.sh` consume via `--plan-file`.
 
-The PHASE is still emitted -- Plan happened, it just decided nothing that needed
+The phase is still emitted -- the Plan work happened, it just decided nothing that needed
 recording.
 
 ### Step 1: Emit pipeline phase
 
 Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
-`--field Phase --value Plan`.
+`--field Phase --value Planning`.
 
 ### Step 2: none
 
@@ -581,7 +570,7 @@ Directly confirm the work-root `STATE.yml`'s top-level `delivery_state` key read
 write is an idempotent confirmation, not a new value); also directly edit the
 `delivery_lifecycle.updated` child key to `{now}`. Direct field edit, not
 `writeback-state.sh` -- this is the first real population of these keys beyond the
-INTAKE-time template copy's placeholders, the same "first write = direct edit"
+placeholders the INTAKE-time record carries, the same "first write = direct edit"
 convention `state-first-run.md § 1b-ii` uses for the opening frontmatter values; see the
 design note below.
 
@@ -589,7 +578,7 @@ design note below.
 > execution, `/aid-execute` mutates `delivery_state` / `delivery_lifecycle` /
 > `delivery_gate` / `tasks_lifecycle` through `writeback-state.sh`'s locking/disjoint-write
 > machinery (feature-001 teaches it the flat-layout target). That machinery exists to
-> arbitrate concurrent writers across parallel delivery/task branches during Execute.
+> arbitrate concurrent writers across parallel delivery/task branches during Building.
 > Nothing is concurrent during INTAKE-DETAIL -- this is a single engine run authoring
 > its own work, exactly like CAPTURE/SPEC directly writing REQUIREMENTS.md.
 > PLAN and DETAIL therefore populate `delivery_lifecycle` and
@@ -606,13 +595,13 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} PLAN'
 ```
 
-**Advance:** CHAIN -> DETAIL.
+**Advance:** CHAIN → DETAIL.
 
 ---
 
 ## State: DETAIL
 
-Collapses **Detail**. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
+Collapses the Detail work. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
 task (bold `**Type:**` shape; no per-task `STATE.yml`) and promotes each task into the
 work-root `STATE.yml`'s `tasks_lifecycle` mapping. The execution graph is NOT written:
 it is derived from the `**Depends on:**` fields these DETAILs carry. FR-4, FR-17.
@@ -620,7 +609,7 @@ it is derived from the `**Depends on:**` fields these DETAILs carry. FR-4, FR-17
 ### Step 1: Emit pipeline phase
 
 Same three `writeback-state.sh --pipeline` calls as SPEC/PLAN Step 1, with
-`--field Phase --value Detail`.
+`--field Phase --value Planning`.
 
 ### Step 2: Dispatch aid-architect to decide + write the task breakdown
 
@@ -670,7 +659,7 @@ script's output via `--plan-file`.
 ### Step 3: Promote task cells into `tasks_lifecycle` (direct edit)
 
 For each task just written, add a `task-NNN` entry to the `tasks_lifecycle` mapping
-(which the INTAKE-time template copy scaffolds empty, `{}`):
+(which the INTAKE-time record scaffolds empty, `{}`):
 
 ```
 tasks_lifecycle:
@@ -703,14 +692,14 @@ Append an entry to the `lifecycle_history` sequence:
   notes: '/{name} DETAIL'
 ```
 
-**Advance:** CHAIN -> GATE.
+**Advance:** CHAIN → GATE.
 
 <!-- ============================================================
      GATE / APPROVAL-HALT INSERTION POINT (task-011, feature-004)
      Append the "## State: GATE" and "## State: APPROVAL-HALT" sections HERE,
      immediately after this comment and before the "Worked example" section below.
      Do not insert new states between INTAKE and DETAIL above -- DETAIL's own
-     "**Advance:** CHAIN -> GATE." line already names the target.
+     "**Advance:** CHAIN → GATE." line already names the target.
      ============================================================ -->
 
 ## State: GATE
@@ -720,9 +709,9 @@ CAPTURE/SPEC/PLAN/DETAIL just produced, looping REVIEW -> GRADE -> FIX within
 each pass until every document clears the resolved `minimum_grade`. FR-11.
 
 No pipeline `Phase` change here: GATE is still validating the collapsed
-Detail-phase output before Execute (which never runs in this engine), and
-`writeback-state.sh`'s `Phase` enum (`Describe | Define | Specify | Plan |
-Detail | Execute`) has no `Gate` value -- `Phase` stays `Detail`
+Planning-phase output before Building (which never runs in this engine), and
+`writeback-state.sh`'s `Phase` enum (`Definition | Specification | Planning |
+Building | CI`) has no `Gate` value -- `Phase` stays `Planning`
 (its last write, DETAIL Step 1).
 
 ### Step 1: Resolve the floor
@@ -845,8 +834,10 @@ content:
    `Pending`/`Recurred` row from the pass's ledger. The architect addresses
    each row's cited `Doc`/`Line` in place; it does **not** touch the
    ledger's `Status` column -- that is the next REVIEW cycle's job
-   (`reviewer-ledger-schema.md § Authoring rules for the fixer`). Loop back
-   to Step 1 (REVIEW) for a fresh, clean-context reviewer pass.
+   (`reviewer-ledger-schema.md § Authoring rules for the fixer`). Then the
+   pass is reviewed again by a fresh, clean-context reviewer (Step 1): the
+   `CHAIN → GATE` case of this state's **Advance** line, which resumes at the pass
+   not yet cleared.
 
    **Circuit breaker.** If the pass's grade has not improved across 3
    consecutive cycles, STOP (mirrors
@@ -860,7 +851,8 @@ content:
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-gate-{pass}.md"
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
-   and surface it to the user instead of looping further.
+   and surface it to the user instead of looping further; the state ends on the `HALT`
+   case of its **Advance** line.
 
 ### Step 5: Record the cleared grades
 
@@ -892,7 +884,7 @@ rm -f .aid/.temp/review-pending/shortcut-{work}-defn.md .aid/.temp/review-pendin
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 
-**Advance:** CHAIN -> APPROVAL-HALT.
+**Advance:** CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work.
 
 ---
 
@@ -923,16 +915,30 @@ work-{NNN}-{slug}  (/{name})
 
 GATE: Pass 1 (definition docs) {pass-1-grade}  ·  Pass 2 (task set) {pass-2-grade}  ·  floor {floor}
 
-Nothing has executed. Review the documents above, then run
-/aid-execute {name-or-work-id} when ready -- that is a separate,
-user-initiated step this engine never triggers on its own.
+Nothing has executed. Review the documents above.
 ```
 
-### Step 2: Halt the pipeline
+### Step 2: Record the approval, pause, and ask
+
+On a resume, read the step detail first. If it says the approval is already recorded as `Q<n>`, do
+not run `--ask` again: ask that open question first (Step 3). If it says the approval was given,
+tell the user to run `/aid-execute {name-or-work-id}` and end the run (**Advance** below, the
+approve case).
+
+Otherwise record the approval before it is shown (`.aid/runtime/templates/question-protocol.md`; an
+approval cannot be skipped, so it stays open until the user approves or declines). The call prints
+the question's id, `Q<n>`:
 
 ```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Approve the flattened work so /aid-execute can start?" --suggested "Yes, once you have reviewed the documents above"
+```
+
+Then keep the same step saved with the open question in its detail, and pause the pipeline:
+
+```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill {name} --name APPROVAL-HALT --detail 'done: GATE cleared and approval recorded as Q<n>; waiting for Q<n>'
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Paused-Awaiting-Input
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "GATE cleared; awaiting user approval before /aid-execute"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Waiting for the user: Q<n>"
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -942,7 +948,29 @@ entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
 is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
 `Executing`).
 
-**Advance:** HALT. No branch is created; no `tasks_lifecycle` entry
+Then ask the approval, in the question protocol's form.
+
+### Step 3: Read the answer
+
+The answer is read in this conversation, or by the session that resumes later and asks `Q<n>` first.
+Record it with `--answer --id Q<n> --state Answered`, with the user's words as `--value`, and set the
+lifecycle back to `Running` (`--pipeline --field Lifecycle --value Running`, which also clears the
+pause reason). Then branch on the answer:
+
+- **Approved.** Save the detail so a resume does not ask twice:
+  `--step --skill {name} --name APPROVAL-HALT --detail 'approved as Q<n>; next: /aid-execute {name-or-work-id}'`.
+  The lifecycle stays `Running` so that `/aid-execute` can take the work up (it stops on any other
+  value). Tell the user to run `/aid-execute {name-or-work-id}`; this engine never starts it.
+- **Declined, with a change to the requirements** (the user wants the work reshaped): CAPTURE runs
+  again with the change the user asked for, and the later states follow, so GATE clears both passes
+  again before a new approval is asked. CAPTURE saves its own step on entry.
+- **Declined, with a change to the task set only**: the same, from DETAIL.
+- **Declined, the user drops the work**: set `--pipeline --field Lifecycle --value Canceled`
+  (the writer clears the saved skill and step); nothing has executed, so nothing else is undone.
+
+**Advance:** CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set
+must change; HALT when the work is approved (the run ends; `/aid-execute` is a separate,
+user-initiated run) or the user drops it. No branch is created; no `tasks_lifecycle` entry
 advances past `Pending` (the halt-proof fixture in feature-004's testing
 strategy asserts both).
 
@@ -953,7 +981,7 @@ strategy asserts both).
 - Invocation binds `{name}=aid-create-api`, `{verb}=create`, `{artifact}=api`,
   `{description}="a /orders read endpoint with pagination"`.
 - INTAKE: catalog row resolves `default_type=IMPLEMENT`, `group=G4`; allocates
-  `work-014-orders-read-api`; scaffolds `STATE.yml` (frontmatter-zone keys only).
+  `work-014-orders-read-api`; creates `STATE.yml` in one gate write (`writeback-state.sh --create`).
 - CAPTURE: description is non-empty (no bootstrapping question); no load-bearing gap
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
@@ -962,13 +990,13 @@ strategy asserts both).
 - DETAIL: proposes `task-001 IMPLEMENT` (endpoint + handler + validation); writes
   `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1);
   promotes `| task-001 | Pending | -- | -- | -- |`.
-- Halts pre-Execute (GATE/APPROVAL-HALT, task-011) -- FR-3/FR-4/FR-6/FR-10.
+- Halts before Building (GATE/APPROVAL-HALT, task-011) -- FR-3/FR-4/FR-6/FR-10.
 
 ## Unit-testable cases
 
 | Input | Expected engine output |
 |---|---|
-| `aid-fix` (no description) | CAPTURE Step 1 asks one bootstrapping question; `work-NNN-fix` slug is provisional until answered |
+| `aid-fix` (no description) | INTAKE Step 2 asks one bootstrapping question before allocation; the `work-NNN-fix` slug is derived from the answer |
 | `aid-fix` with a full bug description | Zero inline questions; `REQUIREMENTS.md` fully terse-filled; a single IMPLEMENT task (no `fix.md` landed yet) or the `fix.md` IMPLEMENT -> TEST pair (once task-013 lands) |
 | `aid-create-data-model` with a full description | the feature section activates `##### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
 | Catalog row missing for the invoking `{name}` | INTAKE STOPs with the build-defect error; no work folder allocated |

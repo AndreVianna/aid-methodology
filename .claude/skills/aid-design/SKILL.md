@@ -30,9 +30,16 @@ It fills the DESIGN lite gap (DESIGN is a task type, but there was no lite entry
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> HANDOFF? ->
 DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 
+Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
+this skill keeps only its own step table.
+
 ---
 
 ## State: INTAKE
+
+**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
+on resume; it never routes. Which skill and step a work continues at come from its work record
+(`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What do you
    want designed, and what will it need to support?") and wait.
@@ -42,17 +49,18 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 3. **Classify complexity (model + effort):** simple (one component/flow) -> `aid-architect`
    at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /
    high**. Verifier tier >= producer tier.
-4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+4. **Consult the Work Initiation Gate, then allocate the work.** First run the gate
+   (`.aid/runtime/templates/work-initiation-gate.md`):
    `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-design`, `lifecycle: Running`, `active_skill: aid-design`; `phase` not driven).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation. On **continuation**,
+   follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names,
+   at its saved step; allocate nothing. On **new work**, follow the gate's `§ 3a`: create and
+   enter the worktree (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit
+   or empty path, else enter the resolved path), **then** allocate (`writeback-state.sh --create`
+   with `--path lite`, `--skill aid-design` and this skill's entry step; `phase` not driven).
+   The gate writes the record; this skill adds nothing by hand.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN → DESIGN when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -64,7 +72,7 @@ control/interaction, component or interface shape, and **accessibility notes**
 (`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's
 kept record).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → VERIFY.
 
 ---
 
@@ -76,18 +84,21 @@ kept record).
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
    buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
+   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → PRESENT when the verify is clean; CHAIN → DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT  (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --
+Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-**Advance:** HANDOFF (optional) then DONE.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design --step PRESENT --covers 'the design DESIGN.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the design DESIGN.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN revises `DESIGN.md` with exactly what was asked, and VERIFY and this step run again.
+
+**Advance:** CHAIN → HANDOFF when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 
@@ -96,13 +107,13 @@ the user decides whether/when to build it.
 Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 
-**Advance:** DONE.
+**Advance:** CHAIN → DONE.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep
+Set the lifecycle to `Completed` through the writer. Keep
 `DESIGN.md` in the work folder as the kept design record.
 
 ---
@@ -116,4 +127,4 @@ Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. 
 - **Resolves nothing** -- presents the design; the build is a separate `/aid-create*` step.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
 - **Throwaway validation is `/aid-prototype`, not this.**
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

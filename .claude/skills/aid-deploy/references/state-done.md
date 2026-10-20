@@ -4,7 +4,7 @@ Release complete. Emit the normalized Completed lifecycle state.
 
 ### Step 10: Emit Completed lifecycle state
 
-Emit the normalized Completed lifecycle state (silent state-write only — no output, no gate):
+Emit the normalized Completed lifecycle state (silent state-write only — no output; a failed write stops the run):
 
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
@@ -12,7 +12,7 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active 
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-This is the **M6 normalized-Completed emit**: it writes the authoritative `lifecycle: Completed`
+This is the **M6 normalized-Completed emit**: it writes the authoritative Completed value of the `lifecycle`
 frontmatter scalar so the dashboard reader can derive Completed from the normalized
 value (not from legacy fallback signals). It mirrors the same silent-state-write pattern that
 M4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,

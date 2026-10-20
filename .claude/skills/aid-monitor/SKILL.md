@@ -91,10 +91,14 @@ Step 0):
 
 ## State Detection
 
-Determine the current entry state from context:
-- No prior run context → **OBSERVE** state (pull telemetry; see `references/state-observe.md`)
-- Active findings present → **CLASSIFY** state (classify and analyze; see `references/state-classify.md`)
-- All findings classified → **ROUTE** state (propose and act; see `references/state-route.md`)
+Per `.aid/runtime/templates/skill-steps.md` § State Detection, this detection shapes the entry step of a
+fresh start and validates a saved step on resume; it never routes. The work record decides where a work
+continues.
+
+Determine the entry step of a fresh start from context:
+- No prior run context → entry step **OBSERVE** (pull telemetry; see `references/state-observe.md`)
+- Active findings present → entry step **CLASSIFY** (classify and analyze; see `references/state-classify.md`)
+- All findings classified → entry step **ROUTE** (propose and act; see `references/state-route.md`)
 - All findings resolved → **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -213,16 +217,13 @@ them more informative by adding mid-wait check-ins + structured progress.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |
-| CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |
-| ROUTE | `references/state-route.md` | `inline` (main conversation) | → DONE |
-| DONE | _(inline — see Re-run below)_ | `inline` | → halt |
+| OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |
+| CLASSIFY | `references/state-classify.md` | `aid-researcher` | CHAIN → ROUTE |
+| ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |
+| DONE | _(inline — see Re-run below)_ | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 ## Re-run
 

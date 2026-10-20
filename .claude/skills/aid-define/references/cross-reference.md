@@ -81,7 +81,8 @@ For each finding, add a Q&A entry to the `qa` sequence in STATE.yml:
 - **Suggested:** {answer if inferrable from KB/code, or "—"}
 ```
 
-Then present them one at a time using State 2 (Q&A mode) logic.
+Then present them one at a time using State 2 (Q&A mode) logic. These questions are asked by the main
+conversation only, through the question protocol; a worker records them and lists them in its report.
 
 After each answer:
 1. Update REQUIREMENTS.md
@@ -93,4 +94,4 @@ After all questions answered:
 
 1. Record the cross-reference event (aspirational Review History tracking -- no dedicated
    key in `work-state-template.yml`; see `SKILL.md`'s accuracy note)
-2. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`
+2. Print: `✅ Cross-reference complete.`

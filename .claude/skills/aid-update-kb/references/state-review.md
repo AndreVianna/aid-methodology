@@ -240,8 +240,8 @@ Update `<STATE_FILE>`:
 
 Print: `[REVIEW] Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited. Returning to APPLY.`
 
-**Advance:** CHAIN -> APPLY (continue inline; `state-apply.md § Step 1` picks
-the doc back up -- it is still in `Confirmed Scope`).
+This outcome ends the step with CHAIN to APPLY: `state-apply.md § Step 1` picks the doc back up -- it is
+still in `Confirmed Scope`.
 
 ### 4(b) Out-of-scope edit found on disk (Step 0b's first bullet) -- user escalation, never auto-decided (HL-7)
 
@@ -259,11 +259,11 @@ entry to `.aid/knowledge/STATE.md ## Q&A (Pending)`:
   Confirmed Scope. This may be an accidental out-of-scope edit, or a
   genuinely needed addition the instruction implies but SCOPE/CONFIRM did
   not originally capture.
-- **Suggested:** If <doc> should be in scope, re-run /aid-update-kb to
-  re-enter CONFIRM/SCOPE with the expanded need. If it should NOT be in
-  scope, simply re-run /aid-update-kb without expanding it -- the next
-  APPLY pass reverts the out-of-scope edit automatically
-  (`state-apply.md § Step 0`), no manual `git restore` required.
+- **Suggested:** If <doc> should be in scope, answer CONFIRM with `[2] Adjust`
+  to re-enter SCOPE with the expanded need. If it should NOT be in scope,
+  answer CONFIRM with `[1] Confirm` without expanding it -- the next APPLY pass
+  reverts the out-of-scope edit automatically (`state-apply.md § Step 0`), no
+  manual `git restore` required.
 ```
 
 Update the run-state file:
@@ -278,11 +278,11 @@ Print:
 ```
 [REVIEW] Scope-diff guard: HARD FAIL -- <doc> is outside Confirmed Scope.
 Escalated as Q{N} in .aid/knowledge/STATE.md -- grade-chasing may not
-expand scope (HL-7). Run /aid-update-kb again to resolve at CONFIRM.
+expand scope (HL-7). CONFIRM asks it next.
 ```
 
-**Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on the next
-invocation. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
+This outcome ends the step with CHAIN to CONFIRM, in the same run: the user answers in the conversation, and
+nothing is waited for outside it. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
 `[1]/[2]/[3]` prompt; Q{N} is the open item the user resolves through it --
 the two answers are NOT symmetric, and only one of them is a plain `[1]`:
 
@@ -328,7 +328,7 @@ Update `<STATE_FILE>`:
 
 Print: `[State: REVIEW] complete. Advancing to APPROVAL.`
 
-**Advance:** CHAIN -> APPROVAL (continue inline).
+This outcome ends the step with CHAIN to APPROVAL.
 
 ### 4(d) NOT READY (grade / teach-back / act-back / `[TRACE-1]` findings) -- self-contained FIX loop, bounded to Confirmed Scope (HL-7)
 
@@ -357,8 +357,8 @@ Update `<STATE_FILE>`:
 
 Print: `[State: REVIEW] below gate -- entering FIX loop.`
 
-**Advance:** CHAIN -> FIX (Step 5, below -- inline in this same document),
-then re-enter REVIEW (Step 0) on return.
+Next, inside this step: Step 5 (FIX), below, which returns to Step 0. This outcome is not an ending: the fix
+pass and the review run again until the exit rule is met or an outcome above ends the step.
 
 ---
 
@@ -411,4 +411,4 @@ to fix), return to Step 0 of this state -- re-run the scope-diff guard
 
 Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
 
-**Advance:** CHAIN -> REVIEW (Step 0, continue inline).
+**Advance:** CHAIN → APPLY when an APPLY is incomplete; CHAIN → CONFIRM when an out-of-scope edit is on disk; CHAIN → APPROVAL when the review is READY.

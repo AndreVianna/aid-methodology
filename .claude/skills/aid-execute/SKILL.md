@@ -126,31 +126,28 @@ Print the state-entry line and "you are here" map:
 ```
 [State: EXECUTE] — Running the executor agent to produce task deliverables.
 aid-execute  ▸ you are here
-  [● EXECUTE ] → [ REVIEW ] → [ FIX ] → [ DONE ]
-                 ↑__________________|
+  [● EXECUTE ] → [ REVIEW ] → [ DONE ]
 ```
 
 **REVIEW:**
 ```
 [State: REVIEW] — Grading task output against acceptance criteria with a clean-context reviewer.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [● REVIEW ] → [ FIX ] → [ DONE ]
-                 ↑___________________|
+  [✓ EXECUTE ] → [● REVIEW ] → [ DONE ]
 ```
 
 **FIX:**
 ```
-[State: FIX] — Applying CODE-issue fixes and returning to REVIEW.
+[State: FIX] — Resuming a task saved at FIX: applying its CODE-issue fixes, then REVIEW.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [● FIX ] → [ DONE ]
-                 ↑____________________|
+  [✓ EXECUTE ] → [● FIX ] → [ REVIEW ] → [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] — Grade meets minimum; task complete.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [● DONE ]
+  [✓ EXECUTE ] → [✓ REVIEW ] → [● DONE ]
 ```
 
 ## State Detection
@@ -164,8 +161,16 @@ or, on the flat path, the work-root `STATE.yml`'s `tasks_lifecycle` entry for `t
 |-----------|-------|
 | File absent or `State: _none yet_` | **EXECUTE** (Step 1) |
 | `State: In Progress`, no issues pending | **EXECUTE** (Step 1 — resume) |
-| `State: In Review`, issues listed | **FIX** (Step 3) |
+| `State: In Review` | **REVIEW** (it fixes what it finds in place; FIX runs only when the saved step is FIX) |
 | `State: Done` | **RE-RUN** (see Re-run below) |
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks above to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
 
 ## Inputs
 
@@ -211,17 +216,17 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
-| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
-| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
-| DONE | _(inline — task complete)_ | `inline` | → halt |
-| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
+| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | CHAIN → REVIEW |
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE; HALT when a `[CRITICAL]` persists after the fix-on-spot |
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW (entered only when resuming a task saved at FIX; a new run fixes inside REVIEW) |
+| DONE | _(inline — task complete)_ | `inline` | HALT |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit.
 
 ## Dispatch Protocol
@@ -315,7 +320,7 @@ create branch aid/{work}-delivery-001
   → /aid-execute work-001 task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
   → /aid-execute work-001 task-005 [TEST]          ← waits for task-003 + task-004
   → /aid-execute work-001 task-006 [DOCUMENT]      ← ADR → review → ✅
-  → merge to main
+  → delivery gate (review of the whole delivery)
 ```
 
 All tasks in a delivery accumulate on the same branch.

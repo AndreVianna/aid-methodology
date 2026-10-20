@@ -156,6 +156,21 @@ to disambiguate and no glob to widen.
 
 The feature is a section of `.aid/works/{work}/REQUIREMENTS.md § 11`; its per-feature process state is its entry in the work `STATE.yml`'s `features:` sequence.
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks below to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+**Saving the step.** Every step saves itself on entry, before any work, with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-specify --name <STEP> --detail '<where>'`,
+where `<STEP>` is one of INITIALIZE, CONTINUE, SPIKE, BLOCKED, REVIEW or DONE. The detail holds what the step has
+settled: the work, the feature and the section being specified. When the work record does not already name
+`aid-specify` (the user typed `/aid-specify`; no skill handed the work on), the first step first records the typed
+start: `--handoff --to aid-specify --step INITIALIZE --why 'user ran the command' --returns no`, with no `--phase`.
+
 ```
 State 1: No features[] entry, or state Pending, in work STATE.yml -> INITIALIZE
 State 2: Feature State: In Discussion                         → CONTINUE
@@ -213,18 +228,15 @@ aid-specify ({feature})  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| INITIALIZE | `references/state-initialize.md` | `aid-architect` | → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `aid-architect` | → REVIEW |
-| SPIKE | `references/state-spike.md` | `inline` | → CONTINUE |
-| BLOCKED | `references/state-blocked.md` | `inline` | → CONTINUE |
-| REVIEW | `references/state-review.md` | `aid-reviewer` | → DONE |
-| DONE | `references/state-done.md` | `inline` | → halt |
+| INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |
+| CONTINUE | `references/state-continue.md` | `aid-architect` | CHAIN → REVIEW when every section is Complete; CHAIN → SPIKE when a spike is needed; CHAIN → BLOCKED when a loopback blocks it |
+| SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |
+| BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
+| DONE | `references/state-done.md` | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 ---
 

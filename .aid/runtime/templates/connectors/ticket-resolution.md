@@ -133,12 +133,10 @@ Parse rules:
 - **`create`/`update` always preview before writing.** Show the user the **exact**
   payload that will be sent, then gate on a single in-invocation `AskUserQuestion`
   confirm **before** the MCP write call (REQUIREMENTS.md NFR-2). No skill ever writes to a tracker without this explicit confirm.
-- **This is a CHAIN advance, never `PAUSE-FOR-USER-DECISION`.** Per
-  [`../state-machine-chaining.md`](../state-machine-chaining.md) § "The four advance
-  types", a transition whose user interaction is "fully `AskUserQuestion`-based" (asked
-  and answered inline, same turn) is CHAIN — the skill never exits mid-run to collect
-  this answer. The confirm question is asked and answered within the same invocation
-  that goes on to perform the write.
+- **This is an ASK advance.** The user decides at this gate, so the step advances with
+  `ASK` under [`../skill-steps.md`](../skill-steps.md) § "The advance words": the confirm
+  question is asked and answered inline, in the same invocation, and the write follows
+  the answer. The skill never writes before that answer.
 - **`create`'s confirm gate folds in the level pick.** When the level is neither
   explicit (`--level`) nor inferable from the description, the pick **is** part of
   this same gate — an `epic|story|task` choice presented alongside the payload

@@ -19,15 +19,24 @@ verify, present, printed-suggestion handoff). The three `test-*` kind-siblings
 - **Read-only** on the source; never fixes (findings -> `/aid-fix`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
-State machine: **INTAKE -> RUN -> VERIFY (loop) -> PRESENT [human] -> HANDOFF? -> DONE**.
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> RUN -> VERIFY (loop) -> PRESENT [human] ->
+HANDOFF? -> DONE**.
 Print the `[State: NAME] -- {purpose}` entry line on each state.
+Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+---
+
+## State Detection
+
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection). A fresh start enters INTAKE. A resume continues at the step the work record saves, which the gate's § 3b routes to; the saved step's artifact is checked against disk, and a mismatch goes to recovery, never to a silent re-route.
 
 ---
 
 ## State: INTAKE
 
-1. **Require a target.** Empty argument -> ask one bootstrapping question ("What should I
-   test or verify?") and wait.
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+
+1. **Check the target.** Note whether the argument is empty. Do not ask here.
 2. **Determine the verification kind** from the request (or the kind a sibling bound):
    functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),
    **performance** (workload/threshold/environment), **data-quality** (schema/freshness/
@@ -35,22 +44,46 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
    threshold). The framework is inferred from the KB (`test-landscape.md`).
 3. **Pick the path:** **Fast** -- a clear target + kind ("run the security scan on the auth
    module", "benchmark the /orders endpoint vs the p99 SLO") -> run now. **Guided** -- vague
-   -> scope target / kind / threshold first.
+   -> scope target / kind / threshold first, in INTAKE-ASK.
 4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /
    medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.
-5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven). When
-   `/aid-orchestrate` passed an `intent:` block, write it into that STATE.yml as the
-   engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-test` writes none.
+5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** RUN.
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
+
+---
+
+## State: INTAKE-ASK  (only when a question must be put)
+
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question ("What should I test or verify?"). The
+   answer is the target; the path and complexity are then set from it.
+2. **Guided path** -> scope target / kind / threshold.
+3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK → [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate the work through the gate: the Work Initiation Gate
+(`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-test`), its saved step (`RUN`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the target. The gate's `§ 3a` step 2 creates and enters the worktree (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." This skill drives no `phase`. When `/aid-orchestrate`
+  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-test` writes none.
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+Every `--step` call in this skill passes in its `--detail` the verification kind, including one a sibling bound, so a
+  resume finds it in the record.
+
+**Advance:** CHAIN → [State: RUN].
 
 ---
 
@@ -66,7 +99,7 @@ workload/environment noted; data-quality: per-check pass/fail with thresholds; f
 pass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence
 (the run output + a `file:line` where applicable).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -79,35 +112,37 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
    over/under-statement, and the run actually exercised the stated scope. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
+   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: RUN] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
 ## State: PRESENT  (hard stop -- human)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the consolidated findings, severity-ranked,
+The hard stop follows the ASK step of `skill-steps.md`. Present the consolidated findings, severity-ranked,
 each with its evidence; state pass/fail against any threshold; and a printed suggestion:
 "N issues found -- run `/aid-fix` to address them." Assert no resolution.
 
-**Advance:** HANDOFF (optional) then DONE.
+**Advance:** ASK → [State: HANDOFF].
 
 ---
 
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests
-for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.
+for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked. Ask which one,
+if any, the user takes; a picked one is named in one plain line.
 
-**Advance:** DONE.
+**Advance:** ASK → [State: DONE].
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Leave the
-findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record.
+
+**Advance:** HALT.
 
 ---
 
@@ -120,4 +155,4 @@ findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record
 - **Clean context**; the controlling agent runs the tool itself (read-only, via Bash),
   and **consolidation + verification are `aid-reviewer` sub-agent dispatches** (clean
   context) -- the findings are never graded inline.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

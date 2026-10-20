@@ -4,9 +4,11 @@ DONE confirms discovery is complete and user-approved; it is selected when the K
 
 Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reopen it for review?"_
 
-- User confirms → set state to REVIEW
+The question is blocking: this step pauses on it until the user answers.
+
+- User confirms → end this step at once with the first case of the advance line below (REVIEW); nothing below this list runs
 - User has specific concern → record as context for reviewer
-- User says no → `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
+- User says no → carry on with the rest of this step, which ends with the second case of the advance line below. Print `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Definition phase.`
 
 ### Ledger cleanup
 
@@ -69,4 +71,4 @@ Neither gate is replaced by this auto-trigger; the trigger composes them.
 
 Print: `[State: DONE] complete.`
 
-**Advance:** **HALT**.
+**Advance:** **CHAIN** → [State: REVIEW] when the user confirms the reopen; **HALT** when the user keeps the discovery as it is.

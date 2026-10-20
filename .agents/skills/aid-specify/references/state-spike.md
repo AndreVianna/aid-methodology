@@ -4,7 +4,7 @@
 
 Feature State is `Spike Needed`; a knowledge gap must be resolved before specification can continue.
 
-1. Update STATE.md: `**State:** Spike Needed` with What/Why/Scope/Blocked Sections
+1. Record in the work `STATE.yml` that this feature's `state` is `Spike Needed`, with What/Why/Scope/Blocked Sections
 2. Print spike details and exit
 
 On return: read spike results, record in the feature's `#### Technical Specification`, resume loop.
@@ -16,4 +16,6 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **PAUSE-FOR-USER-ACTION** → spike work happens outside /aid-specify (separate investigation task). Re-run `/aid-specify` after recording spike results in the feature's section to continue to [State: CONTINUE].
+The spike work happens outside /aid-specify, as a separate investigation task; the step stays saved until its results are recorded in the feature's section.
+
+**Advance:** **WAIT** → [State: CONTINUE].

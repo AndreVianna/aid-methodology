@@ -475,7 +475,7 @@ its f007 `current` verdict are UNCHANGED by this step. The default for every unr
 divergence is to FLAG it for the human, never to silently change the design. Authority
 stays design->code until the human explicitly reconciles.
 
-#### Sub-step 2a -- Present the divergence set (PAUSE-FOR-USER-DECISION)
+#### Sub-step 2a -- Present the divergence set (ASK)
 
 Present the classified divergence set from CL-Step 1, grouped by class, and pause for the
 user to supply a per-item choice (NFR3 transparency -- no silent KB edits). State that the
@@ -648,7 +648,10 @@ Proposed KB refresh scope:
 - `[1]` -> carry the confirmed doc list to Step 4.
 - `[2]` -> the user adds or drops docs; recompute the confirmed list.
 - `[3]` -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
-  cancelled` and PAUSE (stalled exit below).
+  cancelled` and HALT (stalled exit below).
+
+The scope question is asked inside this step: `[1]` or `[2]` continues it at Step 4 once answered;
+`[3]` writes the stall fields and HALTs (the stalled exit below).
 
 ## Step 4 -- Synthesize an `Impact: Required` Q&A entry + invoke `/aid-discover` (AC3)
 
@@ -796,7 +799,7 @@ bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --add .aid/knowledge/
 ```
 
-**Advance:** CHAIN -> SUMMARY-DELTA.
+Next, inside this step: the stage has passed; this step's one **Advance:** line is at the end of this file.
 
 ### Step 6d -- Closure broken: escalate via Q&A + stall (never commit a hole)
 
@@ -856,7 +859,7 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
-**Advance:** CHAIN -> SUMMARY-DELTA.
+Next, inside this step: the stage was skipped; this step's one **Advance:** line is at the end of this file.
 
 ## Exit -- stalled (scope cancelled, re-approval declined, or closure broken)
 
@@ -873,13 +876,12 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 
-Print the resume banner, then PAUSE:
+Print the resume banner, then end the run:
 
 ```
 [!] /aid-housekeep paused at KB-DELTA -- <reason>.
    Fix: <actionable instruction>.
-   Resume: re-run /aid-housekeep -- it will pick up at KB-DELTA (not job 1).
+   Resume: the next /aid-housekeep run picks up at KB-DELTA (not job 1).
 ```
 
-**Advance:** PAUSE-FOR-USER-ACTION (re-run resumes at KB-DELTA via `SKILL.md S
-State Detection` row 3).
+**Advance:** CHAIN → SUMMARY-DELTA when the stage did not stall; HALT when it stalled.

@@ -224,6 +224,9 @@ Delete this folder?
 
 Populate `CONFIRMED_EXPLICIT[]` with any folders the user says "yes" to.
 
+The checklist and every explicit-confirm prompt are asked inside this step; it continues at Step 4
+once each is answered.
+
 ---
 
 ## Step 4 — Cancel-all / empty-selection no-op check
@@ -362,6 +365,8 @@ Semantics:
 No worktree or branch is ever removed without appearing in a confirmed
 `AskUserQuestion` response first (NFR1, mirroring the folder-deletion
 invariant in Step 5).
+
+Every teardown offer is asked inside this step; it continues at Step 5 once each is answered.
 
 ---
 

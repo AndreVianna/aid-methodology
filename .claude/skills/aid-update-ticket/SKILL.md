@@ -41,6 +41,12 @@ tool-limit stop.
 locally. The only write it ever performs is the single host-MCP mutation call at `WRITE`, and only
 after an explicit confirm. An attached file is read here for its preview; it is never copied.
 
+**Its questions.** This skill can ask up to four questions, one at a time and inline: the connector
+pick on the ladder (RESOLVE-CONNECTOR), a missing attachment file (LOAD-CONTEXT), the attachment-limit
+choice (COMPOSE or WRITE) and the confirmation (CONFIRM). It has no shell, so it cannot run the work
+record's writer and records none of them (`question-protocol.md` § Where each record lives): each is
+asked through the question protocol, answered inline, and the step goes on with the answer.
+
 ---
 
 ## Pre-flight
@@ -74,6 +80,8 @@ Hold three values across the remaining states: **PART** (the validated enum valu
 raw ref token, colon-split by RESOLVE-CONNECTOR below), and **CONTENT** (the untouched free-text
 remainder).
 
+**Advance:** **CHAIN** → RESOLVE-CONNECTOR.
+
 ### State 2 — RESOLVE-CONNECTOR
 
 Apply `ticket-resolution.md` § "Connector-Resolution Ladder" to **REF**, exactly as it shares
@@ -83,6 +91,8 @@ the connector comes from the ladder (explicit override → exactly-one-silent �
 host tool's own MCP → the `"no issue-tracker connector found."` notify + exit). This skill does not
 restate the four-step ladder or the `api`/`ssh`/`cli` fall-through note — see the shared reference
 for the full procedure.
+
+**Advance:** **CHAIN** → LOAD-CONTEXT.
 
 ### State 3 — LOAD-CONTEXT
 
@@ -103,6 +113,10 @@ reaches COMPOSE/CONFIRM/WRITE for that attempt.
 `status`, the host MCP explicitly reporting that transition-enumeration is unsupported (a
 capability gap, not an error) is a *different*, expected outcome — see Status Validation below,
 which is the only place that distinction matters.
+
+A missing file is asked inside this step, and the step goes on once the user answers.
+
+**Advance:** **CHAIN** → COMPOSE.
 
 ### State 4 — COMPOSE
 
@@ -163,12 +177,15 @@ The stop, for every case:
    option the user did not pick, and never retries a blocked file. A chosen option (a) is a fresh
    `comment` mutation and goes through COMPOSE and CONFIRM as one.
 
+**Advance:** **CHAIN** → CONFIRM; **HALT** when the status has no matching transition, or the user ends the run at the attachment stop.
+
 ### State 5 — CONFIRM
 
 A single in-invocation confirm, asked and answered inline before WRITE — the skill never exits
 mid-run to collect this answer (`ticket-resolution.md` § "Write Preview + Confirm Gate";
-[`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md) § "The four advance
-types" — a transition whose user interaction is fully `AskUserQuestion`-based is CHAIN). Show the
+[`skill-steps.md`](../../aid/templates/skill-steps.md) § "The step procedure" part 3 — the user decides
+here, so the question pauses the step where it stands, and the step then branches on the answer; this skill
+runs none of that part's writer calls, since it has no shell). Show the
 **exact** change for whichever PART is being mutated:
 
 - **`description`** → the before/after pair from COMPOSE.
@@ -188,9 +205,11 @@ Close with the shared reference's confirm-gate button row, reused **verbatim**
 
 - **`[1] File it`** → proceed to WRITE.
 - **`[2] Edit`** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run
-  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline, still CHAIN.
+  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline.
   For `attachment`, a revised CONTENT re-runs LOAD-CONTEXT's preview as well.
 - **`[3] Cancel`** → exit. No MCP call is made.
+
+**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels.
 
 ### State 6 — WRITE
 
@@ -208,6 +227,8 @@ write. For `attachment`, a refusal or a partial attach is a tool limit instead: 
 Attachment Tool Limit stop above, which names the files that did not go in and does not retry
 them. This is distinct from — and, for `status`, can only be reached *after* — the Status
 Validation branch above, which can already have stopped the run before CONFIRM was ever asked.
+
+**Advance:** **HALT**, after the one mutation call (or its failure) is reported.
 
 ---
 

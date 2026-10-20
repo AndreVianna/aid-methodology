@@ -336,8 +336,7 @@ Write the file as:
 
 Print: `[5b] Exclusion review: {N} candidate terms to confirm (not-concept / descriptive / junk) + {M} glossary fixes recommended. Continue to confirm them.`
 
-**Advance:** the orchestrator chains to Step 5c (`references/state-generate.md`), a
-PAUSE-FOR-USER-DECISION, which presents the candidates and persists the confirmed ones.
+**Next, inside GENERATE:** its Step 5c (`references/state-generate.md`), which asks the user to confirm the candidates and persists the confirmed ones.
 
 ## Reference documents for aid-architect in Step 5b
 

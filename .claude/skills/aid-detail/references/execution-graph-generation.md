@@ -84,4 +84,4 @@ Because the lane value comes from the wave *number*, two `wave 2:` lines are ind
 from one holding the same tasks — so the script emits one line per wave, and no sub-lane judgment
 is required.
 
-**Advance:** **CHAIN** → continue with the parent state's flow.
+Continue with the step that loaded this reference.

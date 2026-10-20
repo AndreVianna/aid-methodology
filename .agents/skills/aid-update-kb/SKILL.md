@@ -48,37 +48,30 @@ explicit human `[1] Confirm` at CONFIRM (the root fix -- scope is vetoed
 BEFORE any edit exists), and cannot proceed to DONE without a second explicit
 human `[1] Approved` at APPROVAL. No auto-apply path exists at either gate.
 
-**State machine -- each `/aid-update-kb` invocation drives the state machine
-until it hits a natural pause point per
-`.aid/runtime/templates/state-machine-chaining.md`.
-Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the
-run. Two human gates by design: CONFIRM guards scope/understanding BEFORE
-any edit; APPROVAL guards the specific edits before commit -- but a gate
-answered `[1]` inline is itself a CHAIN, not a pause (below).**
+**State machine -- the steps move by `.aid/runtime/templates/skill-steps.md`, which
+sets the advance words and what each one does. Two human gates by design: CONFIRM
+guards scope/understanding BEFORE any edit; APPROVAL guards the specific edits
+before commit.**
 
 > ```
 > aid-update-kb  > Pre-flight ISOLATE runs first, every invocation
 >   [ ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
 >                                 ^ human gate                             ^ human gate
->                                 [1] chains inline; [2]/[3] pause/halt
+>                                 [1] chains to APPLY / DONE; [2] re-scopes; [3] halts at CONFIRM
 > ```
 
-CONFIRM and APPROVAL are the two human gates -- **inline decision points,
-not out-of-chat pauses.** Per `state-machine-chaining.md`, a pause is only
-legitimate when the user has to do work outside the chat; answering an
-inline question is not that. Answering `[1]` (CONFIRM's `Confirm` / APPROVAL's
-`Approved`) is a CHAIN: the run continues straight through to APPLY / DONE
-within the same invocation (`state-confirm.md`'s and `state-approval.md`'s
-own `[1]` Advance lines say so explicitly, and the Dispatch table below
-agrees). Only the re-plan/cancel branches actually pause or halt: CONFIRM
-`[2] Adjust` loops back to SCOPE (or ANALYZE if the understanding itself
-changes) and PAUSES (a genuine re-plan needs a fresh clean-context SCOPE
-dispatch, which is real out-of-chat-equivalent work, not just an answer);
-CONFIRM `[3] Cancel` HALTs. APPROVAL `[2] Additional consideration`
-re-scopes back to CONFIRM/SCOPE (never blindly back to APPLY) and PAUSES for
-the same reason. REVIEW's FIX loop (REVIEW -> fix edits -> REVIEW) repeats
-until `grade >= minimum_grade AND teach-back PASS AND act-back PASS`, bounded
-to Confirmed Scope only (HL-7).
+CONFIRM and APPROVAL are the two human gates. Each one asks the user in the
+conversation, and the question pauses the step where it stands until the user
+answers; neither can be skipped. Answering `[1]` (CONFIRM's `Confirm` / APPROVAL's
+`Approved`) continues straight through to APPLY / DONE within the same invocation
+(`state-confirm.md`'s and `state-approval.md`'s own Advance lines say so
+explicitly, and the Dispatch table below agrees). CONFIRM `[2] Adjust` loops back to
+SCOPE (or ANALYZE if the understanding itself changes) inside the same invocation, as a
+fresh clean-context SCOPE dispatch; the user's answer is taken in the chat. CONFIRM
+`[3] Cancel` HALTs. APPROVAL `[2] Additional consideration` re-scopes back to
+SCOPE (never blindly back to APPLY) in the same way. REVIEW's FIX loop (REVIEW's
+own fix pass -> REVIEW again, inside the one step) repeats until `grade >= minimum_grade AND teach-back PASS AND act-back PASS`,
+bounded to Confirmed Scope only (HL-7).
 
 ---
 
@@ -269,7 +262,7 @@ conversation half). This worktree's branch is what ANALYZE's Step 0 records
 as `**Branch:**` in the run-state file -- DONE never creates a separate
 branch, it only ever commits on this one.
 
-**Advance:** CHAIN -> ANALYZE (State Detection, below, resolves the state to
+**Advance:** CHAIN → ANALYZE (State Detection, below, resolves the state to
 resume inside the entered worktree).
 
 ---
@@ -312,6 +305,10 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the
+entry step of a fresh start, validates a saved step on resume, and never routes; the
+run-state file's `**State:**` field is the saved step.
+
 Resolve `<STATE_FILE>` to the project-level update-kb run-state file under
 `.aid/.temp/` (inside the worktree Pre-flight entered). The file is
 transient (gitignored, never committed/pushed) and is named
@@ -329,9 +326,12 @@ fi
     STATE_FILE=".aid/.temp/UPDATEKB_STATE_$(date +%Y%m%d%H%M).md"
 ```
 
+This table describes how a fresh start picks its entry step (row 1); on a resume, the saved
+`**State:**` in the run-state file decides, and the table only validates it (rows 2 to 8).
+
 **Resume detection:**
 
-| # | Disk condition (read run-state file) | Resume target |
+| # | Disk condition (read run-state file) | Entry step |
 |---|--------------------------------------|---------------|
 | 1 | No run-state file (fresh run, just isolated by Pre-flight) | ANALYZE |
 | 2 | `**State:** ANALYZE` present | ANALYZE |
@@ -367,7 +367,7 @@ reformatted between states):
 | `**Understanding:**` | ANALYZE | plain restatement of what the instruction asks |
 | `**Impact Findings:**` | ANALYZE | per-location table: KB location, current statement, Relation, Confidence |
 | `**Contradictions & open questions:**` | ANALYZE | HL-3/HL-4 items CONFIRM must ask, never silently resolved |
-| `**Escalation:**` | ANALYZE (ungroundable-concept PAUSE only) | the term + Q&A pointer when ANALYZE cannot ground a concept |
+| `**Escalation:**` | ANALYZE (ungroundable-concept ASK only) | the term + Q&A pointer when ANALYZE cannot ground a concept |
 | `**Scope Plan:**` | SCOPE (replaces the legacy `Change Plan`) | the minimal (doc, change-type, description, Traces-to, Kind) table |
 | `**Not-Changing:**` | SCOPE | docs considered but excluded, with reasons (HL-5) |
 | `**Confirm Questions:**` | SCOPE | the questions CONFIRM presents |
@@ -443,13 +443,13 @@ aid-update-kb  > you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or PAUSE-FOR-USER-ACTION if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
-| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
-| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` CHAIN -> APPLY; `[2]` PAUSE-FOR-USER-ACTION -> SCOPE/ANALYZE; `[3]` HALT |
-| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
-| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL |
-| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> CHAIN -> DONE; `[2] Additional consideration` -> PAUSE-FOR-USER-ACTION -> re-scope (CONFIRM/SCOPE) |
-| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN → SCOPE (a concept that cannot be grounded is asked in the step first -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN → CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | CHAIN → APPLY when the user confirms; CHAIN → SCOPE when the user adjusts; CHAIN → ANALYZE when the adjustment corrects the understanding; HALT when the user cancels |
+| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN → REVIEW |
+| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 3 endings (`state-review.md § Step 4`): incomplete APPLY -> CHAIN → APPLY; out-of-scope disk edit -> CHAIN → CONFIRM; READY -> CHAIN → APPROVAL. Below the gate (scope-diff already PASS), the fix pass runs inside the step and the review runs again |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE when the user approves; CHAIN → SCOPE when the user adds a consideration; CHAIN → ANALYZE when the consideration challenges the understanding |
+| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state); a closure shortfall goes back instead: CHAIN → APPLY (fixable within Confirmed Scope) or CHAIN → CONFIRM (needs an out-of-scope addition) |
 
 > **FIX loop.** Once the scope-diff guard has already PASSED, only grade /
 > teach-back / act-back / `[TRACE-1]` findings route to the FIX cycle
@@ -458,7 +458,7 @@ aid-update-kb  > you are here
 > (HL-7). Scope-diff outcomes never reach this loop: an incomplete APPLY (a
 > Confirmed-Scope doc not yet edited) chains straight back to APPLY, and an
 > out-of-scope disk edit escalates to the user
-> (PAUSE-FOR-USER-ACTION -> CONFIRM) instead of expanding scope -- see
+> (CHAIN → CONFIRM) instead of expanding scope -- see
 > `references/state-review.md § Step 4` for the full 4-outcome routing.
 > The minimum grade resolves via:
 > `bash .aid/runtime/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
@@ -505,17 +505,10 @@ aid-update-kb  > you are here
 > falsely current.
 
 On state entry, print `[State: NAME]` + the "you are here" banner from State
-Detection above. When a state completes, route by its `**Advance:**` type per
-`.aid/runtime/templates/state-machine-chaining.md`:
+Detection above. When a state completes, its `**Advance:**` line decides the next move, as
+`.aid/runtime/templates/skill-steps.md` § The advance words sets it. A HALT with an open call returns to the caller.
 
-- **CHAIN** -> begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** -> print the pause reason + resume command and exit.
-- **HALT** -> print the closing summary and exit.
-
-> **State-machine chaining:** Each `/aid-update-kb` invocation drives the state
-> machine until it hits a natural pause point per
-> `.aid/runtime/templates/state-machine-chaining.md`. Mechanical states
-> auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.
+> **Step rules:** The steps move as `.aid/runtime/templates/skill-steps.md` § The advance words sets.
 
 ---
 
@@ -525,7 +518,7 @@ Owner-confirmed limits every state above cites. `/aid-update-kb` never ships a
 change that violates one of these.
 
 - **HL-1 No apply without confirmation.** No KB edit before the user
-  confirms scope + understanding at CONFIRM. Enforced by: CONFIRM is a PAUSE
+  confirms scope + understanding at CONFIRM. Enforced by: CONFIRM is an ASK
   gate; APPLY is unreachable without `**Confirmed:** yes` in run-state.
 - **HL-2 Limit to the scope of the instruction.** The Scope Plan is a subset
   of what the instruction explicitly requests plus *necessary closure* (e.g.

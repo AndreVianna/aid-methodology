@@ -38,46 +38,69 @@ line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the delivery-pipeline record?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-cicd`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/cicd.md`, carrying its `## Current direction` into the destination and
    deleting it once realized.
-4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
+3. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
    operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern
    rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the
    C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
    resolution with the user before writing**. Never resolve silently.
-5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to
-   `/aid-create-cicd` and write nothing.
-6. **Ask whether the user also wants production config this run.** Touching a workflow file is
+4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and
+   write nothing: tell the user to run `/aid-create-cicd`, and end the run.
+5. **Ask whether the user also wants production config this run.** Touching a workflow file is
    **opt-in per run and never the default**; the KB record is what this skill revises unless
    the user asks in this run.
+6. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+8. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-cicd`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 
-**Advance:** UPDATE.
+Every `--step` call after the allocation passes in its `--detail` the change, the destination, whether a workflow file is wanted, the derived
+outputs the user named and the complexity tier, so a resume finds them in the record.
+
+**Advance:** CHAIN → [State: UPDATE]; HALT when the destination is absent.
 
 ---
 
 ## State: UPDATE
 
+**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
+named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
+
 1. **Apply only the change the user named in this run**, to the owned C8 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -86,17 +109,36 @@ line on each state.
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was
+Present the revision, say whether a workflow file was
 touched and that it was asked for, name every output touched, and assert that a consumed seed
 is gone.
 
-**Advance:** DONE.
+Then ask the approval question: keep this revision, change it, or decline it. It is an approval under
+`.aid/runtime/templates/question-protocol.md`: record it with `--ask` (category `Approval`, `covers` the revision), set
+`lifecycle` to `Paused-Awaiting-Input` and the pause reason through the writer, and ask. The question pauses this step
+where it stands and cannot be skipped. Once it is answered, record the answer with `--answer` and set `lifecycle` back to
+`Running` through the writer (`skill-steps.md` part 3). Then:
+
+- **Approve:** the revision stays as written.
+- **Change:** the changes the user asks for go into the step detail, and UPDATE applies them; the verify runs again.
+- **Decline:** copy every file saved under `rollback/` back to its place (a consumed seed included), so the Knowledge
+  Base is as it was before this run and nothing lands.
+
+**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes.
+
+---
+
+## State: DONE
+
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
+
+**Advance:** HALT.
 
 ---
 
@@ -149,4 +191,4 @@ so a flag the user did not point at survives this run untouched.
 - **No seed required; a present seed is consumed.**
 - **Never stands up its destination** -- that path belongs to `/aid-create-cicd`.
 - **Clean context**; verification always an `aid-reviewer` sub-agent dispatch.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the lifecycle through the writer (`--pipeline --field Lifecycle`) at every transition.

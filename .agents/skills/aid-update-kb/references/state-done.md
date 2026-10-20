@@ -44,7 +44,7 @@ Scope, nothing new to confirm:
 
    ```
    [DONE] Closure re-verification failed -- {N} undefined term(s) found.
-   Run /aid-update-kb again; APPLY must define or cross-reference: <terms>.
+   Returning to APPLY now; it must define or cross-reference: <terms>.
    ```
 
 3. Update the run-state file:
@@ -54,7 +54,7 @@ Scope, nothing new to confirm:
    **Closure Failure:** <terms> undefined after APPLY (fixable within Confirmed Scope)
    ```
 
-4. HALT (the user re-enters via `/aid-update-kb`; APPLY will address the gap,
+4. The step ends with CHAIN to APPLY, in the same run (APPLY will address the gap,
    still bounded to `Confirmed Scope` per `state-apply.md § Step 1`).
 
 ### 1b. Needs an out-of-scope addition (HL-7)
@@ -76,7 +76,7 @@ an edit outside the confirmed contract. Escalate to the user instead:
      (e.g. a new domain-glossary.md entry that was never a confirmed Scope
      Plan item).
    - **Suggested:** Confirm whether <terms>/<doc> should be added to scope.
-     If yes, re-run /aid-update-kb to re-enter CONFIRM/SCOPE with the
+     If yes, answer CONFIRM with `[2] Adjust` to re-enter SCOPE with the
      expanded need.
    ```
 
@@ -92,12 +92,11 @@ an edit outside the confirmed contract. Escalate to the user instead:
    ```
    [DONE] Closure re-verification found undefined term(s) needing an
    out-of-scope addition -- escalated as Q{N} in .aid/knowledge/STATE.md.
-   Closure-chasing may not expand scope (HL-7). Run /aid-update-kb again to
-   resolve at CONFIRM.
+   Closure-chasing may not expand scope (HL-7). CONFIRM asks it next.
    ```
 
-4. Do NOT commit. **Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on
-   the next invocation (do not HALT-and-auto-resume at APPLY as in 1a).
+4. Do NOT commit. The step ends with CHAIN to CONFIRM, in the same run: the user answers in the
+   conversation (not a return to APPLY as in 1a).
 
 If closure passes (no new undefined terms), proceed.
 
@@ -235,4 +234,4 @@ To publish the update:
   # -- the human merges only after CI is green)
 ```
 
-**Advance:** HALT.
+**Advance:** CHAIN → APPLY when the closure gap is fixable within Confirmed Scope (1a); CHAIN → CONFIRM when it needs an out-of-scope addition (1b); HALT after the commit.

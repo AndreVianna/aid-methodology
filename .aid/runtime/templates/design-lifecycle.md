@@ -183,16 +183,18 @@ its nearest confusable neighbour as a negative route — the pattern `/aid-desig
 where the complete pair set is verified whole, is REQUIREMENTS FR-11 **CC-9**, referred to
 here and not restated.
 
-**States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE.
+**States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE. The steps, advance words and
+record writes follow `.aid/runtime/templates/skill-steps.md`; this contract restates none of them.
 
 **Allocation.** Consult the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`) by running
-`bash .aid/runtime/scripts/works/enumerate-works.sh`; on new work, run
-`bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>`, stop on a
-non-zero exit or an empty path, otherwise enter the resolved path; then allocate
-`pipeline.path: lite`, `initiator: aid-<verb>-<artifact>`, `lifecycle: Running`,
-`active_skill: <name>`. **`phase` is not driven** by any of the 36 — that is what keeps
-NFR-3 and AC-10 true without touching the enum.
+`bash .aid/runtime/scripts/works/enumerate-works.sh`. On new work, follow `work-initiation-gate.md`
+§ 3a: it creates and enters the worktree, then its writer creates the work record with
+`--path lite`, the calling skill as the initiator, and the first step the work continues at (the steps before the work exists save nothing). **`phase` is
+not driven** by any of the 36 — that is what keeps NFR-3 and AC-10 true without touching
+the enum. The gate creates `STATE.yml`; "`STATE.yml` was created by the gate; skip any
+instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand; set other
+keys through the writer." The starter adds only its own keys, through the writer.
 
 **Dispatch:** `aid-architect`, tiered by complexity
 (`.aid/runtime/templates/agent-dispatch-tiering.md`); verifier tier is always at least the

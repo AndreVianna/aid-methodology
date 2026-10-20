@@ -16,14 +16,14 @@ Interview for {work} is complete and approved.
   - Ask: _"What would you like to add or change?"_
   - If the user wants to change **requirements-level content** (Objective, Problem Statement,
     Functional Requirements, etc.) — print: `For requirements-level changes, run
-    /aid-describe {work} to reopen the requirements interview.` and exit.
+    /aid-describe {work} to reopen the requirements interview.` then HALT.
   - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update
     `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section
     files if the change impacts a feature, and update KB documents if the new info is KB-relevant.
-  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`
+  - Print: `✅ Updated.` and show the menu again.
 
 - **[2] Re-run cross-reference:**
-  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass
+  - Go on to CROSS-REFERENCE for a fresh validation pass
 
 - **[3] Done:**
   - Delete review ledgers:
@@ -34,4 +34,12 @@ Interview for {work} is complete and approved.
     ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
-**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.
+The menu is a blocking question, asked through the question protocol: this step pauses on it until the user
+answers. A requirements-level change hands off to `/aid-describe` in one plain line.
+
+**Before the run ends (the HALT case below), record why it stops** through the writer, so the work is never left
+`Running` with nothing running: `--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then
+`--pipeline --field "Pause Reason" --value '<why>'`. The reason is 'Requirements change requested -- run /aid-describe {work}'
+after a requirements-level change in [1], and 'Features defined and cross-referenced -- run /aid-specify {work}' after [3].
+
+**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option.

@@ -38,11 +38,23 @@ line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-create-cicd`. `phase` is not driven.
+   `--skill aid-create-cicd` given to the gate's `--create`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/cicd.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**
    (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
@@ -56,7 +68,7 @@ line on each state.
    unless the user asks in this run.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CREATE.
+**Advance:** CHAIN → [State: CREATE] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -94,32 +106,37 @@ to `/aid-update-cicd`. The seed is deleted only when everything its `## Destinat
 was written; otherwise it stays in place carrying just the unrealized parts, which
 `/aid-update-cicd` then consumes.
 
-**Advance:** VERIFY.
+**A refusal pauses the work.** The step ends with the HALT case of the advance line, after these writes through the writer: bring the detail up to date with `--step` (done: nothing written; refused under the condition above that applied), set the lifecycle to `Paused-Awaiting-Input`, and set the pause reason to what the user must do next (produce the seed with `/aid-design-cicd`, resolve the open questions or pass the override token, or leave the generated destination to its build script). The step stays saved; a resumed run sets the lifecycle back to `Running` through the writer and checks the three conditions again from the top.
+
+**Advance:** CHAIN → [State: VERIFY] when every refusal check passes; HALT when a refusal check stops the step.
 
 ---
 
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a
+Present the realized document and assert: whether a
 workflow file was emitted and that it was asked for; on the creation path both registration
 surfaces were written; and anything routed to `/aid-update-cicd` is named.
 
-**Advance:** DONE.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-create-cicd --step PRESENT --covers 'the CI/CD document'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the CI/CD document'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, CREATE applies exactly what was asked, in place, to what this run wrote; the three refusal conditions belong to the first pass, since this run consumed the seed. VERIFY and this step then run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → CREATE when the user declines or asks for changes.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 
 ---
 
@@ -187,4 +204,4 @@ range **byte-identical**. Never regenerate and never restructure the document. A
 - **Full verify**, per `design-lifecycle.md`.
 - **Seed consumed on the realizing path**, and left in place for the parts that routed.
 - **Clean context**; verification always an `aid-reviewer` sub-agent dispatch.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

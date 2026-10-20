@@ -52,8 +52,16 @@ the real helper. Never create a new worktree — creation belongs to the work-st
 
 State detection reads the files on disk, every run; nothing remembered from an earlier run counts as state.
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks below to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
 - No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
-- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **REVIEW**
+- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **CONFIRM** (the reopen question, then **REVIEW** on a yes or **DONE** on a no)
 - Tasks complete and grade ≥ minimum → **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -83,13 +91,14 @@ aid-detail  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
-| REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
-| DONE | — | `inline` | `→ halt` |
+| FIRST-RUN | `references/first-run.md` | `aid-architect` | CHAIN → REVIEW |
+| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW when the user reopens; CHAIN → DONE when the user keeps the list |
+| REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |
+| DONE | — | `inline` | HALT |
 
 Load the `Detail` file for the detected state and execute it.
 
-On state completion, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+On state completion, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit (DONE prints the task summary).

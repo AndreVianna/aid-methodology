@@ -27,17 +27,16 @@ described **once**, in
 never restates any of that — each state below points to the relevant section instead.
 
 **Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
-an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
+an optional, on-demand utility skill outside the pipeline phases: no phase gate references
 it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
-**State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —
-`PARSE-ARGS → RESOLVE-CONNECTOR → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — until
-it hits a natural pause point per
-[`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
-CONFIRM's `AskUserQuestion` exchange is fully inline, so it is a **CHAIN** advance, never
-`PAUSE-FOR-USER-DECISION` — a single invocation runs every state through to `RETURN-REF` (or an
-earlier stop/cancel) without exiting mid-run to collect an answer.
+**Step advance:** each `/aid-create-ticket` invocation runs the state machine —
+`PARSE-ARGS → RESOLVE-CONNECTOR → [PICK-CONNECTOR] → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
+advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). The connector pick
+(`PICK-CONNECTOR`, only when two or more match) and CONFIRM are blocking questions: the user decides
+there, through one `AskUserQuestion` exchange answered inline, so a single invocation still runs
+every state through to `RETURN-REF` (or an earlier stop or cancel) without exiting mid-run.
 
 **Read-only until CONFIRM.** `RESOLVE-CONNECTOR`, `COMPOSE`, and `LEVEL-RESOLVE` only ever read —
 the tracker's issue-type list is queried (a non-destructive read), never written. Nothing about
@@ -64,6 +63,8 @@ Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to th
 ---
 
 ## States
+
+This skill creates no work, so it saves no steps through the work-record writer (`skill-steps.md`, "Before a work exists"). Its questions are asked through the question protocol and recorded nowhere: it writes no local file and has no shell to run the writer.
 
 ### State 1 — PARSE-ARGS
 
@@ -98,7 +99,7 @@ Per-flag handling:
   Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to the /orders list"
   ```
 
-**Advance:** → State: RESOLVE-CONNECTOR (continue inline).
+**Advance:** **CHAIN** → [State: RESOLVE-CONNECTOR] when the arguments parse; **HALT** when the usage line was printed.
 
 ### State 2 — RESOLVE-CONNECTOR
 
@@ -109,20 +110,35 @@ Resolve which connector to use via the shared
 silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent) or an
 `AskUserQuestion` among two-or-more → the host tool's own issue-tracker MCP → the verbatim
 `no issue-tracker connector found.` notify-and-exit. This state does not re-describe the ladder
-further than that; `$CONNECTOR` now holds whichever stem it resolves to, for every later state.
+further than that. When a connector resolves silently, `$CONNECTOR` holds its stem for every later
+state; when two or more match, State 2a settles it.
 
-**Cross-tracker parent check (fold-in of Parent Resolution's same-connector rule).** If
-`PARSE-ARGS` captured a `--parent <stem>:<ref>` whose `<stem>` names a **different** catalogued
-connector than `$CONNECTOR` just resolved to, this is a cross-tracker link the skill cannot make
-(ticket-resolution.md § "Parent Resolution (create only)"): surface **"parent must be on the same tracker as the
-new ticket"** and stop here — before `COMPOSE`, before `CONFIRM` — `--parent`'s stem is never
-treated as a `--connector` override, and `$CONNECTOR` is never silently switched to match it. A
-bare `--parent <external-id>` (no stem), or one whose stem matches `$CONNECTOR`, has no ambiguity
-and proceeds.
+A connector resolves silently as the explicit stem, the sole match or the host MCP.
 
-**Advance:** → State: COMPOSE (continue inline).
+**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit.
+
+### State 2a — PICK-CONNECTOR
+
+Reached only when two or more catalogued `issue-tracker` connectors match. One `AskUserQuestion`
+lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
+`$CONNECTOR` for every later state. This is a connector choice, never a write confirm, and nothing
+is sent to any tracker here.
+
+The pick is a blocking question: this state pauses on it until the user answers.
+
+**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline).
 
 ### State 3 — COMPOSE
+
+**Cross-tracker parent check (fold-in of Parent Resolution's same-connector rule).** Run this first,
+once `$CONNECTOR` is settled (resolved silently or picked in State 2a). If `PARSE-ARGS` captured a
+`--parent <stem>:<ref>` whose `<stem>` names a **different** catalogued connector than `$CONNECTOR`,
+this is a cross-tracker link the skill cannot make
+(ticket-resolution.md § "Parent Resolution (create only)"): surface **"parent must be on the same tracker as the
+new ticket"** and stop here — before the payload is composed and before `CONFIRM` — `--parent`'s
+stem is never treated as a `--connector` override, and `$CONNECTOR` is never silently switched to
+match it. A bare `--parent <external-id>` (no stem), or one whose stem matches `$CONNECTOR`, has no
+ambiguity and proceeds.
 
 Build the new-ticket payload from `<description>`. Fix two attributes by precedence, **defaulting
 neither silently**:
@@ -131,14 +147,14 @@ neither silently**:
   description-inferred level is only a *candidate* here — it is surfaced for explicit confirmation
   at `CONFIRM`, never silently applied.
 - **Parent:** `--parent <ref>` › description-inferred ("under PROJ-123") › **none**. Resolved on
-  `$CONNECTOR` (the same-tracker rule was already enforced in `RESOLVE-CONNECTOR` above — see
+  `$CONNECTOR` (the same-tracker rule was already enforced at the start of `COMPOSE` above — see
   [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Parent
   Resolution (create only)" for the full rationale).
 
 Assemble the draft payload: a title/summary derived from `<description>`, the level (a tier, a
 quoted literal, or unset), and the parent ref (or none). Nothing is sent anywhere yet.
 
-**Advance:** → State: LEVEL-RESOLVE (continue inline).
+**Advance:** **CHAIN** → [State: LEVEL-RESOLVE] (continue inline); **HALT** on the cross-tracker stop.
 
 ### State 4 — LEVEL-RESOLVE
 
@@ -164,15 +180,14 @@ only reads -- no new silent behaviour and no new write. Per
   connector-descriptor schema change, out of scope here); this runtime synonym match plus the
   literal passthrough are the whole mechanism.
 
-**Advance:** → State: CONFIRM (continue inline).
+**Advance:** **CHAIN** → [State: CONFIRM] (continue inline).
 
 ### State 5 — CONFIRM
 
 A single in-run `AskUserQuestion` exchange (one tool call, never two prompts across turns) per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Write Preview +
-Confirm Gate" — a **CHAIN** advance, never `PAUSE-FOR-USER-DECISION`
-(`state-machine-chaining.md` — fully `AskUserQuestion`-based exchanges are asked and answered
-inline). It carries up to two parts, both resolved within this same call:
+Confirm Gate" — a blocking question (`skill-steps.md`): the user decides here, and the exchange is
+asked and answered inline. It carries up to two parts, both resolved within this same call:
 
 - **Level pick** (only when the level is still unset after `COMPOSE` — no explicit `--level` and
   none inferable from the description): an `epic | story | task` choice, presented against the
@@ -192,9 +207,10 @@ inline). It carries up to two parts, both resolved within this same call:
 mandatory before `[1] File it` can be chosen — there is no path from `COMPOSE`/`LEVEL-RESOLVE`
 straight to `FILE` that skips this gate.
 
-**Advance:** `[1] File it` → State: FILE (continue inline). `[2] Edit` → State: COMPOSE (continue
-inline, with the user's requested change folded into the payload). `[3] Cancel` → halt; nothing is
-sent, nothing is filed.
+The confirm is a blocking question: this state pauses on it until the user answers.
+
+**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,
+with the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed).
 
 ### State 6 — FILE
 
@@ -211,7 +227,7 @@ Reached **only** after an explicit `[1] File it` confirm. Writes via the host MC
 A failed / not-found / unauthorized / unavailable host-MCP call surfaces the tracker's error
 **verbatim** and exits **non-destructively** — never a partial write.
 
-**Advance:** → State: RETURN-REF (continue inline).
+**Advance:** **CHAIN** → [State: RETURN-REF] (continue inline).
 
 ### State 7 — RETURN-REF
 
@@ -219,7 +235,7 @@ Return the new **`<connector-stem>:<external-id>`** — only now, after `FILE` s
 parent link could not be applied (`FILE`'s best-effort note), restate that alongside the new ref so
 the outcome is never silent.
 
-**Advance:** → halt.
+**Advance:** **HALT**.
 
 ---
 

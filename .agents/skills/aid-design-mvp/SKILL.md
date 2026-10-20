@@ -30,6 +30,8 @@ this skill writes no KB document at all, only within `.aid/design/`.
   `## MVP` section only; this one only develops it. Neither resolves anything on its own --
   the user decides when a seed is ready to realize.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
+- **Step rules:** the advance words, the step procedure and the work record are
+  `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**. Print
 the `[State: NAME] -- {purpose}` entry line on each state.
@@ -40,9 +42,7 @@ the `[State: NAME] -- {purpose}` entry line on each state.
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
    belongs in the first shippable slice, and what should defer?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work
-   Initiation Gate, then `initiator: aid-design-mvp`, `active_skill: aid-design-mvp`,
-   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.
+2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-design-mvp`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure
    the folder exists and seed its `README.md` on first use, before writing anything.
 4. **Read the existing seed, if one is present.** `.aid/design/mvp.md` -- re-invocation
@@ -50,7 +50,11 @@ the `[State: NAME] -- {purpose}` entry line on each state.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** DESIGN.
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
+saved step on resume, and never routes; the work record alone decides where a work continues.
+
+**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -66,7 +70,7 @@ direction` rewritten to the latest proposal, `## Options considered` accumulatin
 than being replaced. **Never writes `.aid/knowledge/`; never writes production code** --
 the `design` invariant, binding without exception.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -74,25 +78,28 @@ the `design` invariant, binding without exception.
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
-IMPEDIMENT + `lifecycle: Blocked`.
+IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user decides whether to iterate further (re-invoke this skill) or realize it now
 (`/aid-create-mvp`).
 
-**Advance:** DONE.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-mvp --step PRESENT --covers 'the seed .aid/design/mvp.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/mvp.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here.
 
 ---
@@ -107,4 +114,4 @@ stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not h
 - **Iterative, not terminal** -- re-invocation rewrites `## Current direction` and
   accumulates `## Options considered`; the user decides when to stop.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

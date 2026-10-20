@@ -18,7 +18,7 @@ field. Read-only; ANALYZE never edits a file.
 
 **Re-plan re-entry vs. same-pass resume.** ANALYZE is re-entered two
 distinct ways, and they are NOT the same thing: (1) the ungroundable-concept
-PAUSE (Step 4) resumes the *same* pass after the user supplies a definition
+ASK (Step 4) resumes the *same* pass after the user supplies a definition
 -- Step 0 below keeps the existing `**Prompt:**` and proceeds; (2) `[2]
 Adjust` at CONFIRM, when the adjustment corrects the **Understanding**
 itself, sets `**State:** ANALYZE` for a genuine **re-plan** pass -- this is
@@ -59,7 +59,7 @@ placeholder for a later state to fill in (unlike today's design, DONE
 creates no branch of its own).
 
 If the run-state file already has a `**Prompt:**` (a resumed ANALYZE -- e.g.
-returning from the ungroundable-concept PAUSE in Step 4 below), do NOT
+returning from the ungroundable-concept ASK in Step 4 below), do NOT
 re-initialize; keep the existing `**Prompt:**`/`**Started:**`/`**Branch:**`
 values and proceed.
 
@@ -232,10 +232,10 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
      ```
      [ANALYZE] Pausing -- concept "<term>" cannot be grounded from available
      artifacts. Q{N} appended to .aid/knowledge/STATE.md. Provide a definition
-     or source pointer, then run /aid-update-kb again to resume.
+     or source pointer.
      ```
 
-  4. PAUSE-FOR-USER-ACTION -- do NOT advance to SCOPE.
+  4. ASK -- put the definition question in the chat; do NOT advance to SCOPE until it is answered.
 
 ---
 
@@ -259,7 +259,7 @@ escalation was triggered:
 
 Print: `[ANALYZE] Impact Map ready. {N} location(s) recorded. Advancing to SCOPE.`
 
-**Advance:** CHAIN -> SCOPE (continue inline).
+**Advance:** CHAIN → SCOPE (continue inline).
 
 If ANALYZE finds NO location the instruction concerns at all (a truly empty
 Impact Map -- the instruction does not describe anything KB-relevant),

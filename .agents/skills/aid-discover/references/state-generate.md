@@ -7,6 +7,8 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 > any bash context that needs them; they are the shared accessor for the declared doc-set.
 > `REPO` must be set to the repository root (e.g. `REPO="$(pwd)"`) before calling.
 
+**Who asks.** The `aid-architect` worker never asks the user. Each gate below marked ASK (0cx, 0d, 0f and the coined terms of Step 5c) is put to the user by the main conversation, through the question protocol: the worker returns the gate's question and stops, and the main conversation asks it, records the answer and resumes the worker with it.
+
 ### Step 0: Check Existing KB
 
 **First, trace the GENERATE front for the user** so every step ahead is visible (traceability —
@@ -16,10 +18,10 @@ the user must always know what is being done and what is decided where). Print t
 [GENERATE] Building the Knowledge Base. The doc-set is NOT fixed up front — it is decided
            by the domain, at the gates below:
   [0c]  Build project index            (mechanical)
-  [0cx] Classify project DOMAIN         -> you confirm        (PAUSE)
-  [0d]  Propose DOC-SET from the domain -> you confirm        (PAUSE)   <- this is what decides which docs
+  [0cx] Classify project DOMAIN         -> you confirm        (ASK)
+  [0d]  Propose DOC-SET from the domain -> you confirm        (ASK)   <- this is what decides which docs
   [0e]  Harvest coined terms            (mechanical)
-  [0f]  Classify discovery PATH         -> you confirm        (PAUSE)
+  [0f]  Classify discovery PATH         -> you confirm        (ASK)
   [1-5] Fan-out research -> closure -> review panel -> approval
 ```
 
@@ -144,7 +146,7 @@ prior_domain_status="$(grep -m1 '^\*\*Confirmed:\*\*' .aid/knowledge/STATE.md 2>
   Re-read the source signals and check whether the measured domain is consistent with the prior
   confirmed domain. If consistent, show "was `<prior_domain>`; still measures `<prior_domain>`"
   and ask the user to re-confirm or change it. If the fresh measurement differs, present the
-  diff ("was `<prior_domain>`; now measures `<new_domain>`") and pause for user decision. This
+  diff ("was `<prior_domain>`; now measures `<new_domain>`") and ask the user to decide. This
   is idempotent re-entry — the domain is re-measured every run; the user is always the final
   authority.
 - **No confirmed domain** (first run, or prior run paused before user confirmed): proceed to
@@ -183,7 +185,7 @@ After reading the signals:
     below) with `**Confirmed:** no` and your measured label.
   - Present the classification to the user and ask for confirmation (see "Present the
     classification" below).
-  - **PAUSE-FOR-USER-DECISION** — stop after presenting.
+  - The question is blocking: stop after presenting, and this step pauses on it until the user answers.
 
 - **Insufficient / uncertain / dubious** — signals are absent, contradictory, or too sparse to
   classify with confidence (e.g. an empty repo, a repo with equal-weight signals in two
@@ -200,10 +202,9 @@ After reading the signals:
     - **Question:** What is the primary domain of this project? Use one of the domain labels
       listed in Step 0cx (or describe a composite using `hybrid:<A>+<B>`).
     ```
-  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md. Resolve Q{N} then
-    re-run /aid-discover.`
-  - **PAUSE** at the existing Q&A gate. Do not proceed to Step 0d until the Q&A is answered
-    and a domain is confirmed.
+  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md.`
+  - Ask the Q&A through the question protocol. This step pauses on it. Do not proceed to Step 0d until
+    the Q&A is answered and a domain is confirmed.
   - On the resume run (after the user answers the Q&A), read the user's answer as the domain,
     write the `## Discovery Domain` block (confirmed), and chain to Step 0d.
 
@@ -234,15 +235,14 @@ Domain classification
 > - Or type the domain label you want to use instead (e.g. `methodology/tooling` or
 >   `hybrid:software-cli+methodology/tooling`).
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting. The user's choice
+**This is a genuine ASK.** Stop here after presenting. The user's choice
 (not the source signals alone) is the authoritative domain; an override is recorded as such.
 
-**Advance:** Stop here. Re-run `/aid-discover` after confirming the domain to continue to
-Step 0d.
+**Next, inside this step:** Step 0d (inside this state), once the user has answered; the question pauses this step until then.
 
 #### On confirm (resume path) -- write the record
 
-When the user re-runs `/aid-discover` and the session resumes after the pause:
+When the user answers the question, in this conversation or in a later session that resumes at the saved step:
 
 1. Read the user's response:
    - **`confirm` or default:** use the proposed domain label.
@@ -268,7 +268,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
 
 3. Print: `[0cx] Domain confirmed: <domain>. Proceeding to doc-set proposal.`
 
-4. **CHAIN -> Step 0d** — the confirmed domain is the anchor the doc-set step consumes.
+4. Go on to Step 0d — the confirmed domain is the anchor the doc-set step consumes.
 
 #### Relationship to Step 0f (path-triage)
 
@@ -286,8 +286,8 @@ Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-deci
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
-**PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/state-machine-chaining.md`).
+The question is a contracted checkpoint (SPEC feature-004 §3.1 and
+`.aid/runtime/templates/skill-steps.md`): this step pauses on it until the user answers.
 
 Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d until the
 `## Discovery Domain` block in `.aid/knowledge/STATE.md` carries `**Confirmed:** yes`.
@@ -427,15 +427,14 @@ Then ask the user to confirm or edit:
 > - Type **`confirm`** (or press Enter) to accept as proposed.
 > - Or provide edits in the pipe-delimited format: `filename|owner|presence[:when]` — one entry per line — and the confirmed set will be written to `.aid/settings.yml`.
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting the proposal.
+**This is a genuine ASK.** Stop here after presenting the proposal.
 
-**Advance:** Stop here (contracted checkpoint per SPEC feature-004 §3.1 and
-`.aid/runtime/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
-proposed doc-set to continue to [State: GENERATE — Step 1].
+**Next, inside this step:** Step 0e (inside this state), once the user has answered; the question pauses this step
+until then (contracted checkpoint per SPEC feature-004 §3.1 and `.aid/runtime/templates/skill-steps.md`).
 
 #### On confirm (resume path)
 
-When the user re-runs `/aid-discover` and the session resumes after the pause:
+When the user answers the question, in this conversation or in a later session that resumes at the saved step:
 
 1. Read the user's response:
    - **`confirm` or default (no change to proposal):** If the proposal equals the default seed, **write nothing** to `.aid/settings.yml` (absent section ⇒ default seed — AC: accepting default writes nothing). If the proposal differs from the default, write the confirmed set to `.aid/settings.yml` as described below.
@@ -492,7 +491,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
    When the provenance is `curated` (matrix hit), skip the candidate emit — the row is already
    in the canonical matrix.
 
-5. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
+5. Go on to Step 1 with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
 
 ### Step 0e: Harvest Coined Terms
 
@@ -563,7 +562,7 @@ prior_path="$(grep -m1 '^\*\*Path:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
   re-triage lifecycle made visible (FR-22 -- the path is re-measured every run).
 - **No prior path** (first run): proceed to the triage gate below.
 
-#### Present the proposal (PAUSE-FOR-USER-DECISION)
+#### Present the proposal (ASK)
 
 Display the measured metrics + the proposed path + the threshold rationale, then present the
 three choices (example for a brownfield-large proposal):
@@ -583,13 +582,12 @@ Proposed discovery path: brownfield-large
 [3] Override greenfield        (no source yet => signpost + HALT: run /aid-describe to define the project; the KB fills in as you build)
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
+**This is a genuine ASK** (C4 human-gated; the path is measured but
 confirmed, never auto-decided -- FR-20). Stop here after presenting. The human's choice (not a
 static `project.type`) is authoritative; an override is recorded as such. Escalation/uncertainty
 defaults to the proposed path on a bare confirm, exactly like Step 0d's conservative default.
 
-**Advance:** Stop here after presenting the triage proposal. Re-run `/aid-discover` after
-confirming the path to continue to Step 1.
+**Next, inside this step:** Step 1 (inside this state) on a brownfield path, once the user has answered; on greenfield, **HALT** after the signpost, which names `/aid-describe`.
 
 #### On confirm (resume path) -- write the decision
 
@@ -612,7 +610,7 @@ an override-record convention used elsewhere in AID's triage-style confirmations
 
 Then **branch on the confirmed path**:
 
-- **Brownfield (small or large):** CHAIN -> Step 1 with the confirmed path parameterizing the
+- **Brownfield (small or large):** go on to Step 1 with the confirmed path parameterizing the
   rest of GENERATE (Steps 2-5 fan-out + Step 5b closure caps; see `references/path-config.md`).
 
 - **Greenfield:** **do NOT chain to Step 1.** Print the **signpost and HALT** --
@@ -949,7 +947,7 @@ loop simply feeds the same pipe.
 
 Print on completion: `[5b] Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
 
-### Step 5c: Confirm term exclusions (PAUSE-FOR-USER-DECISION)
+### Step 5c: Confirm term exclusions (ASK)
 
 The closure step's EXCLUSION-REVIEW (see `references/state-closure.md`) wrote
 `.aid/generated/exclusion-candidates.md` -- terms it could not define and proposes to EXCLUDE
@@ -976,7 +974,7 @@ knowledge-base self-check can finish. Please confirm which are safe to exclude:
 Reply: confirm all  |  exclude only <list>  |  none
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting.
+**This is a genuine ASK.** Stop after presenting.
 
 **On confirm (resume):** append the user-confirmed terms to `discovery.term_exclusions` in
 `.aid/settings.yml` (one `    - <term>` entry per line under the `term_exclusions:` key; create
@@ -986,7 +984,7 @@ never add an unconfirmed term). The DETECT step reads this list on every future 
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
 `[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
-Then **CHAIN -> Step 6.**
+**Next, inside this step:** Step 6 (inside this state), once the user has replied and the confirmed terms are written.
 
 ### Step 6: Generate README.md and INDEX.md
 
@@ -1077,10 +1075,10 @@ consumes. Writing it here (producer-side, once, at the end of GENERATE) ensures 
 in REVIEW always finds a fresh, authoritative copy that matches the confirmed doc-set for this
 run.
 
-Print: `[N/N] Generation complete — Knowledge Base ready. Run /aid-discover again to review.` (where N = declared-set size)
+Print: `[N/N] Generation complete — Knowledge Base ready.` (where N = declared-set size)
 
 (File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
 
 Print: `[State: GENERATE] complete.`
 
-**Advance:** **CHAIN** → [State: REVIEW] (continue inline).
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline); **HALT** when the confirmed discovery path is greenfield (Step 0f prints the signpost and ends the step before any generation).

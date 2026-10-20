@@ -118,7 +118,7 @@ DELIVERABLES:
   ```
     (per-task)     task-NNN of type {Type} produced these artifacts; AC list lives in task-NNN.md.
     (per-delivery) delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution
-                   quality gate before merge to main.
+                   quality gate for the delivery.
   ```
   Do NOT include "we already fixed X", prior grades, or branch history.
 - `{{MODE}}` — literal `per-task` or `per-delivery`.

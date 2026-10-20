@@ -28,8 +28,8 @@ skippable — a project with neither writes only the tracking record below, noth
 ```
 [ELICIT] Capturing the project's external sources and tool integrations.
          Both branches are SKIPPABLE — a project with none moves past cleanly.
-  [E1] External SOURCES  (docs / specs / URLs -> external-sources.md)   -> you confirm  (PAUSE)
-  [E2] Tool INTEGRATIONS (connectors -> .aid/connectors/)               -> you confirm  (PAUSE)
+  [E1] External SOURCES  (docs / specs / URLs -> external-sources.md)   -> you confirm  (ASK)
+  [E2] Tool INTEGRATIONS (connectors -> .aid/connectors/)               -> you confirm  (ASK)
   [E3] Record + chain into GENERATE                                     (mechanical)
 ```
 
@@ -56,7 +56,7 @@ resolved="$(grep -m1 '^\*\*Resolved:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
   below) against whatever is still persisted under `.aid/connectors/`; there is no path that
   reopens or reconciles a still-`Resolved: yes` block in place.
 
-## Step E1: External SOURCES branch (PAUSE-FOR-USER-DECISION)
+## Step E1: External SOURCES branch (ASK)
 
 Sources are **reference knowledge** (docs, vendor specs, reference URLs) — distinct from tool
 integrations (E2). Present:
@@ -72,12 +72,10 @@ Reply with one entry per line as:  <path-or-url> | file|directory|url | <one-lin
   — or type `skip` if the project has no external sources.
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting; emit the pipeline pause
-signal per `.aid/runtime/templates/state-machine-chaining.md` §4. Do **not** write the
+**This is a genuine ASK.** Stop after presenting. Do **not** write the
 `## Discovery Elicitation` block yet — nothing has been captured.
 
-**Advance:** Stop here. Re-run `/aid-discover` after answering to continue processing Step E1's
-reply (below).
+**Next, inside this step:** Step E1 (inside this state), once the user has replied; the question pauses this step until then.
 
 ### On resume — process the reply
 
@@ -136,9 +134,9 @@ write the mid-pause shape of `## Discovery Elicitation` (overwrite if present):
 - **Elicited:** <date> (run N, paused at E2)
 ```
 
-Then present **Step E2**'s prompt and PAUSE there.
+Then present **Step E2**'s prompt and stop there for the answer.
 
-## Step E2: Tool INTEGRATIONS branch (PAUSE-FOR-USER-DECISION)
+## Step E2: Tool INTEGRATIONS branch (ASK)
 
 Tools are **connectable integrations**, captured into `.aid/connectors/` per the descriptor
 contract in `.aid/runtime/templates/connectors/`. Present:
@@ -156,9 +154,9 @@ Reply per tool with:  <preset-id>            (use a preset, then confirm/adjust 
   — or type `skip` to bypass this step for now (nothing about tools is recorded either way)
 ```
 
-**This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting.
+**This is a genuine ASK.** Stop after presenting.
 
-**Advance:** Stop here. Re-run `/aid-discover` after answering to continue to Step E3.
+**Next, inside this step:** Step E3 (inside this state), once the user has replied; the question pauses this step until then.
 
 ### The `skip` / `none` distinction (Q9 marker)
 

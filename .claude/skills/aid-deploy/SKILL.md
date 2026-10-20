@@ -27,7 +27,7 @@ Package completed deliveries into a release.
 Step 0):
 
 - **`work-NNN` present** -- the existing pipeline path below runs unchanged
-  (`IDLE -> SELECTING -> VERIFYING -> PACKAGING -> DONE`, post-Execute). Required: work
+  (`IDLE -> SELECTING -> VERIFYING -> PACKAGING -> DONE`, after the Building phase). Required: work
   ID. If only one work exists, auto-select it.
 - **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
   shortcut: binds `{name}=aid-deploy`, `{verb}=deploy`, `{artifact}=""` (bare verb),
@@ -75,7 +75,7 @@ Step 0):
   shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-deploy`,
   `{verb}=deploy`, `{artifact}=""`, `{description}=<the given text>`, then delegate
   directly to `.aid/runtime/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
-  below do not run for this path (that pre-flight belongs to the post-Execute pipeline
+  below do not run for this path (that pre-flight belongs to the after-Building pipeline
   role, not the shortcut entry). Size never skips a step of this workflow: the STATE.yml writes,
   the documents and the gates run for a one-line package too.
 - **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
@@ -104,11 +104,16 @@ Step 0):
 
 ## State Detection
 
-Read work `STATE.yml`'s Deploy State (`deploy` key):
-- **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
-- **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
-- **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)
-- **Status: Packaging** → PACKAGING state (resume packaging; see `references/state-packaging.md`)
+Per `.aid/runtime/templates/skill-steps.md` § State Detection, this detection shapes the entry step of a
+fresh start and validates a saved step on resume; it never routes. The work record decides where a work
+continues.
+
+Read work `STATE.yml`'s Deploy State (`deploy` key) to choose the entry step of a fresh start, and to
+check a saved step on resume:
+- **Status: Idle** → entry step IDLE (start new package; see `references/state-idle.md`)
+- **Status: Selecting** → entry step SELECTING (resume delivery selection; see `references/state-selecting.md`)
+- **Status: Verifying** → entry step VERIFYING (resume verification; see `references/state-verifying.md`)
+- **Status: Packaging** → entry step PACKAGING (resume packaging; see `references/state-packaging.md`)
 - **Status: Done** → Re-run mode (see Re-run section)
 
 Print the state-entry line and "you are here" map:
@@ -130,6 +135,14 @@ aid-deploy  ▸ you are here
 **VERIFYING:**
 ```
 [State: VERIFYING] — Running full build, tests, and lint against selected deliveries.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
+```
+
+**FIX-DECISION and RE-VERIFY** (inside VERIFYING, Status stays Verifying):
+```
+[State: FIX-DECISION] — Checks failed; the user decides whether to fix here or loop back to aid-execute.
+[State: RE-VERIFY] — Fixing the failed checks here, then running them again.
 aid-deploy  ▸ you are here
   [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
 ```
@@ -172,17 +185,20 @@ dispatch in this skill.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |
-| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
-| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
-| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
-| DONE | `references/state-done.md` | `inline` | → halt |
-| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+| IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
+| SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
+| VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
+| FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
+| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check still fails |
+| PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |
+| DONE | `references/state-done.md` | `inline` | HALT |
+| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.
+- **WAIT** → say what the user must do outside the conversation, plainly, and stop.
 - **HALT** → print the closing summary and exit.
 
 ## Quality Checklist

@@ -579,13 +579,13 @@ If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via
 Print:
 ```
 Grade: {grade} | Essence: {PASS|FAIL} | Assertiveness: {PASS|FAIL} -> {Ready|NOT Ready}
-[Review 3/3] Grade: {grade}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.
+[Review 3/3] Grade: {grade}. Minimum: {min}.
 ```
 
 Print: `[State: REVIEW] complete.`
 
 **Advance:** **CHAIN** → [State: Q-AND-A] if Pending Q&A entries with Impact: Required
-exist; **CHAIN** → [State: FIX] otherwise. Both continue inline.
+exist; **CHAIN** → [State: FIX] when none exists. Both continue inline.
 
 ---
 

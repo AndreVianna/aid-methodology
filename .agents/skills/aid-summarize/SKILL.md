@@ -66,6 +66,13 @@ proceed; do NOT create any state files.
 
 ⚠️ **Filesystem is the only source of truth.** Always read actual files on disk.
 
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start, validates a saved step on resume, and never routes; the saved step
+in `.aid/knowledge/STATE.md` decides where a run continues.
+
+This block describes how a fresh start picks its entry step; on a resume, the saved step in
+`.aid/knowledge/STATE.md` decides, and the block only validates it against the files on disk.
+
 The state-detection logic determines which mode this run executes:
 
 ```
@@ -169,22 +176,19 @@ aid-summarize  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |
-| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |
-| PROFILE | `references/state-profile.md` | inline | → GENERATE |
-| GENERATE | `references/state-generate.md` | inline | → VALIDATE |
-| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |
-| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |
-| FIX | `references/state-fix.md` | inline | → VALIDATE |
-| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |
-| WRITEBACK | `references/state-writeback.md` | inline | → DONE |
-| DONE | `references/state-done.md` | inline | → halt |
+| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → STALE-CHECK |
+| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE (stale) / CHAIN → APPROVAL (current, not approved) / CHAIN → DONE (current and approved) |
+| PROFILE | `references/state-profile.md` | inline | CHAIN → GENERATE |
+| GENERATE | `references/state-generate.md` | inline | CHAIN → VALIDATE |
+| VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
+| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |
+| FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
+| WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
+| DONE | `references/state-done.md` | inline | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
-- **HALT** → print the closing summary and exit.
+When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.
 

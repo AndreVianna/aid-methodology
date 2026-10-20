@@ -95,7 +95,7 @@ Read `.aid/connectors/INDEX.md`.
   with the user, and plan nothing around it until they answer.
 - A ticket, file or link brought into a work is added to its `sources:` before it is applied.
 - If the work turns out bigger or different, re-route it and say so in one line.
-- Ask one topic at a time, with a recommendation; the user approves before building and the result.
+- Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result; AID never merges.
 
 ## Skill guide
 

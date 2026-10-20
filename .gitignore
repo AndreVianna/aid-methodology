@@ -68,6 +68,10 @@ desktop.ini
 .aid/works/work-009-refactor/
 .aid/works/work-001-agent-chat/throwaway/
 
+
+# conversation-runner suite mutants (created and removed during a run)
+tests/conversation/mut-*.py
+
 # >>> AID managed -- do not edit (aid add/update maintains this block) >>>
 .aid/.temp/
 .aid/.trash/
@@ -79,6 +83,3 @@ desktop.ini
 .claude/worktrees/
 .aid/runtime/**/node_modules/
 # <<< AID managed <<<
-
-# conversation-runner suite mutants (created and removed during a run)
-tests/conversation/mut-*.py

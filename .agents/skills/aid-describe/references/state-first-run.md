@@ -9,57 +9,24 @@ already known about the project. This context prevents asking questions the KB a
 
 If no KB exists, that's fine — this is a greenfield project.
 
-### 1b. Create or update STATE.yml
+### 1b. Work record (created by the gate)
 
-Ensure `.aid/works/{work}/STATE.yml` exists and has its `interview` key and `qa` key.
-Copy from `../../../aid/templates/work-state-template.yml` if the file does not yet exist.
+The gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) creates `.aid/works/{work}/STATE.yml`
+before this state runs. Do not copy the template and do not write the record's keys by hand; set any
+other key through the writer.
 
-### 1b-ii. Seed the frontmatter keys
+### 1b-ii. The opening record is already written
 
-After the STATE.yml file exists (created from the template above or already present), write
-the opening scalar values directly into `.aid/works/{work}/STATE.yml`'s frontmatter-zone
-top-level keys, replacing every placeholder value the template ships with the actual opening
-values. Resolve this work's own minimum grade first:
+The gate's `§ 3a` wrote the opening record in one locked write, with the writer's create mode and
+this skill as the caller (`--skill aid-describe`), the step `FIRST-RUN`, the phase `--phase Definition`,
+`--depth full`, `--path full` and the resolved minimum grade, all given when this skill started the work.
+The record holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase
+`Definition`, `pipeline.path: full`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`. `aid-describe` is the FULL-pipeline starting skill,
+never a flattened Lite shortcut.
 
-```bash
-bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
-```
-
-then write the whole block:
-
-```yaml
-pipeline:
-  path: full
-  initiator: aid-describe
-started: "{today, YYYY-MM-DD}"
-minimum_grade: "{resolved value from the read-setting.sh call above}"
-user_approved: no
-lifecycle: Running
-phase: Describe
-active_skill: aid-describe
-updated: "{YYYY-MM-DDTHH:MM:SSZ}"         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
-pause_reason: --
-block_reason: --
-block_artifact: --
-```
-
-(`pipeline.path` is always `full` here -- `aid-describe` is the FULL-pipeline starting
-skill, never a flattened Lite shortcut; the flattened-only `delivery_state`/`gate_tier`/
-`gate_grade`/`gate_timestamp` group is left untouched -- it is not even present in a
-full-layout `STATE.yml`, since a full-path work's delivery lifecycle/gate lives in its own
-`delivery-NNN/STATE.yml` instead.)
-
-This side-effect is a state-write only (no user-visible output, no gate, no prompt). It does
-not change any observable interview behavior — CONTINUE begins immediately after scaffolding.
-The `pause_reason`, `block_reason`, and `block_artifact` keys are included with the sentinel
-value `--` so every conditional key is structurally present from the start. All values are
-valid opening members of the closed enums declared in the template. The template's own
-STATE ADVANCEMENT ORDERING `#` comment block is static and is never rewritten here
-or by any later `writeback-state.sh --pipeline` call.
-
-**Idempotency:** if the frontmatter already has `lifecycle: Running` (the work was
-previously scaffolded), skip this step — do not overwrite values that may have been advanced
-by a later phase.
+Do not write the record again from this state. `--create` is run only by the gate, and it refuses a
+work that already has a `STATE.yml` (exit 8). CONTINUE begins immediately after this check. On a
+resume, the record decides the step.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
@@ -105,4 +72,8 @@ the delegated read is non-destructive, so no extra confirm is added.
 
 ---
 
-**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview.
+CONTINUE emits the D1 opener and runs the full-path interview.
+
+Once the scaffolding is complete, the step goes on to CONTINUE in the same run.
+
+**Advance:** **CHAIN** → [State: CONTINUE].

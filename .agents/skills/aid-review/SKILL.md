@@ -14,25 +14,35 @@ grounded, cited, and never plan-and-halt -- review evaluates an existing artifac
 criteria, where `/aid-ask` answers a free-form question.
 
 - **Not a numbered pipeline phase.** It runs on demand; it does not enter the
-  Discover->Execute flow and never routes to `/aid-execute`.
+  pipeline phases (Definition to CI) and never routes to `/aid-execute`.
 - **Read-only except:** the findings ledger (a `.temp` artifact) and, only after
   your approval, a publish to the reviewed target (a PR/ticket comment, doc notes).
   It never edits the reviewed code/design itself and never fixes -- fixing is
   `/aid-fix`'s job.
 
-State machine: **INTAKE -> REVIEW -> VERIFY (loop) -> PRESENT-FINDINGS [human] ->
-PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
+State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> REVIEW -> VERIFY (loop) ->
+PRESENT-FINDINGS [human] -> PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
 (`[State: NAME] -- {one-line purpose}`), the convention every AID skill uses.
+Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+---
+
+## State Detection
+
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection). A fresh start enters INTAKE. A resume continues at the step the work record saves, which the gate's § 3b routes to; the saved step's artifact is checked against disk, and a mismatch goes to recovery, never to a silent re-route.
 
 ---
 
 ## State: INTAKE
 
-Purpose: resolve the target + criteria, pick the path, allocate the work folder.
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
 
-### Step 1 -- require a target
+Purpose: resolve the target + criteria, pick the path, note the works.
 
-If the argument is empty, ask exactly one bootstrapping question and wait:
+### Step 1 -- check the target
+
+Note whether the argument is empty. Do not ask here. If it is empty, INTAKE-ASK asks exactly one
+bootstrapping question:
 
 ```
 What do you want to review? Point me at a file/dir, a PR, a ticket id, a
@@ -42,7 +52,7 @@ work-NNN, "my changes", or describe the target.
 ### Step 2 -- pick the path (fast vs guided)
 
 **Fast path** -- the prompt carries an explicit, resolvable target whose review method
-is unambiguous. Record the target, method, and tentative delivery; go straight to REVIEW.
+is unambiguous. Record the target, method, and tentative delivery; go on to ALLOCATE, then REVIEW.
 
 | Signal | Method | Tentative delivery |
 |---|---|---|
@@ -58,8 +68,8 @@ is unambiguous. Record the target, method, and tentative delivery; go straight t
 or a fast trigger that does not resolve (file absent, ticket id but no catalogued
 connector, PR # with no repo context). Interpret the request and form a plan -- *what*
 you will review, *how* (method + any tool/MCP needed to gather evidence), and *where*
-findings will be delivered -- **present the plan and wait for the user to confirm or
-correct** before spending review effort.
+findings will be delivered. The plan is presented in INTAKE-ASK, where the user confirms or
+corrects it before any review effort is spent.
 
 ### Step 3 -- criteria
 
@@ -75,38 +85,46 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
   `opus`, effort `high`**; full VERIFY loop.
   Verifier tier is always >= reviewer tier.
 
-### Step 5 -- allocate the work folder + STATE
+### Step 5 -- check for works
 
-**Consult the Work Initiation Gate first**
-(`.aid/runtime/templates/work-initiation-gate.md`): run
-`bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-Empty output -> proceed with the allocation below, no prompt. Works exist -> ask the
-gate's single new-vs-continuation question with the enumerated list; on **continuation**
-the gate routes to the chosen work's resume door and this skill **STOPs (allocates
-nothing)**; on **new work**, allocate below.
+Run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree). Note
+whether any exist. Do not prompt here.
 
-**Resolve `<work-id>`** as `work-{NNN+1}`, where `NNN` is the maximum `work-NNN` numeric
-prefix across every record the enumeration above already returned (cross-worktree by
-construction -- never re-scan a local `.aid/works/` glob for this number; gate `§ 3a` step
-1; `work-001` if none). Derive a short kebab-case slug from the target.
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
-**Create and enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-`bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>` --
-idempotent; prints the worktree's absolute path on success/no-op; on a non-zero exit or an
-empty path, surface the error and **STOP** (do not allocate on the current, possibly
-`master`, tree); on success, enter the resolved path (host-native `EnterWorktree` where
-available, else cwd + surface -- `worktree-lifecycle.md § Step 2`).
+---
 
-**Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
-the `<work-id>` resolved above). Copy `.aid/runtime/templates/work-state-template.yml` to
-`.aid/works/work-NNN-<slug>/STATE.yml` and write the opening frontmatter (direct edit):
-`pipeline.path: lite`, `initiator: aid-review`, `lifecycle: Running`, `active_skill:
-aid-review`, `started`/`updated` timestamps. Leave the 7-phase `phase` scalar at its
-template value -- a standalone review is not a pipeline run and does not drive it
-(specs/aid-review.md 10). The work-level git worktree is created and entered above by the
-gate's `§ 3a` step -- mandatory per FR1, no longer optional.
+## State: INTAKE-ASK  (only when a question must be put)
 
-**Advance:** REVIEW.
+Ask one topic at a time, through the question protocol, in this order and only for what applies:
+
+1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path
+   is then picked from it.
+2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.
+3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.
+
+**Advance:** ASK → [State: ALLOCATE].
+
+---
+
+## State: ALLOCATE
+
+Allocate through the Work Initiation Gate (`.aid/runtime/templates/work-initiation-gate.md`).
+
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-review`), its saved step (`REVIEW`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a short kebab-case slug derived from the target. The
+  gate `§ 3a` step 2 creates and enters the work-level worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`),
+  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+  the writer, before it hands back: "`STATE.yml` was created by the gate;
+  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+  set other keys through the writer." A standalone review is not a pipeline run and drives no
+  `phase` (specs/aid-review.md 10).
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+Every `--step` call in this skill passes in its `--detail` the target, method, criteria, complexity tier and the
+  plan the user confirmed, so a resume finds them in the record.
+
+**Advance:** CHAIN → [State: REVIEW].
 
 ---
 
@@ -131,7 +149,7 @@ Purpose: gather evidence and produce the grounded findings ledger.
    `# | Severity | Status | Doc | Line | Description | Evidence`) to
    `.aid/.temp/review-pending/<work>-review.md`.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -149,19 +167,19 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 3. **Grade the review:** `bash .aid/runtime/scripts/grade.sh --explain <verify-ledger>`.
    If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded
    findings, add missed ones). **Circuit-breaker: 3 cycles** -> write
-   `.aid/works/{work}/IMPEDIMENT-review.md`, set STATE `lifecycle: Blocked` with a block reason,
-   and surface it instead of looping.
+   `.aid/works/{work}/IMPEDIMENT-review.md`, set the lifecycle to `Blocked` through the writer
+   (`--pipeline --field Lifecycle --value Blocked`), and surface it instead of looping.
 
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for
 the presentation as information only -- it does NOT drive a fix loop here.
 
-**Advance:** PRESENT-FINDINGS.
+**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
 ## State: PRESENT-FINDINGS  (always a hard stop -- human final say)
 
-Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
+The hard stop follows the ASK step of `skill-steps.md`. Present:
 
 - the **target grade** (from `grade.sh` on the review ledger) -- informational;
 - the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;
@@ -172,13 +190,14 @@ Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
 Then STOP and await the human's decision (approve / edit the text / choose a different
 delivery / do not publish). Nothing is posted to any external target until they approve.
 
-**Advance:** PUBLISH on approval; otherwise DONE.
+**Advance:** ASK → [State: PUBLISH].
 
 ---
 
 ## State: PUBLISH  (only on approval)
 
-Deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
+If the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise
+deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
 enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 [<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
 PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again
@@ -187,15 +206,15 @@ inline-comment suggestions) for code; inline notes for a document. **Graceful fa
 no catalogued connector / unknown target -> present the exact text for the human to paste.
 Publishing is optional and never blocks DONE.
 
-**Advance:** DONE.
+**Advance:** CHAIN → [State: DONE].
 
 ---
 
 ## State: DONE
 
-Set STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
-Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a
-follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
+
+**Advance:** HALT.
 
 ---
 
@@ -208,5 +227,4 @@ follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
 - **Reviews are always a sub-agent dispatch** (`aid-reviewer`), never inline.
 - **Human final say before any external commit** (PRESENT-FINDINGS).
 - **Read-only** on the reviewed artifact; never fixes (hand off to `/aid-fix`).
-- **Tracking:** write STATE `lifecycle` at every transition (`Running` at INTAKE, the
-  gate pauses, terminal `Completed`/`Blocked` at the end).
+- **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

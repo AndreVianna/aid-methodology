@@ -112,6 +112,5 @@ uncommitted changes are permitted — housekeeping is resuming mid-run.
 
 Print: `[State: PREFLIGHT] complete.`
 
-**Advance:** **CHAIN** → [State: KB-DELTA] (or [State: CLEANUP] if `--cleanup-only`
-was set, but `--cleanup-only` is rejected in delivery-001 — see `SKILL.md § Arguments`).
-Continue inline.
+**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`);
+otherwise **CHAIN** → [State: KB-DELTA].

@@ -9,13 +9,14 @@
 #   AUTHORED (single-writer, YAML structures under a key, one key per former
 #     markdown section) -- intent, sources, write_backs, interview, features,
 #     lifecycle_history, deploy, delivery_lifecycle (incl. its
-#     tasks_lifecycle child), delivery_gate, qa.
+#     tasks_lifecycle child), delivery_gate.
 #   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
 #     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
 #     here -- no key at all. A reader seeing no key derives the same union it
 #     derives today. Agents that write state must target the per-unit
 #     STATE.yml files instead. `qa` is the one former-DERIVED name that keeps
-#     a key here, because on the flattened Lite path it is AUTHORED.
+#     a key here, on both layouts: the question record is written through the
+#     writer, so it is never omitted.
 #
 #     `features` was ALSO listed as DERIVED here and that was wrong. Nothing
 #     derives it: /aid-define creates a row per feature at decomposition and
@@ -60,13 +61,13 @@
 # Full-layout omission rule: a full multi-delivery work's STATE.yml is
 # IDENTICAL to this template minus these keys: delivery_state, gate_tier,
 # gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
-# minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
-# own delivery/task file instead), and minus qa (DERIVED on the full path).
-# `features`, `intent`, `sources` and `write_backs` are NOT on that list:
-# each is a work-level concept on both layouts, so the key is present either
-# way.
+# and minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in
+# its own delivery/task file instead).
+# `features`, `intent`, `sources`, `write_backs`, `step`, `step_detail`,
+# `handoffs` and `qa` are NOT on that list: each is a work-level concept on
+# both layouts, so the key is present either way.
 #
-# Shape rule (both dashboard readers): block style only, at most three key
+# Shape rule (known issue KI-002, both dashboard readers): block style only, at most three key
 # levels deep. A flow list or mapping other than the literal `[]` / `{}` is
 # rejected, a key nested deeper than three levels is skipped, and a comment
 # on the line of a key that opens a list or mapping empties that key -- each
@@ -103,7 +104,7 @@
 
 # [W]
 #   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
-#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+#   initiator: aid-{skill}  -- the skill that called the work-initiation gate: aid-describe, a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api), or an entry skill such as aid-orchestrate or aid-research
 pipeline:
   path: lite
   initiator: aid-describe
@@ -115,10 +116,17 @@ minimum_grade: A
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
-# [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+# [W] Definition | Specification | Planning | Building | CI
+phase: Specification
 # [W] aid-{skill} | none
 active_skill: none
+# [W] that skill's current step; -- when none
+step: --
+# [W] where inside the step, in plain words; -- when none
+step_detail: --
+# [W] append-only, newest last; one entry per hand-off:
+#   at / from / from_step / from_detail / to / why / returns (yes = a call, no = a pass) / returned
+handoffs: []
 # [W]
 updated: '2026-01-01T00:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
@@ -138,16 +146,19 @@ gate_grade: Pending
 # [W]
 gate_timestamp: --
 
-# [A] how this work reads the user's request; written by /aid-orchestrate
-#     on this work's active branch (single writer) when it starts or resumes
-#     the work, and re-written when the work is re-routed. The values below
-#     are the rest values until the first write: no reading yet, and the
-#     default route of a clear request.
+# [W] request, reading, depth and changes: how this work reads the user's
+#     request. Only the writer sets them: `--create` when the work starts
+#     (request, reading, and depth when given), and `--reroute` on a re-route
+#     (reading, depth, and one changes entry). Never by hand. reason and phases
+#     are set by `--create --reason --phases` when the work starts, and later
+#     by `--intent`.
+#     The values below are the rest values until the first write: no reading
+#     yet, and no depth recorded (a work with no recorded depth takes full).
 #   request: the user's words, short (quoted)
 #   reading: bug fix | refactor | change | new capability | document |
 #            operational | knowledge update | investigation
 #   reason:  one line on why the reading holds (quoted)
-#   depth:   lite | full -- how much the user reviews
+#   depth:   lite | full -- how much the user reviews; -- when none is recorded
 #   phases:  the phases this work runs, in order, one `- <phase>` line each
 #            (block style: the readers reject an inline list). Names are
 #            the routing phases -- Preparation, Definition, Specification,
@@ -157,8 +168,9 @@ intent:
   request: --
   reading: --
   reason: --
-  depth: lite
+  depth: --
   phases:
+    - Definition
     - Specification
     - Planning
     - Building
@@ -325,10 +337,10 @@ tasks_lifecycle: {}
 delivery_gate:
   issue_list: []
 
-# [A] flattened Lite only (AUTHORED here, not derived); one entry per
-#     question:
+# [W] every question and answer, newest last; one entry per question:
 #   - id / category (e.g. Architecture, Requirements, Security) /
-#     impact: High | Medium | Low | Required /
-#     state: Pending | Answered | Skipped /
-#     context / suggested / answer / applied_to
+#     impact: High | Medium | Low /
+#     state: Pending | Answered | Skipped | Assumed /
+#     asked_by / step / context / suggested / answer / answered_by / applied_to /
+#     covers (set by --ask or --answer) / commit (set by --answer)
 qa: []

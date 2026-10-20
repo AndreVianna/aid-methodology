@@ -28,6 +28,8 @@ this one's.
 - **Boundary vs `/aid-design-test` and `/aid-test`:** `/aid-design-test` designs specific
   tests, not the policy; `/aid-test` *runs* existing suites rather than designing them.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
+- **Step rules:** the advance words, the step procedure and the work record are
+  `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**, as
 `design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
@@ -42,18 +44,22 @@ entry line on each state.
    gates?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-design-testing-strategy`. `phase` is not driven.
+   `--skill aid-design-testing-strategy` given to the gate's `--create`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/testing-strategy.md`
    if a prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** DESIGN.
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
+saved step on resume, and never routes; the work record alone decides where a work continues.
+
+**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
 ## State: DESIGN
 
-Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
+Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
 `.aid/design/testing-strategy.md` in the seed shape the contract fixes (`design-seed.md`;
 feature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read
 in INTAKE. What this artifact's seed must settle: **the test levels, coverage expectations,
@@ -73,31 +79,36 @@ silently**.
 **Writes only `.aid/design/testing-strategy.md`.** Never writes `.aid/knowledge/`, never
 writes test code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+The destination confirmation is a blocking question, asked before the dispatch writes anything: this step pauses on it until the user answers.
+
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now
 (`/aid-create-testing-strategy`).
 
-**Advance:** DONE.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-testing-strategy --step PRESENT --covers 'the seed .aid/design/testing-strategy.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/testing-strategy.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/testing-strategy.md`; consumption happens at
 `/aid-create-testing-strategy`.

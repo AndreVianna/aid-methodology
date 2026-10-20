@@ -37,16 +37,10 @@ After logging failures, run grade.sh on the ledger:
 bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
-If any failures logged (grade below A+):
-- Show the failure clearly
-- Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?
-- If fixing here: fix → re-verify → re-run grade.sh (max 3 attempts, then must loop to execute)
-- If looping back: set work `STATE.yml`'s Deploy State (`deploy` key) → Idle, keep package file as Draft
-  Delete ledger: `rm -f {{LEDGER}}`
+If all pass (ledger is empty → grade A+): delete the ledger on success (`rm -f {{LEDGER}}`),
+update work `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging, and proceed to PACKAGING.
 
-If all pass (ledger is empty → grade A+): proceed to PACKAGING.
-Delete ledger on success: `rm -f {{LEDGER}}`
+If any failures logged (grade below A+): show the failures clearly. The user's fix-or-loop decision
+is taken at FIX-DECISION (see `references/state-fix-decision.md`); the Deploy State stays Verifying.
 
-Update work `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.
-
-**Advance:** **CHAIN** → [State: PACKAGING] (continue inline).
+**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) when any check fails.

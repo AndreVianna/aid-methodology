@@ -29,30 +29,44 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 
 ---
 
+## State Detection
+
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs INTAKE's reads to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
+---
+
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
    you like to revise in the backlog -- items to add, re-prioritize, promote from
    tech-debt.md, or move between sections?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the
-   Work Initiation Gate, then `initiator: aid-update-backlog`, `active_skill:
-   aid-update-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not
-   driven.
-3. **Read the destination** at `.aid/knowledge/backlog.md`. If absent, **route** to
-   `/aid-create-backlog` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.
-4. **Read the seed** at `.aid/design/backlog.md` if one exists. Note its presence or
+2. **Read the destination** at `.aid/knowledge/backlog.md`. If absent, **route**: allocate nothing and
+   write nothing, name `/aid-create-backlog` explicitly in the response, and end the run.
+3. **Read the seed** at `.aid/design/backlog.md` if one exists. Note its presence or
    absence; do not require it.
-5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed or the
+4. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed or the
    user may name candidate rows to promote; know their current state before the confirm
    gate runs.
-6. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
+5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
    created outputs should be updated alongside backlog.md?" Wait for the user's answer
    before proceeding. Write no stored list and no tracking metadata anywhere.
-7. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
+6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
+7. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
+   `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
+   `initiator: aid-update-backlog`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
+   record and saves nothing). `phase` is not driven.
 
-**Advance:** GUARD.
+Every `--step` call after the allocation passes in its `--detail` the subject, whether a seed was found, the
+derived outputs the user named and the complexity tier, so a resume finds them in the record.
+
+**Advance:** CHAIN → [State: GUARD]; HALT when the destination is absent.
 
 ---
 
@@ -63,16 +77,23 @@ found in INTAKE.
 
 - **Seed present, unresolved questions, no override** → refuse. Name each unresolved
   question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write
-  nothing; leave seed and destination byte-identical. Set `lifecycle:
-  Paused-Awaiting-Input`.
+  nothing; leave seed and destination byte-identical. Set `lifecycle` to `Paused-Awaiting-Input` through the writer.
 - **No seed present** → advance (gate does not apply).
 - **Seed present, no unresolved questions, or override supplied** → advance.
 
-**Advance:** UPDATE.
+The run ends at a refusal, with the work paused at this step: set the lifecycle to `Paused-Awaiting-Input` and the pause reason (the refusal, in one line) through the writer (`--pipeline --field Lifecycle` and `--field "Pause Reason"`). A resume sets the lifecycle back to `Running`, runs GUARD again and re-reads the seed.
+
+**Advance:** CHAIN → [State: UPDATE] when no seed was found, it has no unresolved question, or the override is supplied; HALT when the guard refuses.
 
 ---
 
 ## State: UPDATE
+
+**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
+named in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same
+relative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs
+again (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores
+the original, not an earlier revision.
 
 Dispatch **`aid-architect`** (clean context, tiered) to revise the document.
 
@@ -144,7 +165,7 @@ All seven columns are required on every row, from both arms.
 **User-named outputs.** For each output the user named in INTAKE: update it alongside
 `backlog.md` in this same dispatch.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -154,13 +175,13 @@ All seven columns are required on every row, from both arms.
 defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation
 to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. Assert:
+Present the revised document clearly. Assert:
 
 - Every promoted row was deleted from `tech-debt.md` in this run.
 - No item exists in both `backlog.md` and `tech-debt.md` simultaneously.
@@ -169,13 +190,26 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. As
 - No tracking metadata was written to any output.
 - To create a backlog for the first time, use `/aid-create-backlog`.
 
-**Advance:** DONE.
+Then ask the approval question: keep this revision, change it, or decline it. It is an approval under
+`.aid/runtime/templates/question-protocol.md`: record it with `--ask` (category `Approval`, `covers` the revision), set
+`lifecycle` to `Paused-Awaiting-Input` and the pause reason through the writer, and ask. The question pauses this step
+where it stands and cannot be skipped. Once it is answered, record the answer with `--answer` and set `lifecycle` back to
+`Running` through the writer (`skill-steps.md` part 3). Then:
+
+- **Approve:** the revision stays as written.
+- **Change:** the changes the user asks for go into the step detail, and UPDATE applies them; the verify runs again.
+- **Decline:** copy every file saved under `rollback/` back to its place (a consumed seed included), so the Knowledge
+  Base is as it was before this run and nothing lands.
+
+**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes.
 
 ---
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
+
+**Advance:** HALT.
 
 ---
 
@@ -202,4 +236,4 @@ Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 - **Both column-mapping arms are binding** (tech-debt.md promotion and release-note
   bullet); neither is exempt from any of the seven columns.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the lifecycle through the writer (`--pipeline --field Lifecycle`) at every transition.

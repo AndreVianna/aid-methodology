@@ -8,6 +8,7 @@ The spec was completed previously (the work `STATE.yml`'s `features:` entry has 
 Is there something specific you want to re-examine?"_
 
 If user confirms → set feature status to `In Discussion`, continue below.
+If user declines → the spec stays Ready; the step ends at once, on DONE.
 If user has a specific concern → record it as context for the review.
 
 Re-run enters **the same loop at step 4** —
@@ -61,7 +62,7 @@ Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh 
 |-----------|--------|
 | Grade ≥ minimum | Print summary, done. Set this feature's `state: Ready` and its `grade` in the work `STATE.yml`'s `features:` sequence. |
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
-| Grade < minimum, core assumptions wrong | Recommend `--reset`. |
+| Grade < minimum, core assumptions wrong | Recommend `--reset`. Before the HALT, set the lifecycle to `Paused-Awaiting-Input` and the pause reason (`--pipeline --field "Pause Reason" --value 'core assumptions wrong: recommend --reset'`) through the writer. |
 
 <!-- A delivery-definition review step once sat here and is retired, for two independent
      reasons either of which is sufficient.
@@ -87,4 +88,7 @@ Minimum: B+. ✅ Meets minimum.
 For grades below minimum: re-enter the loop (Propose → Discuss → Write → Review)
 for affected sections. When all resolved, set status back to Ready.
 
-**Advance:** **CHAIN** → [State: DONE] when spec is Ready and meets minimum grade (continue inline).
+The reopen question pauses this step where it stands; the review below runs once the user has answered it.
+The step is finished when the spec is Ready and meets minimum grade, or when the user declined to reopen it.
+
+**Advance:** **CHAIN** → [State: DONE] when the spec stays Ready; **CHAIN** → [State: CONTINUE] when the grade is below minimum and sections are fixable; **HALT** when core assumptions are wrong (recommend `--reset`).
