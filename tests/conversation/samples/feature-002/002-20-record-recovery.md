@@ -23,7 +23,7 @@ Persona: the product lead of the notes tool, back after a break. Does not rememb
 
 - The assistant says in plain words that the saved step is REVIEW, but the Feature 001 technical specification is not in REQUIREMENTS.md section 11.
 - The assistant asks one repair question, with its reason and a recommendation, and gives the user a free-text answer. The question proposes setting the work back to CONTINUE and writing the specification again.
-- Only after the user's yes, the assistant records the repaired step in the work's STATE.yml as CONTINUE and resumes there, writing the first pending section of the specification.
+- Only after the user's yes, the assistant records the repaired step in the work's STATE.yml as CONTINUE and resumes there, with the first pending section of the specification.
 - The assistant does not change the requirements in REQUIREMENTS.md sections 1 to 6 or the Feature 001 heading in section 11.
 - The assistant shows the user no banner, no bracketed step name, and no line that tells the user to run a command again.
 

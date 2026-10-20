@@ -58,48 +58,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INITIALIZE`** — First run for this feature; load context, determine… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L231" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L235" wrap
 | INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L231) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L145)
+[Source: `canonical/skills/aid-specify/SKILL.md#L235`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L235) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L145)
 
 <a id="fragment-n2"></a>**2 · `CONTINUE`** — The work STATE.yml's features: entry for this feature shows… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L232" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L236" wrap
 | CONTINUE | `references/state-continue.md` | `aid-architect` | CHAIN → REVIEW when every section is Complete; CHAIN → SPIKE when a spike is needed; CHAIN → BLOCKED when a loopback blocks it |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L232`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L232) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L122)
+[Source: `canonical/skills/aid-specify/SKILL.md#L236`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L236) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L122)
 
 <a id="fragment-n3"></a>**3 · `SPIKE`** — > Source: references/handling-outcomes.md §"Spike Needed… · _step_
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L233" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L237" wrap
 | SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L233) · [full step: `canonical/skills/aid-specify/references/state-spike.md#L1-L22`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-spike.md#L1-L22)
+[Source: `canonical/skills/aid-specify/SKILL.md#L237`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L237) · [full step: `canonical/skills/aid-specify/references/state-spike.md#L1-L22`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-spike.md#L1-L22)
 
 <a id="fragment-n4"></a>**4 · `BLOCKED`** — > Source: references/handling-outcomes.md §"Blocked (State… · _step_
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L234" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L238" wrap
 | BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L234) · [full step: `canonical/skills/aid-specify/references/state-blocked.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-blocked.md#L1-L19)
+[Source: `canonical/skills/aid-specify/SKILL.md#L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L238) · [full step: `canonical/skills/aid-specify/references/state-blocked.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-blocked.md#L1-L19)
 
 <a id="fragment-n5"></a>**5 · `REVIEW`** — All sections complete; re-review entire spec against… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L235" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L239" wrap
 | REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L235`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L235) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L95)
+[Source: `canonical/skills/aid-specify/SKILL.md#L239`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L239) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L95)
 
 <a id="fragment-n6"></a>**6 · `DONE`** — Spec is Ready and has met the minimum grade; this feature's… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L236" wrap
+~~~~plaintext title="canonical/skills/aid-specify/SKILL.md#L240" wrap
 | DONE | `references/state-done.md` | `inline` | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L236`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L236) · [full step: `canonical/skills/aid-specify/references/state-done.md#L1-L20`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-done.md#L1-L20)
+[Source: `canonical/skills/aid-specify/SKILL.md#L240`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L240) · [full step: `canonical/skills/aid-specify/references/state-done.md#L1-L20`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-done.md#L1-L20)

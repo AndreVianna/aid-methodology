@@ -1871,3 +1871,11 @@ qa:
     suggested: 'B: one Sonnet round fixes all 31; the next review verifies those fixes and reports new problems only at HIGH or CRITICAL; new MEDIUM or LOW findings go to the backlog'
     answer: 'B (maintainer).'
     applied_to: 'delivery-002 review cycle 4 fixes and the cycle-5 verify scope; .aid/knowledge/backlog.md for new MEDIUM/LOW findings'
+  - id: Q163
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-002 gate samples: 002-05 1/3 (one run merged into master on the user''s explicit ask), 002-20 0/3 (no defined recovery step for a missing spec, questions bundled, sample expected text wrong), 002-21b 0/3 (offers to reopen a canceled work); 002-21 3/3.'
+    suggested: '1: fix all three now (never-merges holds when asked; aid-specify recovery goes to CONTINUE; 002-20 expected text; a canceled work is reported finished with no reopen offer), then resync, /reload-skills and the samples again'
+    answer: '1 (maintainer).'
+    applied_to: 'canonical/aid/rules.md, skill-steps.md, aid-specify, aid-orchestrate start-or-resume, sample 002-20; then the delivery-002 resync again'

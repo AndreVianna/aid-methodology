@@ -85,17 +85,17 @@ Read `.aid/connectors/INDEX.md`.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the
   chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
-  resumes, closes or cancels a work, goes through `/aid-orchestrate` first.
+  resumes, closes or cancels a work, goes through `/aid-orchestrate` first; a finished work is only reported.
 - Your reading takes the user's words as a hint only: check it against the Knowledge Base and the
   code, then show it and its reason in one line, inside the first question or approval, and wait.
-- CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or
-  when nothing was to land. Definition runs only when the problem itself must be shaped. Release,
-  deploy and monitoring are works of their own.
+- CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to
+  land. Definition runs only when the problem must be shaped; release, deploy, monitoring are works of their own.
 - A Knowledge Base conflict is a request that would make a KB statement false. Quote it, raise it
   with the user, and plan nothing around it until they answer.
 - A ticket, file or link brought into a work is added to its `sources:` before it is applied.
 - If the work turns out bigger or different, re-route it and say so in one line.
-- Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result; AID never merges.
+- Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result.
+  AID never merges, even when the user asks: the merge is the user's own step, and no merge is offered for later.
 
 ## Skill guide
 
