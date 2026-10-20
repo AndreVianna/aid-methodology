@@ -3331,7 +3331,6 @@ test-connector-registry.sh	T9: read missing field exits 1 with a diagnostic nami
 test-connector-secret-ac3-leak-sweep.sh	T1-T3 (bash-twin write): sentinel absent from .aid<PATH> (KB)	1
 test-connector-secret-ac3-leak-sweep.sh	T1-T3 (bash-twin write): sentinel absent from every STATE.md under .aid<PATH>	1
 test-connector-secret-ac3-leak-sweep.sh	T1-T3 (bash-twin write): sentinel absent from the repo working tree	1
-test-connector-secret-ac3-leak-sweep.sh	T1-T3 (bash-twin write): sentinel absent from the repo working tree — expected '' got '<PATH> for this run (synthetic, disposed at exit): AC3-LEAK-SWEEP-SENTINEL-bash-<HEX>'	1
 test-connector-secret-ac3-leak-sweep.sh	T4: sentinel found ONLY at the fixture's .secrets<PATH> store	1
 test-connector-secret-ac3-leak-sweep.sh	T5a: write's printed reference points at the fixture store path	1
 test-connector-secret-ac3-leak-sweep.sh	T5b: a committed descriptor holding the reference never carries the value	1
@@ -3579,6 +3578,40 @@ test-conversation-runner.sh	CP04	1
 test-conversation-runner.sh	CP05	1
 test-conversation-runner.sh	CR01	1
 test-conversation-runner.sh	CR02	1
+test-conversation-runner.sh	CX01	1
+test-conversation-runner.sh	CX02	1
+test-conversation-runner.sh	CX03	1
+test-conversation-runner.sh	CX04	1
+test-conversation-runner.sh	CX05	1
+test-conversation-runner.sh	CX06	1
+test-conversation-runner.sh	CX07	1
+test-conversation-runner.sh	CX08	1
+test-conversation-runner.sh	CX09	1
+test-conversation-runner.sh	CX10	1
+test-conversation-runner.sh	CX11	1
+test-conversation-runner.sh	CX12	1
+test-conversation-runner.sh	CX13	1
+test-conversation-runner.sh	CX14	1
+test-conversation-runner.sh	CX15	1
+test-conversation-runner.sh	CX16	1
+test-conversation-runner.sh	CX17	1
+test-conversation-runner.sh	CX18	1
+test-conversation-runner.sh	CX19	1
+test-conversation-runner.sh	CX20	1
+test-conversation-runner.sh	CX21	1
+test-conversation-runner.sh	CX22	1
+test-conversation-runner.sh	CX23	1
+test-conversation-runner.sh	CX24	1
+test-conversation-runner.sh	CX25	1
+test-conversation-runner.sh	CX26	1
+test-conversation-runner.sh	CX27	1
+test-conversation-runner.sh	CX28	1
+test-conversation-runner.sh	CX29	1
+test-conversation-runner.sh	CX30	1
+test-conversation-runner.sh	CX31	1
+test-conversation-runner.sh	CX32	1
+test-conversation-runner.sh	CX33	1
+test-conversation-runner.sh	CX34	1
 test-conversation-runner.sh	DF01	1
 test-conversation-runner.sh	DF02	1
 test-conversation-runner.sh	DF03	1
@@ -3602,6 +3635,8 @@ test-conversation-runner.sh	DF18	1
 test-conversation-runner.sh	DF19	1
 test-conversation-runner.sh	DF20	1
 test-conversation-runner.sh	DF21	1
+test-conversation-runner.sh	DF22	1
+test-conversation-runner.sh	DF23	1
 test-conversation-runner.sh	ED01	1
 test-conversation-runner.sh	ED02	1
 test-conversation-runner.sh	EN01	1
@@ -3622,6 +3657,9 @@ test-conversation-runner.sh	EX05	1
 test-conversation-runner.sh	EX06	1
 test-conversation-runner.sh	EX07	1
 test-conversation-runner.sh	EX08	1
+test-conversation-runner.sh	EX09	1
+test-conversation-runner.sh	EX10	1
+test-conversation-runner.sh	EX11	1
 test-conversation-runner.sh	FL01	1
 test-conversation-runner.sh	FL02	1
 test-conversation-runner.sh	FL03	1
@@ -3670,6 +3708,20 @@ test-conversation-runner.sh	NP01	1
 test-conversation-runner.sh	NP02	1
 test-conversation-runner.sh	NP03	1
 test-conversation-runner.sh	NP04	1
+test-conversation-runner.sh	NP05	1
+test-conversation-runner.sh	NP06	1
+test-conversation-runner.sh	NP07	1
+test-conversation-runner.sh	RF01	1
+test-conversation-runner.sh	RF02	1
+test-conversation-runner.sh	RF03	1
+test-conversation-runner.sh	RF04	1
+test-conversation-runner.sh	RF05	1
+test-conversation-runner.sh	RF06	1
+test-conversation-runner.sh	RF07	1
+test-conversation-runner.sh	RF08	1
+test-conversation-runner.sh	RF09	1
+test-conversation-runner.sh	RF10	1
+test-conversation-runner.sh	RF11	1
 test-conversation-runner.sh	SA01	1
 test-conversation-runner.sh	SA02	1
 test-conversation-runner.sh	SA03	1
@@ -3826,6 +3878,7 @@ test-dashboard-manifest.sh	DM02	1
 test-dashboard-manifest.sh	DM03	1
 test-dashboard-manifest.sh	DM04	1
 test-dashboard-manifest.sh	DM05	5
+test-dashboard-node.sh	dashboard node test passes: dashboard<PATH>	3
 test-dashboard-parity-h.sh	[PT-1-H] node server started on port <PORT>	1
 test-dashboard-parity-h.sh	[PT-1-H] python server started on port <PORT>	1
 test-dashboard-parity-h.sh	[detail-6a] details map content: 3 tasks, CRITICAL<PATH> findings, delivery_id null, deferred-issue filter correct	1
@@ -4193,6 +4246,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsin
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_all_phase_members	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_all_task_status_members	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_enum_values_match_feature001_literals	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_legacy_phase_names_map_to_fr1_members	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_unknown_lifecycle	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_unknown_phase	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_unknown_task_status	1
@@ -4577,6 +4631,9 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task029_stop_requeste
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task029_stop_requested.TestTaskStopRequestedHelper.test_present_signal_file_returns_true	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task029_stop_requested.TestWt1ControlDirDerivedFromWalkedWorkDir.test_signal_under_real_worktree_control_dir_is_detected	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task029_stop_requested.TestWt1ControlDirDerivedFromWalkedWorkDir.test_signal_under_served_root_is_not_detected	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_intent_phases_list_reaches_both_serialized_works	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_work_without_intent_serializes_phases_as_null	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_work_without_intent_serializes_phases_as_null_in_both_readers	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_all_verdicts_node	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_all_verdicts_python	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_doc_freshness_entry_order_identical	1
@@ -4591,6 +4648,11 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_par
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_python_suspect_verdict_with_named_source	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_python_url_source_unknown	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_suspect_count_equals_one	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task048_phase_mapping.TestPhaseMappingParity.test_completed_ci_work_keeps_its_phase_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task048_phase_mapping.TestPhaseMappingParity.test_completed_work_keeps_its_phase_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task048_phase_mapping.TestPhaseMappingParity.test_each_new_phase_reads_as_itself_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task048_phase_mapping.TestPhaseMappingParity.test_old_phase_names_map_by_the_spec_table_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task048_phase_mapping.TestPhaseMappingParity.test_unknown_phase_name_reads_as_unknown_in_both_readers	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task064_kb_status.TestDeriveKbStatus.test_approved_when_kb_and_html_ready_no_baseline	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task064_kb_status.TestDeriveKbStatus.test_approved_when_non_git_dir_with_baseline	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task064_kb_status.TestDeriveKbStatus.test_generating_when_kb_present_not_approved	1
@@ -4785,6 +4847,10 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_dis
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_discovery.TestPresentationReferencesWorksContainer.test_models_captions_old_form_gone	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_discovery.TestPresentationReferencesWorksContainer.test_models_captions_reference_works	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_discovery.TestPythonNodeContainerParity.test_python_node_agree_on_container_tree	1
+test-deferred-tests.sh	DT-01 header is test, covers, waiting_for, needs	1
+test-deferred-tests.sh	DT-01 rows read: 18 sample row(s), 0 skill row(s)	1
+test-deferred-tests.sh	DT-01 sample samples<PATH> names an existing file	18
+test-deferred-tests.sh	DT-02 deferred list has 18 row(s) (AID_RELEASE_CHECK=0)	1
 test-delete-pipeline.sh	U1 .aid<PATH> container survives	1
 test-delete-pipeline.sh	U1 main-folder delete exits 0	1
 test-delete-pipeline.sh	U1 success message format	1
@@ -5196,12 +5262,12 @@ test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-BODY AGENTS.md AID region is the r
 test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)	1
 test-dogfood-byte-identity.sh	DBI-ROOT-CLAUDE CLAUDE.md AID region is the AGENTS.md body plus the single @.aid<PATH> import	1
 test-dogfood-byte-identity.sh	DBI-ROOT-PROJECT CLAUDE.md keeps its ## Project section	1
-test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	137
+test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	140
 test-dogfood-byte-identity.sh	DBI-RT-EXTRA .aid<PATH> holds no file beyond canonical<PATH> and host.conf	1
 test-dogfood-byte-identity.sh	DBI-RT-HOST .aid<PATH> holds exactly worktree_root=.claude<PATH>	1
 test-dogfood-byte-identity.sh	DBI-RT-RULES .aid<PATH> == canonical<PATH>	1
-test-dogfood-byte-identity.sh	DBI-SK-AGT .agents<PATH>	213
-test-dogfood-byte-identity.sh	DBI-SK-CLA .claude<PATH>	213
+test-dogfood-byte-identity.sh	DBI-SK-AGT .agents<PATH>	217
+test-dogfood-byte-identity.sh	DBI-SK-CLA .claude<PATH>	217
 test-dogfood-byte-identity.sh	DBI-SK-ORPHAN-AGT .agents<PATH> has no orphans	1
 test-dogfood-byte-identity.sh	DBI-SK-ORPHAN-CLA .claude<PATH> has no orphans	1
 test-dogfood-byte-identity.sh	DBI-SURV .claude<PATH> survives	2
@@ -5382,6 +5448,7 @@ test-f010-governance-guards.sh	G06 state-kb-delta.md contains the 'No doc is ski
 test-f010-governance-guards.sh	G07 state-kb-delta.md references closure-check.sh (housekeep closure re-verify)	1
 test-f010-governance-guards.sh	G08 state-kb-delta.md: closure re-verify precedes commit	1
 test-f010-governance-guards.sh	G09 state-done.md references closure-check.sh (update-kb closure re-verify)	1
+test-f010-governance-guards.sh	G10 state-done.md: closure re-verify (line 14) precedes commit (line 156)	1
 test-f010-governance-guards.sh	G10 state-done.md: closure re-verify (line 14) precedes commit (line 157)	1
 test-f010-governance-guards.sh	setup: aid-housekeep<PATH> exists	1
 test-f010-governance-guards.sh	setup: aid-update-kb<PATH> exists	1
@@ -6400,6 +6467,12 @@ test-multitool-isolation.sh	AC-9 shared skill, runtime and AGENTS hashes stay un
 test-multitool-isolation.sh	T27 escape canary: no new .aid<PATH> dirs appeared in real HOME (<PATH>)	1
 test-multitool-isolation.sh	T29 HOME pin: fakehome (<PATH> is distinct from real HOME (<PATH>	1
 test-multitool-isolation.sh	T30 no .update-check in fakehome (AID_NO_UPDATE_CHECK=1 honoured)	1
+test-never-merges.sh	NM-01 git merge <PATH> git pull: no line in an exempt path fires	1
+test-never-merges.sh	NM-02 merge command <PATH> endpoint <PATH> push to main: no line in an exempt path fires	1
+test-never-merges.sh	NM-03 exemption present: canonical<PATH>	1
+test-never-merges.sh	NM-03 gh pr create <PATH> glab mr create: 1 line(s) fire only in the exempt paths	1
+test-never-merges.sh	NM-04 exemption present: canonical<PATH>	3
+test-never-merges.sh	NM-04 merge to main: no line in an exempt path fires	1
 test-npm-installer.sh	ASCII-only: packages<PATH>	2
 test-npm-installer.sh	NM01-01	1
 test-npm-installer.sh	NM01-02	1
@@ -6495,72 +6568,61 @@ test-payload-size.sh	PS05a	1
 test-payload-size.sh	PS05b	1
 test-payload-size.sh	PS06	1
 test-payload-size.sh	PS07	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'updated' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'updated' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'updated' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'updated' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'updated' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Active Skill correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Block Artifact sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Block Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Lifecycle=Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Pause Reason sentinel during Running	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Tasks Status comment content preserved	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'active_skill' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'lifecycle' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'phase' appears exactly once	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'updated' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Active Skill correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Block Artifact sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Block Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Lifecycle=Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Pause Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Phase field correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: Tasks Status comment content preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: frontmatter key 'active_skill' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: frontmatter key 'lifecycle' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: frontmatter key 'phase' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Building: frontmatter key 'updated' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Active Skill correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Block Artifact sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Block Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Lifecycle=Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Pause Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Phase field correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: Tasks Status comment content preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: frontmatter key 'active_skill' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: frontmatter key 'lifecycle' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: frontmatter key 'phase' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=CI: frontmatter key 'updated' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Active Skill correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Block Artifact sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Block Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Lifecycle=Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Pause Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Phase field correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: Tasks Status comment content preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: frontmatter key 'active_skill' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: frontmatter key 'lifecycle' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: frontmatter key 'phase' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Definition: frontmatter key 'updated' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Active Skill correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Block Artifact sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Block Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Lifecycle=Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Pause Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Phase field correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: Tasks Status comment content preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: frontmatter key 'active_skill' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: frontmatter key 'lifecycle' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: frontmatter key 'phase' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Planning: frontmatter key 'updated' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Active Skill correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Block Artifact sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Block Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Lifecycle=Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Pause Reason sentinel during Running	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Phase field correct	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: Tasks Status comment content preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: frontmatter key 'active_skill' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: frontmatter key 'lifecycle' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: frontmatter key 'phase' appears exactly once	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specification: frontmatter key 'updated' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A2 pause: Block Artifact sentinel during Paused state	1
 test-pipeline-status-walkthrough.sh	A2 pause: Block Reason sentinel during Paused state	1
 test-pipeline-status-walkthrough.sh	A2 pause: Lifecycle=Paused-Awaiting-Input	1
@@ -6588,26 +6650,28 @@ test-pipeline-status-walkthrough.sh	A5 setup: Pause Reason set to real text befo
 test-pipeline-status-walkthrough.sh	A5: Block Reason present after transition to Blocked	1
 test-pipeline-status-walkthrough.sh	A5: Pause Reason real text cleared when Lifecycle transitions to Blocked	1
 test-pipeline-status-walkthrough.sh	A5: Pause Reason reset to the '--' sentinel when Lifecycle transitions to Blocked	1
-test-pipeline-status-walkthrough.sh	B1 aid-define: --pipeline Active Skill=aid-define emit present	1
-test-pipeline-status-walkthrough.sh	B1 aid-define: --pipeline Phase=Define emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-define: --pipeline Phase=Specification emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-define: --step --skill aid-define --name FEATURE-DECOMPOSITION emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-define: Lifecycle=Running emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-define: canonical state file exists	1
-test-pipeline-status-walkthrough.sh	B1 aid-detail: --pipeline Active Skill=aid-detail emit present	1
-test-pipeline-status-walkthrough.sh	B1 aid-detail: --pipeline Phase=Detail emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-detail: --pipeline Phase=Planning emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-detail: --step --skill aid-detail --name FIRST-RUN emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-detail: Lifecycle=Running emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-detail: canonical state file exists	1
-test-pipeline-status-walkthrough.sh	B1 aid-execute: --pipeline Active Skill=aid-execute emit present	1
-test-pipeline-status-walkthrough.sh	B1 aid-execute: --pipeline Phase=Execute emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-execute: --pipeline Phase=Building emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-execute: --step --skill aid-execute --name EXECUTE emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-execute: Lifecycle=Running emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-execute: canonical state file exists	1
-test-pipeline-status-walkthrough.sh	B1 aid-plan: --pipeline Active Skill=aid-plan emit present	1
-test-pipeline-status-walkthrough.sh	B1 aid-plan: --pipeline Phase=Plan emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-plan: --pipeline Phase=Planning emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-plan: --step --skill aid-plan --name <STEP> entry write present	1
 test-pipeline-status-walkthrough.sh	B1 aid-plan: Lifecycle=Running emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-plan: canonical state file exists	1
-test-pipeline-status-walkthrough.sh	B1 aid-specify: --pipeline Active Skill=aid-specify emit present	1
-test-pipeline-status-walkthrough.sh	B1 aid-specify: --pipeline Phase=Specify emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-plan: typed start records the hand-off to FIRST-RUN	1
+test-pipeline-status-walkthrough.sh	B1 aid-specify: --pipeline Phase=Specification emit present	1
+test-pipeline-status-walkthrough.sh	B1 aid-specify: --step --skill aid-specify --name <STEP> entry write present	1
 test-pipeline-status-walkthrough.sh	B1 aid-specify: Lifecycle=Running emit present	1
 test-pipeline-status-walkthrough.sh	B1 aid-specify: canonical state file exists	1
+test-pipeline-status-walkthrough.sh	B1 aid-specify: typed start records the hand-off to INITIALIZE	1
 test-pipeline-status-walkthrough.sh	B2 aid-specify<PATH> Pause Reason emit present	1
 test-pipeline-status-walkthrough.sh	B2 aid-specify<PATH> Paused-Awaiting-Input emit present	1
 test-pipeline-status-walkthrough.sh	B2 chaining: Pause Reason emit in PAUSE handler	1
@@ -6653,7 +6717,7 @@ test-pipeline-status-walkthrough.sh	B4b state-machine-chaining.md: no co-occurre
 test-pipeline-status-walkthrough.sh	B4b state-review.md: no co-occurrence of --pipeline and Print: (safe)	1
 test-pipeline-status-walkthrough.sh	B4c chaining: pause-reason print instruction still present after emit	1
 test-pipeline-status-walkthrough.sh	B4c chaining: resume-command instruction still present after emit	1
-test-pipeline-status-walkthrough.sh	B4d state-blocked: PAUSE-FOR-USER-ACTION advance instruction still present (additive)	1
+test-pipeline-status-walkthrough.sh	B4d state-blocked: WAIT advance instruction still present (additive)	1
 test-pipeline-status-walkthrough.sh	B4e state-execute: impediment<PATH> instructions still present alongside emit (additive)	1
 test-pipeline-status-walkthrough.sh	B4f delivery-gate: STOP instruction still present alongside pause emit (additive)	1
 test-pipeline-status-walkthrough.sh	B4g self-test: awk detector correctly fires on Print: inside emit block (not hollow)	1
@@ -7126,19 +7190,12 @@ test-release-install-e2e.sh	E2E01 release.sh --dry-run exits 0 — expected exit
 test-release-install-e2e.sh	E2E01b staging dir contains exactly 7 tarballs (1 shared + 5 tool + 1 CLI bundle)	1
 test-release-install-e2e.sh	E2E01b staging dir contains exactly 7 tarballs (1 shared + 5 tool + 1 CLI bundle) — expected '7' got '0'	1
 test-release-install-e2e.sh	E2E01b-shared aid-shared-<VER> staged	1
-test-release-install-e2e.sh	E2E01b-shared aid-shared-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c aid-antigravity-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-antigravity-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c aid-claude-code-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-claude-code-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c aid-codex-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-codex-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c aid-copilot-cli-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-copilot-cli-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c aid-cursor-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-cursor-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01c-cli aid-cli-<VER> staged	1
-test-release-install-e2e.sh	E2E01c-cli aid-cli-v.tar.gz staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01d aid-install-core.sh staged	1
 test-release-install-e2e.sh	E2E01d aid-install-core.sh staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01e AidInstallCore.psm1 staged	1
@@ -7150,15 +7207,10 @@ test-release-install-e2e.sh	E2E01g SHA256SUMS has 9 entries (1 shared + 5 tool t
 test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes	1
 test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes — expected exit 0, got 1	1
 test-release-install-e2e.sh	E2E02b aid-antigravity-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-antigravity-v.tar.gz: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-claude-code-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-claude-code-v.tar.gz: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-codex-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-codex-v.tar.gz: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-copilot-cli-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-copilot-cli-v.tar.gz: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-cursor-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-cursor-v.tar.gz: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0	1
 test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0 — expected exit 0, got 2	1
 test-release-install-e2e.sh	E2E03b install --verbose reports Copied:	1
@@ -7337,6 +7389,10 @@ test-release.sh	RL08a	6
 test-release.sh	RL08b	2
 test-release.sh	RL09	6
 test-release.sh	RL10a	1
+test-release.sh	RL11a	2
+test-release.sh	RL11b	3
+test-release.sh	RL11c	2
+test-release.sh	RL11d	2
 test-review-cost-meter.sh	CM20	2
 test-review-cost-meter.sh	CM21	2
 test-review-cost-meter.sh	CM22	1
@@ -7725,6 +7781,56 @@ test-skill-guide.sh	SG-06 codex: all 112 skills at .agents<PATH> are byte-identi
 test-skill-guide.sh	SG-06 copilot-cli: all 112 skills at .agents<PATH> are byte-identical, named, described and unflagged	1
 test-skill-guide.sh	SG-06 cursor: all 112 skills at .agents<PATH> are byte-identical, named, described and unflagged	1
 test-skill-guide.sh	SG-06 one bundle staged through tests<PATH>	1
+test-skill-steps.sh	EXEMPT aid-brainstorm exists	1
+test-skill-steps.sh	EXEMPT aid-create-architecture exists	1
+test-skill-steps.sh	EXEMPT aid-create-backlog exists	1
+test-skill-steps.sh	EXEMPT aid-create-cicd exists	1
+test-skill-steps.sh	EXEMPT aid-create-mvp exists	1
+test-skill-steps.sh	EXEMPT aid-create-roadmap exists	1
+test-skill-steps.sh	EXEMPT aid-create-stack exists	1
+test-skill-steps.sh	EXEMPT aid-create-testing-strategy exists	1
+test-skill-steps.sh	EXEMPT aid-design exists	1
+test-skill-steps.sh	EXEMPT aid-design-api exists	1
+test-skill-steps.sh	EXEMPT aid-design-architecture exists	1
+test-skill-steps.sh	EXEMPT aid-design-backlog exists	1
+test-skill-steps.sh	EXEMPT aid-design-cicd exists	1
+test-skill-steps.sh	EXEMPT aid-design-cli exists	1
+test-skill-steps.sh	EXEMPT aid-design-config exists	1
+test-skill-steps.sh	EXEMPT aid-design-dashboard exists	1
+test-skill-steps.sh	EXEMPT aid-design-data-model exists	1
+test-skill-steps.sh	EXEMPT aid-design-data-pipeline exists	1
+test-skill-steps.sh	EXEMPT aid-design-document exists	1
+test-skill-steps.sh	EXEMPT aid-design-infra exists	1
+test-skill-steps.sh	EXEMPT aid-design-integration exists	1
+test-skill-steps.sh	EXEMPT aid-design-job exists	1
+test-skill-steps.sh	EXEMPT aid-design-messaging exists	1
+test-skill-steps.sh	EXEMPT aid-design-mvp exists	1
+test-skill-steps.sh	EXEMPT aid-design-roadmap exists	1
+test-skill-steps.sh	EXEMPT aid-design-stack exists	1
+test-skill-steps.sh	EXEMPT aid-design-test exists	1
+test-skill-steps.sh	EXEMPT aid-design-testing-strategy exists	1
+test-skill-steps.sh	EXEMPT aid-design-theme exists	1
+test-skill-steps.sh	EXEMPT aid-design-ui exists	1
+test-skill-steps.sh	EXEMPT aid-update-architecture exists	1
+test-skill-steps.sh	EXEMPT aid-update-backlog exists	1
+test-skill-steps.sh	EXEMPT aid-update-cicd exists	1
+test-skill-steps.sh	EXEMPT aid-update-mvp exists	1
+test-skill-steps.sh	EXEMPT aid-update-roadmap exists	1
+test-skill-steps.sh	EXEMPT aid-update-stack exists	1
+test-skill-steps.sh	EXEMPT aid-update-testing-strategy exists	1
+test-skill-steps.sh	EXEMPT canonical<PATH> exists	1
+test-skill-steps.sh	EXEMPT list read: 38 row(s)	1
+test-skill-steps.sh	SS-02 58 SKILL.md file(s) with a Dispatch table or ## State: cite skill-steps.md	1
+test-skill-steps.sh	SS-02 canonical<PATH> (while it exists) cites skill-steps.md	2
+test-skill-steps.sh	SS-03 every **Advance:** line in canonical<PATH> names an allowed word; no PAUSE-FOR-USER	1
+test-skill-steps.sh	SS-08 project-state-template.yml parses with no warning	1
+test-skill-steps.sh	SS-08 work-state-template.yml parses with no warning	1
+test-skill-steps.sh	SS-11 354 tracked file(s) in scope name no old phase	1
+test-skill-steps.sh	SS-12 no hand-written lifecycle: Completed or Canceled outside the exempt list	1
+test-skill-steps.sh	SS-14(a) section 3a runs writeback-state.sh --create with --reading, --skill and --step	1
+test-skill-steps.sh	SS-14(b) no record key, template copy or hand-written record block outside the exceptions	1
+test-skill-steps.sh	SS-14(c) skill-steps.md section The work record has the fail-closed and recovery rules	1
+test-skill-steps.sh	SS-14(d) no skill routes a continuation itself	1
 test-spine-depth-coverage.sh	SD01	1
 test-spine-depth-coverage.sh	SD02	11
 test-spine-depth-coverage.sh	SD03	11
@@ -8355,7 +8461,10 @@ test-work-initiation-gate.sh	F: doc documents § 3a's create-failure guard	1
 test-work-initiation-gate.sh	F: doc names worktree-lifecycle.sh create	1
 test-work-initiation-gate.sh	F: doc names worktree-lifecycle.sh locate	1
 test-work-initiation-gate.sh	F: doc points starters at the shared enumeration helper	1
-test-work-initiation-gate.sh	F: routing table names a phase-skill resume target (partial full-path work)	1
+test-work-initiation-gate.sh	F: legacy map has a Proposed step column	1
+test-work-initiation-gate.sh	F: legacy map names a phase-skill target (partial full-path work)	1
+test-work-initiation-gate.sh	F: legacy map names the <PATH> target (halted <PATH> mid-Execute work)	1
+test-work-initiation-gate.sh	F: legacy map proposes EXECUTE as the step for an Execute work	1
 test-work-initiation-gate.sh	F: routing table names the <PATH> resume target (halted <PATH> mid-Execute work)	1
 test-work-initiation-gate.sh	F: work-initiation-gate.md exists (the shared front-door reference)	1
 test-work-initiation-gate.sh	F: § 3a's next-number source is the cross-worktree enumeration, not a local .aid<PATH> glob	1
@@ -8395,6 +8504,31 @@ test-work-initiation-gate.sh	GG09-aid-create-document-create-mention	1
 test-work-initiation-gate.sh	GG10-aid-update-document	1
 test-work-initiation-gate.sh	GG10-aid-update-document-consults	1
 test-work-initiation-gate.sh	GG10-aid-update-document-create-mention	1
+test-work-initiation-gate.sh	H: gate closes the legacy phase map block	1
+test-work-initiation-gate.sh	H: gate opens the legacy phase map block	1
+test-work-initiation-gate.sh	H: no old phase name appears in the gate outside the legacy markers (SS-11)	1
+test-work-initiation-gate.sh	H: § 3a --create passes --reading	1
+test-work-initiation-gate.sh	H: § 3a --create passes --skill	1
+test-work-initiation-gate.sh	H: § 3a --create passes --step	1
+test-work-initiation-gate.sh	H: § 3a hand-back carries the one-line record notice	1
+test-work-initiation-gate.sh	H: § 3a runs writeback-state.sh --create	1
+test-work-initiation-gate.sh	H: § 3b resume table has exactly three rows	1
+test-work-initiation-gate.sh	MUT-RW1: the RW1 row assertion fails when § 3b rows 1 and 2 are swapped (mutation detected)	1
+test-work-initiation-gate.sh	RW1	3
+test-work-initiation-gate.sh	RW2a	3
+test-work-initiation-gate.sh	RW2b	3
+test-work-initiation-gate.sh	RW3a	2
+test-work-initiation-gate.sh	RW3b	2
+test-work-initiation-gate.sh	RWR: --check reports the missing saved skill	1
+test-work-initiation-gate.sh	RWR: --check reports the missing type	1
+test-work-initiation-gate.sh	RWR: --repair with no --reading on a typeless record is refused (exit 5)	1
+test-work-initiation-gate.sh	RWR: after the one confirmed repair --check passes (exit 0)	1
+test-work-initiation-gate.sh	RWR: old-name work with no type or saved skill: --check reports it (exit 9)	1
+test-work-initiation-gate.sh	RWR: resume table lands on row 2 before the repair	1
+test-work-initiation-gate.sh	RWR: the confirmed --repair succeeds (exit 0)	1
+test-work-initiation-gate.sh	RWR: the next resume lands on row 3 (aid-execute at EXECUTE)	1
+test-work-initiation-gate.sh	RWR: the refused repair wrote nothing	1
+test-work-initiation-gate.sh	RWR: the repair appends a lifecycle_history entry naming the record change	1
 test-work-initiation-gate.sh	Recon: aid-prototype references gate § 3a work-level create+enter at its allocation step	1
 test-work-initiation-gate.sh	Recon: aid-prototype's spike opt-in worktree sentence survives unchanged	1
 test-work-initiation-gate.sh	Recon: aid-research references gate § 3a work-level create+enter at its allocation step	1
@@ -8422,10 +8556,12 @@ test-work-state-template.sh	WS19	3
 test-work-state-template.sh	WS20	2
 test-work-state-template.sh	WS21	4
 test-work-state-template.sh	WS22	3
-test-work-state-template.sh	WS23	8
+test-work-state-template.sh	WS23	9
 test-work-state-template.sh	WS24	2
 test-work-state-template.sh	WS25	3
 test-work-state-template.sh	WS26	6
+test-work-state-template.sh	WS27	4
+test-work-state-template.sh	WS28	5
 test-worktree-lifecycle.sh	A: branch is based off master by default	1
 test-worktree-lifecycle.sh	A: fresh create exits 0	1
 test-worktree-lifecycle.sh	A: new worktree is on branch work-101	1
@@ -8815,12 +8951,17 @@ test-writeback-state.sh	10c: Lifecycle=running (lowercase) rejected (exit 4)	1
 test-writeback-state.sh	10d-ii: Phase=Deploy (retired) rejected (exit 4)	1
 test-writeback-state.sh	10d-ii: Phase=Interview (retired) rejected (exit 4)	1
 test-writeback-state.sh	10d-ii: Phase=Monitor (retired) rejected (exit 4)	1
-test-writeback-state.sh	10d: Phase=Define accepted (exit 0)	1
-test-writeback-state.sh	10d: Phase=Describe accepted (exit 0)	1
-test-writeback-state.sh	10d: Phase=Detail accepted (exit 0)	1
-test-writeback-state.sh	10d: Phase=Execute accepted (exit 0)	1
-test-writeback-state.sh	10d: Phase=Plan accepted (exit 0)	1
-test-writeback-state.sh	10d: Phase=Specify accepted (exit 0)	1
+test-writeback-state.sh	10d-iii: Phase=Define (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d-iii: Phase=Describe (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d-iii: Phase=Detail (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d-iii: Phase=Execute (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d-iii: Phase=Plan (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d-iii: Phase=Specify (old name) refused on write (exit 4)	1
+test-writeback-state.sh	10d: Phase=Building accepted (exit 0)	1
+test-writeback-state.sh	10d: Phase=CI accepted (exit 0)	1
+test-writeback-state.sh	10d: Phase=Definition accepted (exit 0)	1
+test-writeback-state.sh	10d: Phase=Planning accepted (exit 0)	1
+test-writeback-state.sh	10d: Phase=Specification accepted (exit 0)	1
 test-writeback-state.sh	10e: Phase=Build rejected (exit 4)	1
 test-writeback-state.sh	10f: Phase=execute (lowercase) rejected (exit 4)	1
 test-writeback-state.sh	10g: Active Skill=aid-review accepted (exit 0)	1
@@ -9035,6 +9176,289 @@ test-writeback-state.sh	26e: declared 'LITE' is case-insensitive: write landed o
 test-writeback-state.sh	26f: declared 'full' overrides the BLUEPRINT.md presence rule (no flat write)	1
 test-writeback-state.sh	26g: undeclared work still falls back to the presence rule -> exit 0	1
 test-writeback-state.sh	26g: undeclared work still falls back to the presence rule: write landed on the FLAT target (tasks_lifecycle.task-001)	1
+test-writeback-state.sh	27a: --create wrote the work STATE.yml	1
+test-writeback-state.sh	27a: lifecycle_history holds exactly one entry	1
+test-writeback-state.sh	27a: no seed date survives in lifecycle_history	1
+test-writeback-state.sh	27a: the creation entry is dated today	1
+test-writeback-state.sh	27a: the creation entry names the creating skill	1
+test-writeback-state.sh	27a: the record --create wrote passes --check	1
+test-writeback-state.sh	27a: the template's seed entry is gone	1
+test-writeback-state.sh	27b: --reroute with a line break in --why exits 0	1
+test-writeback-state.sh	27b: a newline in --why cannot create a second lifecycle: line	1
+test-writeback-state.sh	27b: the line breaks became spaces inside the why scalar	1
+test-writeback-state.sh	27b: the work is still Running	1
+test-writeback-state.sh	27c: a saved skill absent from every installed skill folder exits 9	1
+test-writeback-state.sh	27c: a saved skill present in a tool mirror of the install manifest passes --check	1
+test-writeback-state.sh	27c: the PROBLEM names the uninstalled skill	1
+test-writeback-state.sh	27d: a saved skill present in the shared .agents<PATH> folder passes --check	1
+test-writeback-state.sh	28a: --handoff on a copy of the work template exits 0	1
+test-writeback-state.sh	28a: the staged write keeps the target's 0644 mode	1
+test-writeback-state.sh	28b: --ask --project created .aid<PATH>	1
+test-writeback-state.sh	28b: --ask --project in an empty directory exits 0	1
+test-writeback-state.sh	28b: the created .aid<PATH> is 0644, not the temporary 0600	1
+test-writeback-state.sh	29a2: --create without --phase exits 0	1
+test-writeback-state.sh	29a2: phase written as -- when --phase is omitted	1
+test-writeback-state.sh	29a2: updated written when --phase is omitted	1
+test-writeback-state.sh	29a: --create with every option exits 0	1
+test-writeback-state.sh	29a: active_skill written	1
+test-writeback-state.sh	29a: intent.depth written	1
+test-writeback-state.sh	29a: intent.reading written	1
+test-writeback-state.sh	29a: intent.request written	1
+test-writeback-state.sh	29a: lifecycle written as Running	1
+test-writeback-state.sh	29a: minimum grade written	1
+test-writeback-state.sh	29a: no staging file is left beside the record	1
+test-writeback-state.sh	29a: phase written	1
+test-writeback-state.sh	29a: pipeline.initiator written	1
+test-writeback-state.sh	29a: pipeline.path written	1
+test-writeback-state.sh	29a: started written	1
+test-writeback-state.sh	29a: step written	1
+test-writeback-state.sh	29a: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29a: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29a: the creation entry names the creating skill	1
+test-writeback-state.sh	29a: the template's seed entry is replaced	1
+test-writeback-state.sh	29a: updated written	1
+test-writeback-state.sh	29b: --create on a clean folder exits 0	1
+test-writeback-state.sh	29b: --create over an existing STATE.yml exits 8	1
+test-writeback-state.sh	29b: --create with a --skill outside aid-{skill} exits 4	1
+test-writeback-state.sh	29b: --create with an invalid --depth exits 4	1
+test-writeback-state.sh	29b: --create with an invalid --minimum-grade exits 4	1
+test-writeback-state.sh	29b: --create with an invalid --reading exits 4	1
+test-writeback-state.sh	29b: --create with an invalid --step exits 4	1
+test-writeback-state.sh	29b: --create with an old phase name exits 4	1
+test-writeback-state.sh	29b: --create without --reading exits 5	1
+test-writeback-state.sh	29b: --create without --request exits 5	1
+test-writeback-state.sh	29b: --create without --skill exits 5	1
+test-writeback-state.sh	29b: --create without --step exits 5	1
+test-writeback-state.sh	29b: a refused --create writes no record	1
+test-writeback-state.sh	29b: the refused --create leaves the record byte-for-byte unchanged	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Define exits 4	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Describe exits 4	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Detail exits 4	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Execute exits 4	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Plan exits 4	1
+test-writeback-state.sh	29c: --pipeline --field Phase --value Specify exits 4	1
+test-writeback-state.sh	29c: the refused phase writes leave the record byte-for-byte unchanged	1
+test-writeback-state.sh	29d: --create against a held lock exits 2 (lock timeout)	1
+test-writeback-state.sh	29d: --repair against a held lock exits 2 (lock timeout)	1
+test-writeback-state.sh	29d: --reroute against a held lock exits 2 (lock timeout)	1
+test-writeback-state.sh	29d: --step against a held lock exits 2 (lock timeout)	1
+test-writeback-state.sh	29d: a write into an unwritable work folder exits 1	1
+test-writeback-state.sh	29d: the lock timeouts leave the record byte-for-byte unchanged	1
+test-writeback-state.sh	29d: the lock-timeout --create writes no record	1
+test-writeback-state.sh	29d: the unwritable folder is named in the error	1
+test-writeback-state.sh	29d: the unwritable-folder write leaves the record byte-for-byte unchanged	1
+test-writeback-state.sh	29e: --check on a Canceled work that still names a saved skill exits 9	1
+test-writeback-state.sh	29e: --check on a Completed work that still names a saved skill exits 9	1
+test-writeback-state.sh	29e: --check on a handoff whose returns is neither yes nor no exits 9	1
+test-writeback-state.sh	29e: --check on a pass that has a returned time exits 9	1
+test-writeback-state.sh	29e: --check on a record with no intent.reading exits 9	1
+test-writeback-state.sh	29e: --check on a record with no saved skill exits 9	1
+test-writeback-state.sh	29e: --check on a saved skill with no saved step exits 9	1
+test-writeback-state.sh	29e: --check passes a healthy record	1
+test-writeback-state.sh	29e: --check with the saved skill absent from the skill folder exits 9	1
+test-writeback-state.sh	29e: --check with the saved skill installed in the skill folder exits 0	1
+test-writeback-state.sh	29e: --handoff as a pass writes the entry that the malformed case edits	1
+test-writeback-state.sh	29e: --handoff writes the call that the malformed case edits	1
+test-writeback-state.sh	29e: the Canceled work with a saved skill is named	1
+test-writeback-state.sh	29e: the Completed work with a saved skill is named	1
+test-writeback-state.sh	29e: the malformed handoff entry is named	1
+test-writeback-state.sh	29e: the missing reading is named	1
+test-writeback-state.sh	29e: the missing saved skill is named	1
+test-writeback-state.sh	29e: the missing saved step is named	1
+test-writeback-state.sh	29e: the pass with a returned time is named	1
+test-writeback-state.sh	29e: the uninstalled skill is named	1
+test-writeback-state.sh	29f-Canceled: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29f-Canceled: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29f-Completed: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29f-Completed: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29f: --pipeline --field Lifecycle --value Canceled exits 0	1
+test-writeback-state.sh	29f: --pipeline --field Lifecycle --value Completed exits 0	1
+test-writeback-state.sh	29f: Canceled clears the saved skill	1
+test-writeback-state.sh	29f: Canceled clears the saved step	1
+test-writeback-state.sh	29f: Canceled clears the saved step detail	1
+test-writeback-state.sh	29f: Completed clears the saved skill	1
+test-writeback-state.sh	29f: Completed clears the saved step	1
+test-writeback-state.sh	29f: Completed clears the saved step detail	1
+test-writeback-state.sh	29f: the Canceled record passes --check	1
+test-writeback-state.sh	29f: the Completed record passes --check	1
+test-writeback-state.sh	29g: --step exits 0	1
+test-writeback-state.sh	29g: --step sets active_skill	1
+test-writeback-state.sh	29g: --step sets step	1
+test-writeback-state.sh	29g: --step sets step_detail	1
+test-writeback-state.sh	29g: --step with a skill outside aid-{skill} exits 4	1
+test-writeback-state.sh	29g: --step with an invalid step name exits 4	1
+test-writeback-state.sh	29g: --step without --detail exits 0	1
+test-writeback-state.sh	29g: --step without --detail sets the step	1
+test-writeback-state.sh	29g: --step without --detail writes step_detail as --	1
+test-writeback-state.sh	29g: --step without --skill exits 5	1
+test-writeback-state.sh	29g: --step without a step name exits 5	1
+test-writeback-state.sh	29g: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29g: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29g: the record after --step passes --check	1
+test-writeback-state.sh	29h: --reroute exits 0	1
+test-writeback-state.sh	29h: --reroute sets intent.depth	1
+test-writeback-state.sh	29h: --reroute sets intent.reading	1
+test-writeback-state.sh	29h: --reroute with an invalid depth exits 4	1
+test-writeback-state.sh	29h: --reroute with an invalid reading exits 4	1
+test-writeback-state.sh	29h: --reroute without --reading exits 5	1
+test-writeback-state.sh	29h: --reroute without --why exits 5	1
+test-writeback-state.sh	29h: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29h: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29h: the change entry carries its at key	1
+test-writeback-state.sh	29h: the change entry records the new reading	1
+test-writeback-state.sh	29h: the change entry records the old reading	1
+test-writeback-state.sh	29h: the change entry records the reason	1
+test-writeback-state.sh	29i: --repair appends a lifecycle_history entry	1
+test-writeback-state.sh	29i: --repair of a record that has a reading needs no --reading	1
+test-writeback-state.sh	29i: --repair on a record with no reading and no --reading exits 5	1
+test-writeback-state.sh	29i: --repair sets active_skill	1
+test-writeback-state.sh	29i: --repair sets intent.reading	1
+test-writeback-state.sh	29i: --repair sets step	1
+test-writeback-state.sh	29i: --repair sets step_detail	1
+test-writeback-state.sh	29i: --repair with --reading exits 0	1
+test-writeback-state.sh	29i: --repair with an invalid --reading exits 4	1
+test-writeback-state.sh	29i: a repair without --reading keeps intent.reading	1
+test-writeback-state.sh	29i: a second repair appends a second entry	1
+test-writeback-state.sh	29i: exactly one repair entry is appended	1
+test-writeback-state.sh	29i: the Node reader parses the record with no warning	1
+test-writeback-state.sh	29i: the Python reader parses the record with no warning	1
+test-writeback-state.sh	29i: the entry names the old and the new reading	1
+test-writeback-state.sh	29i: the refusal names the missing --reading	1
+test-writeback-state.sh	29i: the refused --repair leaves the record byte-for-byte unchanged	1
+test-writeback-state.sh	29i: the repaired record passes --check	1
+test-writeback-state.sh	30a: --handoff as a call exits 0	1
+test-writeback-state.sh	30a: --phase with a call exits 4	1
+test-writeback-state.sh	30a: the call clears step_detail	1
+test-writeback-state.sh	30a: the call is open (returned --)	1
+test-writeback-state.sh	30a: the call sets active_skill to the target	1
+test-writeback-state.sh	30a: the call sets step to the target's entry step	1
+test-writeback-state.sh	30a: the entry is a call	1
+test-writeback-state.sh	30a: the entry records the caller as from	1
+test-writeback-state.sh	30a: the entry records the caller's step as from_step	1
+test-writeback-state.sh	30a: the refused --phase call writes no entry	1
+test-writeback-state.sh	30b: --handoff as a pass with --phase exits 0	1
+test-writeback-state.sh	30b: --phase sets the phase	1
+test-writeback-state.sh	30b: a pass has returned --	1
+test-writeback-state.sh	30b: a pass leaves no open call, so --handoff-return exits 7	1
+test-writeback-state.sh	30b: the entry is a pass	1
+test-writeback-state.sh	30c: --handoff as a pass without --phase exits 0	1
+test-writeback-state.sh	30c: a pass without --phase leaves no open call, so --handoff-return exits 7	1
+test-writeback-state.sh	30c: setup pass sets the phase to Definition	1
+test-writeback-state.sh	30c: the pass has returned --	1
+test-writeback-state.sh	30c: the pass still moves the active skill	1
+test-writeback-state.sh	30c: the phase stays as it was	1
+test-writeback-state.sh	30d: a third --handoff-return, with no open call, exits 7	1
+test-writeback-state.sh	30d: both calls are now returned	1
+test-writeback-state.sh	30d: the first --handoff-return exits 0	1
+test-writeback-state.sh	30d: the first return restores that caller's step	1
+test-writeback-state.sh	30d: the first return restores the newest call's caller	1
+test-writeback-state.sh	30d: the inner call is stamped with its return time	1
+test-writeback-state.sh	30d: the nested call is the active skill	1
+test-writeback-state.sh	30d: the outer call stays open after the inner one returns	1
+test-writeback-state.sh	30d: the second --handoff-return exits 0	1
+test-writeback-state.sh	30d: the second return restores the original step	1
+test-writeback-state.sh	30d: the second return restores the outer call's caller	1
+test-writeback-state.sh	30d: the second, nested --handoff exits 0	1
+test-writeback-state.sh	30e: --handoff-return with no handoffs exits 7	1
+test-writeback-state.sh	30e: the refused --handoff-return leaves the record byte-for-byte unchanged	1
+test-writeback-state.sh	30f: --covers is written to the question	1
+test-writeback-state.sh	30f: a new question is Pending	1
+test-writeback-state.sh	30f: the earlier question is unchanged	1
+test-writeback-state.sh	30f: the first --ask exits 0	1
+test-writeback-state.sh	30f: the first question is Q1 and the only output	1
+test-writeback-state.sh	30f: the next question is Q2, one above the highest id	1
+test-writeback-state.sh	30f: the qa list holds exactly the two questions	1
+test-writeback-state.sh	30f: the second --ask exits 0	1
+test-writeback-state.sh	30g: --answer --project exits 0	1
+test-writeback-state.sh	30g: --answer --project sets the project question's state	1
+test-writeback-state.sh	30g: --ask --project creates .aid<PATH>	1
+test-writeback-state.sh	30g: --ask --project in an empty directory exits 0	1
+test-writeback-state.sh	30g: a second --ask --project exits 0	1
+test-writeback-state.sh	30g: the first project question is Q1	1
+test-writeback-state.sh	30g: the other project question stays Pending	1
+test-writeback-state.sh	30g: the project file holds only the qa key	1
+test-writeback-state.sh	30g: the second project question is Q2	1
+test-writeback-state.sh	30h: --answer Answered exits 0	1
+test-writeback-state.sh	30h: --answer Skipped exits 0	1
+test-writeback-state.sh	30h: --answer for a question that does not exist exits 4	1
+test-writeback-state.sh	30h: --answer with a state outside Answered | Skipped | Assumed exits 4	1
+test-writeback-state.sh	30h: --by sets answered_by	1
+test-writeback-state.sh	30h: Answered sets the answer	1
+test-writeback-state.sh	30h: Answered sets the state	1
+test-writeback-state.sh	30h: Assumed takes the value as the answer	1
+test-writeback-state.sh	30h: Skipped sets the state	1
+test-writeback-state.sh	30h: Skipped without --value leaves the answer --	1
+test-writeback-state.sh	30h: a later --answer may set Assumed	1
+test-writeback-state.sh	30h: an approval answer with --covers and --commit exits 0	1
+test-writeback-state.sh	30h: the approval is Answered	1
+test-writeback-state.sh	30h: the approval's --commit is written	1
+test-writeback-state.sh	30h: the approval's --covers is written	1
+test-writeback-state.sh	30h: the earlier answer is untouched by a later one	1
+test-writeback-state.sh	30h: the refusal names the missing question	1
+test-writeback-state.sh	31a: --step run inside a work folder finds that folder's record and exits 0	1
+test-writeback-state.sh	31a: the step is written to the record found from inside the folder	1
+test-writeback-state.sh	31b: --step from the worktree root finds the work matching the branch and exits 0	1
+test-writeback-state.sh	31b: the step is written to the branch's work record	1
+test-writeback-state.sh	31c: an AID_STATE_FILE outside the work folder is honoured and exits 0	1
+test-writeback-state.sh	31c: the explicit record is the one written	1
+test-writeback-state.sh	31c: the work folder the directory is in is left alone	1
+test-writeback-state.sh	31d: neither record is written	1
+test-writeback-state.sh	31d: the refusal says more than one work matches	1
+test-writeback-state.sh	31d: two matching works exit 1 (no guess)	1
+test-writeback-state.sh	31e: no work record found exits 1	1
+test-writeback-state.sh	31e: the message says no work record was found	1
+test-writeback-state.sh	31f: --handoff on a record with no handoffs list exits 0 (R8)	1
+test-writeback-state.sh	31f: the first handoff entry is written under a new handoffs list	1
+test-writeback-state.sh	31g: --ask on a record with no qa list exits 0 (R8)	1
+test-writeback-state.sh	31g: the first question is Q1	1
+test-writeback-state.sh	31g: the question is written under a new qa list	1
+test-writeback-state.sh	31h: --reroute on a record with no intent.changes exits 0 (R8)	1
+test-writeback-state.sh	31h: the change is written under a new intent.changes list	1
+test-writeback-state.sh	31h: the existing lifecycle_history is not duplicated	1
+test-writeback-state.sh	31i: --repair on a record with a lifecycle_history exits 0	1
+test-writeback-state.sh	31i: the repair appends its entry to the existing history	1
+test-writeback-state.sh	31j: the record grown by first appends passes --check	1
+test-writeback-state.sh	31k: --create with --reason and --phases exits 0	1
+test-writeback-state.sh	31k: --create writes intent.phases as a three-item block list	1
+test-writeback-state.sh	31k: --create writes intent.reason	1
+test-writeback-state.sh	31k: the phase names are written as the list items	1
+test-writeback-state.sh	31l: --create with an unknown phase name exits 4	1
+test-writeback-state.sh	31l: an empty phase item exits 4	1
+test-writeback-state.sh	31l: the refused create wrote no record	1
+test-writeback-state.sh	31m: --intent on an existing record exits 0	1
+test-writeback-state.sh	31m: --intent writes intent.reason on the existing record	1
+test-writeback-state.sh	31m: --intent writes the phase list	1
+test-writeback-state.sh	31m: a second --intent replaces the whole list	1
+test-writeback-state.sh	31n: --intent with an unknown phase exits 4	1
+test-writeback-state.sh	31n: --intent with neither --reason nor --phases exits 5	1
+test-writeback-state.sh	31o: --pipeline from the worktree root finds the work matching the branch and exits 0	1
+test-writeback-state.sh	31o: --pipeline run inside a work folder finds that folder's record and exits 0	1
+test-writeback-state.sh	31o: --pipeline with no work record exits 1	1
+test-writeback-state.sh	31o: an AID_STATE_FILE that names no file is honoured and exits 1	1
+test-writeback-state.sh	31o: the lifecycle is written to the branch's work record	1
+test-writeback-state.sh	31o: the lifecycle is written to the record found from inside the folder	1
+test-writeback-state.sh	31o: the message says no work record was found, not a placeholder path	1
+test-writeback-state.sh	31o: the work the directory belongs to is left alone	1
+test-writeback-state.sh	31p: --phases given to --step exits 5 instead of being dropped	1
+test-writeback-state.sh	31p: the one-record-mode error lists --intent	1
+test-writeback-state.sh	31q: --step with no git checkout and no work folder exits 1	1
+test-writeback-state.sh	31q: the message names git as the cause	1
+test-writeback-state.sh	31r: --append-issue from the worktree root exits 0	1
+test-writeback-state.sh	31r: --block from the worktree root exits 0	1
+test-writeback-state.sh	31r: --findings from the worktree root exits 0	1
+test-writeback-state.sh	31r: --gate-field from the worktree root exits 0	1
+test-writeback-state.sh	31r: --gate-field on the flat layout finds the work's own record and exits 0	1
+test-writeback-state.sh	31r: --lifecycle from the worktree root exits 0	1
+test-writeback-state.sh	31r: --lifecycle on the flat layout exits 0	1
+test-writeback-state.sh	31r: --task-id --field from inside the work folder exits 0	1
+test-writeback-state.sh	31r: --task-id --field from the worktree root finds the work and exits 0	1
+test-writeback-state.sh	31r: --task-id --field with no work record exits 1	1
+test-writeback-state.sh	31r: the delivery lifecycle is written under the found work	1
+test-writeback-state.sh	31r: the flat delivery lifecycle is written to the work record	1
+test-writeback-state.sh	31r: the issue row lands in the found work folder	1
+test-writeback-state.sh	31r: the message says no work record was found	1
+test-writeback-state.sh	31r: the task state is written from inside the folder	1
+test-writeback-state.sh	31r: the task state is written under the found work	1
 test-writeback-state.sh	9a: Lifecycle write with no prior base keys -> exit 0	1
 test-writeback-state.sh	9a: lifecycle key written	1
 test-writeback-state.sh	9b: Phase field written	1
@@ -9117,6 +9541,15 @@ test-writeback-state.sh	W1-18 kept-newline folded block: the body is consumed, t
 test-writeback-state.sh	W1-18 literal block with a blank line inside it: the body is consumed, the value replaced, every sibling intact	1
 test-writeback-state.sh	W1-18 nested block scalar under a parent: the body is consumed, the value replaced, every sibling intact	1
 test-writeback-state.sh	append-issue: idempotent -- duplicate row not added	1
+test-writeback-state.sh	check-bad-returns: setup --create exits 0	1
+test-writeback-state.sh	check-finished-Canceled: setup --create exits 0	1
+test-writeback-state.sh	check-finished-Completed: setup --create exits 0	1
+test-writeback-state.sh	check-healthy: setup --create exits 0	1
+test-writeback-state.sh	check-missing-reading: setup --create exits 0	1
+test-writeback-state.sh	check-missing-skill: setup --create exits 0	1
+test-writeback-state.sh	check-missing-step: setup --create exits 0	1
+test-writeback-state.sh	check-not-installed: setup --create exits 0	1
+test-writeback-state.sh	check-pass-returned: setup --create exits 0	1
 test-writeback-state.sh	clean gate (no issues) round-trips to an empty sequence	1
 test-writeback-state.sh	concurrent P1 write landed in task-001<PATH> (Done)	1
 test-writeback-state.sh	concurrent P2 write landed in task-002<PATH> (In Progress)	1
@@ -9134,9 +9567,12 @@ test-writeback-state.sh	delivery-001<PATH> has a delivery_gate mapping	1
 test-writeback-state.sh	delivery-002 delivery_state advanced to Blocked	1
 test-writeback-state.sh	delivery-002<PATH> gets its own gate block	1
 test-writeback-state.sh	delivery-block mode: idempotent -- same block, delivery STATE.yml size unchanged	1
+test-writeback-state.sh	failed-write: setup --create exits 0	1
 test-writeback-state.sh	field mode: idempotent -- same value, no size change	1
 test-writeback-state.sh	findings item written to task-001 STATE.yml	1
 test-writeback-state.sh	findings mode: idempotent -- same block, no task STATE.yml size change	1
+test-writeback-state.sh	finish-Canceled: setup --create exits 0	1
+test-writeback-state.sh	finish-Completed: setup --create exits 0	1
 test-writeback-state.sh	fixed-on-spot in task-002 STATE.yml	1
 test-writeback-state.sh	gate block replaced -- new issue present in delivery-001	1
 test-writeback-state.sh	header present	1
@@ -9154,6 +9590,9 @@ test-writeback-state.sh	no args -> non-zero exit	1
 test-writeback-state.sh	non-numeric delivery-id -> exit 4	1
 test-writeback-state.sh	non-numeric task-id -> exit 4	1
 test-writeback-state.sh	old issue removed from delivery-001 (replace, not append)	1
+test-writeback-state.sh	old-phase-write: setup --create exits 0	1
+test-writeback-state.sh	repair-mode: setup --create exits 0	1
+test-writeback-state.sh	reroute-mode: setup --create exits 0	1
 test-writeback-state.sh	reviewer_tier written to task-001 STATE.yml	1
 test-writeback-state.sh	row1	1
 test-writeback-state.sh	row2	1
@@ -9162,6 +9601,7 @@ test-writeback-state.sh	shrink-on-overwrite: stale item 1 fully swallowed	1
 test-writeback-state.sh	shrink-on-overwrite: stale item 3 fully swallowed	1
 test-writeback-state.sh	shrink-on-overwrite: the new single item is present	1
 test-writeback-state.sh	single-line-diff: overwriting an existing scalar changes exactly one line (1 removed + 1 added)	1
+test-writeback-state.sh	step-mode: setup --create exits 0	1
 test-writeback-state.sh	table header present	1
 test-writeback-state.sh	task STATE.yml missing -> exit 1	1
 test-writeback-state.sh	task-001 STATE.yml dispatch_log key survives the --findings rewrite	1
@@ -9183,7 +9623,15 @@ test-writeback-state.sh	task-005 Elapsed updated	1
 test-writeback-state.sh	task-005 STATE.yml NOT modified by --block	1
 test-writeback-state.sh	task-005: no stale lock file after concurrent write	1
 test-writeback-state.sh	task-006 Notes written via source-line resolution	1
+test-writeback-state.sh	u30-answer: setup --create exits 0	1
+test-writeback-state.sh	u30-ask: setup --create exits 0	1
+test-writeback-state.sh	u30-call: setup --create exits 0	1
+test-writeback-state.sh	u30-nested: setup --create exits 0	1
+test-writeback-state.sh	u30-none: setup --create exits 0	1
+test-writeback-state.sh	u30-pass-phase: setup --create exits 0	1
+test-writeback-state.sh	u30-pass-plain: setup --create exits 0	1
 test-writeback-state.sh	unknown field name -> exit 4	1
+test-writeback-state.sh	unwritable: setup --create exits 0	1
 test-writeback-state.sh	work STATE.yml NOT modified by --block (isolation)	1
 test-writeback-state.sh	work STATE.yml NOT modified by --findings (isolation)	1
 test-writeback-state.sh	work STATE.yml NOT modified by --lifecycle (isolation)	1
