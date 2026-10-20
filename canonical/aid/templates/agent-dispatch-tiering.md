@@ -49,7 +49,6 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 | aid-operator | medium | `medium` | large / `high` (risky release / verification) |
 | aid-developer | medium | `medium` | large / `xhigh` (cross-file / hard implementation) |
 | aid-researcher | medium | `low` | large / `high` (genuinely deep analysis only) |
-| aid-interviewer | medium | `medium` | large / `high` (complex requirement synthesis) |
 | aid-reviewer | medium | `medium` | large / `high`–`xhigh` (complex / security / design / delivery gate, or to match a large executor) |
 | aid-architect | large | `medium` | large / `xhigh` (hard design / decomposition) |
 

@@ -870,7 +870,7 @@ Claude Code additionally gets a `.claude/skills/` mirror of the shared skills.
 ```
 canonical/  (single source of truth — never edit profiles/ or an installed tree directly)
   ├── skills/        (skill directories: the shared skills payload)
-  ├── agents/        (8 agents: rendered once per tool)
+  ├── agents/        (7 agents: rendered once per tool)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
         ├── scripts/       (helper scripts by phase)

@@ -467,7 +467,7 @@ work folders.
 | `copilot-cli` | `.github/agents/` | Markdown |
 | `antigravity` | `.agent/agents/` | Markdown |
 
-Every tool gets the same 8 `aid-`-prefixed agent files, each named `aid-<name>`. The CLI manages only
+Every tool gets the same 7 `aid-`-prefixed agent files, each named `aid-<name>`. The CLI manages only
 `aid-*` files in these folders, so your own files there are never touched.
 
 ### Root instruction files

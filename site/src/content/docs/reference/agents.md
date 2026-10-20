@@ -1,12 +1,12 @@
 ---
 title: 'Agents'
-description: 'All 8 AID pipeline agents — grouped by model tier, with role, tools, and source definition.'
+description: 'All 7 AID pipeline agents — grouped by model tier, with role, tools, and source definition.'
 generatedFrom: 'canonical/agents/*/AGENT.md'
 ---
 
 <!-- generated — do not edit; source: canonical/agents/*/AGENT.md -->
 
-AID runs **8 specialized agents** across three model tiers. The separation is structural: the reviewer's tier is always **≥** the executor's, and the agent that writes code never grades its own work. Each profile maps these tiers to concrete models (see [the Agent Model](/concepts/methodology/#5-the-agent-model)). Generated from `canonical/agents/`.
+AID runs **7 specialized agents** across three model tiers. The separation is structural: the reviewer's tier is always **≥** the executor's, and the agent that writes code never grades its own work. Each profile maps these tiers to concrete models (see [the Agent Model](/concepts/methodology/#5-the-agent-model)). Generated from `canonical/agents/`.
 
 ## Large tier
 
@@ -31,14 +31,6 @@ The production workhorses — implementation, delivery, coordination, and docume
 The only agent that modifies production code. Implements TASK files following specs and KB conventions across all implementation task types (IMPLEMENT, TEST, REFACTOR, CONFIGURE, MIGRATE, FIX), with mandatory build verification and formal IMPEDIMENT.md escalation.
 
 [Definition: `canonical/agents/aid-developer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-developer/AGENT.md)
-
-### `aid-interviewer`
-
-**Tools:** Read, Glob, Grep, Bash
-
-Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md or Q&A entries.
-
-[Definition: `canonical/agents/aid-interviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-interviewer/AGENT.md)
 
 ### `aid-operator`
 

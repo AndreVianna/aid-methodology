@@ -243,15 +243,15 @@ describe('gen-reference: roster counts', () => {
     expect(skillsContent).toMatch(/Looking for the list of skills/);
   });
 
-  it('agents.md: exactly 8 agent sections matching canonical/agents/', () => {
+  it('agents.md: exactly 7 agent sections matching canonical/agents/', () => {
     const agentDirs = readdirSync(AGENTS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(agentDirs).toHaveLength(8);
+    expect(agentDirs).toHaveLength(7);
 
     const agentsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'agents.md'), 'utf8');
     const sections = agentsContent.split('\n').filter((l) => /^### `aid-/.test(l));
-    expect(sections).toHaveLength(8);
+    expect(sections).toHaveLength(7);
   });
 
   it('kb.md: exactly 14 KB doc-type rows matching canonical/aid/templates/knowledge-base/', () => {

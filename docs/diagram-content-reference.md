@@ -25,7 +25,7 @@ fact, grep the **"Update triggers"** index below to find every diagram that must
 | The **entry-point model** (shortcut / plain request / `/aid-describe`) or the **shortcut engine**'s collapsed-phase list | README **R1**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows (TRIAGE-inside-describe is gone — do not reintroduce it) |
 | The **shortcut catalog** (`shortcut-catalog.yml`) or recipe-era content (recipes are **deleted** — do not reintroduce "recipe(s)", `{{slot}}`, or `canonical/aid/recipes/`) | kb.html **Four-plane module map** (Toolkit plane's former "recipes" box); site **methodology** build-pipeline tree/listing |
 | **`/aid-monitor`**'s loopback targets (bug / change-request routing, L9/L10) | site **methodology feedback-loops** Mermaid; README **R1** (`MON -. "bug" .-> SC` / `MON -. "change request" .-> TR`) |
-| An **agent** rename / add / remove (changes the **8** count) | kb.html **Four-plane module map** ("8 agents"); site **agent-tier** Mermaid |
+| An **agent** rename / add / remove (changes the **7** count) | kb.html **Four-plane module map** ("7 agents"); site **agent-tier** Mermaid |
 | A **profile** add / remove (changes the **5** count) | kb.html **Render-and-distribute** (5 profiles); kb.html **Dual-face** (profiles/ 5 trees) |
 | A **publish channel** change (npm / PyPI / GitHub Releases) | kb.html **Render-and-distribute** (3 channels) |
 | A top-level **directory** rename (`canonical/`, `profiles/`, `packages/`, `.claude/`, `.aid/`) | kb.html **Dual-face**; kb.html **Four-plane module map** |
@@ -103,12 +103,12 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
 - **Location:** `07-module-map.html`, `aria-label="AID four-plane module map"`.
 - **Must show:** four planes — **Distribution** (install scripts, `lib/` install-core, `bin/`, `packages/`),
   **Toolkit** (`canonical/skills/` **112 skills** — 18 curated + 94 catalog skills (34 shortcuts + 60 repurpose),
-  `canonical/agents/` **8 agents**, `canonical/aid/scripts/`, `canonical/aid/templates/`, and the
+  `canonical/agents/` **7 agents**, `canonical/aid/scripts/`, `canonical/aid/templates/`, and the
   shortcut catalog/scaffolding — `canonical/aid/templates/shortcut-catalog.yml` +
   `shortcut-scaffolding/` — in the box that used to read `canonical/aid/recipes/` (recipes are
   deleted; do not reintroduce them)), **Render** (`generate-profile` skill), **Observation**.
 - **Source of truth:** `.aid/knowledge/module-map.md` · skill count = `ls -1d canonical/skills/*/ | wc -l` (112) ·
-  agent count = `ls -1d canonical/agents/*/ | wc -l` (8).
+  agent count = `ls -1d canonical/agents/*/ | wc -l` (7).
 - **Update when:** the skill count (**112**) or agent count (**8**) changes; a plane/module is added;
   the shortcut catalog is renamed or moved.
 
@@ -133,7 +133,7 @@ building the site and viewing the page, or by reading the Mermaid source.
      diamond inside it — `/aid-describe` is full-path-only now.
   2. **§3 Knowledge Base** diagram and the **3-tier RAG retrieval** diagram — unaffected;
      keep as-is.
-  3. **§5 Agent Model** (tier diagram) — unaffected; still 8 agents, three tiers.
+  3. **§5 Agent Model** (tier diagram) — unaffected; still 7 agents, three tiers.
   4. **§6 Feedback Loops** — the data-flow node `I["2 · Describe → Define"]` (and its siblings `D`,
      `S`, `P`, `Dt`, `E`) stay; the two Monitor loopback arrows target dedicated entry nodes, not
      `I` — **L9** (bug) points at the plain-request entry (a fix request); **L10** (change request) points at

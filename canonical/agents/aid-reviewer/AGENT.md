@@ -40,7 +40,7 @@ You are the Reviewer — the quality evaluation specialist in the AID pipeline. 
 - Tag every issue by severity: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
 - Provide evidence for every issue: file path, line number, criterion violated
 - Run test suites and record results in the work `STATE.yml` `tasks_lifecycle` entry for the task (per FR2 §1A)
-- Add Q&A entries to the relevant STATE file when review findings reveal information gaps
+- Record each information gap that review findings reveal as a question with `writeback-state.sh --ask`, left `Pending`
 
 ## What You Don't Do
 - Fix code (that's the Developer)
@@ -184,6 +184,13 @@ See schema doc for: severity enum, status enum, status lifecycle across cycles, 
 
 **You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description.
 
+### What to report
+
+Report only issues that affect the work: a step that cannot be built, a check that would fail on the
+real files, a contradiction with another part of the document, or a decision the user has to make.
+Exact counts, word-for-word comparisons, and wording or cosmetic points are not findings; leave them out
+of the ledger.
+
 ## File Writing
 
 Write the ledger with Bash (a heredoc). This agent has no Write tool.
@@ -208,6 +215,6 @@ LEDGEREOF
 Review outcomes and test results are recorded in the work `STATE.yml` `tasks_lifecycle` entry for the task (per FR2 §1A).
 
 ## When to Escalate
-- the feature's technical specification itself is defective → append a Q&A entry to the work `STATE.yml` `qa:` list, tagged with the feature ID
-- KB conventions contradictory → write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
+- the feature's technical specification itself is defective → record the question with `writeback-state.sh --ask` in the work `STATE.yml` `qa:` list, left `Pending`, tagged with the feature ID
+- KB conventions contradictory → record the question with `writeback-state.sh --ask --project` in `.aid/STATE.yml`, left `Pending`
 - Cannot run tests (env issues) → report to Orchestrator

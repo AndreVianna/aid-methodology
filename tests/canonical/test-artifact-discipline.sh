@@ -551,11 +551,13 @@ assert_eq "$ad12_state_count" "0" "AD12a no agent writes work state to the retir
 
 # The KB's own STATE.md must SURVIVE -- asserted positively, so a future over-broad
 # tightening of the rule above is caught here rather than shipping a wrong correction.
-ad12_kb="$(cd "$REPO" && grep -rl 'knowledge/STATE\.md' canonical/agents/ 2>/dev/null | wc -l | tr -d ' ')"
+# Agents no longer cite it: their questions are recorded with writeback-state.sh --ask. The
+# canonical tree (the skills that own the KB state file) still does, so the check reads it.
+ad12_kb="$(cd "$REPO" && grep -rl 'knowledge/STATE\.md' canonical/ 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "${ad12_kb:-0}" -ge 1 ]]; then
-    pass "AD12b the KB's own STATE.md is still cited by agents (${ad12_kb} file(s)) -- not over-corrected"
+    pass "AD12b the KB's own STATE.md is still cited in canonical/ (${ad12_kb} file(s)) -- not over-corrected"
 else
-    fail "AD12b agents no longer cite .aid/knowledge/STATE.md -- AD12a was applied too broadly"
+    fail "AD12b canonical/ no longer cites .aid/knowledge/STATE.md -- AD12a was applied too broadly"
 fi
 
 ad12_art="$(scan_tree "canonical/agents" 'task-NNN\.md|execution graph in PLAN|SPEC\.md|BLUEPRINT' include-fences)"
