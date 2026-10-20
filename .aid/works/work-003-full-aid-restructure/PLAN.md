@@ -170,7 +170,8 @@ true:
   regenerated. From delivery-005 on, `kb.html` is also re-rendered by `render-kb-view.sh`.
 - `tests/coverage-baseline.tsv` and `tests/cost-baseline.tsv` are re-recorded, and every removed
   assertion has its row in `tests/coverage-accepted-removals.tsv`.
-- Every conversation sample the stanza names passes 3 runs of 3 (NFR-T). Every sample still waiting
+- Every conversation sample the stanza names passes 3 runs of 3 (NFR-T), or, after its one fix round,
+  is recorded as a known issue (step 5, Sample cap, Q166). Every sample still waiting
   has a row in `tests/conversation/deferred.tsv` naming what it waits for.
 - Every earlier delivery's static-check group still passes. For a split feature (Q113, Q115), its
   suite holds one group per part, and each group is added in the delivery that lands its part.
@@ -2018,12 +2019,20 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
    - Write `--lifecycle Gated`.
    - One `aid-reviewer` pass over the delivery's diff from its first task's base, graded. Fix rounds
      follow as in step 2.6.
+   - **Review cap (Q166):** one full review, one fix round for all its rows, then one verify-only pass.
+     The verify pass reports a row as Fixed or Recurred, and reports a new problem only at HIGH or
+     CRITICAL. A new MEDIUM or LOW finding is filed as `OOS` and goes to `.aid/knowledge/backlog.md`. A
+     recurred row or a new HIGH/CRITICAL gets one more fix round and one more verify pass.
    - Record the grade with `--gate-field Grade`. Every delivery's verification runs before its own
      resync, so this mode is still installed, up to and including delivery-009. The format-6 building
      step that delivery-009's resync runs carries every delivery's gate grade into its `verify`.
 4. **The resync** (resync rule 1). Then the session ends.
 5. **The gate, in a new session** (resync rule 2).
    - A gate failure is fixed as a fix round of step 3, then the delivery goes back to step 4.
+   - **Sample cap (Q166):** a sample that fails the gate gets one fix round (with its resync and a second
+     gate run). A sample still failing after it is recorded as a known issue and re-checked at the full
+     integration run at delivery-014's gate; it does not block the gate, as Q149 set for delivery-001.
+     A never-merges or other safety sample is the exception: it blocks until it passes.
    - When the gate passes, write `--lifecycle Done`.
    - For delivery-009 only, its resync installs the F007 writer, which refuses `--lifecycle`,
      `--gate-field` and `--field Review` (exit 4) and derives the delivery state itself. So a fix after

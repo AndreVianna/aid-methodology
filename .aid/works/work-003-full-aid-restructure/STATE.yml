@@ -1919,3 +1919,11 @@ qa:
     suggested: '1: pass the gate and record 002-20 and 002-21 as a known issue for delivery-003'
     answer: '2 (maintainer): another fix round.'
     applied_to: 'the fourth delivery-002 fix round'
+  - id: Q166
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-002 took 7 delivery-review rounds and 4 gate attempts; 12 deliveries remain. Most of the time went to the review-to-A loop and the 3-of-3 sample loop, not to building.'
+    suggested: '1 and 2: cap the delivery review (one full review, one fix round, one verify-only pass; new MEDIUM/LOW to the backlog) and cap the sample fixes (one fix round, then a known issue, as Q149)'
+    answer: '1 and 2 (maintainer), on the recommendation that kept safety samples (never-merges and the like) blocking until they pass. Replaces Q143''s review-to-A loop from delivery-003 on.'
+    applied_to: 'PLAN.md How deliveries 001-009 are built, steps 3 and 5; G0 samples line'
