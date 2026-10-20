@@ -137,24 +137,28 @@ conflicts with reasons, and gaps. Assert no resolution.
 
 <a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L134-L140" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L134-L144" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
 a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
-Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
-in one plain line.
+Never auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the
+form of `.aid/runtime/templates/question-protocol.md` (`Report -- question 1 of 1 -- importance: low`,
+**Why I ask**, **My recommendation**, numbered options with the recommended one first, and the closing
+line). Record it with `writeback-state.sh --ask --category Report --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-report` before it is shown, and the reply with
+`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked suggestion is named in
+one plain line.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L134-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L134-L140) · [full step: `canonical/skills/aid-report/SKILL.md#L134-L142`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L134-L142)
+[Source: `canonical/skills/aid-report/SKILL.md#L134-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L134-L144) · [full step: `canonical/skills/aid-report/SKILL.md#L134-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L134-L146)
 
 <a id="fragment-n8"></a>**8 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L146-L148" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L150-L152" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`REPORT.md`, the verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L146-L148`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L146-L148) · [full step: `canonical/skills/aid-report/SKILL.md#L146-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L146-L150)
+[Source: `canonical/skills/aid-report/SKILL.md#L150-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L150-L152) · [full step: `canonical/skills/aid-report/SKILL.md#L150-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L150-L154)

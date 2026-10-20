@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-data-model/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-data-model
-- **`description`** — Develop a data-model design as a DESIGN SEED in `.aid/design/data-model.md` -- its entities, their relationships, and the migration impact of introducing them. Use this skill when an entity's shape and its relationships are still being worked out, before any migration is written. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built model and its migration with `/aid-create-data-model` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a data-model design as a DESIGN SEED in `.aid/design/data-model.md` -- its entities, their relationships, and the migration impact of introducing them. Use this skill when an entity's shape and its relationships are still being worked out, before any migration is written. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built model and its migration with `/aid-create-data-model` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify).
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the data model to design (entities, relationships, migration impact)
 
@@ -30,13 +30,13 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 -->|"when the gate allocated a new work"| n2
+  n1 --> n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
   n4 -. "when the user declines or asks for changes" .-> n2
   n4 -->|"when the user approves"| n5
-  class n1 aidExit
+  class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
   class n4 aidLoopBack
@@ -51,27 +51,24 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L39-L49" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L38-L45" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What data
-   model do you want to design -- its entities, relationships, and migration impact?") and
-   wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `--skill aid-design-data-model` given to the gate's `--create`. `phase` is not driven.
+   model do you want to design -- its entities, relationships, and migration impact?") and wait: acquire `.aid/design/` first (below), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/data-model.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design-data-model`, which opens the seed document (`status: draft`) when it does not exist yet, and record the reply with `--answer --design .aid/design/data-model.md --id <id> --state Answered --value '<the reply>'`.
+2. **Name the seed; open no work.** The seed is `.aid/design/data-model.md`. This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/data-model.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/data-model.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-model.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L39-L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L39-L49) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L39-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L39-L55)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L38-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L38-L45) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L38-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L38-L51)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L59-L67" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L55-L63" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -83,37 +80,37 @@ model and its migration land. **Never writes `.aid/knowledge/` and never writes 
 code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L59-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L59-L67) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L59-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L59-L69)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L55-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L55-L63) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L55-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L55-L65)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L73-L76" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L69-L72" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/data-model.md --detail 'impediment: <reason>'`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L73-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L73-L78)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L69-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L69-L72) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L69-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L69-L74)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L82-L85" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L78-L81" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
 the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-data-model`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L82-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L82-L85) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L82-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L82-L90)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L78-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L78-L86)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L94-L97" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L90-L93" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/data-model.md --detail 'approved'`. The seed
 persists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L94-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L94-L97) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L94-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L94-L97)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93)

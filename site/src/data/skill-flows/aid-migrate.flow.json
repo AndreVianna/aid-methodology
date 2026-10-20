@@ -55,8 +55,8 @@
       },
       "provenance": {
         "file": "canonical/aid/templates/work-initiation-gate.md",
-        "startLine": 146,
-        "endLine": 146,
+        "startLine": 149,
+        "endLine": 149,
         "sourceKind": "engine",
         "excerpt": "### 3b. CONTINUATION -> the work's record decides where it resumes"
       },
@@ -240,8 +240,8 @@
       "advanceType": "HALT",
       "provenance": {
         "file": "canonical/aid/templates/work-initiation-gate.md",
-        "startLine": 146,
-        "endLine": 146,
+        "startLine": 149,
+        "endLine": 149,
         "sourceKind": "engine",
         "excerpt": "### 3b. CONTINUATION -> the work's record decides where it resumes"
       }

@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-dashboard/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-dashboard
-- **`description`** — Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the data source, the visualizations, and the refresh cadence. Use this skill when what a dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built dashboard with `/aid-create-dashboard` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the data source, the visualizations, and the refresh cadence. Use this skill when what a dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built dashboard with `/aid-create-dashboard` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify).
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the dashboard to design (source, visualizations, refresh cadence)
 
@@ -30,13 +30,13 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 -->|"when the gate allocated a new work"| n2
+  n1 --> n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
   n4 -. "when the user declines or asks for changes" .-> n2
   n4 -->|"when the user approves"| n5
-  class n1 aidExit
+  class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
   class n4 aidLoopBack
@@ -51,27 +51,24 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L37-L47" wrap
+~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L37-L44" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What dashboard
-   do you want to design -- its data source, visualizations, and refresh cadence?") and
-   wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `--skill aid-design-dashboard` given to the gate's `--create`. `phase` is not driven.
+   do you want to design -- its data source, visualizations, and refresh cadence?") and wait: acquire `.aid/design/` first (below), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/dashboard.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design-dashboard`, which opens the seed document (`status: draft`) when it does not exist yet, and record the reply with `--answer --design .aid/design/dashboard.md --id <id> --state Answered --value '<the reply>'`.
+2. **Name the seed; open no work.** The seed is `.aid/design/dashboard.md`. This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/dashboard.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/dashboard.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/dashboard.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L37-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L37-L47) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L37-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L37-L53)
+[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L37-L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L37-L44) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L37-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L37-L50)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L57-L65" wrap
+~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L54-L62" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -83,37 +80,37 @@ and the refresh cadence**; its `## Destination` names where the built dashboard 
 invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L57-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L57-L65) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L57-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L57-L67)
+[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L54-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L54-L62) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L54-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L54-L64)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L71-L74" wrap
+~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L68-L71" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/dashboard.md --detail 'impediment: <reason>'`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L71-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L71-L76)
+[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L68-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L68-L71) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L68-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L68-L73)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L80-L83" wrap
+~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L77-L80" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
 the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-dashboard`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L80-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L80-L88)
+[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L77-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L77-L80) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L77-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L77-L85)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L92-L95" wrap
+~~~~plaintext title="canonical/skills/aid-design-dashboard/SKILL.md#L89-L92" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/dashboard.md --detail 'approved'`. The seed
 persists at `.aid/design/dashboard.md`; consumption happens at `/aid-create-dashboard`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L92-L95) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L92-L95)
+[Source: `canonical/skills/aid-design-dashboard/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L89-L92) · [full step: `canonical/skills/aid-design-dashboard/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md#L89-L92)

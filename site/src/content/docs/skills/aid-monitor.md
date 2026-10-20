@@ -50,7 +50,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L190) · [full step: `canonical/skills/aid-monitor/references/state-observe.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-observe.md#L1-L35)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L190) · [full step: `canonical/skills/aid-monitor/references/state-observe.md#L1-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-observe.md#L1-L51)
 
 <a id="fragment-n2"></a>**2 · `CLASSIFY`** — Active findings are present; classify each anomaly and… · _step_
 

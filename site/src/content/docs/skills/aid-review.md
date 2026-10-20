@@ -121,11 +121,11 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 The hard stop follows the ASK step of `skill-steps.md`. Present:
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L181-L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L181-L183) · [full step: `canonical/skills/aid-review/SKILL.md#L181-L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L181-L194)
+[Source: `canonical/skills/aid-review/SKILL.md#L181-L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L181-L183) · [full step: `canonical/skills/aid-review/SKILL.md#L181-L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L181-L199)
 
 <a id="fragment-n7"></a>**7 · `PUBLISH`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L198-L208" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L203-L215" wrap
 ## State: PUBLISH  (only on approval)
 
 If the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise
@@ -135,18 +135,20 @@ enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again
 at its own CONFIRM before posting); a findings report in the work folder (+ optional
 inline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /
-no catalogued connector / unknown target -> present the exact text for the human to paste.
+no catalogued connector / unknown target -> present the exact text for the human to paste; when the
+user must choose where it goes, ask that as one question in the same form, recorded with `--ask` before
+it is shown and `--answer` after, recommending the paste.
 Publishing is optional and never blocks DONE.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L198-L208`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L198-L208) · [full step: `canonical/skills/aid-review/SKILL.md#L198-L210`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L198-L210)
+[Source: `canonical/skills/aid-review/SKILL.md#L203-L215`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L203-L215) · [full step: `canonical/skills/aid-review/SKILL.md#L203-L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L203-L217)
 
 <a id="fragment-n8"></a>**8 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L214-L216" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L221-L223" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L214-L216`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L214-L216) · [full step: `canonical/skills/aid-review/SKILL.md#L214-L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L214-L218)
+[Source: `canonical/skills/aid-review/SKILL.md#L221-L223`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L221-L223) · [full step: `canonical/skills/aid-review/SKILL.md#L221-L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L221-L225)

@@ -30,13 +30,13 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 -->|"when the gate allocated a new work"| n2
+  n1 --> n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
   n4 -. "when the user declines or asks for changes" .-> n2
   n4 -->|"when the user approves"| n5
-  class n1 aidExit
+  class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
   class n4 aidLoopBack
@@ -51,21 +51,21 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L35-L39" wrap
 ## State: INTAKE
 
 **State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
-on resume; it never routes. Which skill and step a work continues at come from its work record
+on resume; it never routes. The step a design resumes at comes from the seed's `step:` and `step_detail:` frontmatter
 (`.aid/runtime/templates/skill-steps.md`, § State Detection).
 ~~~~
 
-[Source: `canonical/skills/aid-brainstorm/SKILL.md#L35-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L35-L39) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L35-L56`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L35-L56)
+[Source: `canonical/skills/aid-brainstorm/SKILL.md#L35-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L35-L39) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L35-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L35-L53)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L60-L68" wrap
+~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L57-L65" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -77,22 +77,22 @@ destination until the user promotes the seed. **Never writes `.aid/knowledge/` a
 writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-brainstorm/SKILL.md#L60-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L60-L68) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L60-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L60-L70)
+[Source: `canonical/skills/aid-brainstorm/SKILL.md#L57-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L57-L65) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L57-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L57-L67)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L74-L77" wrap
+~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L71-L74" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/<slug>.md --detail 'impediment: <reason>'`.
 ~~~~
 
-[Source: `canonical/skills/aid-brainstorm/SKILL.md#L74-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L74-L77) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L74-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L74-L79)
+[Source: `canonical/skills/aid-brainstorm/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L71-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L71-L76)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L83-L87" wrap
+~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L80-L84" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
@@ -100,15 +100,15 @@ the user iterates (declining the approval below changes the seed in place), prom
 entry, or takes it forward however they choose.
 ~~~~
 
-[Source: `canonical/skills/aid-brainstorm/SKILL.md#L83-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L83-L87) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L83-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L83-L92)
+[Source: `canonical/skills/aid-brainstorm/SKILL.md#L80-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L80-L84) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L80-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L80-L89)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L96-L99" wrap
+~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L93-L96" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/<slug>.md --detail 'approved'`. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.
 ~~~~
 
-[Source: `canonical/skills/aid-brainstorm/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L96-L99)
+[Source: `canonical/skills/aid-brainstorm/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L93-L96)

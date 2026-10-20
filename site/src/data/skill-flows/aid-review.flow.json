@@ -135,9 +135,9 @@
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
         "startLine": 181,
-        "endLine": 194,
+        "endLine": 199,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations**, and a **printed suggestion** to act: \"N issues found -- run\n  `/aid-fix` (or `/aid-update`) to address them\" (review never starts the fix itself);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP and await the human's decision (approve / edit the text / choose a different\ndelivery / do not publish). Nothing is posted to any external target until they approve.\n\n**Advance:** ASK → [State: PUBLISH]."
+        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations**, and a **printed suggestion** to act: \"N issues found -- run\n  `/aid-fix` (or `/aid-update`) to address them\" (review never starts the fix itself);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP and ask one decision question in the form of `.aid/runtime/templates/question-protocol.md`\n(`Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without your approval,\n**My recommendation**, numbered options: approve and publish / edit the text / choose a different\ndelivery / do not publish, and the closing line). Record it with\n`writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with\n`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.\nNothing is posted to any external target until they approve.\n\n**Advance:** ASK → [State: PUBLISH]."
       }
     },
     {
@@ -149,17 +149,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 198,
-        "endLine": 208,
+        "startLine": 203,
+        "endLine": 215,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE."
+        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste; when the\nuser must choose where it goes, ask that as one question in the same form, recorded with `--ask` before\nit is shown and `--answer` after, recommending the paste.\nPublishing is optional and never blocks DONE."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 198,
-        "endLine": 210,
+        "startLine": 203,
+        "endLine": 217,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste.\nPublishing is optional and never blocks DONE.\n\n**Advance:** CHAIN → [State: DONE]."
+        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste; when the\nuser must choose where it goes, ask that as one question in the same form, recorded with `--ask` before\nit is shown and `--answer` after, recommending the paste.\nPublishing is optional and never blocks DONE.\n\n**Advance:** CHAIN → [State: DONE]."
       }
     },
     {
@@ -174,15 +174,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 214,
-        "endLine": 216,
+        "startLine": 221,
+        "endLine": 223,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 214,
-        "endLine": 218,
+        "startLine": 221,
+        "endLine": 225,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.\n\n**Advance:** HALT."
       }
@@ -295,8 +295,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 194,
-        "endLine": 194,
+        "startLine": 199,
+        "endLine": 199,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: PUBLISH]."
       }
@@ -309,8 +309,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 210,
-        "endLine": 210,
+        "startLine": 217,
+        "endLine": 217,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE]."
       }

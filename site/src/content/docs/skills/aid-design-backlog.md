@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-backlog/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-backlog
-- **`description`** — Develop the defined-and-prioritized item set as a DESIGN SEED in `.aid/design/backlog.md` -- item definitions, done-conditions, priorities, and which tech-debt.md rows the user is accepting into the plan. Use this skill when what belongs in the backlog is still being decided, and you want that thinking captured as a seed before the document is written. Grounded in the Knowledge Base (`.aid/knowledge/`, including tech-debt.md) and the project source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into backlog.md with `/aid-create-backlog` once it is ready. For direction rather than items, use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop the defined-and-prioritized item set as a DESIGN SEED in `.aid/design/backlog.md` -- item definitions, done-conditions, priorities, and which tech-debt.md rows the user is accepting into the plan. Use this skill when what belongs in the backlog is still being decided, and you want that thinking captured as a seed before the document is written. Grounded in the Knowledge Base (`.aid/knowledge/`, including tech-debt.md) and the project source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into backlog.md with `/aid-create-backlog` once it is ready. For direction rather than items, use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify).
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;items> -- the items to define and prioritize, and any tech-debt.md rows to accept
 
@@ -30,13 +30,13 @@ flowchart TB
   n3(["VERIFY"])
   n4["PRESENT<br/>hard stop -- the user decides"]
   n5(["DONE"])
-  n1 -->|"when the gate allocated a new work"| n2
+  n1 --> n2
   n2 --> n3
   n3 -. "when it is not clean and fewer than 3 cycles have run" .-> n2
   n3 -->|"when the verify is clean"| n4
   n4 -. "when the user declines or asks for changes" .-> n2
   n4 -->|"when the user approves"| n5
-  class n1 aidExit
+  class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
   class n4 aidLoopBack
@@ -51,15 +51,15 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L44-L55" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
    you want to define and prioritize, and are there `tech-debt.md` rows you're ready to
-   accept into the plan?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-design-backlog`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
+   accept into the plan?") and wait: acquire `.aid/design/` first (below), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/backlog.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design-backlog`, which opens the seed document (`status: draft`) when it does not exist yet, and record the reply with `--answer --design .aid/design/backlog.md --id <id> --state Answered --value '<the reply>'`.
+2. **Name the seed; open no work.** The seed is `.aid/design/backlog.md`. This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/backlog.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/backlog.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure
    the folder exists and seed its `README.md` on first use, before writing anything.
 4. **Read the existing seed, if one is present.** `.aid/design/backlog.md` --
@@ -91,7 +91,7 @@ plan.**
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
-IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/backlog.md --detail 'impediment: <reason>'`.
 ~~~~
 
 [Source: `canonical/skills/aid-design-backlog/SKILL.md#L84-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L84-L88) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L84-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L84-L90)
@@ -113,7 +113,7 @@ the user decides whether to iterate further (declining the approval below change
 ~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L107-L111" wrap
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/backlog.md --detail 'approved'`. The seed
 stays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog`, not
 here.
 ~~~~

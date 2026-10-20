@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 116,
-        "endLine": 116,
+        "startLine": 130,
+        "endLine": 130,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 138,
-        "endLine": 138,
+        "startLine": 152,
+        "endLine": 152,
         "sourceKind": "skill",
         "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       },
@@ -94,8 +94,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 160,
-        "endLine": 160,
+        "startLine": 174,
+        "endLine": 174,
         "sourceKind": "skill",
         "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
       },
@@ -113,8 +113,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 218,
+        "endLine": 218,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       },
@@ -158,8 +158,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 116,
-        "endLine": 116,
+        "startLine": 130,
+        "endLine": 130,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       }
@@ -172,8 +172,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 138,
-        "endLine": 138,
+        "startLine": 152,
+        "endLine": 152,
         "sourceKind": "skill",
         "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       }
@@ -186,8 +186,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 160,
-        "endLine": 160,
+        "startLine": 174,
+        "endLine": 174,
         "sourceKind": "skill",
         "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
       }
@@ -200,8 +200,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 218,
+        "endLine": 218,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       }

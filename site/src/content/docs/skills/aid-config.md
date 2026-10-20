@@ -9,9 +9,9 @@ generatedFrom: 'canonical/skills/aid-config/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-config
-- **`description`** — View or update AID pipeline settings. Use this skill when you need to see how the pipeline is configured, or change one setting such as the project name, its type, or the minimum grade. A bare invocation prints every value in a table and, on the first run, creates `.aid/settings.yml` from the template. Passing a key -- `/aid-config` name -- views and updates that one setting interactively.
+- **`description`** — View or update AID pipeline settings. Use this skill when you need to see how the pipeline is configured, or change one setting such as the project name, its type, or the minimum grade. A bare invocation creates `.aid/settings.yml` from the template on the first run, prints every value in a table and walks the settings in groups, one question at a time. Passing a key -- `/aid-config` name -- views and updates that one setting interactively.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit
-- **`argument-hint`** — (none) view all  |  &lt;key> view+update one (e.g., name, minimum_grade)
+- **`argument-hint`** — (none) view all and walk the settings  |  &lt;key> view+update one (e.g., name, minimum_grade)
 
 [Definition: `canonical/skills/aid-config/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md)
 
@@ -27,10 +27,10 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1(["MODE-1<br/>Mode 1 — Show all settings (/aid-config)"])
+  n1(["MODE-1<br/>Mode 1 — Show all settings and walk them (/aid-config)"])
   n2["STEP-1<br/>Ensure .aid/settings.yml exists"]
   n3["STEP-2<br/>Render the table"]
-  n4(["STEP-3<br/>Suggest commands for unset values + the general update form"])
+  n4(["STEP-3<br/>Walk the settings"])
   n5(["MODE-2<br/>Mode 2 — View/update one key (/aid-config &lt;key&gt;)"])
   n6["STEP-1<br/>Validate the key argument"]
   n7["STEP-2<br/>Ensure .aid/settings.yml exists"]
@@ -78,10 +78,10 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `MODE-1`** — Mode 1 — Show all settings (/aid-config) · _entry_
+<a id="fragment-n1"></a>**1 · `MODE-1`** — Mode 1 — Show all settings and walk them (/aid-config) · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L39" wrap
-## Mode 1 — Show all settings (`/aid-config`)
+## Mode 1 — Show all settings and walk them (`/aid-config`)
 ~~~~
 
 [Source: `canonical/skills/aid-config/SKILL.md#L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L39)
@@ -102,74 +102,74 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-config/SKILL.md#L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L48)
 
-<a id="fragment-n4"></a>**4 · `STEP-3`** — Suggest commands for unset values + the general update form · _exit_ · UNSPECIFIED
+<a id="fragment-n4"></a>**4 · `STEP-3`** — Walk the settings · _exit_ · UNSPECIFIED
 
 ~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L57" wrap
-### Step 3: Suggest commands for unset values + the general update form
+### Step 3: Walk the settings
 ~~~~
 
 [Source: `canonical/skills/aid-config/SKILL.md#L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L57)
 
 <a id="fragment-n5"></a>**5 · `MODE-2`** — Mode 2 — View/update one key (/aid-config &lt;key>) · _entry_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L76" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L88" wrap
 ## Mode 2 — View/update one key (`/aid-config <key>`)
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L76)
+[Source: `canonical/skills/aid-config/SKILL.md#L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L88)
 
 <a id="fragment-n6"></a>**6 · `STEP-1`** — Validate the key argument · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L78" wrap
-### Step 1: Validate the key argument
-~~~~
-
-[Source: `canonical/skills/aid-config/SKILL.md#L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L78)
-
-<a id="fragment-n7"></a>**7 · `STEP-2`** — Ensure .aid/settings.yml exists · _step_
-
 ~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L90" wrap
-### Step 2: Ensure `.aid/settings.yml` exists
+### Step 1: Validate the key argument
 ~~~~
 
 [Source: `canonical/skills/aid-config/SKILL.md#L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L90)
 
+<a id="fragment-n7"></a>**7 · `STEP-2`** — Ensure .aid/settings.yml exists · _step_
+
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L102" wrap
+### Step 2: Ensure `.aid/settings.yml` exists
+~~~~
+
+[Source: `canonical/skills/aid-config/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L102)
+
 <a id="fragment-n8"></a>**8 · `STEP-3`** — Read current value · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L94" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L106" wrap
 ### Step 3: Read current value
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L94)
+[Source: `canonical/skills/aid-config/SKILL.md#L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L106)
 
 <a id="fragment-n9"></a>**9 · `STEP-4`** — Prompt for new value · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L103" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L115" wrap
 ### Step 4: Prompt for new value
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L103)
+[Source: `canonical/skills/aid-config/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L115)
 
 <a id="fragment-n10"></a>**10 · `STEP-5`** — Validate · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L137" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L149" wrap
 ### Step 5: Validate
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L137)
+[Source: `canonical/skills/aid-config/SKILL.md#L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L149)
 
 <a id="fragment-n11"></a>**11 · `STEP-6`** — Save in place · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L141" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L153" wrap
 ### Step 6: Save in place
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L141)
+[Source: `canonical/skills/aid-config/SKILL.md#L153`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L153)
 
 <a id="fragment-n12"></a>**12 · `STEP-7`** — Confirm · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L150" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L162" wrap
 ### Step 7: Confirm
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L150)
+[Source: `canonical/skills/aid-config/SKILL.md#L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L162)
