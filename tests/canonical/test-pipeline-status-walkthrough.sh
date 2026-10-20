@@ -395,7 +395,7 @@ for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute"; d
 done
 
 # ---------------------------------------------------------------------------
-# B2: M5 pause emits -- state-machine-chaining.md PAUSE handler contains
+# B2: M5 pause emits -- skill-steps.md ASK pause (step procedure, part 3) contains
 # Paused-Awaiting-Input + Pause Reason emits.
 # aid-specify state-blocked.md contains the per-skill pause emit.
 # aid-execute state-delivery-gate.md (non-CODE stop) contains the pause emit.
@@ -403,22 +403,22 @@ done
 echo ""
 echo "--- B2: M5 pause emits present in canonical files ---"
 
-CHAINING_FILE="${REPO_ROOT}/canonical/aid/templates/state-machine-chaining.md"
+SKILL_STEPS_FILE="${REPO_ROOT}/canonical/aid/templates/skill-steps.md"
 SPECIFY_BLOCKED="${REPO_ROOT}/canonical/skills/aid-specify/references/state-blocked.md"
 DELIVERY_GATE="${REPO_ROOT}/canonical/skills/aid-execute/references/state-delivery-gate.md"
 
-# state-machine-chaining.md: shared PAUSE handler
-assert_file_exists "$CHAINING_FILE" \
-    "B2: state-machine-chaining.md exists"
-if grep -qF 'writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"' "$CHAINING_FILE" 2>/dev/null; then
-    pass "B2 chaining: Paused-Awaiting-Input emit in PAUSE handler"
+# skill-steps.md: shared ASK pause (step procedure, part 3)
+assert_file_exists "$SKILL_STEPS_FILE" \
+    "B2: skill-steps.md exists"
+if grep -qF -- '--pipeline --field Lifecycle --value Paused-Awaiting-Input' "$SKILL_STEPS_FILE" 2>/dev/null; then
+    pass "B2 skill-steps: Paused-Awaiting-Input emit in ASK pause handler"
 else
-    fail "B2 chaining: Paused-Awaiting-Input emit NOT found in state-machine-chaining.md"
+    fail "B2 skill-steps: Paused-Awaiting-Input emit NOT found in skill-steps.md"
 fi
-if grep -qF 'writeback-state.sh --pipeline --field "Pause Reason"' "$CHAINING_FILE" 2>/dev/null; then
-    pass "B2 chaining: Pause Reason emit in PAUSE handler"
+if grep -qF -- '--pipeline --field "Pause Reason"' "$SKILL_STEPS_FILE" 2>/dev/null; then
+    pass "B2 skill-steps: Pause Reason emit in ASK pause handler"
 else
-    fail "B2 chaining: Pause Reason emit NOT found in state-machine-chaining.md"
+    fail "B2 skill-steps: Pause Reason emit NOT found in skill-steps.md"
 fi
 
 # aid-specify/state-blocked.md: per-skill pause emit
@@ -525,7 +525,6 @@ echo "--- B4: C4 silence -- emit blocks are annotated silent, no new Print: ---"
 
 # List of all files that contain --pipeline emits
 ALL_EMIT_FILES=(
-    "${CHAINING_FILE}"
     "${SPECIFY_BLOCKED}"
     "${REPO_ROOT}/canonical/skills/aid-specify/references/state-initialize.md"
     "${REPO_ROOT}/canonical/skills/aid-specify/references/state-continue.md"
@@ -584,21 +583,6 @@ for ef in "${ALL_EMIT_FILES[@]}"; do
         pass "B4b $bname: no co-occurrence of --pipeline and Print: (safe)"
     fi
 done
-
-# B4c: Pause instructions still present surrounding the PAUSE handler emit.
-# Assert that state-machine-chaining.md still says "print the pause reason" and
-# "resume command" AFTER the emit block (the emit is ADDITIVE, not a replacement).
-if grep -qF "print the pause reason" "$CHAINING_FILE" 2>/dev/null || \
-   grep -qF "Then print the pause reason" "$CHAINING_FILE" 2>/dev/null; then
-    pass "B4c chaining: pause-reason print instruction still present after emit"
-else
-    fail "B4c chaining: pause-reason print instruction MISSING -- emit may have replaced it (C4 violation)"
-fi
-if grep -qF "resume command" "$CHAINING_FILE" 2>/dev/null; then
-    pass "B4c chaining: resume-command instruction still present after emit"
-else
-    fail "B4c chaining: resume-command instruction MISSING -- emit may have replaced it (C4 violation)"
-fi
 
 # B4d: aid-specify/state-blocked.md still has the WAIT Advance line
 # (the pause instruction is still there; the emit is additive).
