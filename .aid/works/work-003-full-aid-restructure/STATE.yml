@@ -522,6 +522,10 @@ review_history:
     event: 'Delivery-002 gate fixes (Q165) and fourth resync'
     outcome: 'Fixes in 2b22b31d; resync committed alone as 462e5db2'
     notes: 'next: the full suite, /reload-skills, then samples 002-05, 002-20, 002-21 and 002-21b at 3 runs each'
+  - date: '2026-10-20'
+    event: 'Delivery-002 gate passed'
+    outcome: 'Fourth attempt: samples 002-05, 002-20, 002-21 and 002-21b each 3/3; stanza criteria and G0 pass but for the 9 machine-limit suites; installer CI green (run 2115); cost and coverage baselines re-recorded'
+    notes: 'Gate report: analysis/delivery-002-gate.md; next: delivery-003'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
