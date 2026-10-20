@@ -150,13 +150,18 @@ Exit.
 
 ### One or more candidates survive Layer 2
 
-```
+```text
 Approved works ready for feature definition:
   work-001-user-auth   [3 features, cross-reference pending]
   work-002-reporting   [no features yet]
 
-[1] Continue work-001-user-auth
-[2] Continue work-002-reporting
+Your work -- question 1 of 1 -- importance: high
+Which work should I define the features for?
+Why I ask: more than one approved work is ready, and I will not guess between them.
+My recommendation: {the work that fits the request best, and why}
+  1. work-001-user-auth
+  2. work-002-reporting
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Wait for response and proceed to State Detection for that work.
@@ -207,7 +212,7 @@ State 7:  **Path:** full, Interview State: Approved, features +
 
 1. Read `STATE.md` `## Interview State` `**Interview State:**` field.
 2. If field is absent or value is NOT `Approved`:
-   - Print: `[aid-define] Requirements for {work} are not yet approved. Run /aid-describe {work} first to gather and approve requirements.`
+   - Print: `Requirements for {work} are not yet approved. Run /aid-describe {work} first to gather and approve requirements.`
    - HALT
 3. If State is `Approved`:
    - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**

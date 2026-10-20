@@ -150,18 +150,17 @@ assert_eq "$ACTUAL_REF_COUNT" "13" "DFO11 aid-describe/references/ carries exact
 # DFO-12: the D1 opener text is byte-identical between elicitation-engine.md (canonical
 # source) and state-continue.md (the relocated invocation site).
 read -r -d '' OPENER_TEXT <<'OPENER_EOF' || true
+Your project -- question 1 of 1 -- importance: high
 In a sentence or two -- what do you want to build or change, and what outcome
 are you after?
 
-Suggested: For example: "I want a small CLI tool that parses a config file and
+My recommendation: For example: "I want a small CLI tool that parses a config file and
            validates it against a schema, so that our team stops manually
            checking config files before each deploy."
-Why: Describing the pieces in your own words gives me the working vocabulary
+Why I ask: Describing the pieces in your own words gives me the working vocabulary
      for this project. I will use your terms, not impose mine -- so the more
      naturally you name the pieces, the more useful what follows will be.
-
-[1] Use the form above and share yours
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 OPENER_EOF
 
 assert_file_contains "$ENGINE_MD" "$OPENER_TEXT" "DFO12a elicitation-engine.md carries the D1 opener text verbatim"

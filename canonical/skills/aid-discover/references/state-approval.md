@@ -11,16 +11,23 @@ APPROVAL presents the KB summary and asks the user to confirm it is ready for th
 
 ### Step 2: Ask for User Approval
 
-```
-The Knowledge Base has reached the minimum grade of {minimum} (current: {grade}).
-Please review .aid/knowledge/ and let us know if there is anything else to consider.
-[1] Approved — KB is ready for the next phase
-[2] Additional consideration: ___
+Show the summary above, then ask one approval question, in the protocol's form. It is an approval, so it
+offers no skip and stays open until the user approves or declines. Record it first, as the SKILL's recording
+paragraph says (Category: `Approval`, Impact: `High`), and record the answer when it comes.
+
+```text
+Knowledge base -- question 1 of 1 -- importance: high
+The Knowledge Base has reached the minimum grade of {minimum} (current: {grade}). Do you approve it as ready for the next phase?
+Why I ask: approval is what lets the work move on to the Definition phase.
+My recommendation: approve it -- it meets the grade and no question is left pending.
+  1. Approve (recommended)
+  2. Not yet -- I have something more to consider (tell me what)
+Or answer in your own words or ask me to explain. An approval cannot be skipped.
 ```
 
 ### Step 3: Process Response
 
-- **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md` (the
+- **Approve:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md` (the
   header-blockquote doc-set-level approval line; distinct from the KB summary's own
   `summary_approved` frontmatter scalar, set separately by `/aid-summarize`'s own APPROVAL state).
   Also set the KB status scalar in the run-state frontmatter (relocated from the
@@ -30,8 +37,8 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
   ```
   Add Review History entry under `## Review History`.
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Definition phase.`
-- **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
-  Print: `[Approval] Consideration recorded as Q{N}.` The pending Q&A is addressed by the Q-AND-A state of the next run.
+- **Not yet (a consideration):** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
+  Say in one plain line that the consideration is recorded as Q{N}. The pending Q&A is addressed by the Q-AND-A state of the next run.
 
 The approval is a blocking question: this step pauses on it until the user answers.
 

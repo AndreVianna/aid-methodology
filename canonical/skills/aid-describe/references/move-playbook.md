@@ -55,11 +55,10 @@ Step 3.
 
 [the question]
 
-Suggested: [a concrete proposed answer -- never blank, never "-"]
-Why: [the rationale grounded in the user's prior words, the KB, or expert judgment]
+My recommendation: [a concrete proposed answer -- never blank, never "-"]
+Why I ask: [the rationale grounded in the user's prior words, the KB, or expert judgment]
 
-[1] Accept this
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 The straw-man guarantees a suggestion always exists, even for genuinely open creative
@@ -117,8 +116,8 @@ silent synonyms.
 You used the term "[X]." By that do you mean [proposed definition, as the user seems to
 use it]? Is this the same concept as "[Y]" you mentioned earlier, or a different one?
 
-Suggested: [proposed canonical label and one-sentence definition]
-Why: keeping one label per concept prevents the "same thing, two names" confusion that
+My recommendation: [proposed canonical label and one-sentence definition]
+Why I ask: keeping one label per concept prevents the "same thing, two names" confusion that
      breaks requirements downstream.
 ```
 
@@ -146,9 +145,9 @@ just "what we build" vs "what we integrate with" and how they talk.
 ```
 It sounds like [Part A] and [Part B] are separate things. Where exactly does [Part A] end?
 
-Suggested: [Part A] handles [proposed scope]; [Part B] handles [proposed scope]; they
+My recommendation: [Part A] handles [proposed scope]; [Part B] handles [proposed scope]; they
            interact via [proposed mechanism].
-Why: naming boundaries and relationships now prevents the "whose responsibility is it"
+Why I ask: naming boundaries and relationships now prevents the "whose responsibility is it"
      argument later.
 ```
 
@@ -172,8 +171,8 @@ that occurs?
 So the sequence looks like: [proposed ordered event timeline]. Does that match? What
 happens between [step N] and [step N+1]?
 
-Suggested: [proposed timeline]
-Why: events reveal hidden states and decision points that noun-first descriptions miss.
+My recommendation: [proposed timeline]
+Why I ask: events reveal hidden states and decision points that noun-first descriptions miss.
 ```
 
 ---
@@ -200,8 +199,8 @@ list all the activities in order.
 Which of those activities are absolutely necessary for the first working version -- the
 simplest end-to-end slice that would still be genuinely useful?
 
-Suggested: [proposed skeleton -- the activities that seem essential vs deferrable]
-Why: a small end-to-end slice suggests a lite/short path; a sprawling multi-step backbone
+My recommendation: [proposed skeleton -- the activities that seem essential vs deferrable]
+Why I ask: a small end-to-end slice suggests a lite/short path; a sprawling multi-step backbone
      suggests a full path.
 ```
 
@@ -223,8 +222,8 @@ Why does [requirement] matter for this project specifically?
 And how will you know when it is satisfied -- what is a concrete check you could run
 to confirm it?
 
-Suggested: [proposed fit criterion grounded in what the user has said]
-Why: a requirement with no measurable fit criterion cannot be reliably accepted or
+My recommendation: [proposed fit criterion grounded in what the user has said]
+Why I ask: a requirement with no measurable fit criterion cannot be reliably accepted or
      rejected.
 ```
 
@@ -248,8 +247,8 @@ You said you want [X]. Why is that important for this project?
 
 And underlying that -- is the real driver [proposed inferred motive]?
 
-Suggested: [proposed terminal motive / decision rationale]
-Why: knowing the real driver lets us propose the right design decision and record it in
+My recommendation: [proposed terminal motive / decision rationale]
+Why I ask: knowing the real driver lets us propose the right design decision and record it in
      decisions.md rather than just recording what was asked for.
 
 [Stop here if the motive is confirmed. Do NOT continue asking "why" mechanically.]
@@ -272,8 +271,8 @@ yet load-bearing in the concept-spine.
 Can you give me a specific example of [term / claim] in use? Walk me through a real
 or imagined scenario where this applies.
 
-Suggested: [proposed example inferred from the user's prior description]
-Why: if [term] cannot be illustrated concretely, it is probably under-defined and will
+My recommendation: [proposed example inferred from the user's prior description]
+Why I ask: if [term] cannot be illustrated concretely, it is probably under-defined and will
      cause confusion downstream.
 ```
 

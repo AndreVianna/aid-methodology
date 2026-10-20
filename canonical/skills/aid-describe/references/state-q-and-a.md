@@ -1,6 +1,6 @@
 # State: Q-AND-A
 
-The work's `qa` (STATE.yml) has entries with `state: Pending`; resolve them one at a time before continuing.
+The work's `qa` (STATE.yml) has open entries (`state: Pending` or `state: Skipped`); resolve them one at a time before continuing. A `Skipped` entry stays open and is offered again here, to the same user or to another one.
 
 These may come from:
 - Cross-reference analysis (State 6)
@@ -9,7 +9,7 @@ These may come from:
 
 ### Step 1: Load and Filter
 
-Read the work's `qa`. Collect all entries with `state: Pending`.
+Read the work's `qa`. Collect all entries with `state: Pending` or `state: Skipped`.
 
 **Before asking each question, filter:**
 
@@ -19,7 +19,7 @@ Read the work's `qa`. Collect all entries with `state: Pending`.
 2. **Answered in KB?** → record it `Assumed` the same way, citing the KB document. Skip.
 3. **Inferrable from context?** → Keep it, and make sure its `suggested` answer exists.
 
-After filtering, sort remaining Pending by impact: **High → Medium → Low**.
+After filtering, sort the remaining open entries by impact: **High → Medium → Low**.
 
 If zero remain, say that every question is resolved from existing material, and stop this step.
 
@@ -27,7 +27,7 @@ Otherwise say how many questions need the user's input.
 
 ### Step 2: Ask One at a Time
 
-For each Pending question, ask it in the question form of `.aid/runtime/templates/question-protocol.md`:
+For each open question, ask it in the question form of `.aid/runtime/templates/question-protocol.md`:
 its category and importance label on the first line, the question, **Why I ask** (who injected it and
 why it matters), **My recommendation** (its `suggested` answer), and the closing line that allows a
 free answer, an explanation or a skip.

@@ -112,10 +112,17 @@ own, ask for an explanation, or skip the question.
 For free-text-natural keys (`name`, `description`), the Suggestions table says `(no defaults)` — the
 question offers just `Keep current value`, and the user types the value in their own words.
 
-Question text format (keep brief):
+Show each question in the protocol's form (one question per message):
 
-```
-New value for <key>?  (pick a suggestion, or type your own)
+```text
+Settings -- question {n} of {m} -- importance: {high|medium|low}
+New value for <key>?
+Why I ask: {what the setting controls, in one short reason}
+My recommendation: {the suggested value, and why}
+  1. {the suggested value} (recommended)
+  2. Keep current value: {current value}
+  3. {another suggestion}
+Or answer in your own words (type a value of your own), ask me to explain, or skip this question.
 ```
 
 **Recording.** This skill keeps no work record, so each question it asks is recorded in the project

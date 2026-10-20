@@ -18,9 +18,11 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
 
 Then append the reviewer's share of the process body from `references/cross-reference.md`
 (sections 6a to 6c: load context, cross-reference, grade) so the subagent has the per-step execution
-detail. Sections 6d to 6f are the main conversation's: it presents the findings, records each question
-with `writeback-state.sh --ask`, asks them through the question protocol, and wraps up. The subagent never
-asks; it lists its open questions in its report.
+detail. Sections 6d to 6f are the main conversation's: it presents the findings, asks the questions the
+reviewer listed through the question protocol (each is already `Pending` in the work's `qa`, recorded by the
+reviewer with `--ask`; the main conversation does not record it a second time, and answers it by its id with
+`--answer`), and wraps up. The subagent never asks; it records its open questions and lists them, with their
+ids, in its report.
 
 ▶ aid-reviewer starting (~1–2 min)
 Wait for completion. If it fails, say why in one plain line.

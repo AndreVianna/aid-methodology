@@ -87,7 +87,7 @@ Step 0):
    run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id` — single record → auto-select; multiple records →
-   list them, ask user to choose; zero records on any worktree → **STOP.** "No works
+   list them, and ask which one as one question in the protocol's form; zero records on any worktree → **STOP.** "No works
    found. Run `/aid-describe` first." **Then locate + enter the work's
    worktree**, before item 3 below reads work `STATE.yml`: follow
    `.aid/runtime/templates/downstream-worktree-entry.md` to normalize the work id to its bare

@@ -263,6 +263,15 @@ State 6: GRADE file, grade >= min, ZERO Pending Q&A,
 
 Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
+Every question a state puts to the user is shown in the protocol's question form (one topic per
+message, **Why I ask**, **My recommendation**, the closing free-answer line, never the host tool's picker)
+and is recorded in the Knowledge Base state file, as the protocol's "Where each record lives" says:
+before it is shown, append a `### Q{N}` entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` with
+`**Status:** Pending`, its Category, an `**Impact:**` of `High`, `Medium` or `Low`, its Context and its
+Suggested answer; when it is answered, set `**Status:** Answered` and fill `**Answer:**` and
+`**Applied to:**`; a skipped question gets `**Status:** Skipped`, stays open and is offered again. The
+states below name the question and its answers; they do not repeat this.
+
 When a state completes, follow its `**Advance:**` word as [`skill-steps.md`](../../aid/templates/skill-steps.md) defines it:
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **ASK** → stop for the user through the question protocol, then continue to the state the line names.

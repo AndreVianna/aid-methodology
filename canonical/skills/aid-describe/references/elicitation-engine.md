@@ -96,18 +96,17 @@ the discipline D2 requires: an adaptive analyst, not a fixed questionnaire.
 ### Opener text
 
 ```
+Your project -- question 1 of 1 -- importance: high
 In a sentence or two -- what do you want to build or change, and what outcome
 are you after?
 
-Suggested: For example: "I want a small CLI tool that parses a config file and
+My recommendation: For example: "I want a small CLI tool that parses a config file and
            validates it against a schema, so that our team stops manually
            checking config files before each deploy."
-Why: Describing the pieces in your own words gives me the working vocabulary
+Why I ask: Describing the pieces in your own words gives me the working vocabulary
      for this project. I will use your terms, not impose mine -- so the more
      naturally you name the pieces, the more useful what follows will be.
-
-[1] Use the form above and share yours
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 ### Why the opener is NFR-7-compliant by construction
@@ -262,8 +261,9 @@ Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
 
 - **Question form** (advisor-stance.md "Question Form"): every
   emitted question carries context, the question itself, a concrete `Suggested:`
-  answer, a grounded `Why:` rationale, and the accept/override options. All five
-  parts are non-optional.
+  answer, a grounded `Why:` rationale, and the free-answer closing line. The first line
+  of the form gives the topic, the question's place in its group and its importance. All of
+  these parts are non-optional.
 - **Pre-emit self-check** (advisor-stance.md "Enforcement 2: Self-Check"): before
   emitting, verify `Suggested:` is present and concrete (not blank, not "-") and
   `Why:` is present and grounded. If a concrete suggestion cannot be formed, propose
@@ -273,6 +273,10 @@ Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
   Handlers"): shape the response when the user signals "I don't know," "what do you
   recommend?," "explain the pros and cons," "explain it like I'm a junior," or asserts
   something the analyst judges mistaken.
+
+**Before the question is shown,** record it as `Pending` in the work's `qa` (the intake exception
+does not apply: the work exists): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<the section or topic>' --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<My recommendation>' --asked-by aid-describe --step <the host step: CONTINUE or DESCRIBE-SEED>` (it prints the question's id). The D1 opener is recorded the same way. When the user answers, record it right away with `--answer --id <id> --state <Answered|Skipped|Assumed> --value '<the answer>' --applied-to '<the REQUIREMENTS.md section>'`.
+An interview stopped mid-question therefore leaves that question `Pending`, and a resume asks it first.
 
 **After the user answers, before returning to Step 1:**
 

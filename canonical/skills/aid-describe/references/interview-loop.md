@@ -24,8 +24,9 @@ next-move selector every turn after the D1 opener:
 4. **CALIBRATION SHAPING** -- Shape the chosen move's depth by calibration state
    (`references/calibration.md` depth-shaping table).
 5. **ENVELOPE + EMIT** -- Ask in the question form and run the pre-emit
-   self-check (`references/advisor-stance.md`); emit one question; wait for the
-   answer; record to the record sink; re-read calibration; return to Step 1.
+   self-check (`references/advisor-stance.md`); record it `Pending` with `--ask`
+   before it is shown; emit one question; wait for the answer; record it with `--answer` and to the
+   record sink; re-read calibration; return to Step 1.
 
 For the full-path interview the stop predicate is: every REQUIREMENTS.md section is
 Complete or N/A and no unresolved coherence conflict is open.

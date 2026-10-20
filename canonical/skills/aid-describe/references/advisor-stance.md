@@ -158,12 +158,11 @@ then offered as a direction to CONFIRM or OVERRIDE, not a lead:
 
 [the question]
 
-Suggested: [a concrete direction -- offered to confirm or override, not to anchor]
-Why: [rationale; this straw-man is here to confirm your direction, not impose one --
+My recommendation: [a concrete direction -- offered to confirm or override, not to anchor]
+Why I ask: [rationale; this straw-man is here to confirm your direction, not impose one --
      override freely if this does not match your thinking]
 
-[1] This matches -- confirming
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Both `Suggested:` and `Why:` remain present and non-optional (the question-form invariant holds). The

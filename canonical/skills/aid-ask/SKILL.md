@@ -10,7 +10,7 @@ description: >
   it feeds back into improving the Knowledge Base. Trivial questions are answered inline;
   broad investigations are dispatched read-only. The only thing it ever writes is that
   recorded gap.
-allowed-tools: Read Glob Grep Agent Write Edit
+allowed-tools: Read Glob Grep Agent Write Edit Bash
 argument-hint: "<question>  — a free-form question about the project"
 ---
 
@@ -31,7 +31,7 @@ fully read-only; only the gap-append branch writes (NFR-6/C4: capture-and-flag,
 never auto-apply).
 
 **Not a numbered pipeline phase.** `/aid-ask` is an optional, on-demand skill
-outside the pipeline phases. No work folder, no STATE.md of its own.
+outside the pipeline phases. No work folder, no state file of its own.
 
 **Single-shot, no state machine.** One pass: read context -> answer -> exit.
 
@@ -66,7 +66,7 @@ Decide whether the question is **trivial** or **broad/expensive**:
   generator output go?", "What is the allowed-tools list for aid-researcher?"
 - **Broad/expensive:** requires deep codebase traversal, cross-file pattern
   matching, or analysis of many files. Examples: "What are all the places where
-  STATE.md is written?", "Summarize every Q&A in the current discovery cycle",
+  STATE.yml is written?", "Summarize every Q&A in the current discovery cycle",
   "How does the render pipeline handle tool-name remapping across all profiles?"
 
 ### Step 2a — Trivial question: answer inline
@@ -77,11 +77,11 @@ Read only the files needed to answer:
 2. Read the relevant KB docs (e.g., `architecture.md`, `coding-standards.md`,
    `module-map.md`, `pipeline-contracts.md`, `schemas.md`, etc.) using `Read`.
 3. Glob or Grep specific files as needed (e.g., locate a SKILL.md or AGENT.md,
-   check a script header, read a work STATE.md).
+   check a script header, read a work's STATE.yml).
 4. Compose the answer with inline citations:
    - KB doc: cite as "`architecture.md` §Section" or `coding-standards.md §7b`.
    - File path: cite as `.agents/skills/aid-ask/SKILL.md`.
-   - Work state: cite as `work-001-kb-skills STATE.md` or `work-NNN STATE.md §Section`.
+   - Work state: cite as `work-001-kb-skills STATE.yml` or `work-NNN STATE.yml §Section`.
 
 ### Step 2b — Broad/expensive question: dispatch aid-researcher
 
@@ -98,9 +98,9 @@ INSTRUCTIONS:
 1. Load .aid/knowledge/INDEX.md to navigate the KB.
 2. Read the KB docs relevant to the question.
 3. Glob or Grep the codebase as needed to gather evidence.
-4. Read .aid/works/work-*/STATE.md files if the question concerns in-flight works.
+4. Read .aid/works/work-*/STATE.yml files if the question concerns in-flight works.
 5. Return a structured answer with source citations (KB doc names, file paths,
-   work-NNN STATE references). Do not fabricate facts; if the context cannot
+   work-NNN STATE.yml references). Do not fabricate facts; if the context cannot
    answer the question, state the gap explicitly.
 6. Write nothing. Return everything as your message.
 ```
@@ -131,7 +131,7 @@ Format the answer as:
 
 - <citation 1>  (e.g., `architecture.md §Thin-Router state machine`)
 - <citation 2>  (e.g., `.agents/skills/aid-housekeep/SKILL.md`)
-- <citation 3>  (e.g., `work-NNN STATE.md §Goal`)
+- <citation 3>  (e.g., `work-NNN STATE.yml`, the `intent` key)
 ```
 
 If context is insufficient to answer, emit the reply AND then capture the gap:
@@ -147,7 +147,7 @@ question: <restate the question briefly>.
 ## Gap
 
 <Describe specifically what is missing -- which KB doc lacks the data, which
-codebase subtree was not reachable, or which work STATE.md did not exist.>
+codebase subtree was not reachable, or which work STATE.yml did not exist.>
 
 ## Sources
 
@@ -196,8 +196,8 @@ the KB moves to its own state file.)
 - `KB-cannot-answer`: the KB simply lacks coverage for the question. Impact = `Medium`.
 
 **Record the entry.** For a work, write it through the writer, which appends a `Pending`
-entry to the work's `qa` and prints its id. Point it at that work's record with
-`AID_STATE_FILE` when more than one work is in the worktree:
+entry to the work's `qa` and prints its id. This skill runs from the project root, not from
+the work's worktree, so always point the writer at that work's record with `AID_STATE_FILE`:
 
 ```
 AID_STATE_FILE=.aid/works/work-NNN-<slug>/STATE.yml bash .aid/runtime/scripts/execute/writeback-state.sh \

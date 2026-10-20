@@ -124,18 +124,24 @@ Present the gate's single new-vs-continuation question, showing the enumerated l
 (group by `work_id`; annotate each with its `[phase · lifecycle]` and worktree/branch
 label from the helper's record columns):
 
-```
-Works already exist. Is this a NEW work, or a CONTINUATION of an existing one?
+This is an intake question, so it is not recorded with `--ask` (no work record exists yet). Show it in the
+protocol's form, with the list above it:
 
+```text
 Existing works:
   work-001-user-auth        [Definition · Running]                (main)
   work-002-reporting        [Planning · Running]                 (main)
   work-016-numberless-...   [Specification · Paused-Awaiting-Input] (worktree: work-016)
 
-[N] New work
-[1] Continue work-001-user-auth
-[2] Continue work-002-reporting
-[3] Continue work-016-numberless-...
+Your work -- question 1 of 1 -- importance: high
+Is this a new work, or a continuation of one of those above?
+Why I ask: a continuation picks up where that work stopped; a new work starts a fresh record.
+My recommendation: {the one that fits the request best, and why; a new work when none fits}
+  1. New work
+  2. Continue work-001-user-auth
+  3. Continue work-002-reporting
+  4. Continue work-016-numberless-...
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Wait for the response, then act per the gate:
@@ -164,7 +170,7 @@ All paths below are relative to `.aid/works/{work}/`.
 
 ```plaintext
 State 1:  No STATE.md (§ Interview State)                           -> FIRST-RUN
-State 2:  the work's qa has Pending entries (STATE.yml)               -> Q-AND-A
+State 2:  the work's qa has open entries, Pending or Skipped (STATE.yml) -> Q-AND-A
 State 3:  Interview State: In Progress, incomplete                  -> CONTINUE
 State GS: Interview State: In Progress, all done,
           greenfield (no brownfield KB on disk) + seed not complete -> DESCRIBE-SEED
@@ -178,8 +184,8 @@ Approved: Interview State: Approved                                 -> hand-off 
 1. Check for `STATE.md` in the work folder and look for the `## Interview State` section
 2. If missing → **State 1: FIRST-RUN**
 3. If exists:
-   a. Check the work's `qa` (STATE.yml) for entries with `state: Pending`
-   b. If Pending entries exist → **State 2: Q-AND-A**
+   a. Check the work's `qa` (STATE.yml) for entries with `state: Pending` or `state: Skipped` (both are open)
+   b. If open entries exist → **State 2: Q-AND-A**
    c. Read `**Interview State:**` field in `## Interview State`
       - If State is `In Progress`:
         - Read Section Status table under `## Interview State`
@@ -219,7 +225,7 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 
 1. The calling phase records its question with `writeback-state.sh --ask` in the work's `qa`
    (`Pending`, with `--asked-by` set to its own skill)
-2. Next `/aid-describe {work}` run detects Pending Q&A → enters State 2 (Q-AND-A)
+2. Next `/aid-describe {work}` run detects open Q&A (Pending or Skipped) → enters State 2 (Q-AND-A)
 3. Questions are presented to the user one at a time, through the question protocol
 4. Each answer is recorded with `writeback-state.sh --answer` in the work's `qa`, and in REQUIREMENTS.md
 5. The affected `§ 11` feature section is updated if the answer bears on one feature

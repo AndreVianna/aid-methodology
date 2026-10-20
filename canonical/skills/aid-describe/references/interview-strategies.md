@@ -24,11 +24,10 @@ Surface KB inferences at gap rank 3 or 4 with a suggested answer and source refe
 
 {Your question about this section}
 
-Suggested: {inferred content from codebase analysis}
-Why: {rationale for the inference -- grounded in the KB doc cited above}
+My recommendation: {inferred content from codebase analysis}
+Why I ask: {rationale for the inference -- grounded in the KB doc cited above}
 
-[1] Accept this
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Only update REQUIREMENTS.md after the user responds.

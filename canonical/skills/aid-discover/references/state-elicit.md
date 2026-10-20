@@ -51,15 +51,15 @@ resolved="$(grep -m1 '^\*\*Resolved:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
 Sources are **reference knowledge** (docs, vendor specs, reference URLs) — distinct from tool
 integrations (E2). Present:
 
-```
-External sources
-----------------
-List the external documentation this project depends on — local doc paths, directories, or
-reference URLs (vendor specs, API docs). These are catalogued so agents find them before
-fetching. This is separate from tool integrations (asked next).
-
-Reply with one entry per line as:  <path-or-url> | file|directory|url | <one-line purpose>
-  — or type `skip` if the project has no external sources.
+```text
+External sources -- question 1 of 2 -- importance: medium
+Does this project depend on external documentation (local doc paths, directories or reference URLs)?
+Why I ask: catalogued sources let agents find them before fetching; this is separate from tool integrations, asked next.
+My recommendation: list the vendor specs and API docs you rely on, one per line as
+  <path-or-url> | file|directory|url | <one-line purpose>
+  1. Give the list in that form
+  2. None -- the project has no external sources
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **This is a genuine ASK.** Stop after presenting. Do **not** write the
@@ -131,17 +131,15 @@ Then present **Step E2**'s prompt and stop there for the answer.
 Tools are **connectable integrations**, captured into `.aid/connectors/` per the descriptor
 contract in `.aid/runtime/templates/connectors/`. Present:
 
-```
-Tool integrations
-------------------
-Declare a tool the project's agents should be able to reach (issue tracker, chat, CI, source
-host, docs, container runtime). Pick a preset for sensible defaults, or declare a custom tool.
-
-Presets (from the catalog):  github  gitlab  jira  slack  confluence  notion  jenkins  docker
-Reply per tool with:  <preset-id>            (use a preset, then confirm/adjust its fields)
-                 or:  custom                 (declare a generic descriptor)
-  — type `none` if you have zero tool integrations to declare (an explicit, recorded answer)
-  — or type `skip` to bypass this step for now (nothing about tools is recorded either way)
+```text
+Tool integrations -- question 2 of 2 -- importance: medium
+Which tools should the project's agents be able to reach (issue tracker, chat, CI, source host, docs, container runtime)?
+Why I ask: each tool you name is captured as a connector under .aid/connectors/, so agents can use it.
+My recommendation: declare the tools you already use, from the catalog (github, gitlab, jira, slack, confluence, notion, jenkins, docker), then confirm each one's fields.
+  1. Use a preset: give its id, one per tool (recommended when the tool is in the catalog)
+  2. Declare a custom tool
+  3. None -- the project has zero tool integrations (recorded as an explicit answer)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **This is a genuine ASK.** Stop after presenting.

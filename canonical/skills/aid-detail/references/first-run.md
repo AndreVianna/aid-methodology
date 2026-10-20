@@ -48,12 +48,23 @@ I'm proposing {n} tasks:
    Scope: {brief description}
    Criteria: {brief summary}
 
-What do you think? We can discuss:
-- **Type** — should any task be a different type? Am I mixing types?
-- **Size** — is any task too big or too small?
-- **Scope** — should something move between tasks?
-- **Dependencies** — are the dependencies right? Can anything run in parallel?
-- **Criteria** — are the acceptance criteria concrete enough?
+```
+
+Then ask the approval of this proposal, as one question in the protocol's form (its subjects to discuss are type,
+size, scope, dependencies and criteria). It blocks the work. Record it first with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-detail --step FIRST-RUN --covers 'the task breakdown of delivery-NNN'` (it prints the question's id),
+bring the step detail up to date with `--step` (which delivery's proposal awaits approval, and the id), and set the
+lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval
+cannot be skipped. Record the answer with `--answer --id <id> --state Answered --value '<Approved, or the change asked>' --applied-to 'the task breakdown of delivery-NNN'` and set the lifecycle back to `Running`.
+
+```text
+Tasks -- question 1 of 1 -- importance: high
+Is this task breakdown for delivery-NNN right (type, size, scope, dependencies, acceptance criteria)?
+Why I ask: each task becomes one agent session and one review, so the boundaries need to be right before I write them.
+My recommendation: approve it -- every task has one type, a bounded scope and concrete criteria.
+  1. Approve as it is (recommended)
+  2. Change it (tell me what: retype, split, merge, reorder, scope or criteria)
+Or answer in your own words or ask me to explain. An approval cannot be skipped.
 ```
 
 ### Step 2: Discuss

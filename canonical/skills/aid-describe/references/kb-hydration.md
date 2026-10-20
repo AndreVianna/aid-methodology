@@ -64,17 +64,15 @@ For each, assess: **Would the user reasonably know this at this stage?**
 
 ### Step 3: Ask Targeted Questions
 
-For each "Likely knows" gap, ask ONE question at a time:
+For each "Likely knows" gap, ask ONE question at a time. Record each one first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category 'Knowledge Base' --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<the recommendation>' --asked-by aid-describe --step COMPLETION`, and its answer with `--answer --id <id> --state <Answered|Skipped> --value '<the answer>' --applied-to '<KB document>'`, then show it:
 
 ```
-[KB Gap: {document name}]
-
+{document name} -- question {n} of {m} -- importance: {high|medium|low}
 {question}
 
-This helps fill the project Knowledge Base so future phases have full context.
-
-[1] Skip — will figure it out later
-[2] Your answer: ___
+Why I ask: this helps fill the project Knowledge Base so future phases have full context.
+My recommendation: {the answer the interview points to, and why}
+Or answer in your own words, ask me to explain, or skip this question (you can figure it out later).
 ```
 
 After each answer:

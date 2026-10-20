@@ -189,21 +189,15 @@ done
 # create/update; absent in read; button-row copy byte-identical across
 # create/update/the shared reference.
 # ===========================================================================
-assert_wrapped_contains "$CREATE_SKILL" "single in-run question exchange, asked in plain text" "T45 aid-create-ticket's CONFIRM state is a single in-run question exchange, asked in plain text"
-assert_file_contains "$CREATE_SKILL" "[1] File it · [2] Edit · [3] Cancel" "T46 aid-create-ticket shows the [1]/[2]/[3] confirm button row"
+assert_wrapped_contains "$CREATE_SKILL" "questions asked one at a time in plain text and answered inline" "T45 aid-create-ticket's CONFIRM state is a single in-run question exchange, asked in plain text"
+assert_file_contains "$CREATE_SKILL" "  1. File it (recommended)" "T46 aid-create-ticket shows the confirm in the question form, one topic per message"
 assert_wrapped_contains "$UPDATE_SKILL" "single in-invocation confirm" "T47 aid-update-ticket's CONFIRM state is a single in-invocation confirm"
-assert_file_contains "$UPDATE_SKILL" "[1] File it · [2] Edit · [3] Cancel" "T48 aid-update-ticket shows the [1]/[2]/[3] confirm button row"
+assert_file_contains "$UPDATE_SKILL" "  1. File it (recommended)" "T48 aid-update-ticket shows the confirm in the question form, one topic per message"
 assert_file_not_contains "$READ_SKILL" "[1] File it · [2] Edit · [3] Cancel" "T49 aid-read-ticket never shows the confirm button row (non-destructive, no write)"
 assert_wrapped_contains "$READ_SKILL" "No confirmation prompt, ever" "T50 aid-read-ticket documents it never shows a confirmation prompt"
 
-# T51/T52 -- extract the exact button-row line (trimmed) from each file and
-# assert byte-identity across create/update/shared-ref (not just "contains").
-BTN_RE='^[[:space:]]*\[1\] File it · \[2\] Edit · \[3\] Cancel[[:space:]]*$'
-create_btn="$(grep -E "$BTN_RE" "$CREATE_SKILL" | head -1 | sed -E 's/^[[:space:]]+//;s/[[:space:]]+$//')"
-update_btn="$(grep -E "$BTN_RE" "$UPDATE_SKILL" | head -1 | sed -E 's/^[[:space:]]+//;s/[[:space:]]+$//')"
-sharedref_btn="$(grep -E "$BTN_RE" "$SHARED_REF" | head -1 | sed -E 's/^[[:space:]]+//;s/[[:space:]]+$//')"
-assert_eq "$create_btn" "$update_btn" "T51 create's confirm button row is byte-identical to update's"
-assert_eq "$create_btn" "$sharedref_btn" "T52 create's confirm button row is byte-identical to the shared reference's"
+# T51/T52 retired: create's confirm is in the question form, so it no longer
+# shares a button-row line with update or the shared reference.
 
 # ===========================================================================
 # T53-T63  Grammar matrix.
@@ -232,7 +226,7 @@ assert_file_contains "$SHARED_REF" "no issue-tracker connector found." "T68 shar
 assert_file_contains "$SHARED_REF" '`api` / `ssh` / `cli` fall-through' "T69 shared ref: an api/ssh/cli fall-through section exists"
 assert_wrapped_contains "$SHARED_REF" "so resolution falls through to Step 3/4" "T70 shared ref: a non-mcp connector falls through to Step 3/4"
 assert_wrapped_contains "$READ_SKILL" "one \`mcp\` + \`issue-tracker\` connector → use it silently" "T71 aid-read-ticket routes the ladder's single-match outcome to its own State 2"
-assert_wrapped_contains "$CREATE_SKILL" "match (silent) or an" "T72 aid-create-ticket's RESOLVE-CONNECTOR routes all four ladder outcomes (silent/ask/host-MCP/notify)"
+assert_wrapped_contains "$CREATE_SKILL" "match (silent) or" "T72 aid-create-ticket's RESOLVE-CONNECTOR routes all four ladder outcomes (silent/ask/host-MCP/notify)"
 assert_file_contains "$UPDATE_SKILL" "exactly-one-silent → two-or-more-ask" "T73 aid-update-ticket's RESOLVE-CONNECTOR routes all four ladder outcomes (silent/ask/host-MCP/notify)"
 
 # ===========================================================================

@@ -323,10 +323,18 @@ Here is what I have gathered for each seed element:
 - Technology stack (technology-stack.md): [summary of named language / runtime / framework]
 - Decisions (decisions.md): [summary of decisions, or "none recorded"]
 
-Does this accurately reflect your intent? Any corrections before I check coherence?
+```
 
-[1] Looks right, proceed
-[2] Correct: ___
+Then ask one question, in the protocol's form (record it first with `--ask --category Requirements --impact Medium`, and the answer with `--answer`):
+
+```text
+Seed -- question 1 of 1 -- importance: medium
+Does this accurately reflect your intent, before I check coherence?
+Why I ask: the coherence check runs against exactly what is shown above.
+My recommendation: proceed as it stands -- it matches what we settled.
+  1. Looks right, proceed (recommended)
+  2. Correct something (tell me what)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Record any corrections before moving to step 3.
@@ -354,12 +362,11 @@ Propose an extension ONLY when the domain warrants it. Use the same propose->con
 I notice this project is [process/workflow-heavy | data/ML-heavy | integration-heavy].
 Would you like me to author [process-architecture.md | schemas.md | integration-map.md]
 as part of the seed?
-
-Suggested: [Yes, include it -- it is load-bearing for downstream phases on this project]
-Why: [because <domain signal> means <element> will be needed by aid-specify to act without KB-gap loopbacks]
-
-[1] Yes, add it to the seed
-[2] No, defer it to when code exists
+Why I ask: [because <domain signal> means <element> will be needed by aid-specify to act without KB-gap loopbacks]
+My recommendation: [Yes, include it -- it is load-bearing for downstream phases on this project]
+  1. Yes, add it to the seed (recommended)
+  2. No, defer it to when code exists
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Domain signals and their extensions:

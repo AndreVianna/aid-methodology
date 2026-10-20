@@ -2,13 +2,24 @@
 
 DONE confirms discovery is complete and user-approved; it is selected when the KB meets minimum grade and `**User Approved:** yes` is present in STATE.md.
 
-Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reopen it for review?"_
+Tell the user, in one plain line, that discovery is complete and approved (Grade: {grade}). Then ask one
+question, in the protocol's form, recorded first as the SKILL's recording paragraph says:
+
+```text
+Knowledge base -- question 1 of 1 -- importance: low
+Do you want to reopen the discovery for another review?
+Why I ask: the knowledge base is already approved, so nothing more runs unless you ask for it.
+My recommendation: leave it as it is -- it is approved and meets the minimum grade.
+  1. Leave it as it is (recommended)
+  2. Reopen it for review
+Or answer in your own words (for example, a concern for the reviewer), ask me to explain, or skip this question.
+```
 
 The question is blocking: this step pauses on it until the user answers.
 
-- User confirms → end this step at once with the first case of the advance line below (REVIEW); nothing below this list runs
+- User reopens it → end this step at once with the first case of the advance line below (REVIEW); nothing below this list runs
 - User has specific concern → record as context for reviewer
-- User says no → carry on with the rest of this step, which ends with the second case of the advance line below. Print `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Definition phase.`
+- User leaves it as it is (or skips) → carry on with the rest of this step, which ends with the second case of the advance line below. Print `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Definition phase.`
 
 ### Ledger cleanup
 

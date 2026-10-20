@@ -28,7 +28,7 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id`
 3. Single record → auto-select it
-4. Multiple records → list them, ask user to choose
+4. Multiple records → list them, and ask which one, as one question in the protocol's form (`.aid/runtime/templates/question-protocol.md`)
 5. Zero records on any worktree → **STOP.** "No works found. Run `/aid-describe` first."
 
 ### Locate + Enter the Work's Worktree

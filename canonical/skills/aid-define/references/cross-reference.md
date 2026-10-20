@@ -69,12 +69,15 @@ I have {N} questions to resolve these. Let's go through them one at a time.
 
 ## 6e. Record Questions and Ask
 
-For each finding that needs the user, record a question in the work's `qa` sequence with
-`writeback-state.sh --ask --category {category, e.g., Architecture, Requirements, Security} --impact {High|Medium|Low} --context '{why this matters; what evidence was found; surfaced by /aid-define (cross-reference)}' --suggested '{answer if inferrable from KB/code, or "—"}' --asked-by aid-define` (it prints the question's id).
+Each finding that needs the user is already a `Pending` question in the work's `qa` sequence: the
+reviewer recorded it with `writeback-state.sh --ask` (category, impact, context, suggested, `--asked-by aid-reviewer`)
+and listed its id in its report. The main conversation does not record it a second time. If the main conversation
+finds a gap of its own that the reviewer did not record, it records that one with `--ask` first, with
+`--asked-by aid-define`.
 
-Then present them one at a time through the question protocol. These questions are asked by the main
-conversation only; a worker records them and lists them in its report. Record each answer with `--answer --id <id>`
-(`--state Answered`, or `Skipped`) before the next question.
+Then present them one at a time through the question protocol, using the ids the reviewer listed. These questions are
+asked by the main conversation only; a worker records them and lists them in its report. Record each answer with
+`--answer --id <id>` (`--state Answered`, or `Skipped`) before the next question.
 
 After each answer:
 1. Update REQUIREMENTS.md

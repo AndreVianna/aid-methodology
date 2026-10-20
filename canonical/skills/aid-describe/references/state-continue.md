@@ -8,18 +8,17 @@ If all REQUIREMENTS.md sections are Pending, emit the D1 fixed opener
 (`references/elicitation-engine.md` "D1 Fixed Opener -- The Only Fixed Turn"):
 
 ```
+Your project -- question 1 of 1 -- importance: high
 In a sentence or two -- what do you want to build or change, and what outcome
 are you after?
 
-Suggested: For example: "I want a small CLI tool that parses a config file and
+My recommendation: For example: "I want a small CLI tool that parses a config file and
            validates it against a schema, so that our team stops manually
            checking config files before each deploy."
-Why: Describing the pieces in your own words gives me the working vocabulary
+Why I ask: Describing the pieces in your own words gives me the working vocabulary
      for this project. I will use your terms, not impose mine -- so the more
      naturally you name the pieces, the more useful what follows will be.
-
-[1] Use the form above and share yours
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Read the answer, then enter the adaptive loop at STOP-CHECK / GAP-SELECTION

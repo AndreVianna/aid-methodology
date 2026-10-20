@@ -175,15 +175,13 @@ surfaced it, and what the effect on the downstream phases would be]
 
 [The question: what does the user want to do about it?]
 
-Suggested: [a concrete proposed resolution -- e.g., add a glossary entry, clarify or
+My recommendation: [a concrete proposed resolution -- e.g., add a glossary entry, clarify or
             remove the REQUIREMENTS term, remove the orphan seed concept, or add a
             missing requirement]
-Why: [the rationale: why this conflict matters for the downstream phases, and why the
+Why I ask: [the rationale: why this conflict matters for the downstream phases, and why the
      suggested resolution is the right direction]
 
-[1] Accept the suggested resolution
-[2] Alternative: ___
-[3] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **[HUMAN GATE].** Work MUST NOT proceed to the greenfield-mode review gate while any

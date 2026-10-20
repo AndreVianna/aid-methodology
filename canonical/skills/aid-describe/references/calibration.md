@@ -116,14 +116,13 @@ right depth.
 
 How familiar are you with requirements and design work of this kind?
 
-Suggested: You are experienced in this domain and have done similar requirements work
+My recommendation: You are experienced in this domain and have done similar requirements work
 before, so I will pitch questions at a technical level and skip the teaching scaffolds
 unless you ask.
-Why: Knowing your level lets me calibrate depth from the start rather than over- or
+Why I ask: Knowing your level lets me calibrate depth from the start rather than over- or
 under-explaining; correct me if I have read this wrong.
 
-[1] Accept this
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 After the user responds, the engine updates calibration state and records the answer before
