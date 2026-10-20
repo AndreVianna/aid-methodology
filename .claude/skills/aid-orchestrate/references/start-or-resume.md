@@ -77,7 +77,8 @@ open, and the work stays paused, until the user approves or declines.
 
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
 that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
-`Canceled` is finished: say so and end the run.
+`Canceled` is finished: say so in plain words and end the run, with no offer to reopen it and none of
+its old questions.
 
 A continued work resumes at the skill and step its record names, which HAND-OVER starts once the open
 questions above are asked (ASK-FIRST). This flow writes no `--step` and no `--handoff` into a continued

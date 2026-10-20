@@ -179,6 +179,10 @@ State 4: Feature State: Blocked (loopback pending)            → BLOCKED
 State 5: Feature State: Ready                                 → REVIEW (enter loop at step 4)
 ```
 
+A saved REVIEW or DONE whose feature has no `#### Technical Specification` content in § 11 is a mismatch.
+Its recovery proposes CONTINUE: the feature's state goes back to `In Discussion`, and the specification
+is written again from its first pending section.
+
 Print the state-entry line and "you are here" map. Examples for INITIALIZE:
 
 ```

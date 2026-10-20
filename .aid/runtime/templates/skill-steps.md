@@ -199,7 +199,8 @@ line for each problem and exits 9 when there is one. The problems are:
 
 The agent does not repair on its own. It tells the user what it found, and proposes the whole
 repaired record (the type, the skill and the step) as **one** confirmation question under the
-question protocol, with its recommendation:
+question protocol, with its recommendation. It is the only question of that turn; any other question
+waits until it is answered:
 
 - the skill and step come from the skill's own detection (for a work started before the record
   existed, from the legacy block of the gate);
@@ -284,6 +285,9 @@ exception is the conflict merge that brings the parent branch, or the work branc
 into the work's branch, only to resolve a conflict. That exception belongs to Feature 008
 (`/aid-monitor-pipeline`), and its result is approved before it is pushed (Q85). A PR or MR is created
 only on the user's yes, and only by `/aid-monitor-pipeline`.
+
+The rule holds when the user asks for the merge, however plainly or often. The agent says that the
+merge is the user's own step, leaves every branch as it is, and offers no merge for later, in any form.
 
 ## What the user sees
 
