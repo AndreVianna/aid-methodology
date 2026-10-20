@@ -1887,3 +1887,11 @@ qa:
     suggested: '1: fix all three now (never-merges holds when asked; aid-specify recovery goes to CONTINUE; 002-20 expected text; a canceled work is reported finished with no reopen offer), then resync, /reload-skills and the samples again'
     answer: '1 (maintainer).'
     applied_to: 'canonical/aid/rules.md, skill-steps.md, aid-specify, aid-orchestrate start-or-resume, sample 002-20; then the delivery-002 resync again'
+  - id: Q164
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Second delivery-002 gate attempt: 002-05 3/3, 002-21 2/3, 002-20 0/3 (questions bundled with the repair, step names shown, repair written before the yes), 002-21b 0/3 (offers to reopen, raises Q1).'
+    suggested: '1: pass the gate and record the rest as a known issue for delivery-003'
+    answer: '2 (maintainer): one more fix round -- aid-specify recovery asks the repair question alone and writes nothing before the yes; a finished work cannot be reopened -- then resync, /reload-skills and the samples again.'
+    applied_to: 'skill-steps.md Recovery; aid-specify State Detection; rules.md; work-initiation-gate.md row 1; aid-orchestrate start-or-resume.md'

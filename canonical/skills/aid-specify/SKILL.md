@@ -181,7 +181,9 @@ State 5: Feature State: Ready                                 → REVIEW (enter 
 
 A saved REVIEW or DONE whose feature has no `#### Technical Specification` content in § 11 is a mismatch.
 Its recovery proposes CONTINUE: the feature's state goes back to `In Discussion`, and the specification
-is written again from its first pending section.
+is written again from its first pending section. Ask that repair question alone, in plain words with no
+step name and no state-entry line or map, and change no file, the work record included, before the
+user's yes. The first section's own question comes after the repair is written.
 
 Print the state-entry line and "you are here" map. Examples for INITIALIZE:
 

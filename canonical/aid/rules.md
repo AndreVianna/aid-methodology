@@ -85,7 +85,7 @@ Read `.aid/connectors/INDEX.md`.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the
   chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
-  resumes, closes or cancels a work, goes through `/aid-orchestrate` first; a finished work is only reported.
+  resumes, closes or cancels a work, goes through `/aid-orchestrate` first. A finished work is only reported: no reopen, no old questions.
 - Your reading takes the user's words as a hint only: check it against the Knowledge Base and the
   code, then show it and its reason in one line, inside the first question or approval, and wait.
 - CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to
