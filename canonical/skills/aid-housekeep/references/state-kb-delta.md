@@ -55,8 +55,6 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Branch" --value "$BRANCH"
 ```
 
-Print the `[State: KB-DELTA]` banner from `SKILL.md S State Detection`.
-
 ---
 
 ## Step 1 -- Deterministic suspect pre-pass (f007); optionally refresh git

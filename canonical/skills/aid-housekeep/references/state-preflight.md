@@ -110,7 +110,4 @@ uncommitted changes are permitted — housekeeping is resuming mid-run.
 
 ## On Success
 
-Print: `[State: PREFLIGHT] complete.`
-
-**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`);
-otherwise **CHAIN** → [State: KB-DELTA].
+**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`); otherwise **CHAIN** → [State: KB-DELTA].

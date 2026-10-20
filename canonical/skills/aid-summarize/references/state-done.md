@@ -16,8 +16,6 @@ Print:
     ## Summarization History → entry #{N} added ({date}, grade {grade})
 ✓ ## Knowledge Summary Status → User Approved: yes
 
-[State: DONE]
-
 Open .aid/knowledge/kb.html in a browser to view the summary.
 ```
 
@@ -33,8 +31,6 @@ Print:
    Last summary: {date} (grade {grade})
    Last KB review: {date}
    Nothing to do. Re-run with --reset to force regeneration.
-
-[State: DONE]
 ```
 
 Exit with success. `.aid/knowledge/STATE.md` `## Knowledge Summary Status` and `## Summarization History` are NOT modified.

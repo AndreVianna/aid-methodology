@@ -9,8 +9,6 @@ CONFIRM`.
 `[2]` prompt, ASK), plus a `[3] Cancel` exit, but gates
 SCOPE before any edit exists rather than the finished edits.
 
-Print the `[State: CONFIRM]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 1: Present understanding + scope + questions
@@ -91,7 +89,7 @@ Scope Plan item (same doc-path + parenthetical convention as the existing
 rest of the run: APPLY may only touch it, and REVIEW's scope-diff guard
 hard-fails on any divergence between it and the disk-derived edited set.
 
-Print: `[CONFIRM] Confirmed. {N} doc(s) in scope. Advancing to APPLY.`
+Print: `Confirmed. {N} doc(s) in scope.`
 
 The step ends with CHAIN to APPLY (see the Advance line at the end of this file).
 

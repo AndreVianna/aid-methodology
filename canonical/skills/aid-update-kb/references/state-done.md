@@ -7,8 +7,6 @@ the run-state file records `**State:** DONE` and `**User Approved:** yes`.
 at APPROVAL. If this state is entered without `**User Approved:** yes` in the
 run-state file, print an error and HALT without committing.
 
-Print the `[State: DONE]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 1: Re-verify closure (FR-34, before commit)
@@ -219,8 +217,6 @@ find .aid/.temp -maxdepth 1 -name 'UPDATEKB_STATE_*.md' -delete 2>/dev/null || t
 ## Step 6: Print closing summary
 
 ```
-[State: DONE] complete.
-
 KB update committed on branch: <Branch>
 Commit: <COMMIT_SHA>
 Docs updated ({N}):

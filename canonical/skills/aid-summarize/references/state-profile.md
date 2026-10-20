@@ -133,7 +133,7 @@ of html-skeleton.html.
 
 Print:
 ```
-[State: PROFILE] Doc-set/domain read complete.
+Doc-set/domain read complete.
   Domain:        {I2 value}
   Resolved docs: {N} of {M} doc-set entries present on disk
   Ordered sections: At a Glance | {trio present} | {primary docs} | {extension docs} | {meta docs} | KB Index
@@ -141,7 +141,7 @@ Print:
 
 If `discovery.doc_set` is missing from `.aid/settings.yml` (pre-feature-014 KB), warn:
 ```
-[State: PROFILE] WARNING: discovery.doc_set not found in .aid/settings.yml.
+WARNING: discovery.doc_set not found in .aid/settings.yml.
   Falling back to reading all .aid/knowledge/*.md files (no frontmatter ordering).
   Run /aid-discover to produce a feature-014-compatible KB for full section derivation.
 ```
@@ -156,7 +156,5 @@ Persist to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Domain:** {I2 value}
 **Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain
 ```
-
-Print: `[State: PROFILE] complete.`
 
 **Advance:** **CHAIN** → [State: GENERATE] (continue inline).

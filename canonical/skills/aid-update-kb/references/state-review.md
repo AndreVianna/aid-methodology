@@ -26,8 +26,6 @@ modification (AC-7 -- the f005 panel itself is unchanged). This section
 supplies only the `aid-update-kb`-specific wiring, plus the two
 update-kb-specific checks that gate entry into it.
 
-Print the `[State: REVIEW]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 0: Scope-diff guard (mechanical, runs FIRST, HL-7/AC-4)
@@ -238,7 +236,7 @@ Update `<STATE_FILE>`:
 **Scope-diff:** incomplete-APPLY -- <doc> confirmed but unedited
 ```
 
-Print: `[REVIEW] Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited. Returning to APPLY.`
+Print: `Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited.`
 
 This outcome ends the step with CHAIN to APPLY: `state-apply.md § Step 1` picks the doc back up -- it is
 still in `Confirmed Scope`.
@@ -326,7 +324,7 @@ Update `<STATE_FILE>`:
 **Review Completed:** <ISO-8601 timestamp>
 ```
 
-Print: `[State: REVIEW] complete. Advancing to APPROVAL.`
+Print: `Review complete.`
 
 This outcome ends the step with CHAIN to APPROVAL.
 
@@ -355,7 +353,7 @@ Update `<STATE_FILE>`:
 **Review Act-back:** <PASS|FAIL>
 ```
 
-Print: `[State: REVIEW] below gate -- entering FIX loop.`
+Print: `Below the gate -- entering the FIX loop.`
 
 Next, inside this step: Step 5 (FIX), below, which returns to Step 0. This outcome is not an ending: the fix
 pass and the review run again until the exit rule is met or an outcome above ends the step.
@@ -409,6 +407,6 @@ to fix), return to Step 0 of this state -- re-run the scope-diff guard
 (0a/0b) before re-dispatching the panel (Step 1). This closes the loop: FIX
 -> REVIEW Step 0 -> (guard PASS) -> panel -> 4(c) READY, or 4(d) FIX again.
 
-Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
+Print: `{N} finding(s) addressed, bounded to Confirmed Scope.`
 
 **Advance:** CHAIN → APPLY when an APPLY is incomplete; CHAIN → CONFIRM when an out-of-scope edit is on disk; CHAIN → APPROVAL when the review is READY.

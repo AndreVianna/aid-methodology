@@ -161,7 +161,7 @@ If the Scope Plan has at least one item:
 **State:** CONFIRM
 ```
 
-Print: `[SCOPE] Scope Plan ready. {N} item(s) in scope, {M} in Not-Changing. Advancing to CONFIRM.`
+Print: `Scope Plan ready. {N} item(s) in scope, {M} in Not-Changing.`
 
 **Advance:** CHAIN → CONFIRM (continue inline).
 

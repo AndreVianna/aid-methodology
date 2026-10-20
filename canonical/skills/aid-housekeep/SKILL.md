@@ -18,6 +18,8 @@ argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minim
 
 State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 Runs the three standard housekeeping jobs in a safe, fixed order, on a dedicated
 `aid/housekeep-*` branch, with one commit per stage. Re-running after a stalled
 gate resumes at the stalled stage — not job 1.
@@ -189,43 +191,6 @@ If row 6 is reached, print:
 ```
 Then HALT.
 
-**State-entry banner.** At the start of each state, print the matching banner:
-
-**PREFLIGHT:**
-```
-[State: PREFLIGHT] — Verifying prerequisites: .aid/ exists, not Plan Mode, git repo present.
-aid-housekeep  ▸ you are here
-  [● PREFLIGHT ] → [ KB-DELTA ] → [ SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]
-```
-
-**KB-DELTA:**
-```
-[State: KB-DELTA] — Detecting KB delta since last approval; dispatching targeted re-discovery.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [● KB-DELTA ] → [ SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]
-```
-
-**SUMMARY-DELTA:**
-```
-[State: SUMMARY-DELTA] — Checking whether the visual summary needs regeneration.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [● SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]
-```
-
-**CLEANUP:**
-```
-[State: CLEANUP] — Sweeping stale work-area artifacts.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [✓ SUMMARY-DELTA ] → [● CLEANUP ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Housekeeping complete.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [✓ SUMMARY-DELTA ] → [✓ CLEANUP ] → [● DONE ]
-```
-
 ---
 
 ## Dispatch
@@ -245,7 +210,6 @@ aid-housekeep  ▸ you are here
 > within KB-DELTA. The full dispatch protocol is documented inside
 > `references/state-kb-delta.md` (authored by task-004 / feature-002).
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Step rules:** The steps move as `skill-steps.md` § The advance words sets.

@@ -33,8 +33,6 @@ guard (`state-review.md § Step 0`) hard-fails on any divergence between the
 disk-derived edited set and `Confirmed Scope` -- APPLY exists to make that
 guard pass, not to be graded around.
 
-Print the `[State: APPLY]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 0: Re-scope revert guard (disk-derived, re-entry only, HL-7/AC-5)
@@ -306,6 +304,6 @@ Update `<STATE_FILE>`:
 **APPLY Completed:** <ISO-8601 timestamp>
 ```
 
-Print: `[APPLY] {N} doc(s) edited. Advancing to REVIEW.`
+Print: `{N} doc(s) edited.`
 
 **Advance:** CHAIN → REVIEW (continue inline).

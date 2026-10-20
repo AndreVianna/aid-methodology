@@ -57,6 +57,4 @@ bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 
 If Machine Grade >= minimum → MANUAL-CHECKLIST. Otherwise → FIX.
 
-Print: `[State: VALIDATE] complete.`
-
 **Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if Machine Grade >= minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline.

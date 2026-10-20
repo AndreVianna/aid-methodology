@@ -82,8 +82,6 @@ resuming); STOP and report to the Orchestrator/user.
 If they do not match, HALT -- do not proceed to Step 1 with a mismatched
 Prompt.
 
-Print the `[State: ANALYZE]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 1: Dispatch aid-researcher (clean-context)
@@ -257,7 +255,7 @@ escalation was triggered:
 **State:** SCOPE
 ```
 
-Print: `[ANALYZE] Impact Map ready. {N} location(s) recorded. Advancing to SCOPE.`
+Print: `Impact Map ready. {N} location(s) recorded.`
 
 **Advance:** CHAIN → SCOPE (continue inline).
 

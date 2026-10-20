@@ -8,9 +8,9 @@ The MANUAL_POOL (K1 KB-completeness, K2 fact-grounding) needs human judgment —
 
 Run `.aid/runtime/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/.temp/summarize/spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.
 
-### Step 2 — elicit the human-judgment answers via `AskUserQuestion`
+### Step 2 — elicit the human-judgment answers through the question protocol
 
-Ask the user (use `AskUserQuestion`; the user must have actually opened the HTML in a browser first — say so):
+Ask the user, one question at a time through `.aid/runtime/templates/question-protocol.md` (each with its reason and recommendation). The user must have actually opened the HTML in a browser first, so say so before the first question:
 
 - **K1 — KB completeness (10 pts):** "Open the generated HTML. Does it represent every populated KB doc you care about?" → Full (10) / Partial (5) / No (0).
 - **K2 — facts grounded (15 pts):** "Using the spot-check report above, are the HTML's numeric/named facts accurate against the source KB?" → Full (15) / Partial (8) / No (0).
@@ -33,7 +33,5 @@ Re-run `grade-summary.sh` — it reads `manual-checklist.json`, computes the Hum
 - Overall Grade ≥ minimum → APPROVAL.
 - **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.
 - Overall Grade < minimum → FIX. **If the shortfall is in MANUAL_POOL** (K1/K2 partial-or-no, or V1 fail) or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.
-
-Print: `[State: MANUAL-CHECKLIST] complete.`
 
 **Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise.

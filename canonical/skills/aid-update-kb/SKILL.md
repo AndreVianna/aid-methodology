@@ -16,6 +16,8 @@ argument-hint: "<what changed / what to update in the KB>"
 
 State machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 Analyzes how a prompt-driven instruction lands in the Knowledge Base,
 confirms the correct understanding and the exact scope with the user BEFORE
 any edit, then applies only that confirmed delta through the same
@@ -386,57 +388,6 @@ reformatted between states):
 `**Change Plan:**` no longer exists anywhere in this schema -- SCOPE's
 `**Scope Plan:**` replaces it.
 
-**State-entry banners.** At the start of each state, print the matching banner:
-
-**ANALYZE:**
-```
-[State: ANALYZE] -- Building the Impact Map: how and where the instruction lands in the KB.
-aid-update-kb  > you are here
-  [* ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**SCOPE:**
-```
-[State: SCOPE] -- Turning the Impact Map into the minimal Scope Plan + Not-Changing list.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [* SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**CONFIRM:**
-```
-[State: CONFIRM] -- Human gate: confirm understanding + scope before any edit.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [* CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**APPLY:**
-```
-[State: APPLY] -- Applying only the Confirmed Scope's targeted summary+pointer edits.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [* APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] -- Scope-diff guard, then grading the changed KB docs through f005's four-mandate panel.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [* REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**APPROVAL:**
-```
-[State: APPROVAL] -- Human gate: confirm the approved changes before committing.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [* APPROVAL ] -> [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] -- Restamp approved_at_commit:, commit, and clean run-state.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [+ APPROVAL ] -> [* DONE ]
-```
-
 ---
 
 ## Dispatch
@@ -504,8 +455,7 @@ aid-update-kb  > you are here
 > is edited-but-not-yet-approved is correctly `suspect` to f007, never
 > falsely current.
 
-On state entry, print `[State: NAME]` + the "you are here" banner from State
-Detection above. When a state completes, its `**Advance:**` line decides the next move, as
+When a state completes, its `**Advance:**` line decides the next move, as
 `.aid/runtime/templates/skill-steps.md` § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Step rules:** The steps move as `.aid/runtime/templates/skill-steps.md` § The advance words sets.

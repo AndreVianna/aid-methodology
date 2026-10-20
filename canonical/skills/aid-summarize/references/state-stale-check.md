@@ -27,6 +27,4 @@ If STALE: tell the user *why* it's stale:
    Regenerating to match latest KB...
 ```
 
-Print: `[State: STALE-CHECK] complete.`
-
 **Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch).

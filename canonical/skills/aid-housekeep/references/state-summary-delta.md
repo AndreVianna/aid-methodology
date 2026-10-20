@@ -40,9 +40,9 @@ confirmation that the KB is approved before any HTML is generated.
 
 ---
 
-## Step 1 — State-entry banner
+## Step 1 — State entry
 
-Write the run-state fields and print the state-entry banner.
+Write the run-state fields.
 
 Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
@@ -54,14 +54,6 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
 bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
-
-Print the state-entry banner from `SKILL.md § State Detection`:
-
-```
-[State: SUMMARY-DELTA] — Checking whether the visual summary needs regeneration.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [● SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]
 ```
 
 Then warn the user about the possible V1 human gate (NFR3 transparency):

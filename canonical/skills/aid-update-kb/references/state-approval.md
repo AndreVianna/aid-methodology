@@ -14,8 +14,6 @@ prompt, consideration loop), scoped to the `aid-update-kb` context -- with one
 deliberate deviation: `[2]` here re-scopes back to CONFIRM/SCOPE, not APPLY
 (see Step 3).
 
-Print the `[State: APPROVAL]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 1: Present the diff summary
@@ -86,7 +84,7 @@ Update the run-state file:
 **Approved At:** <ISO-8601 timestamp>
 ```
 
-Print: `[APPROVAL] Approved. Advancing to DONE.`
+Print: `Approved.`
 
 The step ends with CHAIN to DONE (see the Advance line at the end of this file).
 
