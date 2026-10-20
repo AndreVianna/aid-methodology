@@ -1152,7 +1152,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--samples-dir", type=Path, default=DEFAULT_SAMPLES_DIR)
     parser.add_argument("--fixtures-dir", type=Path, default=DEFAULT_FIXTURES_DIR)
     parser.add_argument("--briefs-dir", type=Path, default=DEFAULT_BRIEFS_DIR,
-                        help="folder holding simulated-user.md and judge.md")
+                        help="folder holding simulated-user.md, judge.md and protocol-checks.md (a run exits 2 when protocol-checks.md is missing and a sample covers AC-8 or AC-28)")
     parser.add_argument("--validate", action="store_true", help="parse the samples and run nothing")
     args = parser.parse_args(argv)
 

@@ -755,7 +755,7 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   door the user must choose before the work begins. Keeping the orchestrator sub-agent, because it
   cannot hold a conversation with the user and its routing duplicates the host agent's.
 - **Supersedes:** D21 (the router) and D25 (its routes now run as plain requests).
-- **Amends:** D14, whose pointer to D21 now points here; D15, whose agent count is now eight.
+- **Amends:** D14, whose pointer to D21 now points here; D15, whose agent count is now seven.
 - **Status:** Accepted. CONFIRMED `canonical/aid/rules.md` § Handling a request;
   `canonical/skills/aid-orchestrate/SKILL.md` (its opening paragraph: "runs in the main
   conversation and dispatches no sub-agent"); and the `canonical/agents/` folder, which holds seven
@@ -784,8 +784,9 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   agent that asked its own questions outside the work record. A host question picker, whose form the rest of
   the conversation does not share. Routing by detecting artifacts, which can send a work to the wrong step.
 - **Supersedes:** The chaining rule of `canonical/aid/templates/state-machine-chaining.md`.
-- **Amends:** D17, for the hand-off and question bookkeeping, which is written by scripts; the prose rule
-  still holds for every other step.
+- **Amends:** D15, whose agent count is seven because the question-asking agent retired; D17, for the
+  hand-off and question bookkeeping, which is written by scripts; the prose rule still holds for every
+  other step.
 - **Status:** Accepted. CONFIRMED `canonical/aid/templates/question-protocol.md`,
   `canonical/aid/templates/skill-steps.md` (the advance words and the writer modes) and the writer modes in
   `canonical/aid/scripts/execute/writeback-state.sh`. IN FORCE in the canonical tree: `canonical/agents/`

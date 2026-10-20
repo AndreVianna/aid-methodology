@@ -3,16 +3,16 @@
 This tutorial walks through a realistic small change on an existing codebase using
 the **AID lite path**. You will see:
 
-- How `/aid-describe` TRIAGE routes a small, well-scoped bug fix away from the full
-  pipeline and onto the lite path.
-- What the condensed four-state lite flow looks like in practice
-  (CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE).
+- How a direct-entry shortcut (`/aid-fix`) takes a small, well-scoped bug fix straight
+  to a graded Lite work, without the full pipeline.
+- What the shortcut engine does in one run: capture, specification, task breakdown,
+  grading and an approval.
 - What artifacts the lite path produces — and, just as importantly, what it skips.
-- How to hand off to `/aid-execute` once the lite gate passes.
+- How to hand off to `/aid-execute` once you approve.
 
 The worked scenario is deliberately small: a single bug in a Python web service.
 That is intentional — the lite path is designed for work that fits comfortably in
-one to three tasks and does not need the full Define → Map chain.
+one to three tasks and does not need the full Define → Plan chain.
 
 ---
 
@@ -33,7 +33,7 @@ cache never being invalidated when an order is updated. Orders show a status of
 
 ## Step 1 — Decide Whether to Run `/aid-discover` First
 
-Before opening the interview, ask: does the team have a reasonably current Knowledge
+Before you start, ask: does the team have a reasonably current Knowledge
 Base? This matters because the lite path skips a full discovery run.
 
 In this scenario the KB was built three weeks ago and the relevant module
@@ -45,70 +45,34 @@ for KB drift if there were any doubt, but here the existing KB is sufficient.
 
 > If the KB were stale or the bug were in an unfamiliar subsystem, the right move
 > would be to run `/aid-discover` first (or `/aid-housekeep` for a targeted refresh)
-> before opening the interview.
+> before asking for the fix.
 
 ---
 
-## Step 2 — Open the Interview
+## Step 2 — Ask for the Fix
 
-With the existing KB in place, run:
+With the existing KB in place, say what you want, either in plain words or with the
+shortcut that matches the request:
 
 ```
-/aid-describe
+/aid-fix the order-status endpoint returns stale data after an update
 ```
 
-`aid-describe` reads the current `.aid/` state. Because no work is in progress,
-it enters its opening state and immediately moves to **TRIAGE**.
+`/aid-fix` is one of the verb-first shortcut skills. It is bound to the verb `fix`, so
+it already knows the shape of the change and skips the generic questions a
+from-scratch requirements interview would ask. It creates a flattened Lite work:
+one feature, one delivery, nothing to sequence, so no plan is written.
+
+> If the request were large (several features, many tasks) or unclear, the right
+> move would be the full path: `/aid-describe` gathers the requirements, and
+> `/aid-define`, `/aid-specify`, `/aid-plan` and `/aid-detail` follow.
 
 ---
 
-## Step 3 — TRIAGE: The 2-3 Routing Questions
+## Step 3 — Capture: A Few Short Questions
 
-TRIAGE is deterministic. `aid-describe` asks 2-3 questions in order. Any
-"large" answer routes the work to the full pipeline.
-
-**T1 — Breadth: how many distinct features does this work touch?**
-
-> "None — it is a bug fix in a single, well-understood location."
-
-Answer: **none.** Signal: small. (Lite admits `none` or `one small`; `multiple` → FULL.)
-
-**T2 — Size: roughly how many distinct tasks will this require?**
-
-> "A few. The fix is adding an explicit `cache.invalidate(order_id)` call
-> in the update path and writing a regression test — two tasks at most."
-
-Answer: **a few (≤ ~5).** Signal: small. (Threshold: `a few` for lite; `many` → FULL.)
-
-**T3 — Type: what category of work is this?**
-
-> "It is a bug fix. The feature is already supposed to work — we are correcting
-> a defect, not adding new behaviour."
-
-Answer: **bug-fix.** workType: `bug-fix`. Routes to sub-path: **LITE-BUG-FIX**.
-
-**TRIAGE verdict: LITE path, LITE-BUG-FIX sub-path.**
-
-All three signals pointed to "small." If any one of them had come back "large" —
-say, the bug turned out to touch five modules, or the fix required a new caching
-strategy — TRIAGE would have routed to the full path instead, and `aid-describe`
-would have proceeded to produce `REQUIREMENTS.md` with a `### Feature NNN` section per feature under § 11.
-
-> The lite path is conservative by design. Any ambiguous answer routes full.
-> You can always escalate a lite work to full mid-flight; the STATE.md carries
-> an `## Escalation Carry` block to preserve slot answers so nothing is re-asked.
-
----
-
-## Step 4 — CONDENSED-INTAKE: Filling the Spec Slots
-
-Having confirmed the lite path, `aid-describe` asks the questions itself, in the
-main conversation, in **CONDENSED-INTAKE** state. Instead of the full multi-session requirements
-gathering that the full path uses, CONDENSED-INTAKE is a focused slot-fill:
-a short conversation that gathers only what is needed to write the work-root
-`REQUIREMENTS.md`.
-
-`aid-describe` asks targeted questions:
+The shortcut asks only what it needs to write the requirements, one question at a
+time, each with its reason and a recommendation. For this bug it asks:
 
 1. **What is the root cause as you understand it?**
    > "The `update_order()` function in `order_repository.py` modifies the database
@@ -129,59 +93,50 @@ a short conversation that gathers only what is needed to write the work-root
    > "None. `invalidate()` already exists on the cache class; this is a call-site
    > omission, not a missing feature."
 
-CONDENSED-INTAKE ends when `aid-describe` has enough to write the spec. It
-then drafts the **work-root REQUIREMENTS.md** and presents it for approval.
-
 ---
 
-## Step 5 — Work-Root REQUIREMENTS.md (Sample Output)
+## Step 4 — Work-Root REQUIREMENTS.md (Sample Output)
 
-`aid-describe` produces a single `REQUIREMENTS.md` at the work root. Notice what is
-absent: there is no `REQUIREMENTS.md`, no `features/` folder, and no `PLAN.md`.
-The lite path collapses all of that into one document.
+The `aid-architect` agent writes a single `REQUIREMENTS.md` at the work root. Its
+section 11 carries the one feature's technical specification and section 9 carries
+the gate criteria. Notice what is absent: there is no `features/` folder and no
+`PLAN.md`. The lite path collapses all of that into one document.
 
 See [sample-requirements.md](sample-requirements.md) for the exact file produced at this step.
 
-The Director reviews it: the problem statement matches the reported bug; the
-acceptance criteria are testable; there are no open questions. **Approved.**
-
 ---
 
-## Step 6 — TASK-BREAKDOWN: The Architect Proposes Tasks
+## Step 5 — The Task Breakdown
 
-With the SPEC approved, `aid-describe` invokes the `architect` agent in
-**TASK-BREAKDOWN** state. The architect reads the work-root REQUIREMENTS.md and proposes
-a typed task breakdown directly — no PLAN.md sequencing step, no per-feature
-decomposition. For a LITE-BUG-FIX, the architect typically produces one to two
-tasks.
-
-The architect proposes:
+The architect reads the work-root `REQUIREMENTS.md` and writes a typed task
+breakdown directly — no per-feature decomposition. For a bug fix it typically
+produces one to two tasks.
 
 | # | Type | Title |
 |---|------|-------|
 | task-001 | IMPLEMENT | Add cache invalidation call to `update_order()` + unit test |
 | task-002 | TEST | Integration test — update → read cycle confirms fresh data |
 
-Two tasks. task-002 depends on task-001. The task files are written to
-`.aid/works/work-001-fix-stale-cache/tasks/`.
+Two tasks. task-002 depends on task-001. Each task is written to
+`.aid/works/work-001-fix-stale-cache/tasks/task-NNN/DETAIL.md`, and the execution
+order is derived from each task's `**Depends on:**` field.
 
 See [sample-task-001.md](sample-task-001.md) for what a lite-path task file looks
 like.
 
-> For a LITE-BUG-FIX, the architect aims for exactly 1 IMPLEMENT task (fix +
-> regression test). Here the integration test is separated to keep task-001
-> reviewable in isolation, which is a judgment call the architect documents in
-> its reasoning. Both options (1 task or 2) are valid.
+> For a bug fix, the architect aims for exactly 1 IMPLEMENT task (fix + regression
+> test). Here the integration test is separated to keep task-001 reviewable in
+> isolation, which is a judgment call the architect documents in its reasoning.
+> Both options (1 task or 2) are valid.
 
 ---
 
-## Step 7 — LITE-REVIEW: The Reviewer Validates the Task Set
+## Step 6 — The Grading Gates
 
-Before handing off to execute, `aid-describe` runs the **LITE-REVIEW** gate.
-The `reviewer` agent reads the work-root REQUIREMENTS.md and the proposed tasks and
-checks:
+Before it shows you anything, the shortcut grades its own documents, in two passes:
+the requirements first, then the task set. The `aid-reviewer` agent checks:
 
-- Do the tasks cover all acceptance criteria in the SPEC?
+- Do the tasks cover all acceptance criteria in the requirements?
 - Are the task types correct?
 - Are the dependencies correctly declared?
 - Is anything overcomplicated for the stated change?
@@ -198,45 +153,32 @@ The reviewer in this scenario finds two minor points and one issue:
 No HIGH or CRITICAL findings. The computed grade is **B+** (worst severity is LOW;
 1 LOW finding → B tier, count = 1 → `+` modifier → B+).
 
-The default minimum grade for LITE-REVIEW is **A**. B+ does not clear A.
+The default minimum grade is **A**. B+ does not clear A, so the architect fixes the
+findings in place and the reviewer re-checks the changed sections only. The grade is
+now **A+** (zero findings remaining), and the gate passes.
 
-The `reviewer` flags the findings. `aid-describe` presents them to the Director.
-
-**Decision:** Accept the LOW/MINOR fixes — they are quick and clarify intent.
-The architect updates task-001 and task-002 in place. The reviewer re-checks the
-changed sections only and confirms: grade now **A+** (zero findings remaining).
-Gate passes.
-
-> The LITE-REVIEW gate mirrors the rigor of a full-path delivery gate, just scoped
-> to the lite task set. The grade scale and severity tags are identical across both
-> paths — `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — and the same `grade.sh`
-> script computes the letter grade.
+> The gates mirror the rigor of a full-path delivery gate, just scoped to the lite
+> work. The grade scale and severity tags are identical across both paths —
+> `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — and the same `grade.sh` script computes
+> the letter grade.
 
 ---
 
-## Step 8 — LITE-DONE: Hand-Off to Execute
+## Step 7 — Your Approval
 
-With the LITE-REVIEW gate passed, `aid-describe` enters **LITE-DONE** and emits
-the hand-off prompt:
+The shortcut shows you the work it made: the requirements, the task list and the
+grades. It asks one question, whether you approve it, with its recommendation. It
+never starts building on its own. You can approve, ask for a change to the
+requirements or to the task set, or drop the work.
 
-```
-Lite path complete. Work: work-001-fix-stale-cache
-Tasks ready:
-  task-001 — IMPLEMENT — Add cache invalidation call + unit test
-  task-002 — TEST      — Integration test, depends on task-001
-
-Run /aid-execute to begin execution on branch aid/work-001-fix-stale-cache-delivery-001.
-```
-
-The STATE.md is updated: `Path: lite`, `Status: Ready`, phase gate reached.
+In this scenario you approve. The work's record is updated with the approval, and
+the work is ready to execute.
 
 ---
 
-## Step 9 — Execute
+## Step 8 — Execute
 
-```
-/aid-execute
-```
+Ask to carry on with the work (`/aid-execute` runs it).
 
 `aid-execute` reads `tasks/`. It detects two tasks with a dependency edge
 (task-002 depends on task-001). It runs task-001 first, runs the built-in
@@ -254,99 +196,44 @@ phases; it does not relax the *execution quality* bar.
 
 | Artifact | Full Path | Lite Path (this example) |
 |----------|-----------|--------------------------|
-| `REQUIREMENTS.md` | Yes | No |
-| per-feature `### Feature NNN` section under `REQUIREMENTS.md § 11` | Yes | No |
-| `PLAN.md` | Yes | No |
 | work-root `REQUIREMENTS.md` | Yes | **Yes** |
-| `tasks/task-NNN/DETAIL.md` | Yes (via aid-detail) | **Yes (via TASK-BREAKDOWN)** |
-| `STATE.md` | Yes | **Yes** |
-| LITE-REVIEW gate | No | **Yes** |
+| per-feature `### Feature NNN` section under `REQUIREMENTS.md § 11` | One per feature | **One (feature-001)** |
+| `PLAN.md` | Yes | No |
+| `tasks/task-NNN/DETAIL.md` | Yes (via aid-detail) | **Yes (written by the shortcut)** |
+| `STATE.yml` (the work's record) | Yes | **Yes** |
+| Grading gates before approval | Per document | **Yes (requirements, then task set)** |
 | Delivery gate in execute | Yes | **Yes** |
 
-The lite path eliminated `aid-specify`, `aid-plan`, and `aid-detail` entirely.
-For a bug fix that is well understood and confined to one subsystem, those phases
-add overhead without adding information. The lite path reaches the same execution
-quality bar through a shorter, targeted route.
+The lite path eliminated separate `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`
+and `aid-detail` runs. For a bug fix that is well understood and confined to one
+subsystem, those phases add overhead without adding information. The lite path reaches
+the same execution quality bar through a shorter, targeted route.
 
 ---
 
-## Recipe Shortcut (Optional)
-
-For recurring patterns like this bug fix, AID ships seed recipes at
-`canonical/recipes/`. The `bug-fix.md` recipe is a pre-filled template with
-`{{slot}}` placeholders. Its frontmatter declares four slots
-(`bug-title`, `bug-description-one-sentence`, `reproduction-steps`,
-`intended-behavior`) and the body contains `## spec` and `## tasks` blocks
-with those placeholders in place.
-
-To use it, `aid-describe` fills a JSON file with the slot values for
-this specific bug and calls `parse-recipe.sh`:
+## Summary: The Lite Path in One Run
 
 ```
-bash canonical/aid/scripts/interview/parse-recipe.sh \
-  --render \
-  --recipe canonical/recipes/bug-fix.md \
-  --slots-json /path/to/slots.json \
-  --work-dir .aid/works/work-001-fix-stale-cache
-```
-
-where `slots.json` contains:
-
-```json
-{
-  "bug-title": "Stale cache on order update",
-  "bug-description-one-sentence": "update_order() never calls cache.invalidate(), so reads return stale status for up to 30 minutes after an update.",
-  "reproduction-steps": "1. Update order status to fulfilled. 2. Read order within 30 min. 3. Response shows 'processing'.",
-  "intended-behavior": "Read immediately after update returns the updated status."
-}
-```
-
-The script writes a rendered `REQUIREMENTS.md` and `tasks/task-001.md` directly into the
-work directory, skipping CONDENSED-INTAKE entirely. The recipe output feeds
-directly into TASK-BREAKDOWN.
-
-If this codebase produces cache-invalidation bugs regularly, the team could author
-a custom recipe with an even tighter slot set specific to that pattern — reducing
-the slot-fill step to filling three or four known fields.
-
-Recipes are an optional accelerator. They do not change the lite path mechanics —
-the LITE-REVIEW gate still runs, and `/aid-execute` still applies its full
-two-tier review.
-
----
-
-## Summary: The Lite Path in Four States
-
-```
-/aid-describe
+/aid-fix <the request>
       │
       ▼
-[TRIAGE]
-  T1: breadth = none (bug fix)      ──►  small
-  T2: size = a few tasks            ──►  small
-  T3: type = bug-fix                ──►  workType: bug-fix
-                                     sub-path: LITE-BUG-FIX
+Capture: a few short questions, one at a time
+  → work-root REQUIREMENTS.md (section 11 = the one feature's spec)
       │
       ▼
-[CONDENSED-INTAKE]  (aid-describe, main conversation)
-  Slot-fill conversation → work-root REQUIREMENTS.md
-  Director approves REQUIREMENTS.md
-      │
-      ▼
-[TASK-BREAKDOWN]  (architect agent)
-  Proposes 1–2 typed tasks directly from SPEC
+Task breakdown (aid-architect)
+  Proposes 1–2 typed tasks directly from the requirements
   Tasks written to tasks/task-NNN/DETAIL.md
       │
       ▼
-[LITE-REVIEW]  (reviewer agent)
-  Validates tasks against SPEC
+Grading gates (aid-reviewer)
+  Requirements, then task set
   Grade ≥ minimum (default A) required to pass
-  Findings fixed in-place; re-check on changed sections
+  Findings fixed in place; re-check on changed sections
       │
       ▼
-[LITE-DONE]
-  Hand-off prompt emitted
-  STATE.md updated: Path: lite, Status: Ready
+Your approval
+  Nothing is built before you approve
       │
       ▼
 /aid-execute
@@ -354,9 +241,9 @@ two-tier review.
   Branch: aid/work-001-fix-stale-cache-delivery-001
 ```
 
-The full path inserts `aid-specify` → `aid-plan` → `aid-detail` between TRIAGE
-and execute. The lite path skips all three, replacing them with CONDENSED-INTAKE
-+ TASK-BREAKDOWN + LITE-REVIEW — a single `aid-describe` session.
+The full path runs `aid-describe`, `aid-define`, `aid-specify`, `aid-plan` and
+`aid-detail` one after another before execute. The lite path replaces them with one
+shortcut run.
 
 ---
 
@@ -365,8 +252,8 @@ and execute. The lite path skips all three, replacing them with CONDENSED-INTAKE
 | File | What it is |
 |------|-----------|
 | `README.md` | This tutorial |
-| `sample-requirements.md` | Sample work-root REQUIREMENTS.md produced at Step 5 |
-| `sample-task-001.md` | Sample task file produced at Step 6 |
+| `sample-requirements.md` | Sample work-root REQUIREMENTS.md produced at Step 4 |
+| `sample-task-001.md` | Sample task file produced at Step 5 |
 
 The sample files are illustrative outputs, not real project files. They show the
 exact shape and sections AID produces; the content is specific to this scenario.

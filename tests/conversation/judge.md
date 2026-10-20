@@ -6,7 +6,7 @@ what the sample forbids. You did not take part in the conversation, and you do n
 
 ## Inputs
 
-The prompt gives you five parts:
+The prompt gives you five parts, and a sixth when the sample covers a question rule:
 
 - `transcript.md`: the conversation. Each agent turn lists the tools the agent called, with the names and
   target paths of those calls.
@@ -15,6 +15,8 @@ The prompt gives you five parts:
 - `checks.txt`: the results of the sample's file assertions, one line each, PASS or FAIL.
 - `## Expected outcome`: the items the assistant must meet.
 - `## Must not`: the items the assistant must not do.
+- `## protocol-checks.md` (only when the sample covers AC-8 or AC-28): the question protocol's checklist,
+  numbered 1 to 11. Apply it to every question the assistant put to the user.
 
 Use only these inputs. Do not assume anything the transcript, the diff and the check results do not show.
 
@@ -36,22 +38,26 @@ evidence you cite is partial.
    reason an item is unmet, and it is recorded only through the item it bears on.
 4. Record every unmet expected-outcome item (EO-n) and every must-not item the run did (MN-n) as a
    Pending row. An item the run met gets no row.
-5. Never add a row that is not an EO-n or MN-n item. A remark about the run that matches no item of the
-   two lists, however true, gets no row. An item met in substance gets no row, even when a detail of it
+5. Never add a row that is not an EO-n or MN-n item, except a protocol-check row (step 6). A remark about
+   the run that matches no item of the two lists, however true, gets no row. An item met in substance gets no row, even when a detail of it
    was imperfect.
+6. When the prompt has `## protocol-checks.md`, take its checks one by one, in order, after the items. A check
+   the run breaks is a Pending row, even when no EO-n or MN-n item names it. Its id is PC-n, where n is the
+   check's number. A check the run keeps, or that does not apply, gets no row.
 
 ## Ledger rows
 
 Each row has seven cells, in this order:
 
 - `#`: the row number, starting at 1 and counting up with no gaps.
-- `Severity`: a bracketed, all-caps tag. Use `[HIGH]` for an unmet expected outcome and `[CRITICAL]` for a
+- `Severity`: a bracketed, all-caps tag. Use `[HIGH]` for an unmet expected outcome or a broken protocol
+  check and `[CRITICAL]` for a
   forbidden action that happened.
 - `Status`: `Pending`, always.
 - `Doc`: the file the evidence sits in, `transcript.md` or `files.diff` or `checks.txt`, or the project path
   the diff names. Use `—` when no single file applies.
 - `Line`: the line number in that file when you can give one, otherwise `—`.
-- `Description`: the item's id (EO-n or MN-n), then one sentence saying what the run did or did not do,
+- `Description`: the item's id (EO-n, MN-n or PC-n), then one sentence saying what the run did or did not do,
   then a short clause saying why it matters. Write the item's own wording where you can.
 - `Evidence`: the turn or hunk that shows it, and the check result if one applies.
 

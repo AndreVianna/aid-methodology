@@ -1200,34 +1200,19 @@ class TestFeature006CardRework(unittest.TestCase):
         self.assertIn("'Lite path: '", snippet,
                       "_pathSummary must include 'Lite path: ' marker")
 
-    def test_f6rw6_path_summary_defining_features(self):
-        # '[defining features]' appears embedded inside 'Full path: [defining features]'
+    def test_f6rw6_path_summary_names_no_step(self):
+        # The path line is a plain count line: no bracketed step marker and no
+        # "[Identifying path]" fallback (the pipeline has no named steps to show).
         idx = self.src.find('function _pathSummary(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1300]
-        self.assertIn("'Full path: [defining features]'", snippet,
-                      "_pathSummary must include 'Full path: [defining features]' bracketed stage")
-
-    def test_f6rw6_path_summary_planning_deliveries(self):
-        idx = self.src.find('function _pathSummary(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1300]
-        self.assertIn("'[planning deliveries]'", snippet,
-                      "_pathSummary must include '[planning deliveries]' bracketed stage")
-
-    def test_f6rw6_path_summary_writing_tasks(self):
-        idx = self.src.find('function _pathSummary(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1300]
-        self.assertIn("'[writing tasks]'", snippet,
-                      "_pathSummary must include '[writing tasks]' bracketed stage")
-
-    def test_f6rw6_path_summary_identifying_path(self):
-        idx = self.src.find('function _pathSummary(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1300]
-        self.assertIn("'[Identifying path]'", snippet,
-                      "_pathSummary must include '[Identifying path]' as the pre-triage fallback")
+        end = self.src.find('// Two-part progress model', idx)
+        snippet = self.src[idx:end]
+        for retired in ("[defining features]", "[planning deliveries]",
+                        "[writing tasks]", "[Identifying path]"):
+            self.assertNotIn(retired, snippet,
+                             f"_pathSummary must not print the step marker {retired}")
+        self.assertIn("return '';", snippet,
+                      "_pathSummary returns an empty line when the path is unknown")
 
     def test_f6rw6_path_summary_arrow(self):
         # Arrow ' → ' (Unicode right arrow with spaces) must be the separator
@@ -1510,7 +1495,7 @@ class TestFeature002WorkCardLines(unittest.TestCase):
         cls.src = _INDEX_HTML.read_text(encoding="utf-8")
         start = cls.src.find("function _renderWorkCard(work)")
         assert start != -1, "_renderWorkCard not found in home.html"
-        end = cls.src.find("// Triage-path progress pipeline", start)
+        end = cls.src.find("// Path summary -- progressively disclosed", start)
         assert end != -1, "card-line block marker not found in _renderWorkCard"
         cls.card_snippet = cls.src[start:end]
 
@@ -1532,8 +1517,8 @@ class TestFeature002WorkCardLines(unittest.TestCase):
                       "card must read 'Away in /aid-<skill> -- back to <phase> after'")
 
     def test_cl4_record_warning_verbatim(self):
-        self.assertIn("work.record_status !== 'ok'", self.card_snippet,
-                      "record warning must show for any record_status other than ok")
+        self.assertIn("work.record_status != null && work.record_status !== 'ok'", self.card_snippet,
+                      "record warning must show for missing or inconsistent, not for a null status")
         self.assertIn("This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes",
                       self.card_snippet,
                       "record warning text must be verbatim from the spec")
@@ -1556,7 +1541,7 @@ class TestTask079CardLinesPerFixture(unittest.TestCase):
     left out of the comparison.
     """
 
-    _PATH_LINE_PREFIXES = ("Full path:", "Lite path", "[Identifying path]")
+    _PATH_LINE_PREFIXES = ("Full path", "Lite path")
 
     # Renders each work through the page's own functions; prints JSON of the
     # text of every p element of each card, in order.
@@ -1661,6 +1646,13 @@ process.stdout.write(JSON.stringify(result) + '\n');
         self.assertIn(warning, rendered["work-109-missing-record"])
         self.assertIn(warning, rendered["work-110-inconsistent-record"])
         self.assertNotIn(warning, rendered["work-104-building"])
+
+    @unittest.skipUnless(shutil.which("node") is not None, "node not available on PATH")
+    def test_null_record_status_shows_no_record_warning(self):
+        works = self._serialized_works()
+        works["work-104-building"]["record_status"] = None
+        rendered = self._card_lines({"work-104-building": works["work-104-building"]})
+        self.assertNotIn(self.expected["record_warning"], rendered["work-104-building"])
 
 
 if __name__ == "__main__":

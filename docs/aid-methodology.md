@@ -977,7 +977,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 **Loop 3: Plan → Discovery.** Planning reveals the codebase is more complex than the KB captured. Plan writes a Q&A entry → targeted discovery → KB updated → planning resumes.
 
-**Loop 4: Plan → Specify.** The KB is complete, but the SPEC is ambiguous or contradictory. Plan writes a Q&A entry to the feature's `STATE.md` → spec revision (possibly with a targeted interview) → planning resumes.
+**Loop 4: Plan → Specify.** The KB is complete, but the SPEC is ambiguous or contradictory. Plan records the question in the work's `STATE.yml` (`qa`) → spec revision (possibly with a targeted question to the user) → planning resumes.
 
 **Loop 5: Detail → Plan.** The plan is too vague to decompose into tasks. Deliverables are too broad, module boundaries unclear, or test scenarios don't map to features. Detail flags the under-specified deliverable → Plan revises it → Detail resumes.
 

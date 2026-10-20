@@ -1,7 +1,6 @@
 agent	aid-architect/AGENT.md	3095
 agent	aid-clerk/AGENT.md	4054
 agent	aid-developer/AGENT.md	3496
-agent	aid-interviewer/AGENT.md	2278
 agent	aid-operator/AGENT.md	2410
 agent	aid-researcher/AGENT.md	4203
 agent	aid-reviewer/AGENT.md	14189
@@ -640,7 +639,6 @@ template	shortcut-scaffolding/prototype.md	5049
 template	shortcut-scaffolding/test-experiment.md	7511
 template	skill-steps.md	21392
 template	specs/technical-specification-template.md	2053
-template	state-machine-chaining.md	5836
 template	subagent-heartbeat-protocol.md	12841
 template	task-detail-template.md	2430
 template	work-initiation-gate.md	15505

@@ -113,7 +113,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept â
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (8 agent
+1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (7 agent
    directories) and `aid/{scripts,templates,rules.md}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the agents into the five
    `profiles/<tool>/` trees, one per `profiles/*.toml`. Each tree is wiped and regenerated in full on

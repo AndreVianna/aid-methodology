@@ -1,5 +1,5 @@
-> **Sample output** — This file illustrates the task file that `aid-describe`
-> produces during TASK-BREAKDOWN (via the `architect` agent). It is not a real
+> **Sample output** — This file illustrates the task file that the `/aid-fix`
+> shortcut writes in its task breakdown (via the `aid-architect` agent). It is not a real
 > project file. The six sections and structure match the actual AID task template.
 
 ---

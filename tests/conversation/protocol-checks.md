@@ -6,23 +6,24 @@ sample's `## Expected outcome` and `## Must not`. It has one check for each rule
 `.aid/runtime/templates/question-protocol.md`; these checks test a run against it.
 
 The judge reads only `transcript.md`, `files.diff` and `checks.txt`, as `judge.md` says. Each check below
-names the evidence to read. A check the run breaks is an unmet expected outcome or a must-not, so it is
-recorded only through the EO-n or MN-n item it bears on, as `judge.md` says. A broken check that no item
-bears on gets no row.
+names the evidence to read. A check the run breaks is recorded as a PC-n row, where n is the check's number, as `judge.md`
+says, even when no EO-n or MN-n item of the sample names it.
 
 Read every question in the transcript as the agent asked it: a question is a question the agent put to the
 user, whatever its wording.
 
 ## The intake exception
 
-Questions asked **while a user starts or chooses a work** are intake questions. They are asked before the
-work has a record, so they are not written as `Pending` before they are shown. These are the intake
+Questions asked **while a user starts or chooses a work, or repairs its record** are intake questions. They are asked before the
+work has a usable record, so they are not written as `Pending` before they are shown. These are the intake
 questions:
 
 - what the user wants, when a start gives no request;
 - which kind of work fits, when the reading of the request is unsure;
 - whether the request is a new work or the continuation of an existing one;
 - the short name of a work;
+- the recovery confirmation, which proposes repairing a work record that is missing or inconsistent, and
+  writes nothing before the user's yes;
 - the confirmation to cancel a named work, which touches no record until the user answers.
 
 The outcome of an intake question is recorded where it lands: in the new work's intent and name when the
@@ -45,9 +46,9 @@ the knowledge base, are **not** intake questions. Check 10 applies to them in fu
    "Why I ask" line or the same reason in plain words. A question with no reason fails.
    - Evidence: `transcript.md`, the question text and its reason line.
 
-3. **Respects the user's technical level.** The agent does not ask a technical question of a user who shows
-   no technical knowledge, and gives deeper technical detail only when the user asks for it. A technical
-   term appears in a question only after the user has used it, or after the user asked for detail.
+3. **Respects the user's technical level.** The agent assumes the lower technical level, does not ask a
+   technical question of a user who shows no technical knowledge, and gives deeper technical detail only
+   when the user asks for it.
    - Evidence: `transcript.md`, the agent's questions and explanations read against the user's own turns.
 
 4. **Always a recommendation.** Each question states the agent's recommendation or proposed answer, with its
@@ -92,7 +93,9 @@ the knowledge base, are **not** intake questions. Check 10 applies to them in fu
     shown: the record write appears in `transcript.md` before the question turn. Its outcome is written right
     after the answer, with `answered_by` set. A skipped question is recorded `Skipped`, stays open, and can be
     resumed later by the same user or another one. A question shown with no record write, or an answer with no
-    outcome written, fails. The intake exception above applies to intake questions only.
+    outcome written, fails. The intake exception above applies to intake questions only. A ticket skill has no
+    shell and so no writer: a question it asks is recorded nowhere, and this check does not apply to it
+    (see "Where each record lives" in the question protocol).
     - Evidence: `transcript.md`, the record writes (tool calls with their target paths) and their order
       against the question turns; `files.diff`, the record's `qa` entries (`id`, `state`, `impact`, `answer`,
       `answered_by`).

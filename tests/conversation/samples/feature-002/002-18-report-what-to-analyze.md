@@ -22,7 +22,7 @@ Persona: the maintainer of the notes tool, who has a usage export and wants to k
 
 ## Expected outcome
 
-- The assistant asks what data to analyze and what question to answer, with its reason, and asks only what it needs to know to start; this first question is not judged against the question protocol's rules.
+- The assistant asks what data to analyze and what question to answer, with its reason, and asks only what it needs to know to start; this first question is an intake question: only its missing `Pending` record is excused, and it still carries a reason and a recommendation.
 - Once the user names the export, the assistant has the file read (by itself or by the helper it dispatches) and analyses it against the question the user asked.
 - Its findings rest on the file's own rows; it states what the export can and cannot show, for example that it has no figures for before the first date.
 - The assistant does not invent figures, trends or causes that are not in the file, and it resolves nothing: it reports what the data shows and leaves any decision about what to build to the user. Its own verify cycles on the report belong to the skill and are not a decision taken for the user.

@@ -2000,6 +2000,7 @@ footer {
   //     work-003-state-schema task-002 -- fixes the historical "Lite path: Lite" render)
   //   A bracketed [stage] marks the step in progress; "[Identifying path]" before triage.
   function _pathSummary(work) {
+    // A plain count line: the path and what exists so far. No step names, no brackets.
     var ARROW = ' → ';
     var wp = (work.work_path || '').toLowerCase();
     var nf = (work.features || []).length;
@@ -2007,23 +2008,22 @@ footer {
     var nt = (work.tasks || []).length;
     function tasks(n) { return n + ' Task' + (n === 1 ? '' : 's'); }
     if (wp === 'full') {
-      if (nf === 0) return 'Full path: [defining features]';
+      if (nf === 0) return 'Full path';
       var s = 'Full path: ' + nf + ' feature' + (nf === 1 ? '' : 's');
-      if (nd === 0) return s + ARROW + '[planning deliveries]';
+      if (nd === 0) return s;
       s += ARROW + nd + ' deliver' + (nd === 1 ? 'y' : 'ies');
-      if (nt === 0) return s + ARROW + '[writing tasks]';
+      if (nt === 0) return s;
       return s + ARROW + tasks(nt);
     }
     if (wp === 'lite') {
       // kind: resolved display verb from pipeline.initiator (e.g. "Refactor",
-      // "Create api"), falling back to the legacy (now dead-prose) Triage recipe.
-      // When neither is known, drop the redundant word entirely instead of
+      // "Create api"). When it is not known, drop the word entirely instead of
       // printing the literal "Lite" -- "Lite path: Lite" must never appear.
       var kind = work.kind || _formatRecipe(work.recipe);
       var base = kind ? ('Lite path: ' + kind) : 'Lite path';
-      return nt === 0 ? base + ARROW + '[writing tasks]' : base + ARROW + tasks(nt);
+      return nt === 0 ? base : base + ARROW + tasks(nt);
     }
-    return '[Identifying path]';
+    return '';
   }
 
   // Two-part progress model:
@@ -2168,8 +2168,9 @@ footer {
       card.appendChild(awayLine);
     }
 
-    // Record warning: any record_status other than ok
-    if (work.record_status !== 'ok') {
+    // Record warning: a record_status of missing or inconsistent. A null status means no
+    // record was read, which is not an incomplete record, so it shows no warning.
+    if (work.record_status != null && work.record_status !== 'ok') {
       var recordLine = document.createElement('p');
       recordLine.className = 'meta';
       recordLine.style.margin = '0.25rem 0';
@@ -2177,9 +2178,8 @@ footer {
       card.appendChild(recordLine);
     }
 
-    // Triage-path progress pipeline -- progressively disclosed by what's been produced so far.
-    // Full: features -> deliveries -> tasks; Lite: recipe -> tasks. A bracketed [stage] marks
-    // the step currently in progress; "[Identifying path]" before triage has run.
+    // Path summary -- progressively disclosed by what has been produced so far.
+    // Full: features -> deliveries -> tasks; Lite: kind -> tasks. It names no step.
     var pathText = _pathSummary(work);
     if (pathText) {
       var pathLineEl = document.createElement('p');

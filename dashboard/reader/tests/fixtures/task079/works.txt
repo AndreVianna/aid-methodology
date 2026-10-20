@@ -22,6 +22,7 @@ started: "2026-10-01"
 minimum_grade: A
 user_approved: "no"
 lifecycle: Paused-Awaiting-Input
+pause_reason: which login methods the page offers
 phase: Specification
 active_skill: aid-specify
 step: "1"

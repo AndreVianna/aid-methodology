@@ -155,8 +155,10 @@ assert_file_contains "$MONITOR_SKILL" "State machine: OBSERVE → CLASSIFY → R
     "DMR11d aid-monitor frontmatter State machine line unchanged"
 
 # DMR-12: classification vocabulary unchanged (BUG / CHANGE REQUEST / INFRASTRUCTURE / NO ACTION).
-assert_file_contains "$MONITOR_DIR/references/state-classify.md" "NOT CODE → INFRASTRUCTURE" \
-    "DMR12 aid-monitor classification vocabulary unchanged"
+for word in "→ BUG (spec right, code wrong)" "→ CHANGE REQUEST" "NOT CODE → INFRASTRUCTURE" "FALSE POSITIVE → NO ACTION"; do
+    assert_file_contains "$MONITOR_DIR/references/state-classify.md" "$word" \
+        "DMR12 aid-monitor classification vocabulary unchanged: $word"
+done
 
 # DMR-13: the mode-branch Step 0 explicitly marks the work-NNN path as untouched, for both
 # skills. The phrase wraps across two source lines, so check both fragments.

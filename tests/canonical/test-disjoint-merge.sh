@@ -23,12 +23,14 @@
 #   branch: aid/delivery-001
 #     Writes ONLY deliveries/delivery-001/STATE.yml + deliveries/delivery-001/tasks/task-001/STATE.yml
 #     via writeback-state.sh (--field, --block, --lifecycle, --append-issue).
-#     Also appends a Cross-phase Q&A entry to deliveries/delivery-001/STATE.yml's `qa:` sequence.
+#     Also appends a `qa:` entry to deliveries/delivery-001/STATE.yml, as a disjoint-write fixture only
+#     (the product no longer writes a delivery-level `qa`).
 #
 #   branch: aid/delivery-002
 #     Writes ONLY deliveries/delivery-002/STATE.yml + deliveries/delivery-002/tasks/task-002/STATE.yml
 #     via writeback-state.sh (same modes, different files).
-#     Also appends a Cross-phase Q&A entry to deliveries/delivery-002/STATE.yml's `qa:` sequence.
+#     Also appends a `qa:` entry to deliveries/delivery-002/STATE.yml, as a disjoint-write fixture only
+#     (the product no longer writes a delivery-level `qa`).
 #
 #   Merge aid/delivery-001 -> main  (fast-forward or no-conflict)
 #   Merge aid/delivery-002 -> main  (ASSERT: zero conflicts on any STATE.yml)
@@ -38,8 +40,8 @@
 #   DM02  delivery-001's edits are present (lifecycle, gate block, task state, Q&A)
 #   DM03  delivery-002's edits are present (lifecycle, gate block, task state, Q&A)
 #   DM04  work-level STATE.yml is not modified by either delivery branch
-#   DM05  Cross-phase Q&A is per-delivery (SD-5 partition) -- retargeted to the `qa:`
-#         sequence key (the `## Cross-phase Q&A` markdown heading FR-2b retires)
+#   DM05  A write to a delivery's own `qa:` key stays in that delivery's STATE.yml (the
+#         disjoint-write property, shown on a fixture entry; not a product write path)
 #   DM06  Isolation canary -- no real-HOME .aid leak
 #   DM07  The file parses at every observable moment (each pre-merge/post-merge
 #         snapshot is a well-formed YAML mapping) with no silently-lost write --
@@ -420,13 +422,13 @@ assert_file_contains "${WORK_DIR}/STATE.yml" "phase: Building" \
     "DM04e: work STATE.yml phase key intact"
 
 # ---------------------------------------------------------------------------
-# DM05: The two deliveries wrote INDEPENDENT Cross-phase Q&A (SD-5 partition).
-# Retargeted: each delivery's Q&A lives in its OWN `qa:` sequence key (the
-# `## Cross-phase Q&A` markdown heading FR-2b retires), never in the
-# work-level STATE.yml.
+# DM05: The two deliveries wrote INDEPENDENT `qa:` fixture entries.
+# Each entry lives in its OWN delivery's `qa:` sequence key, never in the
+# other delivery's or the work-level STATE.yml. This shows the disjoint-write
+# property only; the product writes no delivery-level `qa`.
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== DM05: Cross-phase Q&A is per-delivery (SD-5 partition) ==="
+echo "=== DM05: a delivery's qa: fixture entry stays in its own STATE.yml ==="
 
 assert_file_contains "${DELIV1}/STATE.yml" "qa:" \
     "DM05a: delivery-001/STATE.yml has a qa: key"

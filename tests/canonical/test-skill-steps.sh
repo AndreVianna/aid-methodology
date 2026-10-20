@@ -472,9 +472,9 @@ run_ss01() {
     group_begin "SS-01 no banner form (Steps and hand-offs)"
     local hits
     hits=$(git grep -n -I -E -e '\[State: ' -e 'you are here' -e 'Advancing to \[State' \
-        -e '\[State [0-9]+\] Dispatching' -e '\[Resolved:' -e 'Re-run `/aid-' \
+        -e '\[State [0-9]+\] Dispatching' -e '\[Resolved:' -e '[Rr]e-run `?/aid-' \
         -- canonical/skills canonical/aid/templates \
-        | grep -v -E 'Advance|(CHAIN|ASK|WAIT|PASS|CALL|HALT)\*{0,2} →' || true)
+        | grep -v -E '\*\*Advance:\*\*|(CHAIN|ASK|WAIT|PASS|CALL|HALT)\*{0,2} →' || true)
     if [[ -z "$hits" ]]; then
         pass "SS-01 no banner line under canonical/skills/ or canonical/aid/templates/"
     else
@@ -524,7 +524,11 @@ run_ss04() {
     done < <(git ls-files -- ':(glob)canonical/skills/*/SKILL.md')
     [[ $bad -eq 0 ]] && pass "SS-04 $hand hand-authored and $gen generated asking SKILL.md file(s) cite the protocol"
 
-    hits=$(git grep -n -I -E '^allowed-tools:.*AskUserQuestion' -- canonical || true)
+    # the single-line form, and the YAML list form: an `allowed-tools:` key alone on its line, then
+    # `- AskUserQuestion` items
+    hits=$({ git grep -n -I -E '^allowed-tools:.*AskUserQuestion' -- canonical
+        git grep -n -I -E -A12 '^allowed-tools:[[:space:]]*$' -- canonical \
+            | grep -E -e '^[^[:space:]]+-[0-9]+-[[:space:]]*-[[:space:]]*AskUserQuestion'; } || true)
     if [[ -z "$hits" ]]; then
         pass "SS-04 no AskUserQuestion in any allowed-tools"
     else

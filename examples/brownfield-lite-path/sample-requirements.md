@@ -13,7 +13,7 @@
 
 - **Work:** work-001-fix-stale-cache
 - **Created:** 2026-06-03
-- **Source:** /aid-describe lite path — LITE-BUG-FIX
+- **Source:** /aid-fix shortcut (lite path)
 - **Status:** Draft
 
 ## Goal
