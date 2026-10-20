@@ -26,6 +26,14 @@ work's open questions (`--answer`), the lifecycle set back to `Running` through 
 answered or skipped, and the cancel or close the user confirmed. A new work is saved from the gate's `--create`,
 with RECORD-INTENT as its first step.
 
+No work exists before FIND-OR-CREATE, so every question asked until then (the go-ahead at SHOW-READING,
+the question of which work or a new one, a short name) is recorded in a design document under
+`.aid/design/`, as the gate's "Recording the questions asked before a work exists" says
+(`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design` before it is shown and `--answer --design`
+after the reply, in `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, which `--rename-design <from> --to
+.aid/design/<slug>.md` moves to the work's slug once FIND-OR-CREATE derives it. The work's `--create` then
+passes `--seed` that document, so the questions move into the work's `qa` list.
+
 1. **Project question** (`PROJECT-QUESTION`). `references/check-intent.md` step 0 spots a question about the
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
    sources. No work is created. **Advance:** **CHAIN** → CHECK-READING when the request is not a
@@ -64,7 +72,7 @@ with RECORD-INTENT as its first step.
    through the writer only, never by hand; a continued work already holds its intent and writes nothing.
    **Advance:** **CHAIN** → HAND-OVER.
 8. **Cancel a named work** (`CANCEL`). `references/start-or-resume.md` section 5: one confirmation question,
-   asked in this step as an intake question (the target work's record is not paused or touched),
+   asked in this step (it concerns a work that already exists, so it is not recorded and the target work's record is not paused or touched),
    then the writer on a confirmed cancel. No new work is created. **Advance:** **HALT**.
 9. **Close a work** (`CLOSE`). `references/size-and-route.md` section 3: when every task is `Done` (or, for an
    investigation, when nothing was to land), set the phase to `CI` and the lifecycle to

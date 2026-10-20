@@ -90,7 +90,21 @@ Per [`references/question-sets.md`](references/question-sets.md), present the qu
 resolved `<type>`, prefilled per Step 1 (ADD) or from the on-disk descriptor when the type is
 unchanged from what's on disk (UPDATE, same type). Ask each question in plain text, in the form the
 question protocol sets: the suggestions are numbered, and the closing line always lets the user type a
-value of their own. Resolve: `name`, `endpoint` (required for `api`/`ssh`/`cli`; optional and
+value of their own.
+
+**Name.** Do not ask for `name` when it is obvious from the tool: a preset match supplies it from
+the row's `name` column, a custom tool uses `<tool>` as given. It is not a question; the name shows in
+the final one-line trace. Only when the name is genuinely ambiguous (for example the tool argument is a
+path or a bare id) ask one confirmation in the form, recommending the name you propose.
+
+**Connection type.** The type is the `<type>` argument. When you must suggest or list types (the user
+asks what is possible, or the preset's own type differs from the argument), offer only the types usable
+for consumption now: `mcp`, which is live (the host tool's own MCP/plugin supplies the connection).
+`api`, `ssh`, `url` and `cli` are catalogue-only (`.aid/runtime/rules.md` § Connectors): their
+descriptors are kept for discovery and audit, not for live use. When the user asks for one of them, say
+so in the confirmation (`recommend mcp; <type> is catalogued only`) and let the user decide.
+
+Resolve `endpoint` (required for `api`/`ssh`/`cli`; optional and
 informational-only for `mcp`), `auth_method` (forced `none` for `mcp`/`ssh`/`cli` — `api` is the
 only type that is ever asked and may resolve to `token`/`pat`/`oauth`), and — only for `api` with a
 non-`none` result — the `secret_reference` FORM (default `file:.aid/connectors/.secrets/$STEM`).

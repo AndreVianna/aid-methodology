@@ -40,29 +40,20 @@ this skill keeps only its own step table.
 ## State: INTAKE
 
 **State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
-on resume; it never routes. Which skill and step a work continues at come from its work record
+on resume; it never routes. The step a design resumes at comes from the seed's `step:` and `step_detail:` frontmatter
 (`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What do you
-   want designed, and what will it need to support?") and wait.
+   want designed, and what will it need to support?") and wait: acquire `.aid/design/` first (step 4), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design`, which opens that provisional document (`status: draft`; the timestamp is the time now) and prints the question's id, `D<n>`, and record the reply with `--answer --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --id D<n> --state Answered --value '<the reply>'`, using the id the writer printed. Once the reply names the subject, move that document to the seed (step 4) with `bash .aid/runtime/scripts/execute/writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`: the questions go with it, and when the seed already exists the writer appends them to it.
 2. **Pick the path:** **Fast** -- a clear thing to design ("design the checkout flow",
    "design this service's interface") -> design now. **Guided** -- open-ended ("design our
    onboarding") -> scope the subject, constraints, and success criteria first.
 3. **Classify complexity (model + effort):** simple (one component/flow) -> `aid-architect`
    at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /
    high**. Verifier tier >= producer tier.
-4. **Consult the Work Initiation Gate, then allocate the work.** First run the gate
-   (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation. On **continuation**,
-   follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names,
-   at its saved step; allocate nothing. On **new work**, follow the gate's `§ 3a`: create and
-   enter the worktree (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit
-   or empty path, else enter the resolved path), **then** allocate (`writeback-state.sh --create`
-   with `--path lite`, `--skill aid-design` and this skill's entry step; `phase` not driven).
-   The gate writes the record; this skill adds nothing by hand.
+4. **Name the seed; open no work.** Derive a kebab-case `<slug>` from the subject; the design is kept as the seed `.aid/design/<slug>.md` (acquire `.aid/design/` per `.aid/runtime/templates/design-lifecycle.md` first, and read the seed if a prior one exists). This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/<slug>.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/<slug>.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 
-**Advance:** CHAIN → DESIGN when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
+**Advance:** CHAIN → DESIGN.
 
 ---
 
@@ -71,7 +62,7 @@ on resume; it never routes. Which skill and step a work continues at come from i
 Dispatch **`aid-architect`** (clean context, tiered) to produce the design, **grounded in
 the KB** (existing patterns, conventions, `architecture.md`) + the request: variables/flow,
 control/interaction, component or interface shape, and **accessibility notes**
-(`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's
+(`task-type-rules.md ## DESIGN`). It writes the design into the seed `.aid/design/<slug>.md` (the design's
 kept record).
 
 **Advance:** CHAIN → VERIFY.
@@ -82,11 +73,11 @@ kept record).
 
 1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they
    build on; accessibility is addressed.
-2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:
+2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the seed:
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
-   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
+   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<slug>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/<slug>.md --detail 'impediment: <reason>'`.
 
 **Advance:** CHAIN → PRESENT when the verify is clean; CHAIN → DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
@@ -94,11 +85,11 @@ kept record).
 
 ## State: PRESENT  (hard stop -- the user decides)
 
-Present `DESIGN.md` clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design --step PRESENT --covers 'the design DESIGN.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the design DESIGN.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
-If the user declines or asks for changes, DESIGN revises `DESIGN.md` with exactly what was asked, and VERIFY and this step run again.
+Then ask the user to approve the result, through the question protocol, and record the approval on the seed. Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/<slug>.md --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design` (it prints the question's id, `D<n>`), and bring the step up to date with `--step PRESENT --design .aid/design/<slug>.md --detail 'presented; waiting for D<n>'`. An approval cannot be skipped: the step stays open until the user approves or declines. Once it is answered, record the answer with `--answer --design .aid/design/<slug>.md --id D<n> --state Answered --value '<Approved, or Declined with the changes asked>'`, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN revises the seed with exactly what was asked, and VERIFY and this step run again.
 
 **Advance:** CHAIN → HANDOFF when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
@@ -115,8 +106,8 @@ capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. Keep
-`DESIGN.md` in the work folder as the kept design record.
+Record the step with `--step DONE --design .aid/design/<slug>.md --detail 'approved'`. Keep
+the seed in `.aid/design/` as the kept design record.
 
 ---
 
@@ -129,4 +120,5 @@ Set the lifecycle to `Completed` through the writer. Keep
 - **Resolves nothing** -- presents the design; the build is a separate `/aid-create*` step.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
 - **Throwaway validation is `/aid-prototype`, not this.**
-- **Tracking:** set the STATE lifecycle through the writer at every transition.
+- **No work is opened** by this skill, and nothing is written under `.aid/works/`; the seed's `## Questions` table is its question record.
+- **Tracking:** set the seed's `step:` through `--step --design` at every transition.

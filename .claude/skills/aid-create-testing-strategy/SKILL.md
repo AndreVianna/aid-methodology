@@ -52,8 +52,8 @@ continues at come only from its work record.
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `--skill aid-create-testing-strategy` given to the gate's `--create`. `phase` is not driven.
+   requires (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with
+   `--skill aid-create-testing-strategy` given to the gate's `--create`, plus `--seed .aid/design/testing-strategy.md` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
 2. **Read the seed** at `.aid/design/testing-strategy.md`.
 3. **Resolve the destinations by concern, not filename.** This skill binds concern **C6**
    (quality & testing, `.aid/runtime/templates/kb-authoring/concern-model.md`) and owns

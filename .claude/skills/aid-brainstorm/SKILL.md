@@ -35,11 +35,11 @@ this skill keeps only its own step table.
 ## State: INTAKE
 
 **State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
-on resume; it never routes. Which skill and step a work continues at come from its work record
+on resume; it never routes. The step a design resumes at comes from the seed's `step:` and `step_detail:` frontmatter
 (`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What problem
-   or theme do you want to explore?") and wait. The subject may be fuzzy -- an unformed
+   or theme do you want to explore?") and wait: acquire `.aid/design/` first (step 3), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-brainstorm`, which opens that provisional document (`status: draft`; the timestamp is the time now) and prints the question's id, `D<n>`, and record the reply with `--answer --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --id D<n> --state Answered --value '<the reply>'`, using the id the writer printed. Once the reply names the subject, move that document to the seed (step 2) with `bash .aid/runtime/scripts/execute/writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`: the questions go with it, and when the seed already exists the writer appends them to it. With an argument, no provisional document is needed. The subject may be fuzzy -- an unformed
    problem is exactly this skill's case, so INTAKE never refuses an argument for not being
    a question.
 2. **Name the seed.** Because `artifact` is empty, feature-002 §4's `<token>` = `artifact`
@@ -47,13 +47,10 @@ on resume; it never routes. Which skill and step a work continues at come from i
    message as your first question about the idea (for example "I'll call the seed
    `note-tagging`; first question: ..."), not as a question of its own. The seed is then
    `.aid/design/<slug>.md`.
-3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `--skill aid-brainstorm` given to the gate's `--create`. `phase` is not driven. The `work-NNN` folder is where
-   `STATE.md` and the review gate live, even though the seed is the deliverable.
+3. **Open no work; acquire `.aid/design/`.** This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Acquire `.aid/design/` per the contract, then record every question with `--ask --design .aid/design/<slug>.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/<slug>.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CHAIN → DESIGN when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
+**Advance:** CHAIN → DESIGN.
 
 ---
 
@@ -74,7 +71,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/<slug>.md --detail 'impediment: <reason>'`.
 
 **Advance:** CHAIN → PRESENT when the verify is clean; CHAIN → DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
@@ -86,7 +83,7 @@ Present the seed clearly. Assert no resolution --
 the user iterates (declining the approval below changes the seed in place), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 
-Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-brainstorm --step PRESENT --covers 'the seed .aid/design/<slug>.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/<slug>.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+Then ask the user to approve the result, through the question protocol, and record the approval on the seed. Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/<slug>.md --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-brainstorm` (it prints the question's id, `D<n>`), and bring the step up to date with `--step PRESENT --design .aid/design/<slug>.md --detail 'presented; waiting for D<n>'`. An approval cannot be skipped: the step stays open until the user approves or declines. Once it is answered, record the answer with `--answer --design .aid/design/<slug>.md --id D<n> --state Answered --value '<Approved, or Declined with the changes asked>'`, and end the step with the advance below.
 If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
 
 **Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
@@ -95,5 +92,5 @@ If the user declines or asks for changes, DESIGN iterates the seed with exactly 
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/<slug>.md --detail 'approved'`. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.

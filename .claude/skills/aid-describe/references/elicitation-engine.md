@@ -274,8 +274,7 @@ Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
   recommend?," "explain the pros and cons," "explain it like I'm a junior," or asserts
   something the analyst judges mistaken.
 
-**Before the question is shown,** record it as `Pending` in the work's `qa` (the intake exception
-does not apply: the work exists): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<the section or topic>' --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<My recommendation>' --asked-by aid-describe --step <the host step: CONTINUE or DESCRIBE-SEED>` (it prints the question's id). The D1 opener is recorded the same way. When the user answers, record it right away with `--answer --id <id> --state <Answered|Skipped|Assumed> --value '<the answer>' --applied-to '<the REQUIREMENTS.md section>'`.
+**Before the question is shown,** record it as `Pending` in the work's `qa` (the work exists, so this is not a design-stage question): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<the section or topic>' --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<My recommendation>' --asked-by aid-describe --step <the host step: CONTINUE or DESCRIBE-SEED>` (it prints the question's id). The D1 opener is recorded the same way. When the user answers, record it right away with `--answer --id <id> --state <Answered|Skipped|Assumed> --value '<the answer>' --applied-to '<the REQUIREMENTS.md section>'`.
 An interview stopped mid-question therefore leaves that question `Pending`, and a resume asks it first.
 
 **After the user answers, before returning to Step 1:**

@@ -36,11 +36,11 @@ free answer, an explanation or a skip.
 
 ### Step 3: Record
 
-Record each outcome with `writeback-state.sh --answer` right after the user answers:
+Record each outcome with `writeback-state.sh --answer` right after the user answers; the writer sets `answered_by`:
 
 - **Skip:** `--answer --id Q<n> --state Skipped`. The question stays open and is offered again later.
-- **Accept the suggestion:** `--answer --id Q<n> --state Answered --value '<suggested>' --by '<user>'`.
-- **The user's own answer:** `--answer --id Q<n> --state Answered --value '<text>' --by '<user>'`.
+- **Accept the suggestion:** `--answer --id Q<n> --state Answered --value '<suggested>'`.
+- **The user's own answer:** `--answer --id Q<n> --state Answered --value '<text>'`.
 
 **Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.
 

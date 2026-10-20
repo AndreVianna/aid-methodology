@@ -32,6 +32,10 @@ it seeded is built — remove it by hand. Entry D's seed persists until you prom
 the entries above or remove it by hand yourself. A seed kept past its own entry's point becomes a
 second, stale description of a system that has moved on.
 
+A seed also holds the record of every question asked while it was shaped, in its `## Questions` table
+(`id`, `question`, `answer`, `state`, `answered_by`, `category`). Design skills open no work, and a skill that builds from
+the seed takes those questions into the work it opens.
+
 Seeds for work that was never started are **kept** — that is the folder's whole purpose.
 
 ## What belongs here, and what does not

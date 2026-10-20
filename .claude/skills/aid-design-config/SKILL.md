@@ -8,8 +8,7 @@ description: >
   NO production code and NO KB document -- realize the seed into the built option with
   `/aid-create-config` once it is ready. To design the technology stack itself rather than a
   configuration option within it, use `/aid-design-stack` instead. Produced by the
-  aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  aid-architect agent and independently verified by aid-reviewer (full verify).
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the config option/flag to design (default, scope, how it is read)"
 ---
@@ -42,19 +41,17 @@ State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> 
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
    configuration option or flag do you want to design -- its default, scope, and how it is
-   read?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `--skill aid-design-config` given to the gate's `--create`. `phase` is not driven.
+   read?") and wait: acquire `.aid/design/` first (below), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/config.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design-config`, which opens the seed document (`status: draft`) when it does not exist yet, and record the reply with `--answer --design .aid/design/config.md --id <id> --state Answered --value '<the reply>'`.
+2. **Name the seed; open no work.** The seed is `.aid/design/config.md`. This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/config.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/config.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/config.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
 **State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
-saved step on resume, and never routes; the work record alone decides where a work continues.
+saved step on resume, and never routes; the seed's `step:` and `step_detail:` frontmatter alone decide where a design resumes.
 
-**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
+**Advance:** CHAIN → [State: DESIGN].
 
 ---
 
@@ -75,7 +72,7 @@ invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/config.md --detail 'impediment: <reason>'`.
 
 **Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
@@ -86,7 +83,7 @@ invariant (`design-lifecycle.md`).
 Present the seed clearly. Assert no resolution --
 the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-config`).
 
-Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-config --step PRESENT --covers 'the seed .aid/design/config.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/config.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+Then ask the user to approve the result, through the question protocol, and record the approval on the seed. Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/config.md --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-config` (it prints the question's id, `D<n>`), and bring the step up to date with `--step PRESENT --design .aid/design/config.md --detail 'presented; waiting for D<n>'`. An approval cannot be skipped: the step stays open until the user approves or declines. Once it is answered, record the answer with `--answer --design .aid/design/config.md --id D<n> --state Answered --value '<Approved, or Declined with the changes asked>'`, and end the step with the advance below.
 If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
 
 **Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
@@ -95,5 +92,5 @@ If the user declines or asks for changes, DESIGN iterates the seed with exactly 
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/config.md --detail 'approved'`. The seed
 persists at `.aid/design/config.md`; consumption happens at `/aid-create-config`.

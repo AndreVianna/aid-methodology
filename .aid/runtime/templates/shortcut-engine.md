@@ -251,6 +251,15 @@ My recommendation: describe it in one or two sentences; a free answer is fine.
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
+No work exists yet, so this question is recorded in a design document, as the gate's "Recording the
+questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): before it is
+shown, `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design
+.aid/design/untitled-<YYYYMMDD-HHMMSS>.md --category Scope --impact High --context '<the question, as
+shown>' --suggested '<your recommendation>' --asked-by {name}`, and after the reply `--answer --design` on the
+same file with `--id` set to the id the writer printed. Once the description gives the work its slug, move the
+document with `bash .aid/runtime/scripts/execute/writeback-state.sh --rename-design
+.aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, and keep that file as this run's seed.
+
 The answer becomes `{description}`. The work record's request is the user's own words and the
 writer refuses an empty one, so when the user does not answer, nothing is allocated.
 
@@ -267,7 +276,8 @@ bash .aid/runtime/scripts/works/enumerate-works.sh
 - **No works exist anywhere (empty output)** -> proceed with the allocation below, no
   prompt (the common first-work case).
 - **One or more works exist** -> ask the gate's single new-vs-continuation question,
-  showing the enumerated list (main tree + every git worktree). On **new work**, proceed with
+  showing the enumerated list (main tree + every git worktree), recorded in the design document like
+  Step 2's question (the gate's "Recording the questions asked before a work exists"). On **new work**, proceed with
   the allocation below. On **continuation**, follow the gate's § 3b: enter the chosen work's
   worktree and run the skill its record names, at its saved step. This engine allocates
   nothing and this run ends there.
@@ -319,8 +329,14 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --create \
   --work-dir .aid/works/<work-id>-<slug> \
   --reading <type> --request '{description}' \
   --skill {name} --step INTAKE --phase Definition \
-  --path lite --minimum-grade <resolved value>
+  --path lite --minimum-grade <resolved value> \
+  [--seed .aid/design/<seed>.md]
 ```
+
+Pass `--seed` whenever a design document matches: `.aid/design/{artifact}.md` when it exists and
+`{artifact}` is non-empty (the seed Step 2 of CAPTURE reads), else the document that recorded this run's
+questions (Step 2's or Step 3's). The writer adds it to the work's `sources:` and copies its `## Questions`
+rows into the work's `qa` list; the document itself is left unchanged. With neither, omit `--seed`.
 
 When `{intent}` gives a `depth`, add `--depth <that depth>` to the command, so the record holds
 it; with none recorded, full applies.

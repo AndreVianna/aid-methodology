@@ -37,8 +37,11 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
   unless the check found a new fact.
 - No match: the gate's § 3a runs `writeback-state.sh --create` with `--skill aid-orchestrate --step
   RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing),
-  and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading.
-  The flow creates no work by hand.
+  and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading,
+  plus `--seed` for the design document that holds the questions asked so far (the go-ahead at
+  SHOW-READING and any new-or-continue question): first move it to `.aid/design/<slug>.md`, the slug
+  being the work's, with `writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md
+  --to .aid/design/<slug>.md`. The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
 **Advance:** **CHAIN** → ASK-FIRST when several works plausibly match; otherwise **CHAIN** → RECORD-INTENT.
@@ -46,8 +49,9 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 ## 3a. Ask which work
 
 Ask one question -- which work the request continues: its reason, your recommendation (the work
-whose phase fits best), the plausible works by name plus "a new work", and a free-text answer. The
-question pauses the step where it stands. On "a new work", the gate creates it as in section 3,
+whose phase fits best), the plausible works by name plus "a new work", and a free-text answer. No work
+is chosen yet, so record it in the design document before it is shown (`--ask --design`) and its
+answer after (`--answer --design`), with the id the writer printed. The question pauses the step where it stands. On "a new work", the gate creates it as in section 3,
 with `--step RECORD-INTENT`; on an existing work, that work is continued and its record is not
 written by this step.
 

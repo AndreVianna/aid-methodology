@@ -35,7 +35,7 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ## State: INTAKE
 
-INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).
+INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record.
 
 1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path:** **Fast** -- a clear data source + a clear analytical ask ("analyze
@@ -61,6 +61,8 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope *which metrics, what question about it*, one question at a time.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
+Record each of these questions in a design document before it is shown, and its reply after it, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.
+
 **Advance:** ASK → [State: ALLOCATE].
 
 ---
@@ -70,7 +72,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
-- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),
+- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`), with `--seed .aid/design/<slug>.md` on the gate's `--create` when INTAKE-ASK recorded any question (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record),
   its saved step (`ANALYZE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
@@ -136,8 +138,12 @@ conflicts with reasons, and gaps. Assert no resolution.
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
 a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
-Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
-in one plain line.
+Never auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the
+form of `.aid/runtime/templates/question-protocol.md` (`Report -- question 1 of 1 -- importance: low`,
+**Why I ask**, **My recommendation**, numbered options with the recommended one first, and the closing
+line). Record it with `writeback-state.sh --ask --category Report --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-report` before it is shown, and the reply with
+`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked suggestion is named in
+one plain line.
 
 **Advance:** ASK → [State: DONE].
 
