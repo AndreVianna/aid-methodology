@@ -22,7 +22,7 @@ Persona: the product lead of the notes tool. Does not know what a connector or a
 
 ## Expected outcome
 
-- The assistant treats the request as a setup of the project's tracker connection, not as a new work, and says so in one line with its reason.
+- The assistant matches the request to the setup of the project's tracker connection (`/aid-set-connector`), and proposes it in a short statement with its reason before it changes anything.
 - Questions come one at a time. Each has a short reason, a recommendation in plain words, and an importance label (high, medium or low).
 - The recommended way is the tool's own connection. The assistant does not ask for a password or a token.
 - The assistant says in plain words what it has recorded for Jira, and where.

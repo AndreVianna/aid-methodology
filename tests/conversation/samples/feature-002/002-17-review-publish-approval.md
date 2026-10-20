@@ -16,6 +16,7 @@ Persona: a developer on the notes team who wants an honest review before the mod
 - The target is the note store module, src/notes/store.py.
 - You want the findings in plain words, most serious first.
 - You do not have a pull request or a ticket for this review.
+- If the assistant proposes a way to go (such as `/aid-review`) and asks to go ahead, say yes.
 - If the assistant offers to publish the findings anywhere, say no for now and ask it to show you the exact text first.
 - Once the assistant has shown the findings and the text it would publish, reply <<END>>.
 
@@ -38,6 +39,6 @@ Persona: a developer on the notes team who wants an honest review before the mod
 - tool-called Skill aid-review
 - tool-not-called Edit *src/*
 - tool-not-called Write *src/*
-- tool-not-called Bash *pr*comment*
-- tool-not-called Bash *pr*review*
+- tool-not-called Bash *gh?pr?comment*
+- tool-not-called Bash *gh?pr?review*
 - no-push

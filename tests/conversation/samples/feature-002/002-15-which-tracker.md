@@ -16,6 +16,7 @@ Persona: a product owner who keeps the team's tickets in two places, the enginee
 - The ticket is PROJ-42, about the retry policy for the sync job.
 - It lives in the engineering tracker, the one the team calls Jira.
 - You do not know the names of the connectors or how they are set up; if asked which connector to use, answer with the team's name for it, Jira.
+- Do not say which tracker holds the ticket until the assistant asks which one. If it only asks whether to go ahead with a way to go, such as `/aid-read-ticket`, say yes and nothing more.
 - You do not know whether the ticket has attachments; if asked, say you do not know.
 - Once the assistant has shown the ticket's fields, or has said it cannot fetch the ticket, reply <<END>>.
 

@@ -1,14 +1,4 @@
 test	covers	waiting_for	needs
-samples/feature-002/002-01-connector-question	AC-8, AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-02-settings-groups-and-breaks	AC-8, AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-03-follow-up-and-skip-answered	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-04-skip-then-another-user	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-14-orchestrate-unsure-reading	AC-8, AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-15-which-tracker	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-16-research-without-a-question	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-17-review-publish-approval	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-18-report-what-to-analyze	AC-28	Feature 002 (sweep)	-
-samples/feature-002/002-19-monitor-finding-question	AC-28	Feature 002 (sweep)	-
 samples/feature-002/002-06-review-in-chunks	AC-9	Feature 005	-
 samples/feature-002/002-07-small-decisions-with-approval	AC-9, AC-10	Features 005, 007	-
 samples/feature-002/002-08-full-confirms-each-document	AC-10	Features 003, 005, 006, 007	-

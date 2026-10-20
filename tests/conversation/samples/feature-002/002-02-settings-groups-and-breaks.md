@@ -14,6 +14,8 @@ Persona: the team lead of the notes tool. Careful and patient; happy to answer o
 ## Answer sheet
 
 - The project is called "notes". It is a small command-line tool that keeps short text notes in a local file.
+- If asked for a one-line description of the project, say: "A small command-line tool that keeps short text notes in a local file."
+- If the assistant proposes a way to go (such as `/aid-config`) and asks to go ahead, say yes.
 - The project is brownfield: the code already exists and nothing is being started from nothing.
 - The project is kept in git, and that is the only source control it uses.
 - The minimum quality grade stays at the default, A. Do not change it.

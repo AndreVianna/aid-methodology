@@ -17,12 +17,13 @@ Persona: a developer who looks after the notes tool in production and has a vagu
 - You do not know the finding's number and you have no record of it in this session.
 - You do not know where the production logs are kept; if asked, say you do not know.
 - You want to know, in plain words, whether the export is still slow.
-- Once the assistant has said what it can check and has asked what it needs from you, reply <<END>>.
+- If the assistant proposes a way to go (such as `/aid-monitor`) and asks to go ahead, say yes.
+- Once the assistant, after that, has said what it can check and has asked what it needs from you, reply <<END>>.
 
 ## Expected outcome
 
 - The assistant says plainly that it has no finding on record in this session, and does not pretend to know the earlier finding's number or its evidence.
-- It asks one question at a time, with a recommendation: the first is whether the user wants a fresh observation or a check of the earlier finding, and it names the choice in one question.
+- It asks one question at a time, with a recommendation. No earlier finding is on record, so it does not offer to re-check one as if it were (the choice between a new observation and a re-check applies only when prior findings exist).
 - It asks where the production data is before it claims anything about the export's speed, because it has no evidence in the project.
 - It does not invent evidence, timings or a classification.
 

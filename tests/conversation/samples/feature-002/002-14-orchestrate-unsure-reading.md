@@ -37,6 +37,4 @@ Persona: the maintainer of the notes tool. Not sure whether the problem needs a 
 
 - no-new-dir .aid/works
 - tool-called Skill aid-orchestrate
-- tool-not-called Edit
-- tool-not-called Write
 - no-push
