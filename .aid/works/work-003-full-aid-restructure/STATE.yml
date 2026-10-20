@@ -1963,3 +1963,11 @@ qa:
     suggested: '1: write the rule now (pre-work questions recorded in a design file under .aid/design/), leave the work''s pickup of that file as backlog W7-19'
     answer: '2 (maintainer): everything now -- the rule, and the step where a new work takes in its design file (W7-19), in this fix round.'
     applied_to: 'the delivery-003 gate fix round'
+  - id: Q170
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'answered_by: question-protocol.md says the writer sets it (git user name, or --); writeback-state.sh also accepts --by and aid-describe/references/state-q-and-a.md tells the agent to use it; sample 002-04 failed when the agent typed the user name with --by.'
+    suggested: '1: writer only -- remove --by from the writer and from aid-describe'
+    answer: '1 (maintainer).'
+    applied_to: 'the delivery-003 gate fix round'
