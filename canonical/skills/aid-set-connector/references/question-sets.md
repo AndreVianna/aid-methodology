@@ -41,13 +41,20 @@ outright:
 
 `tags`/`audience` are never prompted in either case — see SKILL.md Step 2's closing paragraph.
 
+## Types usable now
+
+Only `mcp` is usable for consumption now. `api`, `ssh`, `url` and `cli` are catalogue-only: the
+descriptor serves discovery and audit and nothing consumes it live (`.aid/runtime/rules.md`
+§ Connectors). Whenever a type is offered or listed, offer `mcp` as the usable one and mark the others
+`(catalogue only)`.
+
 ## The four question-sets
 
 ### `mcp` — tool-managed
 
 | Field | Ask? | Default / rule |
 |---|---|---|
-| `name` | yes | Prefill precedence above |
+| `name` | no, when obvious from the tool | Prefill precedence above; asked only when ambiguous |
 | `endpoint` | optional | Informational only — **never** a launch/wire command (AID does not launch or wire an `mcp` target). Prefill from `endpoint-template` only when the preset's own type is `mcp` too; otherwise blank/skippable |
 | `auth_method` | no | **Forced** `none` — the host tool authenticates the target; AID registers no credential |
 | `secret_reference` | no | **No such field is written** — there is nothing to capture (see `secret-reconcile.md`) |
@@ -63,7 +70,7 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 
 | Field | Ask? | Default / rule |
 |---|---|---|
-| `name` | yes | Prefill precedence above |
+| `name` | no, when obvious from the tool | Prefill precedence above; asked only when ambiguous |
 | `endpoint` | yes | Prefill precedence above; this is the concrete connect target (URL) the agent uses directly |
 | `auth_method` | yes | Choose from `none \| token \| pat \| oauth`. Default suggestion: prefill precedence above, else `token` |
 | `secret_reference` FORM | only if `auth_method != none` | Default `file:.aid/connectors/.secrets/$STEM`; `env:<VAR>` / `keychain:<key>` offered as alternatives — ask for the VAR/key name when chosen |
@@ -72,7 +79,7 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 
 | Field | Ask? | Default / rule |
 |---|---|---|
-| `name` | yes | Prefill precedence above |
+| `name` | no, when obvious from the tool | Prefill precedence above; asked only when ambiguous |
 | `endpoint` | yes | Host/target (e.g. `user@host`) — this type's connect target is a host, not a URL |
 | `auth_method` | no | **Forced** `none` — an `ssh` connector authenticates externally via ssh keys/ssh-agent; AID registers no credential for it |
 | `secret_reference` | no | **No such field is written** — there is nothing to capture (see `secret-reconcile.md`) |
@@ -81,7 +88,7 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 
 | Field | Ask? | Default / rule |
 |---|---|---|
-| `name` | yes | Prefill precedence above |
+| `name` | no, when obvious from the tool | Prefill precedence above; asked only when ambiguous |
 | `endpoint` | yes | Command/target (e.g. `docker`) |
 | `auth_method` | no | **Forced** `none` — a `cli` connector self-authenticates via the invoked tool's own login/config (e.g. docker socket, `gh auth`, `aws` config); AID registers no credential for it |
 | `secret_reference` | no | **No such field is written** — there is nothing to capture (see `secret-reconcile.md`) |
@@ -89,7 +96,10 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 ## Asking, per project convention
 
 Ask in the question form of `.aid/runtime/templates/question-protocol.md`, one field per message, for every field the table above marks "yes"/"only if…" — never silently
-assume a suggested value. For each:
+assume a suggested value. **Exception, `name`:** do not ask it when it is obvious from the tool (the
+preset row's `name`, else `<tool>` as given); take it without a question and show it in the closing
+trace, or, when it is genuinely ambiguous, ask one confirmation whose recommendation is the proposed
+name. For each question that is asked:
 
 - Give the **Why I ask** (what the field is used for) and a **My recommendation** line: when
   precedence resolved a prefill, recommend it ("keep `<prefill>`") as the first option, marked

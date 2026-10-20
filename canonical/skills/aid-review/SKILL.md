@@ -188,8 +188,13 @@ The hard stop follows the ASK step of `skill-steps.md`. Present:
   `/aid-fix` (or `/aid-update`) to address them" (review never starts the fix itself);
 - the **proposed delivery action + the exact comment/notes text** that would be posted.
 
-Then STOP and await the human's decision (approve / edit the text / choose a different
-delivery / do not publish). Nothing is posted to any external target until they approve.
+Then STOP and ask one decision question in the form of `.aid/runtime/templates/question-protocol.md`
+(`Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without your approval,
+**My recommendation**, numbered options: approve and publish / edit the text / choose a different
+delivery / do not publish, and the closing line). Record it with
+`writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with
+`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.
+Nothing is posted to any external target until they approve.
 
 **Advance:** ASK → [State: PUBLISH].
 
@@ -204,7 +209,9 @@ enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again
 at its own CONFIRM before posting); a findings report in the work folder (+ optional
 inline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /
-no catalogued connector / unknown target -> present the exact text for the human to paste.
+no catalogued connector / unknown target -> present the exact text for the human to paste; when the
+user must choose where it goes, ask that as one question in the same form, recorded with `--ask` before
+it is shown and `--answer` after, recommending the paste.
 Publishing is optional and never blocks DONE.
 
 **Advance:** CHAIN → [State: DONE].

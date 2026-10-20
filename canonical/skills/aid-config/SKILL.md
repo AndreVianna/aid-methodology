@@ -3,11 +3,11 @@ name: aid-config
 description: >
   View or update AID pipeline settings. Use this skill when you need to see how the pipeline
   is configured, or change one setting such as the project name, its type, or the minimum
-  grade. A bare invocation prints every value in a table and, on the first run, creates
-  `.aid/settings.yml` from the template. Passing a key -- `/aid-config` name -- views and
-  updates that one setting interactively.
+  grade. A bare invocation creates `.aid/settings.yml` from the template on the first run, prints
+  every value in a table and walks the settings in groups, one question at a time. Passing a key --
+  `/aid-config` name -- views and updates that one setting interactively.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
-argument-hint: "(none) view all  |  <key> view+update one (e.g., name, minimum_grade)"
+argument-hint: "(none) view all and walk the settings  |  <key> view+update one (e.g., name, minimum_grade)"
 ---
 
 # AID Project Configuration
@@ -15,11 +15,11 @@ argument-hint: "(none) view all  |  <key> view+update one (e.g., name, minimum_g
 `/aid-config` reads and writes `.aid/settings.yml` — the single source of truth
 for AID pipeline settings (grades, heartbeat, project identity).
 
-**Two modes, nothing else.**
+**Two modes, nothing else.** The walk is the bare invocation; the single-key mode is unchanged.
 
 | Invocation | What it does |
 |---|---|
-| `/aid-config` | Show all settings as a table. On first run (no `settings.yml`), copy the template into place first, then show. |
+| `/aid-config` | Walk mode. On first run (no `settings.yml`), copy the template into place first. Show all settings as a table, then walk them in groups, one question per message. |
 | `/aid-config <key>` | Show the current value of `<key>`; prompt for new (with suggestions + always a free-form option); validate; write in place. |
 
 Examples: `/aid-config name`, `/aid-config minimum_grade`,
@@ -36,7 +36,7 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
-## Mode 1 — Show all settings (`/aid-config`)
+## Mode 1 — Show all settings and walk them (`/aid-config`)
 
 ### Step 1: Ensure `.aid/settings.yml` exists
 
@@ -54,22 +54,34 @@ Order: `name`, `description`, `type`, `source_control`, `minimum_grade`, `heartb
 
 If any value matches a `<placeholder>` pattern (e.g., `<project-name>`), append ` ⚠ unset` after the value.
 
-### Step 3: Suggest commands for unset values + the general update form
+### Step 3: Walk the settings
 
-After the table, print the line:
-```
-Run /aid-config <key> to update any value.
-```
+After the table, walk the settings, grouped by subject, most important first, **3 to 5 questions per
+group**, one question per message and one topic per question. Each question is shown in the form of
+Mode 2 Step 4 (the same Suggestions table; `Keep current value` is the recommendation when the value is
+already set and sensible; for an `⚠ unset` value the recommendation is a suggestion, or a request for
+the user's own words for `name` and `description`).
 
-If ANY rows were marked `⚠ unset`, ALSO emit a copy-pasteable command per unset row, so the user can act without having to assemble the key themselves:
+| Group | Settings, in order | Importance |
+|---|---|---|
+| 1. Project identity | `name` (high), `description` (high), `type` (high) | high |
+| 2. Pipeline behaviour | `source_control` (medium), `minimum_grade` (medium), `heartbeat_interval` (low) | medium |
 
-```
-N values unset. To set them:
-  /aid-config name
-  /aid-config description
-```
+`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`).
 
-Exit. No prompt; no further interaction.
+- **Record each question** before it is shown and its reply right after, in the project file
+  `.aid/STATE.yml`, exactly as Mode 2 Step 4 sets (`writeback-state.sh --project --ask`, then `--project
+  --answer`). A non-zero exit stops the skill at once.
+- **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
+  A `Keep current value` answer or a skip writes nothing.
+- **Offer a break when the subject changes**, between group 1 and group 2, in one plain line that
+  decides nothing (`Identity is done. Take a break, or go on to the pipeline settings?`). The user may
+  stop there; the answers already given stay.
+- **Skipped questions are offered again at the end**, once, in the same form, as a last group. A question
+  skipped twice stays `Skipped` in `.aid/STATE.yml` and is offered the next time `/aid-config` runs.
+- At the end print the table again, and the line `Run /aid-config <key> to update any single value.`
+
+Exit.
 
 ---
 

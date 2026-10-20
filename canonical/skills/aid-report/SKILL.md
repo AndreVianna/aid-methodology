@@ -136,8 +136,12 @@ conflicts with reasons, and gaps. Assert no resolution.
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
 a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
-Never auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
-in one plain line.
+Never auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the
+form of `.aid/runtime/templates/question-protocol.md` (`Report -- question 1 of 1 -- importance: low`,
+**Why I ask**, **My recommendation**, numbered options with the recommended one first, and the closing
+line). Record it with `writeback-state.sh --ask --category Report --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-report` before it is shown, and the reply with
+`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked suggestion is named in
+one plain line.
 
 **Advance:** ASK → [State: DONE].
 
