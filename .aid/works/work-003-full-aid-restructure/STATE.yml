@@ -502,6 +502,10 @@ review_history:
     event: 'Delivery-002 gate, first attempt (stopped on samples)'
     outcome: 'Static criteria pass (skill-steps E, NM-01..04, writer, gate --check, readers parity, stage rails, flow-advance); scratch generator matches; installer CI green (run 2107); cost baseline re-recorded. Samples: 002-21 3/3; 002-05 1/3 (run 1 merged into master on the user''s explicit ask); 002-20 0/3; 002-21b 0/3 (not a gate sample)'
     notes: 'Runner gained on-branch: (002-20 starts on work-001). Waiting on the maintainer: how to handle the failing samples'
+  - date: '2026-10-20'
+    event: 'Delivery-002 gate fixes (Q163) and second resync'
+    outcome: 'Fixes in 4b527f91; resync committed alone as b65def86'
+    notes: 'next: the full suite, then the maintainer runs /reload-skills, then samples 002-05, 002-20, 002-21 and 002-21b at 3 runs each'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
