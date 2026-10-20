@@ -1994,11 +1994,11 @@ footer {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   }
 
-  // Progressive triage-path summary for a work card.
+  // Path summary for a work card: the path and the counts produced so far.
   //   Full: "Full path: 9 features -> 7 deliveries -> 45 Tasks"  (numbers fill in as produced)
   //   Lite: "Lite path: Refactor -> 5 Tasks"  (kind resolved from pipeline.initiator,
   //     work-003-state-schema task-002 -- fixes the historical "Lite path: Lite" render)
-  //   A bracketed [stage] marks the step in progress; "[Identifying path]" before triage.
+  //   It names no step and carries no brackets; an unknown path gives an empty line.
   function _pathSummary(work) {
     // A plain count line: the path and what exists so far. No step names, no brackets.
     var ARROW = ' → ';

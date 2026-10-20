@@ -211,7 +211,7 @@ skill has no shell and keeps no record of its questions.
      1. File it (recommended)
      2. Edit it first
      3. Cancel
-   Or answer in your own words, ask me to explain, or skip this question.
+   Or answer in your own words, or ask me to explain.
    ```
 
 **No silent level default, ever:** if the level is unset or uninferable, the pick above is

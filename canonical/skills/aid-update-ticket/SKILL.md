@@ -209,7 +209,7 @@ My recommendation: file it -- the preview above is exactly what will be sent.
   1. File it (recommended)
   2. Edit -- you give me a revised change
   3. Cancel -- make no change
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 This is a pause inside the step, not an `ASK` advance: the write follows the answer, in the same invocation,

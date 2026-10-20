@@ -156,7 +156,7 @@ Parse rules:
     1. File it (recommended)
     2. Edit it first
     3. Cancel
-  Or answer in your own words, ask me to explain, or skip this question.
+  Or answer in your own words, or ask me to explain.
   ```
   An approval-style confirmation like this one offers no skip beyond cancelling.
 - **`update`'s confirm gate shows the exact change** for whichever `<part>` is being
