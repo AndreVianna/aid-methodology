@@ -193,9 +193,11 @@
 #       creation itself (today's date, an event naming S).
 #       --seed FILE takes a design document into the work: its repo-relative path is added
 #       to sources, and every row of its `## Questions` table is copied into qa as a new
-#       Q<n> entry (context names the document and its D id; state, answer and answered_by
-#       are kept). The design document is left unchanged. FILE must be inside .aid/design/
-#       and exist (exit 5 otherwise).
+#       Q<n> entry (context names the document and its D id; state, answer, answered_by
+#       and category are kept; impact is Medium). The design document is left unchanged.
+#       FILE must be inside <project root>/.aid/design/ and exist (exit 5 otherwise). The
+#       project root is the git top level, else the current directory; the same rule holds
+#       for every --design and --rename-design path.
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
@@ -205,6 +207,16 @@
 #       Writes step (N) and step_detail (D, or `--`) into the frontmatter of the design
 #       document FILE, so a design skill can resume. FILE must be inside .aid/design/;
 #       the frontmatter is created when missing, and no work record is read or written.
+#       This is the form every step write takes on a design document (no --skill).
+#
+#   writeback-state.sh --rename-design FROM --to TO
+#       Moves the design document FROM (for example .aid/design/untitled-<YYYYMMDD-HHMMSS>.md,
+#       opened by a question asked before the subject was known) to TO (.aid/design/<slug>.md)
+#       once the subject is known. When TO already exists, the rows of FROM's `## Questions`
+#       table are appended to TO's table, renumbered after TO's highest D id, one line
+#       `D<old> -> D<new>` is printed for each, and FROM is deleted. Both paths must be
+#       inside .aid/design/ (exit 5); exit 1 when FROM does not exist; exit 4 when both
+#       name the same file. Ids are never fixed in advance: use the one the writer printed.
 #
 #   writeback-state.sh --intent [--reason R] [--phases P1,P2,...]
 #       Sets intent.reason and/or intent.phases on an existing work record, in one
@@ -252,9 +264,11 @@
 #                       [--asked-by S]
 #       The question comes before any work exists. Appends a Pending row to the
 #       `## Questions` table of the design document FILE (id, question, answer, state,
-#       answered_by), creating the section, and the file with minimal frontmatter
-#       (`status: draft`), when missing. The question is --context. Prints the new id
-#       (the next free D<n>) and nothing else. FILE must be inside .aid/design/ (exit 5).
+#       answered_by, category), creating the section, and the file with minimal frontmatter
+#       (`status: draft`), when missing. The question is --context and the category is
+#       --category. Prints the new id (the next free D<n>, counted in that table alone) and
+#       nothing else. FILE must be inside .aid/design/ (exit 5). A table written with the
+#       earlier five columns reads correctly and gains the category column when written.
 #
 #   writeback-state.sh --answer --id Q<n> --state Answered|Skipped|Assumed [--value T]
 #                       [--applied-to T] [--covers X] [--commit C] [--project]
@@ -265,8 +279,8 @@
 #   writeback-state.sh --answer --design FILE --id D<n> --state Answered|Skipped|Assumed
 #                       [--value T]
 #       Updates that row of the design document's `## Questions` table: state, answer
-#       (when --value is given) and answered_by (git config user.name, else `--`). Exit 4
-#       when the table holds no question with that id.
+#       (when --value is given) and answered_by (git config user.name, else `--`); the
+#       category is kept. Exit 4 when the table holds no question with that id.
 #
 #   writeback-state.sh -h | --help
 #
@@ -340,7 +354,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,304p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,318p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -653,6 +667,7 @@ COVERS_ARG=""
 QID_ARG=""
 STATE_ANSWER_ARG=""
 DESIGN_ARG=""
+RENAME_ARG=""
 SEED_ARG=""
 APPLIED_TO_ARG=""
 COMMIT_ARG=""
@@ -741,6 +756,7 @@ while [[ $# -gt 0 ]]; do
         --state)      [[ $# -lt 2 ]] && die "--state requires a value" 5; STATE_ANSWER_ARG="$2"; shift 2 ;;
         --design)     [[ $# -lt 2 ]] && die "--design requires a value" 5; DESIGN_ARG="$2"; shift 2 ;;
         --seed)       [[ $# -lt 2 ]] && die "--seed requires a value" 5; SEED_ARG="$2"; shift 2 ;;
+        --rename-design) [[ $# -lt 2 ]] && die "--rename-design requires a value" 5; RENAME_ARG="$2"; shift 2 ;;
         --applied-to) [[ $# -lt 2 ]] && die "--applied-to requires a value" 5; APPLIED_TO_ARG="$2"; shift 2 ;;
         --commit)     [[ $# -lt 2 ]] && die "--commit requires a value" 5; COMMIT_ARG="$2"; shift 2 ;;
         --step)
@@ -781,11 +797,14 @@ if [[ "$STEP_FLAG" -eq 1 || -n "$STEP_VALUE" ]]; then
 fi
 NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG + INTENT_FLAG ))
 NEW_MODE_COUNT=$(( NEW_MODE_COUNT + HANDOFF_FLAG + HANDOFF_RETURN_FLAG + ASK_FLAG + ANSWER_FLAG + STEP_MODE ))
+if [[ -n "$RENAME_ARG" ]]; then NEW_MODE_COUNT=$(( NEW_MODE_COUNT + 1 )); fi
 if [[ "$NEW_MODE_COUNT" -gt 1 ]]; then
-    die "one record mode per call: use one of --create, --step, --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask, --answer" 5
+    die "one record mode per call: use one of --create, --step, --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask, --answer, --rename-design" 5
 fi
 if [[ "$CREATE_FLAG" -eq 1 ]]; then
     MODE="create"
+elif [[ -n "$RENAME_ARG" ]]; then
+    MODE="rename-design"
 elif [[ "$STEP_MODE" -eq 1 ]]; then
     MODE="step"
 elif [[ "$REROUTE_FLAG" -eq 1 ]]; then
@@ -825,13 +844,17 @@ else
     die "no valid mode detected; use --help for usage" 5
 fi
 
-# --design belongs to --ask, --answer and --step; --seed to --create alone.
+# --design belongs to --ask, --answer and --step; --seed to --create alone;
+# --rename-design is a mode of its own and takes --to.
 if [[ -n "$DESIGN_ARG" ]]; then
     case "$MODE" in
         ask|answer|step) ;;
         *) die "--design is an option of --ask, --answer and --step only" 5 ;;
     esac
     [[ "$PROJECT_FLAG" -eq 0 ]] || die "--design and --project cannot be used together" 5
+fi
+if [[ "$MODE" == "rename-design" && -n "$DESIGN_ARG" ]]; then
+    die "--rename-design does not take --design" 5
 fi
 if [[ -n "$SEED_ARG" && "$MODE" != "create" ]]; then
     die "--seed is an option of --create only" 5
@@ -2741,15 +2764,32 @@ END { flush(); if (found != 1) exit 3 }
 '
 
 # ---------------------------------------------------------------------------
-# Design documents (--ask, --answer and --step with --design; --create --seed).
-# A question asked before any work exists is recorded in the `## Questions`
-# table of a design document under .aid/design/, so it is still made by this
-# script, still before it is shown. The table is one markdown table:
-#   | id | question | answer | state | answered_by |
-# ids are D1, D2, ...; `|` inside a cell is written `\|`.
+# Design documents (--ask, --answer and --step with --design; --rename-design;
+# --create --seed). A question asked before any work exists is recorded in the
+# `## Questions` table of a design document under <project root>/.aid/design/, so
+# it is still made by this script, still before it is shown. The table is one
+# markdown table:
+#   | id | question | answer | state | answered_by | category |
+# ids are D1, D2, ... and are counted inside the `## Questions` table only; `|` inside
+# a cell is written `\|`. A table with the earlier five columns (no category) reads
+# correctly, and gains the column the next time it is written.
 # ---------------------------------------------------------------------------
-WB_DESIGN_HEADER='| id | question | answer | state | answered_by |'
-WB_DESIGN_SEP='|---|---|---|---|---|'
+WB_DESIGN_HEADER='| id | question | answer | state | answered_by | category |'
+WB_DESIGN_SEP='|---|---|---|---|---|---|'
+
+# WB_DESIGN_NORM_FN -- awk function norm(line): a five-column table line gains the sixth
+# column (header `category`, separator `---`, a row `--`); any other line is returned as is.
+WB_DESIGN_NORM_FN='
+function norm(line,   t, n, cc) {
+    sub(/[ \t]+$/, "", line)
+    t = line; gsub(/\\\|/, "\001", t)
+    n = split(t, cc, "|")
+    if (n != 7) return line
+    if (line ~ /^\|[-: |]+$/) return line "---|"
+    if (line ~ /^\| *id *\|/) return line " category |"
+    return line " -- |"
+}
+'
 
 # wb_answered_by: who answers, set by the writer alone: git config user.name, else `--`.
 wb_answered_by() {
@@ -2761,11 +2801,15 @@ wb_answered_by() {
 
 # wb_design_path FILE OPTION: sets DESIGN_ABS (the normalised absolute path) and
 # DESIGN_REL (the path from .aid/design/ on, as written to sources). Exits 5 when
-# FILE is not inside a .aid/design/ folder.
+# FILE is not inside <project root>/.aid/design/ (the project root is the git top
+# level, else the current directory).
 wb_design_path() {
-    local raw="$1" opt="$2" abs part out="" parts
+    local raw="$1" opt="$2" abs part out="" parts root
+    root="$(git rev-parse --show-toplevel 2>/dev/null)" || root=""
+    if [[ -z "$root" ]]; then root="$(pwd -P)"; fi
+    root="${root%/}"
     abs="$raw"
-    [[ "$abs" == /* ]] || abs="$PWD/$abs"
+    [[ "$abs" == /* ]] || abs="$(pwd -P)/$abs"
     IFS=/ read -ra parts <<< "$abs"
     for part in "${parts[@]}"; do
         case "$part" in
@@ -2774,9 +2818,9 @@ wb_design_path() {
             *) out="$out/$part" ;;
         esac
     done
-    [[ "$out" == */.aid/design/?* ]] || die "$opt '$raw' must be a file inside .aid/design/" 5
+    [[ "$out" == "$root"/.aid/design/?* ]] || die "$opt '$raw' must be a file inside this project's .aid/design/" 5
     DESIGN_ABS="$out"
-    DESIGN_REL=".aid/design/${out##*/.aid/design/}"
+    DESIGN_REL=".aid/design/${out#"$root"/.aid/design/}"
 }
 
 # wb_design_cell VALUE: VALUE as one table cell: line breaks become spaces, `|` is escaped.
@@ -2788,13 +2832,17 @@ wb_design_cell() {
     printf '%s' "$v"
 }
 
-# wb_design_skeleton FILE: the minimal design document written when FILE is missing.
-wb_design_skeleton() {
+# wb_design_title FILE: the heading the skeleton gives FILE (its name, words apart).
+wb_design_title() {
     local title
     title="$(basename "$1")"
     title="${title%.md}"
-    title="${title//-/ }"
-    printf -- '---\nstatus: draft\n---\n\n# %s\n' "$title"
+    printf '%s' "${title//-/ }"
+}
+
+# wb_design_skeleton FILE: the minimal design document written when FILE is missing.
+wb_design_skeleton() {
+    printf -- '---\nstatus: draft\n---\n\n# %s\n' "$(wb_design_title "$1")"
 }
 
 # wb_design_rewrite FILE PROGRAM [awk -v OPTION...]: run an awk PROGRAM over FILE (over a
@@ -2810,7 +2858,7 @@ wb_design_rewrite() {
         src="$skel"
     fi
     t=$(wb_mktemp_beside "$file") || { rm -f "$skel"; die "cannot create a temporary file beside $file" 1; }
-    if ! awk "$@" "$program" "$src" > "$t" || [[ ! -s "$t" ]]; then
+    if ! awk "$@" "$WB_DESIGN_NORM_FN $program" "$src" > "$t" || [[ ! -s "$t" ]]; then
         rm -f "$t" "$skel"
         die "writeback sanity check failed: the edit did not apply to $file; it is preserved" 3
     fi
@@ -2818,15 +2866,19 @@ wb_design_rewrite() {
     mv "$t" "$file" || { rm -f "$t"; die "cannot replace $file; it is preserved" 1; }
 }
 
-# wb_design_next_id FILE: the next free question id, D<n> after the highest one in FILE.
+# wb_design_next_id FILE: the next free question id, D<n> after the highest one in the
+# `## Questions` table of FILE (a D id anywhere else in the document is not counted).
 wb_design_next_id() {
     if [[ ! -f "$1" ]]; then echo "D1"; return; fi
-    awk '/^\| D[0-9]+ \|/ { n = substr($2, 2) + 0; if (n > m) m = n }
+    awk '/^## Questions[ \t]*$/ { insec = 1; next }
+         insec && (/^#[ \t]/ || /^##[ \t]/) { insec = 0 }
+         insec && /^\| D[0-9]+ \|/ { n = substr($2, 2) + 0; if (n > m) m = n }
          END { printf "D%d\n", m + 1 }' "$1"
 }
 
 # WB_DESIGN_ASK_AWK -- appends the row in WB_ROW to the `## Questions` table, creating
-# the table (and the section) when missing. WB_HDR and WB_SEP are the table's head.
+# the table (and the section) when missing. WB_HDR and WB_SEP are the table's head. A
+# table with five columns is written back with six.
 WB_DESIGN_ASK_AWK='
 { L[NR] = $0 }
 END {
@@ -2844,7 +2896,7 @@ END {
     last = 0
     for (i = sec + 1; i <= stop; i++) if (L[i] ~ /^\|/) last = i
     for (i = 1; i <= NR; i++) {
-        print L[i]
+        if (i > sec && i <= stop && L[i] ~ /^\|/) print norm(L[i]); else print L[i]
         if (last && i == last) print row
         if (!last && i == sec) { print ""; print hdr; print sep; print row }
     }
@@ -2852,21 +2904,27 @@ END {
 '
 
 # WB_DESIGN_ANSWER_AWK -- sets state, answered_by (and answer, when WB_ANS is set) of the
-# row `id`. Exits 3 when the table holds no such row.
+# row `id` of the `## Questions` table; the category is kept. Exits 3 when the table holds
+# no such row. A table with five columns is written back with six.
 WB_DESIGN_ANSWER_AWK='
 BEGIN { sub_ = "\001" }
-$0 ~ ("^\\| " id " \\|") {
+/^## Questions[ \t]*$/ { insec = 1; print; next }
+insec && (/^#[ \t]/ || /^##[ \t]/) { insec = 0 }
+insec && $0 ~ ("^\\| " id " \\|") {
     line = $0
     gsub(/\\\|/, sub_, line)
     n = split(line, c, "|")
     ans = c[4]
     if (ENVIRON["WB_ANS_SET"] == "1") ans = " " ENVIRON["WB_ANS"] " "
-    out = "|" c[2] "|" c[3] "|" ans "| " ENVIRON["WB_ST"] " | " ENVIRON["WB_BY"] " |"
+    cat = " -- "
+    if (n >= 8) cat = c[7]
+    out = "|" c[2] "|" c[3] "|" ans "| " ENVIRON["WB_ST"] " | " ENVIRON["WB_BY"] " |" cat "|"
     gsub(sub_, "\\|", out)
     print out
     found++
     next
 }
+insec && /^\|/ { print norm($0); next }
 { print }
 END { if (found != 1) exit 3 }
 '
@@ -2891,7 +2949,8 @@ END {
 '
 
 # WB_DESIGN_ROWS_AWK -- the rows of the `## Questions` table as
-# id US question US answer US state US answered_by (US is the unit separator).
+# id US question US answer US state US answered_by US category (US is the unit separator;
+# the category is empty for a row of a five-column table).
 WB_DESIGN_ROWS_AWK='
 BEGIN { sub_ = "\001" }
 /^## Questions[ \t]*$/ { insec = 1; next }
@@ -2900,8 +2959,9 @@ insec && /^\| D[0-9]+ \|/ {
     line = $0
     gsub(/\\\|/, sub_, line)
     n = split(line, c, "|")
-    for (i = 2; i <= 6; i++) { gsub(/^ +| +$/, "", c[i]); gsub(sub_, "|", c[i]) }
-    printf "%s\037%s\037%s\037%s\037%s\n", c[2], c[3], c[4], c[5], c[6]
+    if (n < 8) c[7] = ""
+    for (i = 2; i <= 7; i++) { gsub(/^ +| +$/, "", c[i]); gsub(sub_, "|", c[i]) }
+    printf "%s\037%s\037%s\037%s\037%s\037%s\n", c[2], c[3], c[4], c[5], c[6], c[7]
 }
 '
 
@@ -2924,7 +2984,7 @@ mode_design_ask() {
     init_lock_file "$file"
     acquire_lock
     id=$(wb_design_next_id "$file")
-    export WB_ROW="| $id | $(wb_design_cell "$CONTEXT_ARG") | -- | Pending | -- |"
+    export WB_ROW="| $id | $(wb_design_cell "$CONTEXT_ARG") | -- | Pending | -- | $(wb_design_cell "$CATEGORY_ARG") |"
     export WB_HDR="$WB_DESIGN_HEADER" WB_SEP="$WB_DESIGN_SEP"
     wb_design_rewrite "$file" "$WB_DESIGN_ASK_AWK"
     printf '%s\n' "$id"
@@ -2941,7 +3001,7 @@ mode_design_answer() {
     wb_design_path "$DESIGN_ARG" "--design"
     local file="$DESIGN_ABS" by
     [[ -f "$file" ]] || die "$file does not exist" 1
-    [[ "$(grep -c -- "^| $QID_ARG |" "$file")" -ge 1 ]] || die "no question $QID_ARG in $file" 4
+    awk "$WB_DESIGN_ROWS_AWK" "$file" | cut -d$'\037' -f1 | grep -qx -- "$QID_ARG" || die "no question $QID_ARG in $file" 4
     by="$(wb_answered_by)"
 
     init_lock_file "$file"
@@ -2970,23 +3030,67 @@ mode_design_step() {
     wb_design_rewrite "$file" "$WB_DESIGN_STEP_AWK"
 }
 
+# mode_rename_design: --rename-design FROM --to TO. A question asked before the subject is
+# known opens .aid/design/untitled-<YYYYMMDD-HHMMSS>.md; once the subject is known this
+# moves it to .aid/design/<slug>.md. When TO exists, the rows of FROM's `## Questions`
+# table are appended to TO's table, renumbered after TO's highest D id (one line
+# `D<old> -> D<new>` is printed for each), and FROM is deleted.
+mode_rename_design() {
+    [[ -n "$TO_ARG" ]] || die "--rename-design requires --to" 5
+    wb_design_path "$RENAME_ARG" "--rename-design"
+    local from="$DESIGN_ABS"
+    wb_design_path "$TO_ARG" "--to"
+    local to="$DESIGN_ABS" rows did dq da ds dby dcat id t
+    [[ -f "$from" ]] || die "$RENAME_ARG does not exist" 1
+    [[ "$from" != "$to" ]] || die "--rename-design and --to name the same file" 4
+    mkdir -p "$(dirname "$to")" || die "cannot create $(dirname "$to")" 1
+
+    init_lock_file "$to"
+    acquire_lock
+    if [[ ! -f "$to" ]]; then
+        t=$(wb_mktemp_beside "$from") || die "cannot create a temporary file beside $from" 1
+        if ! awk -v old="# $(wb_design_title "$from")" -v new="# $(wb_design_title "$to")" \
+            '!d && $0 == old { print new; d = 1; next } { print }' "$from" > "$t" || [[ ! -s "$t" ]]; then
+            rm -f "$t"
+            die "writeback sanity check failed: the rename did not apply; $from is preserved" 3
+        fi
+        mv "$t" "$to" || { rm -f "$t"; die "cannot create $to; $from is preserved" 1; }
+        rm -f "$from"
+        return 0
+    fi
+    rows=$(awk "$WB_DESIGN_ROWS_AWK" "$from")
+    export WB_HDR="$WB_DESIGN_HEADER" WB_SEP="$WB_DESIGN_SEP"
+    while IFS=$'\037' read -r did dq da ds dby dcat; do
+        [[ -n "$did" ]] || continue
+        [[ -n "$da" ]] || da="--"
+        [[ -n "$dby" ]] || dby="--"
+        [[ -n "$dcat" ]] || dcat="--"
+        id=$(wb_design_next_id "$to")
+        export WB_ROW="| $id | $(wb_design_cell "$dq") | $(wb_design_cell "$da") | $ds | $(wb_design_cell "$dby") | $(wb_design_cell "$dcat") |"
+        wb_design_rewrite "$to" "$WB_DESIGN_ASK_AWK"
+        printf '%s -> %s\n' "$did" "$id"
+    done <<< "$rows"
+    rm -f "$from"
+}
+
 # wb_stage_seed FILE REL PHASE: stage the design document FILE into the new work record:
-# one sources entry for REL, and one qa entry for each row of its `## Questions` table.
-# The document itself is not touched.
+# one sources entry for REL, and one qa entry for each row of its `## Questions` table
+# (the row's category is kept). The document itself is not touched.
 wb_stage_seed() {
-    local file="$1" rel="$2" phase="$3" rows did dq da ds dby id n=0 qa="" src now
+    local file="$1" rel="$2" phase="$3" rows did dq da ds dby dcat id n=0 qa="" src now
     rows=$(awk "$WB_DESIGN_ROWS_AWK" "$file")
     id=$(wb_qa_next_id "$STAGED")
     n="${id#Q}"
-    while IFS=$'\037' read -r did dq da ds dby; do
+    while IFS=$'\037' read -r did dq da ds dby dcat; do
         [[ -n "$did" ]] || continue
         case "$ds" in Pending|Answered|Skipped|Assumed) ;; *) ds="Pending" ;; esac
         [[ -n "$da" ]] || da="--"
         [[ -n "$dby" ]] || dby="--"
+        if [[ -z "$dcat" || "$dcat" == "--" ]]; then dcat="Design"; fi
         [[ -z "$qa" ]] || qa="$qa
 "
         qa="${qa}  - id: Q$n
-    category: 'Design'
+    category: $(wb_sq "$dcat")
     impact: Medium
     state: $ds
     asked_by: --
@@ -3227,6 +3331,7 @@ case "$MODE" in
     step|ask|answer)
         if [[ -z "$DESIGN_ARG" && "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
     pipeline|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
+    rename-design) ;;
     # The task and delivery modes find the record the same way, unless the caller has
     # already named where the work lives (AID_WORK_DIR, or the mode's own
     # file/dir override).
@@ -3255,5 +3360,6 @@ case "$MODE" in
     handoff-return)      mode_handoff_return ;;
     ask)                 mode_ask ;;
     answer)              mode_answer ;;
+    rename-design)       mode_rename_design ;;
     *) die "internal error: unknown mode '$MODE'" 1 ;;
 esac

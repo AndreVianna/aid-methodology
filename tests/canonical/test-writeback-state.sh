@@ -3461,5 +3461,138 @@ assert_output_contains "$OUT32" "--design FILE" "32f: the help text documents --
 assert_output_contains "$OUT32" "--seed FILE" "32f: the help text documents --seed"
 assert_output_contains "$OUT32" "9  --check found a problem" "32f: the help text ends with the last exit code"
 
+# --- 32g: the category column ----------------------------------------------------
+echo ""
+echo "--- 32g: --ask --design stores --category in a sixth column; --seed copies it; five-column tables still work ---"
+assert_file_contains "$D32" "| id | question | answer | state | answered_by | category |" "32g: the table head has the category column"
+assert_file_contains "$D32" "| D1 | What do you want to design? | a CLI tool | Answered | Ada | Scope |" "32g: the category is stored last and kept by --answer"
+assert_file_contains "$ST32" "category: 'Scope'" "32g: --seed copies the category into the Q entry"
+assert_eq "$(w30_qa_field "$ST32" Q1 impact)" "Medium" "32g: a seeded entry stays at impact Medium"
+P32G="${R32}/five"
+mkdir -p "${P32G}/.aid/design"
+D32G="${P32G}/.aid/design/old.md"
+cat > "$D32G" <<'DOC'
+---
+status: draft
+---
+
+# old
+
+## Questions
+
+| id | question | answer | state | answered_by |
+|---|---|---|---|---|
+| D1 | first? | yes | Answered | Bob |
+| D2 | second? | -- | Pending | -- |
+
+## Notes
+DOC
+S32G="${R32}/five-seed"
+mkdir -p "${S32G}/.aid/design" "${S32G}/.aid/works/work-001-x"
+cp "$D32G" "${S32G}/.aid/design/old.md"
+w32 "$S32G" --create --work-dir .aid/works/work-001-x --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed .aid/design/old.md
+assert_eq "$RC32" "0" "32g: --seed of a five-column table exits 0"
+assert_eq "$(w30_qa_field "${S32G}/.aid/works/work-001-x/STATE.yml" Q1 answer)" "'yes'" "32g: a five-column row reads correctly"
+assert_eq "$(w30_qa_field "${S32G}/.aid/works/work-001-x/STATE.yml" Q1 category)" "'Design'" "32g: a row with no category is seeded as Design"
+w32 "$P32G" --ask --design .aid/design/old.md --category Scope --impact Low --context 'third?' --suggested s
+assert_eq "$OUT32" "D3" "32g: --ask on a five-column table prints the next id"
+assert_file_contains "$D32G" "| id | question | answer | state | answered_by | category |" "32g: the table head gains the category column on the next write"
+assert_file_contains "$D32G" "|---|---|---|---|---|---|" "32g: the separator gains a column"
+assert_file_contains "$D32G" "| D1 | first? | yes | Answered | Bob | -- |" "32g: an old row gains an empty category"
+assert_file_contains "$D32G" "| D3 | third? | -- | Pending | -- | Scope |" "32g: the new row carries its category"
+w32 "$P32G" --answer --design .aid/design/old.md --id D2 --state Answered --value 'two'
+assert_eq "$RC32" "0" "32g: --answer on a five-column table exits 0"
+assert_file_contains "$D32G" "| D2 | second? | two | Answered | Ada | -- |" "32g: --answer writes six columns"
+
+# --- 32h: D ids are counted only inside ## Questions -----------------------------
+echo ""
+echo "--- 32h: a D-id row outside ## Questions is neither counted nor answered ---"
+D32H="${P32G}/.aid/design/body.md"
+cat > "$D32H" <<'DOC'
+# body
+
+| id | what |
+|---|---|
+| D1 | a body row |
+| D7 | another body row |
+DOC
+w32 "$P32G" --ask --design .aid/design/body.md --category Scope --impact Low --context 'q?' --suggested s
+assert_eq "$OUT32" "D1" "32h: the first question of the table is D1 whatever the body holds"
+w32 "$P32G" --answer --design .aid/design/body.md --id D1 --state Answered --value 'v'
+assert_eq "$RC32" "0" "32h: --answer D1 exits 0"
+assert_file_contains "$D32H" "| D1 | a body row |" "32h: the body row is untouched"
+assert_file_contains "$D32H" "| D1 | q? | v | Answered | Ada | Scope |" "32h: the Questions row is the one answered"
+w32 "$P32G" --answer --design .aid/design/body.md --id D7 --state Answered --value 'v'
+assert_eq "$RC32" "4" "32h: a D id that exists only outside ## Questions exits 4"
+
+# --- 32i: paths must resolve inside the project's .aid/design --------------------
+echo ""
+echo "--- 32i: --design, --seed and --rename-design paths outside <project root>/.aid/design exit 5 ---"
+OUTSIDE32="${R32}/outside"
+mkdir -p "${OUTSIDE32}/.aid/design"
+w32 "$P32" --ask --design "${OUTSIDE32}/.aid/design/x.md" --category Scope --impact Low --context q --suggested s
+assert_eq "$RC32" "5" "32i: --ask --design with an absolute path in another tree exits 5"
+assert_eq "$(w29_absent "${OUTSIDE32}/.aid/design/x.md")" "absent" "32i: nothing is written there"
+w32 "$P32" --ask --design "${P32}/.aid/design/inside.md" --category Scope --impact Low --context q --suggested s
+assert_eq "$RC32" "0" "32i: an absolute path inside the project is accepted"
+w32 "$S32" --create --work-dir .aid/works/work-003-bad --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed "${OUTSIDE32}/.aid/design/x.md"
+assert_eq "$RC32" "5" "32i: --seed with a path in another tree exits 5"
+w32 "$P32" --rename-design "${OUTSIDE32}/.aid/design/x.md" --to .aid/design/y.md
+assert_eq "$RC32" "5" "32i: --rename-design from another tree exits 5"
+w32 "$P32" --rename-design .aid/design/inside.md --to "${OUTSIDE32}/.aid/design/y.md"
+assert_eq "$RC32" "5" "32i: --rename-design to another tree exits 5"
+GIT32="${R32}/gitproj"
+mkdir -p "${GIT32}/sub"
+(cd "$GIT32" && git init -q .)
+w32 "${GIT32}/sub" --ask --design .aid/design/x.md --category Scope --impact Low --context q --suggested s
+assert_eq "$RC32" "5" "32i: from a sub-folder of a git project, a relative path to the sub-folder's own .aid/design exits 5"
+w32 "${GIT32}/sub" --ask --design "${GIT32}/.aid/design/x.md" --category Scope --impact Low --context q --suggested s
+assert_eq "$RC32" "0" "32i: the project root's .aid/design is accepted from a sub-folder"
+
+# --- 32j: --rename-design --------------------------------------------------------
+echo ""
+echo "--- 32j: --rename-design moves a document, or merges its questions into an existing one ---"
+P32J="${R32}/rename"
+mkdir -p "$P32J"
+w32 "$P32J" --ask --design .aid/design/untitled-20260101-101010.md --category Scope --impact High \
+    --context 'what do you want?' --suggested s
+assert_eq "$OUT32" "D1" "32j: the first question opens the untitled document"
+w32 "$P32J" --answer --design .aid/design/untitled-20260101-101010.md --id D1 --state Answered --value 'a parser'
+w32 "$P32J" --step INTAKE --design .aid/design/untitled-20260101-101010.md --detail 'naming'
+w32 "$P32J" --rename-design .aid/design/untitled-20260101-101010.md --to .aid/design/parser.md
+assert_eq "$RC32" "0" "32j: --rename-design to a new name exits 0"
+assert_eq "$(w29_absent "${P32J}/.aid/design/untitled-20260101-101010.md")" "absent" "32j: the old file is gone"
+assert_file_contains "${P32J}/.aid/design/parser.md" "| D1 | what do you want? | a parser | Answered | Ada | Scope |" "32j: the row moved intact"
+assert_file_contains "${P32J}/.aid/design/parser.md" "step: INTAKE" "32j: the frontmatter moved with it"
+assert_file_contains "${P32J}/.aid/design/parser.md" "# parser" "32j: the skeleton title follows the new name"
+w32 "$P32J" --ask --design .aid/design/untitled-20260202-202020.md --category Approval --impact High \
+    --context 'go ahead?' --suggested yes
+w32 "$P32J" --ask --design .aid/design/untitled-20260202-202020.md --category Scope --impact Low \
+    --context 'which formats?' --suggested json
+w32 "$P32J" --answer --design .aid/design/untitled-20260202-202020.md --id D2 --state Skipped
+w32 "$P32J" --rename-design .aid/design/untitled-20260202-202020.md --to .aid/design/parser.md
+assert_eq "$RC32" "0" "32j: --rename-design onto an existing document exits 0"
+assert_output_contains "$OUT32" "D1 -> D2" "32j: the first moved row is reported with its new id"
+assert_output_contains "$OUT32" "D2 -> D3" "32j: the second moved row is reported with its new id"
+assert_eq "$(w29_absent "${P32J}/.aid/design/untitled-20260202-202020.md")" "absent" "32j: the merged file is deleted"
+assert_file_contains "${P32J}/.aid/design/parser.md" "| D1 | what do you want? | a parser | Answered | Ada | Scope |" "32j: the target's own row keeps its id"
+assert_file_contains "${P32J}/.aid/design/parser.md" "| D2 | go ahead? | -- | Pending | -- | Approval |" "32j: a Pending row is appended after the target's highest id"
+assert_file_contains "${P32J}/.aid/design/parser.md" "| D3 | which formats? | -- | Skipped | Ada | Scope |" "32j: the state and answered_by of a moved row are kept"
+assert_eq "$(grep -c '^| D[0-9]' "${P32J}/.aid/design/parser.md")" "3" "32j: the target holds all three rows"
+w32 "$P32J" --rename-design .aid/design/none.md --to .aid/design/parser.md
+assert_eq "$RC32" "1" "32j: --rename-design of a missing file exits 1"
+w32 "$P32J" --rename-design .aid/design/parser.md --to .aid/design/parser.md
+assert_eq "$RC32" "4" "32j: --rename-design onto itself exits 4"
+w32 "$P32J" --rename-design .aid/design/parser.md
+assert_eq "$RC32" "5" "32j: --rename-design without --to exits 5"
+w32 "$P32J" --rename-design .aid/design/parser.md --to .aid/design/p2.md --design .aid/design/parser.md
+assert_eq "$RC32" "5" "32j: --rename-design with --design exits 5"
+w32 "$P32J" --rename-design .aid/design/parser.md --to .aid/design/p2.md --ask
+assert_eq "$RC32" "5" "32j: --rename-design with another mode exits 5"
+w32 "$P32J" --help
+assert_output_contains "$OUT32" "--rename-design FROM --to TO" "32j: the help text documents --rename-design"
+
 test_summary
 exit $?
