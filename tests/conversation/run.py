@@ -27,6 +27,8 @@ and wiring (ENV_DROP_NAMES, ENV_DROP_PREFIXES); auth, provider, proxy and CA var
 Sample file (samples/feature-NNN/<id>.md):
   frontmatter        id, covers, fixture (required); branch (optional: the fixture gets a work branch of
                      that name with one commit of its own, and the default branch stays checked out);
+                     on-branch (optional: the run starts on a new branch of that name, made from the
+                     fixture baseline, as when the user works in the work's own checkout);
                      any other key is kept and ignored (Feature 002's samples add skills:)
   ## User            the first paragraph is the opening message; the whole section is the persona
   ## Answer sheet    all the simulated user knows
@@ -561,6 +563,9 @@ def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: P
         git_in(fixture, "checkout", "-q", "-b", branch)
         git_in(fixture, "commit", "-q", "--allow-empty", "-m", f"{branch} work commit")
         git_in(fixture, "checkout", "-q", "-")
+    on_branch = sample.meta.get("on-branch", "")
+    if on_branch:  # the run starts on a work branch of that name, as in the work's own checkout
+        git_in(fixture, "checkout", "-q", "-b", on_branch)
     return fixture, home
 
 

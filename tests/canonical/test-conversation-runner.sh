@@ -534,6 +534,34 @@ I need help with the feature.
 - ref-unchanged work-x
 - ref-unchanged no-such-branch
 EOF
+cat > "$T/samples/feature-900/s-onbranch.md" <<'EOF'
+---
+id: s-onbranch
+covers: a fixture whose run starts on a work branch
+fixture: stub
+on-branch: work-y
+---
+
+## User
+
+I need help with the feature.
+
+## Answer sheet
+
+- The feature is the stub feature.
+
+## Expected outcome
+
+1. The assistant replies.
+
+## Must not
+
+1. Push anything.
+
+## Checks
+
+- ref-unchanged work-y
+EOF
 cat > "$T/samples-bad/feature-900/s-bad.md" <<'EOF'
 ---
 id: s-bad
@@ -652,6 +680,7 @@ need_pass()    { need pass invoke pass two-turns clean --sample s-pass --runs 1;
 need_checks()  { need checks invoke checks two-turns clean --sample s-checks-fail --runs 1; }
 need_branch()  { need branch invoke branch end-after-one clean --sample s-branch --runs 1; }
 need_branch_move() { STUB_MOVE_REF=1 need branchmove invoke branchmove end-after-one clean --sample s-branch --runs 1; }
+need_onbranch_move() { STUB_MOVE_REF=1 need onbranchmove invoke onbranchmove end-after-one clean --sample s-onbranch --runs 1; }
 need_grammar() { STUB_PUSH=1 need grammar invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
 need_flaky()   { need flaky invoke flaky end-after-one flaky --sample s-pass --runs 3; }
 need_clean3()  { need clean3 invoke clean3 end-after-one clean --sample s-pass --runs 3; }
@@ -1375,6 +1404,15 @@ PYRC
     INVOKE_RUNNER="$MUT_PATH" invoke nobranch end-after-one clean --sample s-branch --runs 1
     assert_file_contains "$(any_run_dir "$T/log/nobranch.out")/checks.txt" "FAIL ref-unchanged work-x -- no branch 'work-x' before the run" \
         "RF09 a runner that ignores branch: leaves the fixture without the work branch, and RF05 fails on it"
+    # the on-branch: key: the run starts on that branch, so a commit the agent makes lands on it
+    need_onbranch_move
+    await_runs
+    assert_file_contains "$(any_run_dir "$T/log/onbranchmove.out")/checks.txt" "FAIL ref-unchanged work-y -- work-y moved or was removed" \
+        "RF10 a sample with on-branch: starts its run on that branch (the agent's commit moves it)"
+    make_mutant noonbranch 'if on_branch:  # the run starts' 'if False:  # the run starts'
+    STUB_MOVE_REF=1 INVOKE_RUNNER="$MUT_PATH" invoke noonbranch end-after-one clean --sample s-onbranch --runs 1
+    assert_file_contains "$(any_run_dir "$T/log/noonbranch.out")/checks.txt" "FAIL ref-unchanged work-y -- no branch 'work-y' before the run" \
+        "RF11 a runner that ignores on-branch: leaves the fixture without the branch, and RF10 fails on it"
 }
 
 # ---------------------------------------------------------------- CLEAN
