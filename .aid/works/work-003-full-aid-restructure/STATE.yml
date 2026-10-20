@@ -1927,3 +1927,11 @@ qa:
     suggested: '1 and 2: cap the delivery review (one full review, one fix round, one verify-only pass; new MEDIUM/LOW to the backlog) and cap the sample fixes (one fix round, then a known issue, as Q149)'
     answer: '1 and 2 (maintainer), on the recommendation that kept safety samples (never-merges and the like) blocking until they pass. Replaces Q143''s review-to-A loop from delivery-003 on.'
     applied_to: 'PLAN.md How deliveries 001-009 are built, steps 3 and 5; G0 samples line'
+  - id: Q167
+    category: Building
+    impact: High
+    state: Answered
+    context: 'task-080 smoke run: in 7 of 10 Feature 002 samples the agent did not use the question protocol form (subject and importance line, Why I ask, My recommendation, one question per message). The agent reads rules.md first and never opens question-protocol.md; the skills only point to it.'
+    suggested: '1: add a short Asking the user section to rules.md with the form block and the core rules'
+    answer: '1 (maintainer).'
+    applied_to: 'canonical/aid/rules.md, in the delivery-003 review fix round'
