@@ -71,3 +71,12 @@ issue you should have caught, that is a self-review gap.
 
 Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
+
+## Talking with the user
+
+A sub-agent never asks the user. Its questions go to the main conversation, which is the only one
+that can talk with the user.
+
+- Each open question is recorded with `writeback-state.sh --ask`, left `Pending`, so the work keeps it.
+- The sub-agent lists every such question in its report, so the main conversation can see it.
+- The main conversation asks the questions, following `.aid/runtime/templates/question-protocol.md`.
