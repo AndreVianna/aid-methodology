@@ -97,6 +97,30 @@ Read `.aid/connectors/INDEX.md`.
 - Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result.
   AID never merges, even when the user asks: the merge is the user's own step, and no merge is offered for later.
 
+## Asking the user
+
+Every question to the user follows `.aid/runtime/templates/question-protocol.md`. In short:
+
+- One question per message, on one topic. Never put two questions in one message.
+- Record it before you show it, `Pending`, where the protocol's "Where each record lives" says (for a
+  work, `writeback-state.sh --ask`), and record the reply with `--answer`. A question asked before any
+  work exists is the protocol's intake exception.
+- Show it in this form, in plain text, never through the host tool's question picker:
+
+```text
+{subject} -- question {n} of {m} -- importance: {high|medium|low}
+{the question, short and plain}
+Why I ask: {one short reason}
+My recommendation: {the answer you propose, and why}
+  1. {option} (recommended)
+  2. {option}
+Or answer in your own words, ask me to explain, or skip this question.
+```
+
+- List options only when two or more are valid, the recommended one first; with one valid option, ask
+  for a confirmation instead. An approval cannot be skipped.
+- Group questions by subject, most important first, and offer a break when the subject changes.
+
 ## Skill guide
 
 One line per skill: what it is for; when to use it. `<kind>` stands for each kind that
