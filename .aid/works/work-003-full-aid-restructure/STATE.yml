@@ -490,6 +490,10 @@ review_history:
     event: 'Delivery-001 gate passed'
     outcome: 'Stanza criteria pass; samples 22 of 48 runs, 5 of 16 at 3 of 3, rest in KI-007 (Q149); G0 passes but for the 9 machine-limit suites; tracking proof under Q151; coverage baseline from both machines (Q153); Codex review h001 found 4 runner defects, fixed in task-370 (A+)'
     notes: 'Gate report: analysis/delivery-001-gate.md'
+  - date: '2026-10-20'
+    event: 'Delivery-002 verification (Opus review, Q143)'
+    outcome: 'Cycle 1 81 open rows (1 CRITICAL, 26 HIGH) -> cycle 2 53 -> cycle 3 42 -> cycle 4 31 -> cycle 5 verify 9 -> cycle 6 verify 2 -> cycle 7 verify A+ (0 open); new MEDIUM/LOW filed as OOS in the KB backlog (Q162): W7-22, W7-25..W7-28'
+    notes: 'Ledgers in analysis/delivery-002-review-c1-a1..c7.md; full suite: only the known machine-limit and resync-lag suites fail (test-chat-node-federation passed alone); next: the resync, committed alone, then /reload-skills, the samples and the gate'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
