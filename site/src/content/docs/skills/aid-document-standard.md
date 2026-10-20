@@ -80,7 +80,7 @@ row (`alias_of: null`, its own `{verb: document, artifact: standard}`), `repurpo
 ~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L50-L52" wrap
 ## State: INTAKE
 
-INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-steps.md`, "Before a work exists"). Their questions are asked through the question protocol, and their answers go into the record when ALLOCATE creates it.
+INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-steps.md`, "Before a work exists"). Their questions are asked through the question protocol and recorded in a design document under `.aid/design/`, and ALLOCATE takes that document into the work.
 ~~~~
 
 [Source: `canonical/skills/aid-create-document/SKILL.md#L50-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L50-L52) · [full step: `canonical/skills/aid-create-document/SKILL.md#L50-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L50-L68)

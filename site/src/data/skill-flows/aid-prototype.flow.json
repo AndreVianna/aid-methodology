@@ -17,14 +17,14 @@
         "startLine": 33,
         "endLine": 35,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists)."
+        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
         "startLine": 33,
         "endLine": 49,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).\n\n1. **Check the direction.** Note whether the argument is empty. Do not ask here.\n2. **Capture (thin):** direction/hypothesis; fidelity (`paper` | `low-fi` | `runnable\n   spike`, default `low-fi`); the success signal that would validate it; the scope\n   boundary (what it does NOT attempt -- keeps it throwaway).\n3. **Pick the path:** **Fast** -- a clear direction + success signal -> build now.\n   **Guided** -- vague (\"prototype something for onboarding\") -> scope direction / success\n   signal / fidelity first, in INTAKE-ASK.\n4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /\n   medium**; complex (a runnable spike, a rich flow) -> **opus / high**.\n5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record.\n\n1. **Check the direction.** Note whether the argument is empty. Do not ask here.\n2. **Capture (thin):** direction/hypothesis; fidelity (`paper` | `low-fi` | `runnable\n   spike`, default `low-fi`); the success signal that would validate it; the scope\n   boundary (what it does NOT attempt -- keeps it throwaway).\n3. **Pick the path:** **Fast** -- a clear direction + success signal -> build now.\n   **Guided** -- vague (\"prototype something for onboarding\") -> scope direction / success\n   signal / fidelity first, in INTAKE-ASK.\n4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /\n   medium**; complex (a runnable spike, a rich flow) -> **opus / high**.\n5. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -44,9 +44,9 @@
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
         "startLine": 53,
-        "endLine": 63,
+        "endLine": 65,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What direction do you want to validate?\").\n   The answer is the direction; the path and complexity are then\n   set from it.\n2. **Guided path** -> scope the success signal (what would tell you it works) and the fidelity, one question at a time.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What direction do you want to validate?\").\n   The answer is the direction; the path and complexity are then\n   set from it.\n2. **Guided path** -> scope the success signal (what would tell you it works) and the fidelity, one question at a time.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\nRecord each of these questions in a design document before it is shown, and its reply after it, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {
@@ -58,17 +58,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 67,
-        "endLine": 70,
+        "startLine": 69,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 67,
-        "endLine": 87,
+        "startLine": 69,
+        "endLine": 89,
         "sourceKind": "skill",
-        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name\n  (`aid-prototype`), its saved step (`BUILD`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the\n  direction. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. For a **runnable spike**,\n  associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`\n  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-prototype` writes none.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the direction, the fidelity, the success signal, the scope\nboundary and the complexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN → [State: BUILD]."
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name\n  (`aid-prototype`), with `--seed .aid/design/<slug>.md` on the gate's `--create` when INTAKE-ASK recorded any question (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record), its saved step (`BUILD`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the\n  direction. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. For a **runnable spike**,\n  associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`\n  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-prototype` writes none.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the direction, the fidelity, the success signal, the scope\nboundary and the complexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN → [State: BUILD]."
       }
     },
     {
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 91,
-        "endLine": 98,
+        "startLine": 93,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "## State: BUILD\n\nDispatch **`aid-architect`** (clean context, tiered) to build the low-fidelity model of\nthe direction and capture the validation signal. A \"runnable spike\" is **throwaway code\nwritten by this same `aid-architect` dispatch** -- deliberately NOT `aid-developer` (whose\njob is production code), keeping the throwaway/non-production boundary crisp. All artifacts\nstay in the work folder / opt-in worktree and **never touch production modules**. It writes\na validation assessment (see [Deliverable](#deliverable)) into the work folder."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 91,
-        "endLine": 100,
+        "startLine": 93,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "## State: BUILD\n\nDispatch **`aid-architect`** (clean context, tiered) to build the low-fidelity model of\nthe direction and capture the validation signal. A \"runnable spike\" is **throwaway code\nwritten by this same `aid-architect` dispatch** -- deliberately NOT `aid-developer` (whose\njob is production code), keeping the throwaway/non-production boundary crisp. All artifacts\nstay in the work folder / opt-in worktree and **never touch production modules**. It writes\na validation assessment (see [Deliverable](#deliverable)) into the work folder.\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -102,15 +102,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 104,
-        "endLine": 111,
+        "startLine": 106,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (LIGHT -- do not polish-grade a rough model)\n\nA prototype is *deliberately* low-fidelity, so this is a single light clean-context check\n(not the full adversarial loop the other collapses run): dispatch **`aid-reviewer`** once to\nconfirm (a) the **\"success signal observed\" claim is honest and grounded** in what was\nactually built, and (b) the **throwaway scope was respected** -- no production code snuck in,\nnothing was committed to real modules. If the check fails, return to BUILD once to correct;\ndo not loop on polish."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 104,
-        "endLine": 113,
+        "startLine": 106,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (LIGHT -- do not polish-grade a rough model)\n\nA prototype is *deliberately* low-fidelity, so this is a single light clean-context check\n(not the full adversarial loop the other collapses run): dispatch **`aid-reviewer`** once to\nconfirm (a) the **\"success signal observed\" claim is honest and grounded** in what was\nactually built, and (b) the **throwaway scope was respected** -- no production code snuck in,\nnothing was committed to real modules. If the check fails, return to BUILD once to correct;\ndo not loop on polish.\n\n**Advance:** CHAIN → [State: BUILD] when the check fails the first time; otherwise CHAIN → [State: PRESENT]."
       }
@@ -124,15 +124,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 117,
-        "endLine": 121,
+        "startLine": 119,
+        "endLine": 123,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the throwaway model + the validation\nassessment: **Direction · What was built (fidelity) · Success signal — observed or not ·\nWhat we learned · viable? (a conclusion, not a resolution).** Assert no resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 117,
-        "endLine": 123,
+        "startLine": 119,
+        "endLine": 125,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the throwaway model + the validation\nassessment: **Direction · What was built (fidelity) · Success signal — observed or not ·\nWhat we learned · viable? (a conclusion, not a resolution).** Assert no resolution.\n\n**Advance:** ASK → [State: HANDOFF]."
       }
@@ -146,15 +146,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 127,
-        "endLine": 132,
+        "startLine": 129,
+        "endLine": 134,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: build the validated thing for real\n(`/aid-create*`, or `/aid-design` first if a kept design is wanted), or test it with users\n(`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution. Ask which one, if\nany, the user takes; a picked one is named in one plain line."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 127,
-        "endLine": 134,
+        "startLine": 129,
+        "endLine": 136,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: build the validated thing for real\n(`/aid-create*`, or `/aid-design` first if a kept design is wanted), or test it with users\n(`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution. Ask which one, if\nany, the user takes; a picked one is named in one plain line.\n\n**Advance:** ASK → [State: DONE]."
       }
@@ -171,15 +171,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 138,
-        "endLine": 140,
+        "startLine": 140,
+        "endLine": 142,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted to production."
       },
       "detail": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 138,
-        "endLine": 142,
+        "startLine": 140,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted to production.\n\n**Advance:** HALT."
       }
@@ -222,8 +222,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 63,
-        "endLine": 63,
+        "startLine": 65,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: ALLOCATE]."
       }
@@ -236,8 +236,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 89,
+        "endLine": 89,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: BUILD]."
       }
@@ -250,8 +250,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -264,8 +264,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: BUILD] when the check fails the first time; otherwise CHAIN → [State: PRESENT]."
       }
@@ -278,8 +278,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: BUILD] when the check fails the first time; otherwise CHAIN → [State: PRESENT]."
       }
@@ -292,8 +292,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 123,
-        "endLine": 123,
+        "startLine": 125,
+        "endLine": 125,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: HANDOFF]."
       }
@@ -306,8 +306,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-prototype/SKILL.md",
-        "startLine": 134,
-        "endLine": 134,
+        "startLine": 136,
+        "endLine": 136,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: DONE]."
       }

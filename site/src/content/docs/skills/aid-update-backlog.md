@@ -79,7 +79,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 7. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
    `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
    `initiator: aid-update-backlog`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
-   record and saves nothing). `phase` is not driven.
+   record and saves nothing), and `--seed .aid/design/backlog.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
 ~~~~
 
 [Source: `canonical/skills/aid-update-backlog/SKILL.md#L45-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L45-L65) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L45-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L45-L70)

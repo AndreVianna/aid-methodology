@@ -80,8 +80,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 8. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work
    Initiation Gate exactly as the contract's Allocation rule requires
-   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-cicd`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
+   (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with
+   `initiator: aid-update-cicd`, saved step `UPDATE` (INTAKE runs before the record and saves nothing), and `--seed .aid/design/cicd.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
 ~~~~
 
 [Source: `canonical/skills/aid-update-cicd/SKILL.md#L54-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L54-L80) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L54-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L54-L85)
