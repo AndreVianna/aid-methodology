@@ -3482,6 +3482,59 @@ w32 "$W32" --create --work-dir .aid/works/work-011-z --reading 'new capability' 
 assert_eq "$RC32" "5" "32e2: a file in neither root exits 5"
 assert_eq "$(w29_absent "${W32}/.aid/works/work-011-z/STATE.yml")" "absent" "32e2: a refused --seed creates no record"
 
+# --- 32e3: a stale committed seed in the worktree; the main checkout's copy wins ----
+echo ""
+echo "--- 32e3: --create --seed prefers the main checkout's differing copy, and copies only after the refusal checks ---"
+M32b="${R32}/gitmain2"
+W32b="${R32}/gitwt2"
+mkdir -p "${M32b}/.aid/design"
+(cd "$M32b" && git init -q . && git config user.name Ada && git config user.email a@example.com \
+    && echo base > README.md && printf -- '---\nstatus: draft\n---\n# Backlog\n' > .aid/design/backlog.md \
+    && git add -A && git commit -q -m base) >/dev/null 2>&1
+w32 "$M32b" --ask --design .aid/design/backlog.md --category Scope --impact High --context 'First?' --suggested a
+w32 "$M32b" --ask --design .aid/design/backlog.md --category Scope --impact Low --context 'Second?' --suggested b
+(cd "$M32b" && git worktree add -q -b work-020-b "$W32b") >/dev/null 2>&1
+# the worktree holds the committed copy; the main checkout's uncommitted edits arrive after
+git -C "$M32b" stash -q >/dev/null 2>&1
+(cd "$M32b" && git worktree remove --force "$W32b" && git worktree add -q -b work-021-b "$W32b") >/dev/null 2>&1
+git -C "$M32b" stash pop -q >/dev/null 2>&1
+assert_eq "$(grep -c '^| D' "${W32b}/.aid/design/backlog.md")" "0" "32e3: the worktree holds the committed copy, without the questions"
+assert_eq "$(grep -c '^| D' "${M32b}/.aid/design/backlog.md")" "2" "32e3: the main checkout holds the uncommitted questions"
+mkdir -p "${W32b}/.aid/works/work-021-b"
+w32 "$W32b" --create --work-dir .aid/works/work-021-b --reading 'new capability' --request 'build it' \
+    --skill aid-create --step s1 --seed .aid/design/backlog.md
+assert_eq "$RC32" "0" "32e3: --create --seed exits 0"
+assert_output_contains "$OUT32" "seed: .aid/design/backlog.md taken from the main checkout" "32e3: one stderr line says the main copy was taken"
+assert_eq "$(printf '%s\n' "$OUT32" | grep -c '^seed: ')" "1" "32e3: the line is printed once"
+assert_eq "$(cksum < "${W32b}/.aid/design/backlog.md")" "$(cksum < "${M32b}/.aid/design/backlog.md")" "32e3: the worktree file equals the main copy"
+assert_eq "$(grep -c '^  - id: Q' "${W32b}/.aid/works/work-021-b/STATE.yml")" "2" "32e3: the main checkout's two questions moved into the qa"
+
+# (b) identical copies: nothing printed, nothing changed
+(cd "$W32b" && git add -A . >/dev/null 2>&1; true)
+mkdir -p "${W32b}/.aid/works/work-022-b"
+BEFORE32="$(cksum < "${W32b}/.aid/design/backlog.md")"
+w32 "$W32b" --create --work-dir .aid/works/work-022-b --reading 'new capability' --request 'build it' \
+    --skill aid-create --step s1 --seed .aid/design/backlog.md
+assert_eq "$RC32" "0" "32e3: identical copies: --create --seed exits 0"
+assert_eq "$(printf '%s\n' "$OUT32" | grep -c '^seed: ')" "0" "32e3: identical copies print no seed line"
+assert_eq "$(cksum < "${W32b}/.aid/design/backlog.md")" "$BEFORE32" "32e3: identical copies leave the worktree file unchanged"
+
+# (c) a refused --create (exit 8) leaves no copied seed behind
+M32c="${R32}/gitmain3"
+W32c="${R32}/gitwt3"
+mkdir -p "${M32c}/.aid/design"
+(cd "$M32c" && git init -q . && git config user.name Ada && git config user.email a@example.com \
+    && echo base > README.md && git add README.md && git commit -q -m base \
+    && git worktree add -q -b work-023-c "$W32c") >/dev/null 2>&1
+cp "$D32" "${M32c}/.aid/design/z.md"
+mkdir -p "${W32c}/.aid/works/work-023-c"
+echo "existing" > "${W32c}/.aid/works/work-023-c/STATE.yml"
+w32 "$W32c" --create --work-dir .aid/works/work-023-c --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed .aid/design/z.md
+assert_eq "$RC32" "8" "32e3: --create onto an existing STATE.yml exits 8"
+assert_eq "$(w29_absent "${W32c}/.aid/design/z.md")" "absent" "32e3: the refused --create left no copied seed behind"
+assert_eq "$(cat "${W32c}/.aid/works/work-023-c/STATE.yml")" "existing" "32e3: the existing STATE.yml is untouched"
+
 # --- 32f: --by is removed --------------------------------------------------------
 echo ""
 echo "--- 32f: --by is an unknown argument ---"

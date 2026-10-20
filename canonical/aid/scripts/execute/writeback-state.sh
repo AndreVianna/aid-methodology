@@ -199,8 +199,13 @@
 #       project root is the git top level, else the current directory; the same rule holds
 #       for every --design and --rename-design path. --seed alone also accepts a file in the
 #       MAIN worktree's .aid/design/ (the work's own worktree does not hold a design written
-#       just before it): it is looked up in the project root first, else in the main worktree,
-#       and a file found only there is copied to the same relative path in the current tree.
+#       just before it, and its tracked copy there may be stale): inside a linked worktree the
+#       main worktree's copy is the source of truth for questions asked before the work existed.
+#       When both trees hold the file and the copies differ, the main copy is copied over the
+#       worktree copy and `seed: <path> taken from the main checkout` is printed to stderr;
+#       identical copies change nothing; a file found only in one tree is used as it is (a main-only
+#       file is copied to the same relative path in the current tree). In the main worktree nothing
+#       is copied. A copy is made only after every refusal check (including exit 8) has passed.
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
@@ -357,7 +362,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,321p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,327p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -2476,6 +2481,7 @@ mode_create() {
     if [[ -e "$STATE_FILE" ]]; then
         die "$STATE_FILE already exists; --create does not overwrite a work record" 8
     fi
+    wb_seed_apply
 
     wb_stage_begin "$template" "$STATE_FILE"
     wb_stage "intent.reading" "$READING_ARG"
@@ -2828,8 +2834,10 @@ wb_design_path() {
 # wb_seed_path FILE: resolves a --seed FILE into DESIGN_ABS / DESIGN_REL. The file is looked
 # up in this project root's .aid/design/ first, else in the main worktree's .aid/design/
 # (the parent of the git common dir); those two roots are the only ones allowed. A file
-# found only in the main worktree is copied to the same relative path in this tree, so the
-# work branch carries it. Exits 5 when the path is outside both or the file is in neither.
+# found only in the main worktree, or found in both but differing, is taken from the main
+# worktree (its copy holds the questions asked before the work existed). It is only recorded
+# here (SEED_COPY_FROM); wb_seed_apply copies it once the refusal checks have passed.
+# Exits 5 when the path is outside both or the file is in neither.
 wb_seed_path() {
     local raw="$1" abs part out="" parts root main common rel
     root="$(git rev-parse --show-toplevel 2>/dev/null)" || root=""
@@ -2855,16 +2863,34 @@ wb_seed_path() {
     else
         die "--seed '$raw' must be a file inside this project's .aid/design/ (or the main checkout's)" 5
     fi
+    SEED_COPY_FROM=""
+    SEED_COPY_NOTE=0
     if [[ -f "$root/$rel" ]]; then
-        :
+        # A linked worktree holds the tracked copy as committed; the questions asked before the
+        # work existed were recorded in the main checkout's copy, so that copy wins when they differ.
+        if [[ -n "$main" && "$main" != "$root" && -f "$main/$rel" ]] && ! cmp -s "$main/$rel" "$root/$rel"; then
+            SEED_COPY_FROM="$main/$rel"
+            SEED_COPY_NOTE=1
+        fi
     elif [[ -n "$main" && "$main" != "$root" && -f "$main/$rel" ]]; then
-        mkdir -p "$(dirname "$root/$rel")" && cp "$main/$rel" "$root/$rel" \
-            || die "cannot copy --seed file into $root/$rel" 1
+        SEED_COPY_FROM="$main/$rel"
     else
         die "--seed file does not exist: $raw" 5
     fi
     DESIGN_ABS="$root/$rel"
     DESIGN_REL="$rel"
+}
+
+# wb_seed_apply: the copy wb_seed_path decided on, made only after every refusal check has
+# passed so that a refused --create writes nothing. Prints one line to stderr when it replaced
+# a differing copy.
+wb_seed_apply() {
+    [[ -n "${SEED_COPY_FROM:-}" ]] || return 0
+    mkdir -p "$(dirname "$DESIGN_ABS")" && cp "$SEED_COPY_FROM" "$DESIGN_ABS" \
+        || die "cannot copy --seed file into $DESIGN_ABS" 1
+    if [[ "$SEED_COPY_NOTE" == 1 ]]; then
+        echo "seed: $DESIGN_REL taken from the main checkout" >&2
+    fi
 }
 
 # wb_design_cell VALUE: VALUE as one table cell: line breaks become spaces, `|` is escaped.
