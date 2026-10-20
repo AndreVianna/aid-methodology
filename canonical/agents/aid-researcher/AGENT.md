@@ -48,6 +48,6 @@ You are the Researcher — the information-gathering and analysis specialist in 
 
 ## When to Escalate
 - Cannot access a resource → report to Orchestrator
-- Requirements are ambiguous → record the question with `writeback-state.sh --ask` in the work's `STATE.yml` `qa:` list, left `Pending`
-- Evidence contradicts itself → document both sides, record the question with `writeback-state.sh --ask`, left `Pending`, and flag it for human decision
-- Knowledge gap blocks another phase → record the question with `writeback-state.sh --ask --project` in `.aid/STATE.yml`, left `Pending`
+- Requirements are ambiguous → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml` `qa:` list, left `Pending`
+- Evidence contradicts itself → document both sides, record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user), left `Pending`, and flag it for human decision
+- Knowledge gap blocks another phase → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml`, left `Pending` (while building the Knowledge Base, with no work, list it in the report for the dispatching skill's Q&A queue instead)

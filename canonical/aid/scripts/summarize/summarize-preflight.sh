@@ -31,7 +31,7 @@ if ! grep -qE '^(> *)?\*\*User Approved:\*\* yes' "$KB_DIR/STATE.md"; then
     APPROVAL_VALUE=$(grep -mE '^(> *)?\*\*User Approved:\*\*' "$KB_DIR/STATE.md" 2>/dev/null | head -1 | sed -E 's/^(> *)?\*\*User Approved:\*\* *//')
     APPROVAL_VALUE="${APPROVAL_VALUE:-not set}"
     err "Knowledge Base discovery is not yet approved. Current status: **User Approved:** $APPROVAL_VALUE" \
-        "Run /aid-discover until it reaches APPROVAL state and approve the KB. Then re-run /aid-summarize."
+        "Run /aid-discover until it reaches APPROVAL state and approve the KB. The Knowledge Base summary is built from an approved KB."
 fi
 
 # Check 3: at least one populated KB document

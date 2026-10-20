@@ -36,7 +36,7 @@
 # This is the single state file for THIS work -- the full dev lifecycle from
 # req to spec to plan to impl to deploy. One STATE.yml per
 # .aid/works/work-NNN-{name}/ directory. See also: per-delivery
-# delivery-NNN/STATE.yml (delivery lifecycle + gate + delivery-scoped Q&A +
+# delivery-NNN/STATE.yml (delivery lifecycle + gate +
 # derived task rollup) and per-task delivery-NNN/tasks/task-NNN/STATE.yml
 # (mutable task cells).
 #

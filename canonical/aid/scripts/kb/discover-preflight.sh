@@ -61,7 +61,7 @@ echo "STATE.md present."
 # also verify visually via the Claude Code interface.
 if [ "${CLAUDE_MODE:-}" = "plan" ]; then
   echo "ERROR: Plan Mode detected. Discovery needs to write files."
-  echo "       Press Shift+Tab to switch out of Plan Mode, then re-run /aid-discover."
+  echo "       Press Shift+Tab to switch out of Plan Mode; discovery cannot write files in it."
   exit 2
 fi
 

@@ -77,6 +77,10 @@ for the full protocol.
 A sub-agent never asks the user. Its questions go to the main conversation, which is the only one
 that can talk with the user.
 
-- Each open question is recorded with `writeback-state.sh --ask`, left `Pending`, so the work keeps it.
+- Each open question is recorded `Pending` where `question-protocol.md` § Where each record lives
+  says: while working on a work, in that work's `STATE.yml` with
+  `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category <subject> --impact High|Medium|Low --context '<the question>' --suggested '<the recommendation>'`;
+  while building the Knowledge Base (no work exists), the question goes into the file the dispatching
+  skill names for it (for `aid-discover`, `.aid/knowledge/.scout-questions.tmp`), never through the writer.
 - The sub-agent lists every such question in its report, so the main conversation can see it.
 - The main conversation asks the questions, following `.aid/runtime/templates/question-protocol.md`.

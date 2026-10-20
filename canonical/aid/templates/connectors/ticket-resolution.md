@@ -133,22 +133,32 @@ Parse rules:
 - **`create`/`update` always preview before writing.** Show the user the **exact**
   payload that will be sent, then gate on a single in-invocation confirm, asked in plain
   text through the question protocol, **before** the MCP write call (REQUIREMENTS.md NFR-2). No skill ever writes to a tracker without this explicit confirm.
-- **This is an ASK advance.** The user decides at this gate, so the step advances with
-  `ASK` under [`../skill-steps.md`](../skill-steps.md) § "The advance words": the confirm
-  question is asked and answered inline, in the same invocation, and the write follows
-  the answer. The skill never writes before that answer.
-- **`create`'s confirm gate folds in the level pick.** When the level is neither
-  explicit (`--level`) nor inferable from the description, the pick **is** part of
-  this same gate — an `epic|story|task` choice presented alongside the payload
-  preview, never a separate pre-write prompt -- no new silent behaviour and no new
-  write. A description-inferred level is
-  surfaced here too, for explicit confirmation — never silently applied. The preview
+- **This is a pause inside the step, not an ASK advance.** The tracker write follows the answer,
+  and `ASK` is used only when no write that depends on the answer remains in the step
+  ([`../skill-steps.md`](../skill-steps.md) § "The advance words"). So the confirm question is
+  asked and answered inline, in the same invocation, the write follows the answer, and the step
+  ends with `CHAIN`. The skill never writes before that answer.
+- **`create` asks the level first, as its own question.** When the level is neither
+  explicit (`--level`) nor inferable from the description, the skill first asks one question
+  on that one topic (`epic`, `story` or `task`, with Why I ask and My recommendation, per
+  the question protocol), before the payload preview. It is still not a write: no tracker call
+  is made until the confirmation below. A description-inferred level is surfaced in the
+  confirmation for explicit confirmation -- never silently applied. The preview
   always shows the **concrete resolved issue-type** (or the graceful-degradation note
-  — see Level Resolution) and any **parent** link (or a no-hierarchy note — see
-  Parent Resolution), followed by:
+  -- see Level Resolution) and any **parent** link (or a no-hierarchy note -- see
+  Parent Resolution), followed by the confirmation, shown in the question form
+  (`question-protocol.md` § One question), as one question on one topic:
+  ```text
+  File this ticket -- question 1 of 1 -- importance: high
+  File the ticket shown above in {tracker}?
+  Why I ask: nothing is written to the tracker until you say yes.
+  My recommendation: file it as shown.
+    1. File it (recommended)
+    2. Edit it first
+    3. Cancel
+  Or answer in your own words, ask me to explain, or skip this question.
   ```
-  [1] File it · [2] Edit · [3] Cancel
-  ```
+  An approval-style confirmation like this one offers no skip beyond cancelling.
 - **`update`'s confirm gate shows the exact change** for whichever `<part>` is being
   mutated: `description` — before/after; `comment` — the text being appended;
   `status` — the target transition (validated against the tracker's available
@@ -163,8 +173,8 @@ Canonical tier `epic | story | task` (broad → granular) resolved to the tracke
 
 - **Determination precedence, no silent default:** (1) explicit `--level`; (2) else
   inferred from the description (e.g. "this epic…", "bug:") and surfaced at the
-  confirm gate for confirmation; (3) else **unset** — the confirm gate requires an
-  explicit pick.
+  confirm gate for confirmation; (3) else **unset** — the skill asks the level as its own
+  question, before the preview.
 - **Tier → type mapping, once a level is known or being resolved:** query the
   tracker's available issue-types via the host MCP, then match by an **ordered
   synonym set, first available wins**:
@@ -185,7 +195,7 @@ Canonical tier `epic | story | task` (broad → granular) resolved to the tracke
   without it.
 - This query is a **non-destructive read** (the tracker's issue-type list), so it runs
   **before** the confirm gate — feeding the preview when the tier is already known,
-  and offering the pick against the tracker's real types when it is not.
+  and offering the level question against the tracker's real types when it is not.
 
 ## Parent Resolution (create only)
 
@@ -233,8 +243,8 @@ Each skill's own `SKILL.md` points here rather than re-describing any of the abo
   the question asks which, in plain text; say the user picks `linear` → the bare `--parent
   LIN-10` (no stem) resolves on that same, now-known connector — no ambiguity. No
   `--level` given and none inferable → the connector's available issue-types are
-  queried → the confirm gate asks `epic|story|task`, shows the resolved concrete
-  type once picked, and shows the `linear:LIN-10` parent link → user confirms →
+  queried → the skill asks the level (`epic|story|task`) as its own question, then the confirm
+  gate shows the resolved concrete type and shows the `linear:LIN-10` parent link → user confirms →
   ticket filed, `linear:<new-id>` returned.
 - **Create, parent on a different tracker (surfaced, not silently resolved).**
   `/aid-create-ticket --connector linear --parent jira-mcp:PROJ-9 "Add pagination"`

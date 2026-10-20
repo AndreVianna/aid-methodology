@@ -326,7 +326,9 @@ When the user types a request like "review X for me" directly at the prompt (not
 2. Creates `.aid/.temp/review-pending/adhoc-<slug>.md` if it doesn't exist.
 3. Dispatches a reviewer sub-agent (`aid-reviewer`) with this schema as the output contract.
 4. After sub-agent return: runs `grade.sh` on the ledger; reports findings + grade to the user.
-5. Asks the user: "Apply fixes now (Status: Pending → Fixed flow), or leave the ledger for later?"
+5. Asks the user whether to apply the fixes now (Status: Pending → Fixed flow) or leave the ledger for later,
+   as one question under `.aid/runtime/templates/question-protocol.md` (Why I ask: the ledger lists open findings;
+   My recommendation: apply the fixes now when any finding is `[HIGH]` or above, otherwise leave it for later).
 6. If the user is done with the ad-hoc review: delete the ledger.
 
 The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-hoc compliance.

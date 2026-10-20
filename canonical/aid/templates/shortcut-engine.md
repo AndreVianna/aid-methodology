@@ -137,8 +137,9 @@ load-bearing gap escalates to CAPTURE's single inline question (CAPTURE Step 3).
 | §10 Priority | `Must` (default -- the user invoked the shortcut) | never escalates |
 
 **The escalation rule:** ask a question only when §5 or §9 cannot be made concrete and
-testable from everything already known. At most one combined question per run (fold
-multiple genuine gaps into one turn rather than drilling one gap at a time) -- this is
+testable from everything already known. One question per genuine gap, each on its own topic and asked
+one per message (question-protocol.md Rule 1), most important first (§5 before §9);
+never fold two gaps into one question -- this is
 the same minimal-slot discipline the retired `aid-describe` lite-path slot-fill step once
 used (D-2): it drew out only the route-deciding signals; CAPTURE here draws out only the
 SPEC-deciding ones, because the route (`{verb, artifact}`) is already fixed by the invocation.
@@ -402,9 +403,10 @@ Step 2 found one) to decide what is already answerable from
 `{verb, artifact, description}` + KB context, and what remains a genuine gap. Escalate
 to one more inline question only for a load-bearing gap -- normally this means §5
 Functional Requirements or §9 Acceptance Criteria cannot be stated concretely and
-testably from what is already known. Ask at most one such question per run; if more
-than one gap is load-bearing, fold them into a single combined question rather than
-multi-turn drilling (bounded minimal-slot fill, not a conversational interview).
+testably from what is already known. Ask one question per load-bearing gap, one topic per
+message, most important first; never fold two gaps into one question. Ask only the
+gaps that are genuinely load-bearing (bounded minimal-slot fill, not a conversational
+interview).
 
 ### Step 4: Dispatch aid-architect to author REQUIREMENTS.md
 
