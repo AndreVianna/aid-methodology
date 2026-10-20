@@ -57,7 +57,10 @@ Every step runs these six parts, in this order.
 1. **Enter.** Before any work in the step, and before dispatching any worker for it, the main
    conversation runs the writer in step mode:
    `bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill <skill> --name <STEP> [--detail '<where>']`.
-   The saved step is written first, so a session that stops during the step resumes at it.
+   The saved step is written first, so a session that stops during the step resumes at it. On a
+   resume the saved step is validated first (State Detection below): only a step that passes is
+   entered again with `--step`. A mismatch writes nothing and goes to recovery, whose `--repair`
+   saves the step once the user says yes.
 2. **Work.** Inline, or by a worker. A worker returns its questions to the main conversation; it
    never asks them.
 3. **Questions, at any point.** The main conversation may ask the user anything at any point of a

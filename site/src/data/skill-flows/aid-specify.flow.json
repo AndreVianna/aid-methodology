@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 237,
-        "endLine": 237,
+        "startLine": 238,
+        "endLine": 238,
         "sourceKind": "skill",
         "excerpt": "| INITIALIZE | `references/state-initialize.md` | `aid-architect` | CHAIN → CONTINUE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 238,
-        "endLine": 238,
+        "startLine": 239,
+        "endLine": 239,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-architect` | CHAIN → REVIEW when every section is Complete; CHAIN → SPIKE when a spike is needed; CHAIN → BLOCKED when a loopback blocks it |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 239,
-        "endLine": 239,
+        "startLine": 240,
+        "endLine": 240,
         "sourceKind": "skill",
         "excerpt": "| SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 240,
-        "endLine": 240,
+        "startLine": 241,
+        "endLine": 241,
         "sourceKind": "skill",
         "excerpt": "| BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |"
       },
@@ -105,8 +105,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 241,
-        "endLine": 241,
+        "startLine": 242,
+        "endLine": 242,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |"
       },
@@ -130,8 +130,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 242,
-        "endLine": 242,
+        "startLine": 243,
+        "endLine": 243,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | HALT |"
       },
