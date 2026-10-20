@@ -53,6 +53,31 @@ project root.) The helper emits one TAB-separated record per work:
   worktree) appears once per branch label. When you present the list, group by
   `work_id`: show each work once, noting the worktree(s)/branch(es) it lives on.
 
+## Recording the questions asked before a work exists
+
+Every question a starter asks before its work exists is recorded in a design document under
+`.aid/design/`: the bootstrapping question, the scoping questions, this gate's own new-vs-continuation
+question, a work's short name, and the go-ahead for a proposed workflow
+(`.aid/runtime/templates/question-protocol.md`, § Questions before a work exists). The mechanics are the
+same for every starter:
+
+1. **The document.** When the subject is already known, it is that subject's seed: `.aid/design/<slug>.md`
+   (a kind's own seed, such as `.aid/design/stack.md`, when one is named). Otherwise it is
+   `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, stamped with the time of the first question and reused for
+   the whole run.
+2. **Record before showing.** `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design <file>
+   --category <category> --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<your
+   recommendation>' --asked-by <starter>` opens the file with `status: draft` when it is missing and prints
+   the question's id, `D<n>`. After the reply, `--answer --design <file> --id D<n> --state
+   Answered|Skipped|Assumed --value '<the reply>'`. Never hard-code the id: use the one the writer printed.
+3. **Name it once the subject is known.** Move an untitled document with `bash
+   .aid/runtime/scripts/execute/writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md
+   --to .aid/design/<slug>.md`; when `<slug>.md` already exists, the writer appends the questions to it and
+   removes the untitled one.
+4. **Take it into the work.** On NEW, § 3a's `--create` passes `--seed <that document>` whenever the
+   starter recorded a question or a seed for its kind exists, so the questions move into the work's `qa`
+   list. On a continuation nothing more is written for the document.
+
 ## Step 2 -- Branch on empty vs non-empty
 
 - **Empty (no works across any root) -> NEW, no prompt.** Do not ask anything.
@@ -78,6 +103,9 @@ project root.) The helper emits one TAB-separated record per work:
     4. Continue work-018-billing-report
   Or answer in your own words, ask me to explain, or skip this question.
   ```
+
+  No work is chosen yet, so record this question and its answer in the design document as the section
+  above says (`--ask --design` before it is shown, `--answer --design` after the reply).
 
   Compose the bracketed `[phase · lifecycle]` and `(worktree: <label>)` from the
   helper's record columns. Wait for the answer before doing anything else. A
@@ -134,7 +162,7 @@ The gate performs the steps below in this order, and only then hands the new wor
      [--reason '<why the reading holds>'] [--phases <P1,P2,...>] [--seed <design file>]
    ```
 
-   A build skill whose seed exists in `.aid/design/` passes `--seed <file>`: the seed is added to the new work's `sources:` and every row of its `## Questions` table is copied into the work's `qa` list as a new `Q<n>` entry (state, answer and `answered_by` kept). The design document is left unchanged.
+   A build skill whose seed exists in `.aid/design/` passes `--seed <file>`, and so does a starter that recorded questions before the work existed (that document): the seed is added to the new work's `sources:` and every row of its `## Questions` table is copied into the work's `qa` list as a new `Q<n>` entry (state, answer and `answered_by` kept). The design document is left unchanged.
 
    A caller that was handed an intent (the reason and the phases it chose) passes `--reason` and `--phases` here, so the work starts with them; the writer's `--intent` sets them later.
 

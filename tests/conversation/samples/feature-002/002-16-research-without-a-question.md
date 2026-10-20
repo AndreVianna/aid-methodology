@@ -23,7 +23,7 @@ Persona: a developer on the notes team who knows that a decision is coming up bu
 
 ## Expected outcome
 
-- The assistant notices that the request names no question to investigate, and asks for one before it starts the research, with its reason. This opening question is asked before any work exists, so its record is the design document under `.aid/design/` (a `## Questions` row written `Pending` before the question and updated with the answer), not the work's record; this is the only question the exception covers, and it still carries a reason and a recommendation. Any further scoping question follows the protocol in full.
+- The assistant notices that the request names no question to investigate, and asks for one before it starts the research, with its reason. This opening question is asked before any work exists, so its record is the design document under `.aid/design/` (a `## Questions` row written `Pending` before the question and updated with the answer), not the work's record, and it still carries a reason and a recommendation. Any further scoping question is recorded the same way and follows the protocol in full.
 - Its questions for the user are scoped one topic at a time, each with a recommendation, and it does not ask a long list of them at once.
 - Once the storage question is clear, the assistant investigates it against the project's code and Knowledge Base and sets out the options it weighed, with what each one costs.
 - The assistant does not decide the storage question for the user; it presents the options and says the choice is the user's.

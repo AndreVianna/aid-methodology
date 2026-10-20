@@ -56,7 +56,12 @@ If any value matches a `<placeholder>` pattern (e.g., `<project-name>`), append 
 
 ### Step 3: Walk the settings
 
-After the table, walk the settings, grouped by subject, most important first, **3 to 5 questions per
+The walk covers only the settings that need a decision: a setting is in the walk when its value is still
+`⚠ unset`, or when its last entry in the `qa` list of `.aid/STATE.yml` (the entry whose `applied_to` is
+`setting <key>`) is `Skipped`. A setting that is set and was not skipped is not asked again; `/aid-config <key>`
+changes it. When no setting is in the walk, say so in one plain line, print the table and stop.
+
+After the table, walk those settings, grouped by subject, most important first, **3 to 5 questions per
 group**, one question per message and one topic per question. Each question is shown in the form of
 Mode 2 Step 4 (the same Suggestions table; `Keep current value` is the recommendation when the value is
 already set and sensible; for an `⚠ unset` value the recommendation is a suggestion, or a request for
@@ -67,18 +72,23 @@ the user's own words for `name` and `description`).
 | 1. Project identity | `name` (high), `description` (high), `type` (high) | high |
 | 2. Pipeline behaviour | `source_control` (medium), `minimum_grade` (medium), `heartbeat_interval` (low) | medium |
 
-`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`).
+`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`, or fewer when some
+settings are left out).
 
 - **Record each question** before it is shown and its reply right after, in the project file
   `.aid/STATE.yml`, exactly as Mode 2 Step 4 sets (`writeback-state.sh --project --ask`, then `--project
-  --answer`). A non-zero exit stops the skill at once.
+  --answer`). A setting whose last entry is `Skipped` is asked again on that same entry: write no new
+  `--ask`, and answer the open entry by its id (`--project --answer --id Q<n>`) when the user replies,
+  so the entry closes as `Answered` (or stays `Skipped` when the user skips again). A non-zero exit stops
+  the skill at once.
 - **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
   A `Keep current value` answer or a skip writes nothing.
 - **Offer a break when the subject changes**, between group 1 and group 2, in one plain line that
   decides nothing (`Identity is done. Take a break, or go on to the pipeline settings?`). The user may
   stop there; the answers already given stay.
-- **Skipped questions are offered again at the end**, once, in the same form, as a last group. A question
-  skipped twice stays `Skipped` in `.aid/STATE.yml` and is offered the next time `/aid-config` runs.
+- **Skipped questions are offered again at the end**, once, in the same form, as a last group, on their
+  own entries. A question skipped twice stays `Skipped` in `.aid/STATE.yml`, and the next `/aid-config`
+  run walks that setting again on the same entry.
 - At the end print the table again, and the line `Run /aid-config <key> to update any single value.`
 
 Exit.

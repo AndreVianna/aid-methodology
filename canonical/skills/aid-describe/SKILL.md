@@ -114,7 +114,7 @@ This skill is the FULL-pipeline starter, never a flattened Lite shortcut. The ga
 runs `worktree-lifecycle.sh create <work-id> <name>` to create and enter the worktree, reads the work's
 type, and creates the work record through the writer before it hands the work back. This skill derives
 the work's kebab-case short name, as the gate's `§ 3a` says the starter does, and passes it on. If the user gave no words, ask what they want to build, as
-`.aid/runtime/templates/question-protocol.md` says; that answer is the request.
+`.aid/runtime/templates/question-protocol.md` says; that answer is the request. No work exists yet, so that question and its answer are recorded in a design document, as the gate's "Recording the questions asked before a work exists" says: `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` before it is shown, `--answer --design` after the reply (with the id the writer printed), then `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md` once the short name is known, and the gate's `--create` passes `--seed .aid/design/<slug>.md`.
 
 Then proceed to State Detection with this work.
 
@@ -124,7 +124,7 @@ Present the gate's single new-vs-continuation question, showing the enumerated l
 (group by `work_id`; annotate each with its `[phase · lifecycle]` and worktree/branch
 label from the helper's record columns):
 
-This is an intake question, so it is not recorded with `--ask` (no work record exists yet). Show it in the
+No work is chosen yet, so record this question in the design document before it is shown (`--ask --design`) and its answer after the reply (`--answer --design`), as the gate's "Recording the questions asked before a work exists" says. Show it in the
 protocol's form, with the list above it:
 
 ```text

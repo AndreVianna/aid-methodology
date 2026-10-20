@@ -70,7 +70,7 @@ continues at come only from its work record.
 6. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
    `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
    `initiator: aid-update-mvp`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
-   record and saves nothing). `phase` is not driven.
+   record and saves nothing), and `--seed .aid/design/mvp.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
 
 Every `--step` call after the allocation passes in its `--detail` the subject, whether a seed was found, the
 derived outputs the user named and the complexity tier, so a resume finds them in the record.

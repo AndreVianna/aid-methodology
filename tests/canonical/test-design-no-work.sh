@@ -119,6 +119,38 @@ for k in architecture backlog cicd mvp roadmap stack testing-strategy document; 
     fi
 done
 
+# DN-06 (continued): the shortcut engine, /aid-orchestrate and the seed-reading update skills pass --seed too.
+for f in canonical/aid/templates/shortcut-engine.md canonical/skills/aid-orchestrate/SKILL.md canonical/skills/aid-orchestrate/references/start-or-resume.md; do
+    [[ -f "$f" ]] || { fail "DN-06: ${f} is missing"; continue; }
+    text="$(tr '\n' ' ' < "$f" | tr -s ' ')"
+    if grep -q -F -e '--seed' <<< "$text" && grep -q -F -e '--create' <<< "$text"; then
+        pass "DN-06: ${f##*/} passes --seed to --create"
+    else
+        fail "DN-06: ${f} does not pass --seed to --create"
+    fi
+done
+for k in architecture backlog cicd mvp roadmap stack testing-strategy; do
+    f="${SKILLS_DIR}/aid-update-${k}/SKILL.md"
+    [[ -f "$f" ]] || { fail "DN-06: ${f} is missing"; continue; }
+    text="$(tr '\n' ' ' < "$f" | tr -s ' ')"
+    if grep -q -F -e "--seed .aid/design/${k}.md" <<< "$text"; then
+        pass "DN-06: aid-update-${k} passes --seed .aid/design/${k}.md to the gate's --create"
+    else
+        fail "DN-06: aid-update-${k} does not pass --seed .aid/design/${k}.md to the gate's --create"
+    fi
+done
+
+# DN-06 (continued): starters that ask before they allocate record their questions in a design document.
+for f in canonical/aid/templates/shortcut-engine.md canonical/aid/templates/work-initiation-gate.md canonical/skills/aid-orchestrate/SKILL.md \
+         canonical/skills/aid-research/SKILL.md canonical/skills/aid-report/SKILL.md; do
+    text="$(tr '\n' ' ' < "$f" | tr -s ' ')"
+    if grep -q -F -e '--ask --design' <<< "$text" && grep -q -F -e '--rename-design' <<< "$text"; then
+        pass "DN-06: ${f##*/} records its pre-work questions with --ask --design and --rename-design"
+    else
+        fail "DN-06: ${f} does not record its pre-work questions with --ask --design / --rename-design"
+    fi
+done
+
 # DN-07 fixture: the writer's design modes never touch .aid/works/.
 # Needs the writer's --design / --seed modes; without them the writer exits 5 and these fail.
 snapshot() { (cd "$1" && { find .aid/works -print 2>/dev/null | sort; find .aid/works -type f -exec cksum {} + 2>/dev/null | sort; }); }

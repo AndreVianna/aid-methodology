@@ -49,7 +49,7 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ## State: INTAKE
 
-INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-steps.md`, "Before a work exists"). Their questions are asked through the question protocol, and their answers go into the record when ALLOCATE creates it.
+INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-steps.md`, "Before a work exists"). Their questions are asked through the question protocol and recorded in a design document under `.aid/design/`, and ALLOCATE takes that document into the work.
 
 1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. "an
@@ -78,7 +78,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope subject / audience / kind.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-Nothing is saved or recorded here, because no work exists yet.
+No step is saved here, because no work exists yet. Record each of these questions in a design document before it is shown, and its reply after it, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.
 
 **Advance:** CHAIN → [State: ALLOCATE] once the questions are answered; HALT when the user does not answer (nothing was created).
 
@@ -90,7 +90,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-  (`aid-create-document`), its first step (`AUTHOR`, the first step that runs once the work exists: INTAKE and INTAKE-ASK ran before it, and the user's words go into `intent.request`), `--path lite`, `--seed .aid/design/document.md` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record), and a kebab-case slug from
+  (`aid-create-document`), its first step (`AUTHOR`, the first step that runs once the work exists: INTAKE and INTAKE-ASK ran before it, and the user's words go into `intent.request`), `--path lite`, `--seed .aid/design/document.md` when that seed exists, or `--seed .aid/design/<slug>.md` when INTAKE-ASK recorded a question (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record), and a kebab-case slug from
   the subject. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
