@@ -9,7 +9,7 @@ description: >
   gates the write, and carries the level choice when you did not give one. It returns the
   new ticket's id only after you confirm; nothing is filed, and no local file is written,
   before that.
-allowed-tools: Read Glob Grep AskUserQuestion
+allowed-tools: Read Glob Grep
 argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"
 ---
 
@@ -35,7 +35,7 @@ directly by name.
 `PARSE-ARGS → RESOLVE-CONNECTOR → [PICK-CONNECTOR] → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
 advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). The connector pick
 (`PICK-CONNECTOR`, only when two or more match) and CONFIRM are blocking questions: the user decides
-there, through one `AskUserQuestion` exchange answered inline, so a single invocation still runs
+there, through one question exchange asked in plain text and answered inline, so a single invocation still runs
 every state through to `RETURN-REF` (or an earlier stop or cancel) without exiting mid-run.
 
 **Read-only until CONFIRM.** `RESOLVE-CONNECTOR`, `COMPOSE`, and `LEVEL-RESOLVE` only ever read —
@@ -47,6 +47,8 @@ after that confirm.
 **Writes no local file.** This skill's only external effect is the host-MCP ticket file (`FILE`
 state, gated behind confirm) — there is no `Write`/`Edit` tool in `allowed-tools`, and no file
 under this repo is ever touched: the three ticket skills persist nothing locally.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -108,7 +110,7 @@ Resolve which connector to use via the shared
 "Connector-Resolution Ladder" — first match wins, exactly as read/update use it: explicit
 `--connector <stem>` (validated `issue-tracker`; an unknown/ineligible stem stops the run, no
 silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent) or an
-`AskUserQuestion` among two-or-more → the host tool's own issue-tracker MCP → the verbatim
+a question in plain text among two-or-more → the host tool's own issue-tracker MCP → the verbatim
 `no issue-tracker connector found.` notify-and-exit. This state does not re-describe the ladder
 further than that. When a connector resolves silently, `$CONNECTOR` holds its stem for every later
 state; when two or more match, State 2a settles it.
@@ -119,8 +121,8 @@ A connector resolves silently as the explicit stem, the sole match or the host M
 
 ### State 2a — PICK-CONNECTOR
 
-Reached only when two or more catalogued `issue-tracker` connectors match. One `AskUserQuestion`
-lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
+Reached only when two or more catalogued `issue-tracker` connectors match. One question, asked in
+plain text, lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
 `$CONNECTOR` for every later state. This is a connector choice, never a write confirm, and nothing
 is sent to any tracker here.
 
@@ -184,7 +186,7 @@ only reads -- no new silent behaviour and no new write. Per
 
 ### State 5 — CONFIRM
 
-A single in-run `AskUserQuestion` exchange (one tool call, never two prompts across turns) per
+A single in-run question exchange, asked in plain text (one message, never two prompts across turns), per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Write Preview +
 Confirm Gate" — a blocking question (`skill-steps.md`): the user decides here, and the exchange is
 asked and answered inline. It carries up to two parts, both resolved within this same call:

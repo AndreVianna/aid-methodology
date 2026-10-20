@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-read-ticket/SKILL.md'
 
 - **`name`** — aid-read-ticket
 - **`description`** — Read one ticket from the project's issue tracker and show its fields. Use when a ticket is named and you need its current contents, as `aid-read-ticket [<connector>:]<ticket-id>`.
-- **`allowed-tools`** — Read Glob Grep AskUserQuestion
+- **`allowed-tools`** — Read Glob Grep
 - **`argument-hint`** — [&lt;connector>:]&lt;ticket-id>
 
 [Definition: `canonical/skills/aid-read-ticket/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md)

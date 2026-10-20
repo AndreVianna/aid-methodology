@@ -88,13 +88,13 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 
 ## Asking, per project convention
 
-Use `AskUserQuestion` for every field the table above marks "yes"/"only if…" — never silently
+Ask in plain text, through the question protocol, for every field the table above marks "yes"/"only if…" — never silently
 assume a suggested value. For each:
 
 - Include a **"Keep prefilled value"** option whose description shows the resolved prefill (or
   states "no default — type your own" when precedence resolved to blank).
 - Include 1–2 topical suggestion options drawn from the table above (e.g. `auth_method`:
   `none`, `token`, `pat`, `oauth` as separate suggestion options, trimmed to what's relevant).
-- **Never set the `preview` field** — it switches `AskUserQuestion` to a side-by-side layout that
-  suppresses the auto-injected `Other` free-text input, which this flow needs (instance specifics
-  — org/host/domain, VAR names — are never fully enumerable as fixed options).
+- **The closing line always allows a free answer** — the flow needs it, because instance specifics
+  (org/host/domain, VAR names) are never fully enumerable as fixed options; the user may also ask for an
+  explanation or skip the question.

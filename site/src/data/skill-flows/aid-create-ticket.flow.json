@@ -17,8 +17,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 69,
-        "endLine": 69,
+        "startLine": 71,
+        "endLine": 71,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -36,8 +36,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 104,
-        "endLine": 104,
+        "startLine": 106,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -52,8 +52,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 120,
-        "endLine": 120,
+        "startLine": 122,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "### State 2a — PICK-CONNECTOR"
       },
@@ -71,8 +71,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 131,
-        "endLine": 131,
+        "startLine": 133,
+        "endLine": 133,
         "sourceKind": "skill",
         "excerpt": "### State 3 — COMPOSE"
       },
@@ -87,8 +87,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 159,
-        "endLine": 159,
+        "startLine": 161,
+        "endLine": 161,
         "sourceKind": "skill",
         "excerpt": "### State 4 — LEVEL-RESOLVE"
       },
@@ -106,8 +106,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 185,
-        "endLine": 185,
+        "startLine": 187,
+        "endLine": 187,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -122,8 +122,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 215,
-        "endLine": 215,
+        "startLine": 217,
+        "endLine": 217,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       },
@@ -141,8 +141,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 232,
-        "endLine": 232,
+        "startLine": 234,
+        "endLine": 234,
         "sourceKind": "skill",
         "excerpt": "### State 7 — RETURN-REF"
       },
@@ -158,8 +158,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 102,
-        "endLine": 102,
+        "startLine": 104,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: RESOLVE-CONNECTOR] when the arguments parse; **HALT** when the usage line was printed."
       }
@@ -172,8 +172,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 120,
+        "endLine": 120,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit."
       }
@@ -186,8 +186,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 120,
+        "endLine": 120,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] when the connector resolves silently; **CHAIN** → [State: PICK-CONNECTOR] when several connectors match; **HALT** on an unknown stem, and on the notify exit."
       }
@@ -200,8 +200,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 129,
-        "endLine": 129,
+        "startLine": 131,
+        "endLine": 131,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline)."
       }
@@ -214,8 +214,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 129,
-        "endLine": 129,
+        "startLine": 131,
+        "endLine": 131,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: COMPOSE] once the user has picked the connector (continue inline)."
       }
@@ -228,8 +228,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 157,
-        "endLine": 157,
+        "startLine": 159,
+        "endLine": 159,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: LEVEL-RESOLVE] (continue inline); **HALT** on the cross-tracker stop."
       }
@@ -242,8 +242,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 183,
-        "endLine": 183,
+        "startLine": 185,
+        "endLine": 185,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: CONFIRM] (continue inline)."
       }
@@ -256,8 +256,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 212,
-        "endLine": 213,
+        "startLine": 214,
+        "endLine": 215,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
       }
@@ -270,8 +270,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 212,
-        "endLine": 213,
+        "startLine": 214,
+        "endLine": 215,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
       }
@@ -284,8 +284,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 230,
-        "endLine": 230,
+        "startLine": 232,
+        "endLine": 232,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: RETURN-REF] (continue inline)."
       }

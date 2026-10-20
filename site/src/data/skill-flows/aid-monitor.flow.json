@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 220,
-        "endLine": 220,
+        "startLine": 190,
+        "endLine": 190,
         "sourceKind": "skill",
         "excerpt": "| OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 221,
-        "endLine": 221,
+        "startLine": 191,
+        "endLine": 191,
         "sourceKind": "skill",
         "excerpt": "| CLASSIFY | `references/state-classify.md` | `aid-researcher` | CHAIN → ROUTE |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 222,
-        "endLine": 222,
+        "startLine": 192,
+        "endLine": 192,
         "sourceKind": "skill",
         "excerpt": "| ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |"
       },
@@ -86,8 +86,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 223,
-        "endLine": 223,
+        "startLine": 193,
+        "endLine": 193,
         "sourceKind": "skill",
         "excerpt": "| DONE | _(inline — see Re-run below)_ | `inline` | HALT |"
       },

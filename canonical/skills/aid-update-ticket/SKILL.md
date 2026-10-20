@@ -11,7 +11,7 @@ description: >
   previewed file by file before the confirmation gate, and a tracker that cannot hold it stops
   the run with the workable options. It never writes silently, and a failed write is never hidden:
   an attachment that lands only some of its files says which ones went in.
-allowed-tools: Read Glob Grep AskUserQuestion
+allowed-tools: Read Glob Grep
 argument-hint: "<description | comment | status | attachment> [<connector>:]<ticket-id> <content>"
 ---
 
@@ -46,6 +46,8 @@ pick on the ladder (RESOLVE-CONNECTOR), a missing attachment file (LOAD-CONTEXT)
 choice (COMPOSE or WRITE) and the confirmation (CONFIRM). It has no shell, so it cannot run the work
 record's writer and records none of them (`question-protocol.md` § Where each record lives): each is
 asked through the question protocol, answered inline, and the step goes on with the answer.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -103,7 +105,7 @@ No write happens in this state; what gets fetched depends entirely on **PART**:
 | `status` | The ticket's **available transitions** from its current state, via the host MCP — feeds the Status Validation step in COMPOSE below. |
 | `description` | The ticket's **current** description value, via the host MCP — feeds the before/after preview in COMPOSE below. |
 | `comment` | Nothing. An append needs no prior read. |
-| `attachment` | Each file named in CONTENT, read through `Read` for its **preview**: the file name, its size, and its first lines. A file that does not exist, or a CONTENT that names no file, stops the run before COMPOSE: the skill names what is missing and asks which files the user means (`AskUserQuestion`), with a recommendation and a free-text answer allowed, never guessing a path. |
+| `attachment` | Each file named in CONTENT, read through `Read` for its **preview**: the file name, its size, and its first lines. A file that does not exist, or a CONTENT that names no file, stops the run before COMPOSE: the skill names what is missing and asks which files the user means (in plain text, through the question protocol), with a recommendation and a free-text answer allowed, never guessing a path. |
 
 A not-found / unauthorized / unavailable host-MCP call at this state is the general MCP-failure
 policy below: surface the tracker's error verbatim and exit non-destructively — the run never

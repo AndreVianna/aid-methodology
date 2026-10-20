@@ -4,7 +4,7 @@ description: >
   Read one ticket from the project's issue tracker and show its fields. Use when a ticket
   is named and you need its current contents, as `aid-read-ticket
   [<connector>:]<ticket-id>`.
-allowed-tools: Read Glob Grep AskUserQuestion
+allowed-tools: Read Glob Grep
 argument-hint: "[<connector>:]<ticket-id>"
 ---
 
@@ -20,7 +20,7 @@ specific tracker, and instead resolves which one to use through AID's connector 
 
 **Single-shot, no confirm.** One pass: parse → resolve → fetch → display → exit. Reading is
 non-destructive (feature-001 AC-1) — it never prompts for a write, regardless of how many
-connectors are catalogued. The connector-choice `AskUserQuestion` (State 2, below), when it
+connectors are catalogued. The connector-choice question (State 2a, below), when it
 fires, is a resolution branch, never a write-confirmation gate.
 
 ---
@@ -95,9 +95,9 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
 
 ### State 2a — PICK-CONNECTOR
 
-Reached only on the two-or-more branch of State 2. `AskUserQuestion` lists the candidate stems (this
-skill's **only** use of `AskUserQuestion` — a connector pick, never a write confirm, since read has
-no write to confirm). The picked stem is the connector for State 3.
+Reached only on the two-or-more branch of State 2. The question lists the candidate stems, asked in
+plain text through the question protocol (this skill's **only** question — a connector pick, never a
+write confirm, since read has no write to confirm). The picked stem is the connector for State 3.
 
 **Advance:** **ASK** → FETCH.
 
@@ -146,13 +146,15 @@ no saved step to validate, and it never routes.
 
 The advance words of each state are read per [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 | Condition | Path | Result |
 |---|---|---|
 | No/empty argument | Pre-flight | Usage line printed; exit |
 | Explicit `<connector>:` stem given | State 2, explicit-stem branch | Validated stem used, or STOP on an unknown/ineligible stem |
 | Zero catalogued `issue-tracker` connectors | State 2, host-MCP / notify branches | Host tool's own tracker MCP attempted; else the notify string, then exit |
 | Exactly one catalogued `issue-tracker` connector | State 2, single-match branch | Used silently |
-| Two or more catalogued `issue-tracker` connectors | State 2 → State 2a, PICK-CONNECTOR | `AskUserQuestion` asks which |
+| Two or more catalogued `issue-tracker` connectors | State 2 → State 2a, PICK-CONNECTOR | The question asks which, in plain text |
 | Fetch succeeds | State 3 → 4 | Fields displayed |
 | Fetch fails (not-found / unauthorized / unavailable) | State 3 | Tracker's error surfaced verbatim; exit |
 
@@ -162,9 +164,9 @@ The advance words of each state are read per [`skill-steps.md`](../../aid/templa
 
 - **Non-destructive, always.** No `Write`/`Edit` tool is declared or ever needed — this skill
   persists nothing in the repo and performs no external write of any kind.
-  `allowed-tools: Read Glob Grep AskUserQuestion` is the complete set; the host-MCP fetch tool
+  `allowed-tools: Read Glob Grep` is the complete set; the host-MCP fetch tool
   itself is requested at runtime per `consumption-protocol.md`, never statically declared here.
-- **No confirmation prompt, ever.** `AskUserQuestion` fires only for the 2+-connector "which
+- **No confirmation prompt, ever.** The question fires only for the 2+-connector "which
   connector" branch in State 2a; it never gates the fetch — there is nothing to confirm, because
   read never writes.
 - **No ladder/grammar/confirm re-description.** Everything about resolving a connector, parsing
@@ -189,8 +191,8 @@ The advance words of each state are read per [`skill-steps.md`](../../aid/templa
   stem `jira`, id `PROJ-123`; State 2 validates `jira` is catalogued and tagged `issue-tracker`
   (overriding any scan) → State 3 fetches → State 4 displays.
 - **Two catalogued trackers.** With `linear` and `jira-mcp` both catalogued `issue-tracker`
-  connectors and no explicit stem → State 2 hands to State 2a, which asks via `AskUserQuestion`
-  which to use; once answered, State 3/4 proceed exactly as above.
+  connectors and no explicit stem → State 2 hands to State 2a, which asks in plain text, through the
+  question protocol, which to use; once answered, State 3/4 proceed exactly as above.
 - **Not found.** `/aid-read-ticket PROJ-999`, where `PROJ-999` does not exist on the resolved
   tracker → State 3's fetch returns a not-found error → the tracker's error is surfaced verbatim
   and the skill exits; no fields are displayed, nothing is retried.

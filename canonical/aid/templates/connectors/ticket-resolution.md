@@ -43,8 +43,8 @@ first match wins:
    preset's `tags` column, `preset-catalog.md`, is the same signal ELICIT already
    applies when a connector is first catalogued).
    - **Exactly one** `mcp` + `issue-tracker` match → **use it silently**, no prompt.
-   - **Two or more** → ask the user which via `AskUserQuestion`, listing the
-     candidate stems (their descriptor `name`, not just the raw stem).
+   - **Two or more** → ask the user which, in plain text through the question protocol
+     (`.aid/runtime/templates/question-protocol.md`), listing the candidate stems (their descriptor `name`, not just the raw stem).
 3. **None catalogued** → request the **host tool's own** issue-tracker MCP
    (host-owned; AID wires nothing — same MCP-first posture as
    `consumption-protocol.md`).
@@ -131,8 +131,8 @@ Parse rules:
 
 - **`read` never prompts.** It is non-destructive — fetch, display, done (AC-1).
 - **`create`/`update` always preview before writing.** Show the user the **exact**
-  payload that will be sent, then gate on a single in-invocation `AskUserQuestion`
-  confirm **before** the MCP write call (REQUIREMENTS.md NFR-2). No skill ever writes to a tracker without this explicit confirm.
+  payload that will be sent, then gate on a single in-invocation confirm, asked in plain
+  text through the question protocol, **before** the MCP write call (REQUIREMENTS.md NFR-2). No skill ever writes to a tracker without this explicit confirm.
 - **This is an ASK advance.** The user decides at this gate, so the step advances with
   `ASK` under [`../skill-steps.md`](../skill-steps.md) § "The advance words": the confirm
   question is asked and answered inline, in the same invocation, and the write follows
@@ -230,7 +230,7 @@ Each skill's own `SKILL.md` points here rather than re-describing any of the abo
 - **Create, ambiguous connector, unset level.** `/aid-create-ticket --parent LIN-10
   "Fix pagination bug on the /orders list"` with two `issue-tracker` connectors
   catalogued (`linear`, `jira-mcp`) → ladder Step 2 finds two matches →
-  `AskUserQuestion` asks which; say the user picks `linear` → the bare `--parent
+  the question asks which, in plain text; say the user picks `linear` → the bare `--parent
   LIN-10` (no stem) resolves on that same, now-known connector — no ambiguity. No
   `--level` given and none inferable → the connector's available issue-types are
   queried → the confirm gate asks `epic|story|task`, shows the resolved concrete

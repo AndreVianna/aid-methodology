@@ -155,7 +155,7 @@ assert_file_contains "$MONITOR_SKILL" "State machine: OBSERVE → CLASSIFY → R
     "DMR11d aid-monitor frontmatter State machine line unchanged"
 
 # DMR-12: classification vocabulary unchanged (BUG / CHANGE REQUEST / INFRASTRUCTURE / NO ACTION).
-assert_file_contains "$MONITOR_SKILL" "Classifying each anomaly as BUG, CHANGE REQUEST, INFRASTRUCTURE, or NO ACTION." \
+assert_file_contains "$MONITOR_DIR/references/state-classify.md" "NOT CODE → INFRASTRUCTURE" \
     "DMR12 aid-monitor classification vocabulary unchanged"
 
 # DMR-13: the mode-branch Step 0 explicitly marks the work-NNN path as untouched, for both

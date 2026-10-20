@@ -116,51 +116,6 @@ check a saved step on resume:
 - **Status: Packaging** → entry step PACKAGING (resume packaging; see `references/state-packaging.md`)
 - **Status: Done** → Re-run mode (see Re-run section)
 
-Print the state-entry line and "you are here" map:
-
-**IDLE / first run:**
-```
-[State: IDLE] — No active release; begin assessing eligible deliveries.
-aid-deploy  ▸ you are here
-  [● IDLE ] → [ SELECTING ] → [ VERIFYING ] → [ PACKAGING ] → [ DONE ]
-```
-
-**SELECTING:**
-```
-[State: SELECTING] — Presenting eligible deliveries for user to include in this release.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [● SELECTING ] → [ VERIFYING ] → [ PACKAGING ] → [ DONE ]
-```
-
-**VERIFYING:**
-```
-[State: VERIFYING] — Running full build, tests, and lint against selected deliveries.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
-```
-
-**FIX-DECISION and RE-VERIFY** (inside VERIFYING, Status stays Verifying):
-```
-[State: FIX-DECISION] — Checks failed; the user decides whether to fix here or loop back to aid-execute.
-[State: RE-VERIFY] — Fixing the failed checks here, then running them again.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
-```
-
-**PACKAGING:**
-```
-[State: PACKAGING] — Producing release artifacts per infrastructure.md § Deployment.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [● PACKAGING ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Release complete; all deliveries and tasks marked Shipped.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [● DONE ]
-```
-
 ## Inputs
 
 - `.aid/works/{work}/PLAN.md` — deliveries, sequencing, success criteria
@@ -194,7 +149,8 @@ dispatch in this skill.
 | DONE | `references/state-done.md` | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.

@@ -12,7 +12,7 @@
 # Traces:
 #   ST01-ST04   aid-set-connector/SKILL.md exists with the right signature
 #               (name, <tool> <type> [--rotate-secret] argument-hint,
-#               AskUserQuestion in allowed-tools, never invokes /aid-discover)
+#               no AskUserQuestion, never invokes /aid-discover)
 #   ST05-ST08   aid-unset-connector/SKILL.md exists with the right signature
 #               (name, <tool> argument-hint, never invokes /aid-discover)
 #   ST09-ST12   both skills documented as on-demand/off-pipeline (no phase
@@ -34,7 +34,7 @@
 #               exception -- `write-connector.sh`, introduced by a LATER, separate
 #               work (feature-007-connectors-list, work-017 task-018) as the
 #               dashboard-dispatchable, bash-only, non-interactive counterpart to
-#               the two skills (SEC-4: the skills require AskUserQuestion/LLM
+#               the two skills (SEC-4: the skills ask in the main conversation/LLM
 #               authoring, which the LLM-free dashboard server cannot invoke); no
 #               OTHER stray script/template file exists under
 #               canonical/aid/scripts/connectors/ or
@@ -100,7 +100,7 @@ assert_wrapped_contains() {
 # ===========================================================================
 assert_file_contains "$SET_SKILL" "name: aid-set-connector" "ST01 aid-set-connector/SKILL.md frontmatter name"
 assert_file_contains "$SET_SKILL" '<tool> <type> [--rotate-secret]' "ST02 aid-set-connector argument-hint covers <tool> <type> [--rotate-secret]"
-assert_file_contains "$SET_SKILL" "AskUserQuestion" "ST03 aid-set-connector allowed-tools includes AskUserQuestion (interactive question-set)"
+assert_file_not_contains "$SET_SKILL" "AskUserQuestion" "ST03 aid-set-connector has no AskUserQuestion (questions asked in plain text)"
 assert_file_contains "$SET_SKILL" "never invokes" "ST04 aid-set-connector documents that it never invokes /aid-discover"
 
 # ===========================================================================

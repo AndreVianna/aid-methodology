@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 188,
-        "endLine": 188,
+        "startLine": 143,
+        "endLine": 143,
         "sourceKind": "skill",
         "excerpt": "| IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |"
       },
@@ -39,8 +39,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 189,
-        "endLine": 189,
+        "startLine": 144,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "| SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |"
       },
@@ -49,7 +49,7 @@
         "startLine": 1,
         "endLine": 50,
         "sourceKind": "worker",
-        "excerpt": "# State: SELECTING\n\nEligible deliveries are presented to the user for inclusion in this release; a package file is created.\n\n**Who asks.** This step runs in the main conversation (inline), because it puts questions to the user; a worker never asks. It uses what IDLE gathered (the eligible deliveries and the knowledge-base facts).\n\n### Step 2: Select Deliveries\n\nPresent eligible deliveries to the user:\n\n```\nReady to ship:\n  ✅ delivery-001: User Authentication (4 tasks, all A or above)\n  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)\n\nAlready shipped:\n  📦 delivery-003: Core Models (in package-001-mvp)\n\nNot ready:\n  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)\n\nWhich deliveries should be in this release? [all ready / select / cancel]\n```\n\nIf user selects \"all ready\" → include all eligible.\nIf user selects specific ones → include only those.\nIf user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written. Set the lifecycle to\n`Paused-Awaiting-Input` and the pause reason to 'Release selection canceled -- run /aid-deploy to select deliveries again'\nthrough the writer, and the run ends (the advance line below).\n\nAsk for:\n- Version/tag name (suggest based on versioning scheme from KB)\n- Package name slug (for the filename: `package-NNN-{slug}.md`)\n- Only when infrastructure.md has no Deployment section or its project type is unclear: how the\n  project gets packaged and deployed (build output, target, environment). Ask it through the question\n  protocol (`.aid/runtime/templates/question-protocol.md`), so the answer is recorded in the work's\n  `STATE.yml` `qa`. Asked in this same exchange, so the question is answered before PACKAGING needs it.\n\nCreate the package file from template (`../../../aid/templates/package.md`):\n- Fill in: deliveries, deployment type/target from KB, environment from KB\n- Determine package number (next sequential after existing packages)\n- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.\n\nThe questions above are blocking: this step pauses on them until they are answered, and then carries on\nthrough the package file and the status update.\n\n**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels.\n"
+        "excerpt": "# State: SELECTING\n\nEligible deliveries are presented to the user for inclusion in this release; a package file is created.\n\n**Who asks.** This step runs in the main conversation (inline), because it puts questions to the user; a worker never asks. It uses what IDLE gathered (the eligible deliveries and the knowledge-base facts).\n\n### Step 2: Select Deliveries\n\nPresent eligible deliveries to the user:\n\n```\nReady to ship:\n  ✅ delivery-001: User Authentication (4 tasks, all A or above)\n  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)\n\nAlready shipped:\n  📦 delivery-003: Core Models (in package-001-mvp)\n\nNot ready:\n  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)\n\nWhich deliveries should be in this release? [all ready / select / cancel]\n```\n\nIf user selects \"all ready\" → include all eligible.\nIf user selects specific ones → include only those.\nIf user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written. Set the lifecycle to\n`Paused-Awaiting-Input` and the pause reason to 'Release selection canceled; no package was written'\nthrough the writer, and the run ends (the advance line below).\n\nAsk for:\n- Version/tag name (suggest based on versioning scheme from KB)\n- Package name slug (for the filename: `package-NNN-{slug}.md`)\n- Only when infrastructure.md has no Deployment section or its project type is unclear: how the\n  project gets packaged and deployed (build output, target, environment). Ask it through the question\n  protocol (`.aid/runtime/templates/question-protocol.md`), so the answer is recorded in the work's\n  `STATE.yml` `qa`. Asked in this same exchange, so the question is answered before PACKAGING needs it.\n\nCreate the package file from template (`../../../aid/templates/package.md`):\n- Fill in: deliveries, deployment type/target from KB, environment from KB\n- Determine package number (next sequential after existing packages)\n- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.\n\nThe questions above are blocking: this step pauses on them until they are answered, and then carries on\nthrough the package file and the status update.\n\n**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels.\n"
       }
     },
     {
@@ -61,8 +61,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 190,
-        "endLine": 190,
+        "startLine": 145,
+        "endLine": 145,
         "sourceKind": "skill",
         "excerpt": "| VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |"
       },
@@ -86,8 +86,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 191,
-        "endLine": 191,
+        "startLine": 146,
+        "endLine": 146,
         "sourceKind": "skill",
         "excerpt": "| FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |"
       },
@@ -108,8 +108,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 192,
-        "endLine": 192,
+        "startLine": 147,
+        "endLine": 147,
         "sourceKind": "skill",
         "excerpt": "| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check still fails |"
       },
@@ -130,8 +130,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 193,
-        "endLine": 193,
+        "startLine": 148,
+        "endLine": 148,
         "sourceKind": "skill",
         "excerpt": "| PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |"
       },
@@ -155,8 +155,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 194,
-        "endLine": 194,
+        "startLine": 149,
+        "endLine": 149,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | HALT |"
       },
@@ -180,17 +180,17 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 195,
-        "endLine": 195,
+        "startLine": 150,
+        "endLine": 150,
         "sourceKind": "skill",
         "excerpt": "| RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |"
       },
       "detail": {
         "file": "canonical/skills/aid-deploy/references/state-re-run.md",
         "startLine": 1,
-        "endLine": 20,
+        "endLine": 14,
         "sourceKind": "worker",
-        "excerpt": "# State: RE-RUN\n\nWhen work `STATE.md` `## Deploy State` is Done and the user invokes `/aid-deploy` again:\n\n```\n[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.\naid-deploy  ▸ you are here\n  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]\n```\n\n1. Show package history (from work `STATE.md` `## Deploy State` History section).\n2. Ask, through the question protocol: **[1] New release** or **[2] Review package-NNN**? The question\n   is blocking, so this step pauses on it until the user answers.\n3. If [1] → reset Status to Idle, and go on with Step 1 (only unshipped deliveries eligible).\n4. If [2] → read the package file, compare against current state of tasks/deliveries,\n   flag any discrepancies (tasks modified after shipping, new known issues).\n   Offer to regenerate release notes if content changed.\n\n**Advance:** **CHAIN** → [State: IDLE] on [1] New release; **HALT** on [2] Review package-NNN.\n"
+        "excerpt": "# State: RE-RUN\n\nWhen work `STATE.md` `## Deploy State` is Done and the user invokes `/aid-deploy` again:\n\n1. Show package history (from work `STATE.md` `## Deploy State` History section).\n2. Ask, through the question protocol: **[1] New release** or **[2] Review package-NNN**? The question\n   is blocking, so this step pauses on it until the user answers.\n3. If [1] → reset Status to Idle, and go on with Step 1 (only unshipped deliveries eligible).\n4. If [2] → read the package file, compare against current state of tasks/deliveries,\n   flag any discrepancies (tasks modified after shipping, new known issues).\n   Offer to regenerate release notes if content changed.\n\n**Advance:** **CHAIN** → [State: IDLE] on [1] New release; **HALT** on [2] Review package-NNN.\n"
       }
     }
   ],
@@ -315,8 +315,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-deploy/references/state-re-run.md",
-        "startLine": 19,
-        "endLine": 19,
+        "startLine": 13,
+        "endLine": 13,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: IDLE] on [1] New release; **HALT** on [2] Review package-NNN."
       }

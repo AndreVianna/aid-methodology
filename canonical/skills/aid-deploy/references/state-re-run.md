@@ -2,12 +2,6 @@
 
 When work `STATE.md` `## Deploy State` is Done and the user invokes `/aid-deploy` again:
 
-```
-[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]
-```
-
 1. Show package history (from work `STATE.md` `## Deploy State` History section).
 2. Ask, through the question protocol: **[1] New release** or **[2] Review package-NNN**? The question
    is blocking, so this step pauses on it until the user answers.

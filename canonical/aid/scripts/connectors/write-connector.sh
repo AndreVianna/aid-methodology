@@ -2,7 +2,8 @@
 # write-connector.sh -- non-interactive writer for the `.aid/connectors/` registry; the
 # dashboard-dispatchable counterpart to the `aid-set-connector` / `aid-unset-connector`
 # skills, which the LLM-free dashboard server cannot invoke directly (`aid-set-connector`
-# requires `AskUserQuestion`, SKILL.md line 12 -- SEC-4). Reproduces the skills'
+# asks its questions in the main conversation, through the question protocol -- SEC-4).
+# Reproduces the skills'
 # non-interactive EFFECT -- deterministic descriptor authoring + the same
 # secret-purge/INDEX-rebuild plumbing -- with no LLM prose composition anywhere
 # (feature-007-connectors-list, work-017 task-018).

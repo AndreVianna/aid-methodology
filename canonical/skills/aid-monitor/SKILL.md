@@ -101,36 +101,6 @@ Determine the entry step of a fresh start from context:
 - All findings classified → entry step **ROUTE** (propose and act; see `references/state-route.md`)
 - All findings resolved → **DONE**
 
-Print the state-entry line and "you are here" map:
-
-**OBSERVE:**
-```
-[State: OBSERVE] — Pulling telemetry signals and correlating against baselines.
-aid-monitor  ▸ you are here
-  [● OBSERVE ] → [ CLASSIFY ] → [ ROUTE ] → [ DONE ]
-```
-
-**CLASSIFY:**
-```
-[State: CLASSIFY] — Classifying each anomaly as BUG, CHANGE REQUEST, INFRASTRUCTURE, or NO ACTION.
-aid-monitor  ▸ you are here
-  [✓ OBSERVE ] → [● CLASSIFY ] → [ ROUTE ] → [ DONE ]
-```
-
-**ROUTE:**
-```
-[State: ROUTE] — Proposing and executing routing actions per finding classification.
-aid-monitor  ▸ you are here
-  [✓ OBSERVE ] → [✓ CLASSIFY ] → [● ROUTE ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — All findings routed; monitor cycle complete.
-aid-monitor  ▸ you are here
-  [✓ OBSERVE ] → [✓ CLASSIFY ] → [✓ ROUTE ] → [● DONE ]
-```
-
 ## Severity Thresholds
 
 | Signal | Threshold | Classification |
@@ -222,18 +192,13 @@ them more informative by adding mid-wait check-ins + structured progress.
 | ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |
 | DONE | _(inline — see Re-run below)_ | `inline` | HALT |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 ## Re-run
 
 When prior findings exist (from conversation context or referenced findings list):
-
-```
-[State: RE-RUN] — Prior findings on record; confirming whether to run fresh or review a finding.
-aid-monitor  ▸ you are here
-  [✓ OBSERVE ] → [✓ CLASSIFY ] → [✓ ROUTE ] → [✓ DONE ] → [● RE-RUN ]
-```
 
 1. Show active findings and their current status.
 2. Show observation history (last runs).

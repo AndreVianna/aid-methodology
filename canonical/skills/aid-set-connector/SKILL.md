@@ -3,7 +3,7 @@ name: aid-set-connector
 description: >
   Add or change a connector to a tracker or tool. Use when you are connecting a tracker or
   tool to the project.
-allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)"
 ---
 
@@ -88,16 +88,17 @@ Read `.aid/runtime/templates/connectors/preset-catalog.md` (LLM-read from disk, 
 
 Per [`references/question-sets.md`](references/question-sets.md), present the question-set for the
 resolved `<type>`, prefilled per Step 1 (ADD) or from the on-disk descriptor when the type is
-unchanged from what's on disk (UPDATE, same type). Ask via `AskUserQuestion` — **do not use the
-`preview` field** (it switches the UI to a layout that suppresses the auto-injected `Other`
-free-text option); use `description` only, so a suggestion plus free-form `Other` are both always
-available. Resolve: `name`, `endpoint` (required for `api`/`ssh`/`cli`; optional and
+unchanged from what's on disk (UPDATE, same type). Ask each question in plain text, in the form the
+question protocol sets: the suggestions are numbered, and the closing line always lets the user type a
+value of their own. Resolve: `name`, `endpoint` (required for `api`/`ssh`/`cli`; optional and
 informational-only for `mcp`), `auth_method` (forced `none` for `mcp`/`ssh`/`cli` — `api` is the
 only type that is ever asked and may resolve to `token`/`pat`/`oauth`), and — only for `api` with a
 non-`none` result — the `secret_reference` FORM (default `file:.aid/connectors/.secrets/$STEM`).
 
 `tags` / `audience` are **never prompted** — auto-derived exactly as ELICIT does: the preset row's
 `tags` column when present, else `[connector, <type>]`; `audience` always `[developer, architect]`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 **Recording.** This skill keeps no work record, so each question it asks is recorded in the project
 file `.aid/STATE.yml` (`question-protocol.md` § Where each record lives). Before a question is shown:

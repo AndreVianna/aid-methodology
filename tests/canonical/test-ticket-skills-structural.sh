@@ -25,7 +25,7 @@
 #   T36-T44   DRY -- all 3 skills point to ticket-resolution.md and do NOT
 #             re-list the ladder's numbered steps or the level-resolution
 #             synonym set inline
-#   T45-T52   Confirm gate -- present (AskUserQuestion + button row) in
+#   T45-T52   Confirm gate -- present (question + button row) in
 #             create/update; absent in read; the button-row copy is
 #             byte-identical across create/update/the shared ref (AC-1,
 #             AC-2, AC-3)
@@ -115,21 +115,21 @@ assert_header() {
 # ===========================================================================
 assert_file_contains "$READ_SKILL" "name: aid-read-ticket" "T01 aid-read-ticket frontmatter name"
 assert_wrapped_contains "$READ_SKILL" "description: >" "T02 aid-read-ticket has a one-pass (folded-scalar) description field"
-assert_file_contains "$READ_SKILL" "allowed-tools: Read Glob Grep AskUserQuestion" "T03 aid-read-ticket allowed-tools includes AskUserQuestion"
+grep -qx "allowed-tools: Read Glob Grep" "$READ_SKILL" && pass "T03 aid-read-ticket allowed-tools is Read Glob Grep (no question tool)" || fail "T03 aid-read-ticket allowed-tools is Read Glob Grep (no question tool)"
 grep -qE '^allowed-tools:.*\bWrite\b' "$READ_SKILL" && fail "T04 aid-read-ticket allowed-tools must NOT include Write" || pass "T04 aid-read-ticket allowed-tools excludes Write"
 grep -qE '^allowed-tools:.*\bEdit\b' "$READ_SKILL" && fail "T05 aid-read-ticket allowed-tools must NOT include Edit" || pass "T05 aid-read-ticket allowed-tools excludes Edit"
 assert_file_contains "$READ_SKILL" 'argument-hint: "[<connector>:]<ticket-id>"' "T06 aid-read-ticket argument-hint = the bare grammar line"
 
 assert_file_contains "$CREATE_SKILL" "name: aid-create-ticket" "T07 aid-create-ticket frontmatter name"
 assert_wrapped_contains "$CREATE_SKILL" "description: >" "T08 aid-create-ticket has a one-pass (folded-scalar) description field"
-assert_file_contains "$CREATE_SKILL" "allowed-tools: Read Glob Grep AskUserQuestion" "T09 aid-create-ticket allowed-tools includes AskUserQuestion"
+grep -qx "allowed-tools: Read Glob Grep" "$CREATE_SKILL" && pass "T09 aid-create-ticket allowed-tools is Read Glob Grep (no question tool)" || fail "T09 aid-create-ticket allowed-tools is Read Glob Grep (no question tool)"
 grep -qE '^allowed-tools:.*\bWrite\b' "$CREATE_SKILL" && fail "T10 aid-create-ticket allowed-tools must NOT include Write" || pass "T10 aid-create-ticket allowed-tools excludes Write"
 grep -qE '^allowed-tools:.*\bEdit\b' "$CREATE_SKILL" && fail "T11 aid-create-ticket allowed-tools must NOT include Edit" || pass "T11 aid-create-ticket allowed-tools excludes Edit"
 assert_file_contains "$CREATE_SKILL" 'argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"' "T12 aid-create-ticket argument-hint = the bare grammar line"
 
 assert_file_contains "$UPDATE_SKILL" "name: aid-update-ticket" "T13 aid-update-ticket frontmatter name"
 assert_wrapped_contains "$UPDATE_SKILL" "description: >" "T14 aid-update-ticket has a one-pass (folded-scalar) description field"
-assert_file_contains "$UPDATE_SKILL" "allowed-tools: Read Glob Grep AskUserQuestion" "T15 aid-update-ticket allowed-tools includes AskUserQuestion"
+grep -qx "allowed-tools: Read Glob Grep" "$UPDATE_SKILL" && pass "T15 aid-update-ticket allowed-tools is Read Glob Grep (no question tool)" || fail "T15 aid-update-ticket allowed-tools is Read Glob Grep (no question tool)"
 grep -qE '^allowed-tools:.*\bWrite\b' "$UPDATE_SKILL" && fail "T16 aid-update-ticket allowed-tools must NOT include Write" || pass "T16 aid-update-ticket allowed-tools excludes Write"
 grep -qE '^allowed-tools:.*\bEdit\b' "$UPDATE_SKILL" && fail "T17 aid-update-ticket allowed-tools must NOT include Edit" || pass "T17 aid-update-ticket allowed-tools excludes Edit"
 assert_file_contains "$UPDATE_SKILL" 'argument-hint: "<description | comment | status | attachment> [<connector>:]<ticket-id> <content>"' "T18 aid-update-ticket argument-hint = the bare grammar line"
@@ -185,11 +185,11 @@ for pair in "READ_SKILL:$READ_SKILL" "CREATE_SKILL:$CREATE_SKILL" "UPDATE_SKILL:
 done
 
 # ===========================================================================
-# T45-T52  Confirm gate -- present (AskUserQuestion + button row) in
+# T45-T52  Confirm gate -- present (question + button row) in
 # create/update; absent in read; button-row copy byte-identical across
 # create/update/the shared reference.
 # ===========================================================================
-assert_wrapped_contains "$CREATE_SKILL" "single in-run \`AskUserQuestion\` exchange" "T45 aid-create-ticket's CONFIRM state is a single in-run AskUserQuestion exchange"
+assert_wrapped_contains "$CREATE_SKILL" "single in-run question exchange, asked in plain text" "T45 aid-create-ticket's CONFIRM state is a single in-run question exchange, asked in plain text"
 assert_file_contains "$CREATE_SKILL" "[1] File it · [2] Edit · [3] Cancel" "T46 aid-create-ticket shows the [1]/[2]/[3] confirm button row"
 assert_wrapped_contains "$UPDATE_SKILL" "single in-invocation confirm" "T47 aid-update-ticket's CONFIRM state is a single in-invocation confirm"
 assert_file_contains "$UPDATE_SKILL" "[1] File it · [2] Edit · [3] Cancel" "T48 aid-update-ticket shows the [1]/[2]/[3] confirm button row"
@@ -226,7 +226,7 @@ assert_wrapped_contains "$CREATE_SKILL" "after the flags are consumed (nothing l
 # ===========================================================================
 assert_wrapped_contains "$SHARED_REF" "Either form **always overrides** the scan below" "T64 shared ref: explicit connector always overrides the scan"
 assert_wrapped_contains "$SHARED_REF" "Exactly one** \`mcp\` + \`issue-tracker\` match → **use it silently**" "T65 shared ref: exactly one catalogued match is used silently"
-assert_wrapped_contains "$SHARED_REF" "Two or more** → ask the user which via \`AskUserQuestion\`" "T66 shared ref: two-or-more catalogued matches ask via AskUserQuestion"
+assert_wrapped_contains "$SHARED_REF" "Two or more** → ask the user which, in plain text through the question protocol" "T66 shared ref: two-or-more catalogued matches ask in plain text through the question protocol"
 assert_wrapped_contains "$SHARED_REF" "None catalogued** → request the **host tool's own** issue-tracker MCP" "T67 shared ref: zero catalogued matches fall through to the host tool's own MCP"
 assert_file_contains "$SHARED_REF" "no issue-tracker connector found." "T68 shared ref: the verbatim notify string is present"
 assert_file_contains "$SHARED_REF" '`api` / `ssh` / `cli` fall-through' "T69 shared ref: an api/ssh/cli fall-through section exists"
