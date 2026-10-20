@@ -10,7 +10,7 @@ description: >
   it feeds back into improving the Knowledge Base. Trivial questions are answered inline;
   broad investigations are dispatched read-only. The only thing it ever writes is that
   recorded gap.
-allowed-tools: Read Glob Grep Agent Write Edit Bash
+allowed-tools: Read Glob Grep Agent Write Edit Bash Shell Terminal
 argument-hint: "<question>  — a free-form question about the project"
 ---
 
