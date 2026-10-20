@@ -1235,6 +1235,8 @@ class TestSerializationDm3(unittest.TestCase):
             "work_path", "recipe", "features", "deliverables",
             # work-003-state-schema task-002 additions:
             "kind", "started", "minimum_grade", "user_approved",
+            # work-003 feature-002 section 6 additions (task-070):
+            "step", "step_detail", "open_call", "record_status",
         ]
         self.assertEqual(list(works[0].keys()), expected)
 
