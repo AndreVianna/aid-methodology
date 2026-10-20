@@ -1955,3 +1955,11 @@ qa:
     suggested: '1: file it in the backlog and trim aid-orchestrate in a later delivery that changes it'
     answer: '1 (maintainer).'
     applied_to: '.aid/knowledge/backlog.md W7-34'
+  - id: Q169
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-003 gate: four texts disagree on recording questions asked before a work exists (rules.md and skill-steps.md say none are recorded; question-protocol.md and protocol-checks.md exempt only six intake questions). About 36 failing sample rows depend on it. The maintainer restated Q159 R2: before a work exists we are in design, and everything about a new work, questions and answers included, is registered in a brainstorm or design document under .aid/design/.'
+    suggested: '1: write the rule now (pre-work questions recorded in a design file under .aid/design/), leave the work''s pickup of that file as backlog W7-19'
+    answer: '2 (maintainer): everything now -- the rule, and the step where a new work takes in its design file (W7-19), in this fix round.'
+    applied_to: 'the delivery-003 gate fix round'
