@@ -17,13 +17,13 @@ Persona: a developer on the notes team who knows that a decision is coming up bu
 - What matters to you: the notes must stay in one file that a person can copy, and the tool must not need a server to run.
 - You have not written the question down in words; if asked for the exact question, say the question is the storage one above.
 - You do not know how many notes a user has; if asked, say you do not know.
-- If the assistant proposes a way to go (such as `/aid-research`) and asks to go ahead, say yes.
+- If the assistant proposes a way to go (such as `/aid-research`) and asks to go ahead, say yes and nothing more.
 - If it asks something you cannot answer from this sheet, say you do not know.
 - Once the assistant has set out the options it weighed, reply <<END>>.
 
 ## Expected outcome
 
-- The assistant notices that the request names no question to investigate, and asks for one before it starts the research, with its reason. This opening question is the question protocol's intake exception, so only its missing `Pending` record is excused; it still carries a reason and a recommendation. Any further scoping question follows the protocol in full.
+- The assistant notices that the request names no question to investigate, and asks for one before it starts the research, with its reason. This opening question is asked before any work exists, so its record is the design document under `.aid/design/` (a `## Questions` row written `Pending` before the question and updated with the answer), not the work's record; this is the only question the exception covers, and it still carries a reason and a recommendation. Any further scoping question follows the protocol in full.
 - Its questions for the user are scoped one topic at a time, each with a recommendation, and it does not ask a long list of them at once.
 - Once the storage question is clear, the assistant investigates it against the project's code and Knowledge Base and sets out the options it weighed, with what each one costs.
 - The assistant does not decide the storage question for the user; it presents the options and says the choice is the user's.

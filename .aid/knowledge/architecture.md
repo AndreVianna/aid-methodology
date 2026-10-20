@@ -216,8 +216,8 @@ shortcut doorways plus 60 hand-authored `repurpose` skills):
 ordered `design -> create -> update`. Its 22 rows cover every artifact carrying a `create`/`update`
 pair, plus a bare `/aid-design` catch-all, and all of them **bind one shared contract** rather than
 restating it -- `canonical/aid/templates/design-lifecycle.md`, which fixes the seed shape, the
-allocation step, the verify depth and the `design` invariant (a `design` skill writes its seed and
-nothing else). That single binding is what keeps 36 skills consistent without 36 copies of the
+allocation step for `create`/`update`, the verify depth and the `design` invariant (a `design` skill
+writes its seed and nothing else, opens no work, and records its questions in the seed's `## Questions`). That single binding is what keeps 36 skills consistent without 36 copies of the
 rules, and it is why adding an artifact to the grid is a catalog row plus a thin body rather than a
 new state machine. `/aid-brainstorm` sits beside the grid as an exploratory doorway with no
 `create` counterpart.

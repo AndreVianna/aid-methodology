@@ -182,27 +182,32 @@ written to the Knowledge Base state file instead, in the same states, until that
 | Asked while | Record |
 |-------------|--------|
 | working on a work | the work's `STATE.yml`, in its `qa` list |
+| before a work exists (the design stage) | the design document under `.aid/design/`, in its `## Questions` table, with `--design`; a question asked before any document exists opens one |
 | building the Knowledge Base | the Knowledge Base state file, `.aid/knowledge/STATE.md` |
 | setting up the project (configure, connectors), in chat, or in any other skill that keeps no work record and can run the writer | the project file `.aid/STATE.yml`, with `--project` |
 | in a ticket skill (no shell, so no writer) | nothing: the skill's own questions (the connector pick, the confirmation) are not recorded |
 
-## The intake-question exception
+## Questions before a work exists
 
-Questions asked **while starting or choosing a work, or repairing its record** are not written with `--ask`, because no work
-record exists yet. They are: the question "what do you want?" on a bare start, which skill fits when
-the reading is unsure, whether to start new work or continue an existing one, a work's short name, the
-recovery confirmation, which proposes repairing a work record that is missing or inconsistent (`skill-steps.md` § Recovery; nothing is written before its yes), and the
-confirmation to cancel a named work (`/aid-orchestrate`; the work's own record is not paused or touched, and
-the answer is acted on at once).
-They are asked by the orchestrator, by the work-initiation gate (`.aid/runtime/templates/work-initiation-gate.md`),
-or by a starter before the gate creates the work.
+Before a work exists we are in the design stage. Every question asked then, with its answer, is
+**recorded in the design document** under `.aid/design/`, in its `## Questions` table, with
+`--ask --design <file>` before it is shown and `--answer --design <file> --id D<n>` right after the
+answer. A question asked before any document exists opens one (`.aid/design/<slug>.md`, `status: draft`).
+These are such questions: "what do you want?" on a bare start, which skill fits when the reading is
+unsure, whether to start new work or continue an existing one, a work's short name, and every question a
+design-stage skill asks. Design-stage skills open no work.
 
-Their outcome is recorded where it lands: a new work's intent and name go into the record that
-creating the work writes, and the chosen work's own record is updated on resume. If the user does
-not answer, nothing is created and nothing needs resuming. Until the work exists, the starter saves
-no step and writes no lifecycle, since there is no record to hold them.
+Their outcome travels with the document: a build skill that opens the work from it passes `--create --seed
+<file>`, which lists the document in the work's `sources:` and copies its questions into the work's `qa`
+list. If the user does not answer, nothing is created beyond the document.
 
-Questions from setup skills and from building the Knowledge Base are **not** intake questions. They
+Two questions concern a work that already exists and are not recorded: the recovery confirmation, which
+proposes repairing a work record that is missing or inconsistent (`skill-steps.md` § Recovery; nothing is
+written before its yes), and the confirmation to cancel a named work (`/aid-orchestrate`; the work's own
+record is not paused or touched, and the answer is acted on at once). The orchestrator, the
+work-initiation gate (`.aid/runtime/templates/work-initiation-gate.md`) or a starter asks them.
+
+Questions from setup skills and from building the Knowledge Base are **not** design-stage questions. They
 follow the normal recording above.
 
 On start or resume, the open entries (`Pending` and `Skipped`) are offered first, in the usual groups.

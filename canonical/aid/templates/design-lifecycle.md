@@ -188,7 +188,18 @@ record writes follow `.aid/runtime/templates/skill-steps.md`; this contract rest
 
 Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
-**Allocation.** Consult the Work Initiation Gate
+**The design stage opens no work.** Everything before a work exists is design and lives only in
+`.aid/design/`. A design-stage skill (`/aid-brainstorm`, `/aid-design`, every `/aid-design-<kind>`) never
+allocates a work and writes nothing under `.aid/works/`: at INTAKE it acquires `.aid/design/` and names the
+seed, and its steps and approvals are recorded in the seed (`--step --design`, `--ask --design`,
+`--answer --design`). Every question it asks, with its answer, goes into the seed's `## Questions` table
+(`| id | question | answer | state | answered_by |`, ids `D1`, `D2`, ...); a question asked before any seed
+exists opens one, `.aid/design/<slug>.md`, with `status: draft`. A build skill (`/aid-create-<kind>`,
+`/aid-update-<kind>`) takes the seed into the work it opens by passing `--seed <file>` to the writer's
+`--create`: the seed joins the work's `sources:` and its questions are copied into the work's `qa` list.
+
+**Allocation (`create`/`update` only).** The design stage no longer binds allocation. A `create` or
+`update` skill consults the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`) by running
 `bash .aid/runtime/scripts/works/enumerate-works.sh`. On new work, follow `work-initiation-gate.md`
 § 3a: it creates and enters the worktree, then its writer creates the work record with
@@ -310,7 +321,7 @@ the count agrees.
 | First-write dispatch (four situations plus the standing preserve-other-regions constraint; the region-owning case is CC-5) | Binds | N/A — class 2's destination is a built artifact, not a document region | N/A — no `create` counterpart |
 | Derived outputs resolved by asking (`update`) | Binds | N/A — class 2's `update` doorways pre-exist, not authored by this work | N/A — no `create` counterpart |
 | Skill shape: frontmatter fields, state list, `description` contract | Binds | Binds — its `design` row | Binds |
-| Allocation via the Work Initiation Gate | Binds | Binds | Binds |
+| Design stage opens no work (questions recorded in the seed's `## Questions`); allocation via the Work Initiation Gate binds `create`/`update` only, with `--seed` | Binds | Binds | Binds |
 | Dispatch: `aid-architect`, tiered by complexity; verifier tier ≥ producer tier | Binds | Binds — its `design` row | Binds |
 | Verify depth on `design` | Full verify | Full verify | Full verify |
 | Verify depth on `create`/`update` | Full verify | N/A — 2a: the engine's own GATE state governs; 2b: the collapse body governs (no GATE state to delegate to) | N/A — no `create` counterpart |

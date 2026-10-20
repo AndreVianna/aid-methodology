@@ -116,10 +116,13 @@ writer exits 1 and says so; the third way needs git, and the message says when g
 
 ### Before a work exists
 
-Steps that run before the gate creates the work, such as a skill's intake and its new-or-continue
-question, save nothing, because there is no record yet. Their questions are asked through the
-question protocol, and their answers go into the record when the gate creates it: the user's words
-into `intent.request`, and the step the caller names into `step`. A skill that never creates a work,
+Before a work exists we are in the design stage. Steps that run then, such as a skill's intake and its
+new-or-continue question, save no step in a work record, because there is none yet. Their questions are
+asked through the question protocol, and every question asked before a work exists, with its answer, is
+recorded in a design document under `.aid/design/` (`--ask --design`, `--answer --design`; a question
+asked before any document exists opens one). When the gate creates the work, the user's words go into
+`intent.request`, the step the caller names into `step`, and a build skill takes the design document in
+with `--create --seed`. Design-stage skills open no work. A skill that never creates a work,
 such as a Knowledge Base, ticket, connector, setting or chat skill, saves no steps; it records its
 questions where `question-protocol.md` § Where each record lives says (the Knowledge Base state file
 while building the Knowledge Base, the project file `.aid/STATE.yml` with `--project` for every other

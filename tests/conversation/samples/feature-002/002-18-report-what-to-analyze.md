@@ -15,14 +15,14 @@ Persona: the maintainer of the notes tool, who has a usage export and wants to k
 
 - The usage export is the file data/usage-events.csv in this project.
 - You want to know which commands people use most, and whether the use is growing.
-- If the assistant proposes a way to go (such as `/aid-report`) and asks to go ahead, say yes.
+- If the assistant proposes a way to go (such as `/aid-report`) and asks to go ahead, say yes and nothing more.
 - You do not have a specific figure in mind; if asked for one, say you do not know.
 - If the assistant asks what question you want answered, say the question is the one above, which commands are used most and whether use is growing.
 - Once the assistant has reported what it found in the export, or has said what it cannot tell from it, reply <<END>>.
 
 ## Expected outcome
 
-- The assistant asks what data to analyze and what question to answer, with its reason, and asks only what it needs to know to start; this first question is an intake question: only its missing `Pending` record is excused, and it still carries a reason and a recommendation.
+- The assistant asks what data to analyze and what question to answer, with its reason, and asks only what it needs to know to start; this first question is asked before any work exists, so its record is the design document under `.aid/design/` (a `## Questions` row written `Pending` before the question and updated with the answer), and it still carries a reason and a recommendation.
 - Once the user names the export, the assistant has the file read (by itself or by the helper it dispatches) and analyses it against the question the user asked.
 - Its findings rest on the file's own rows; it states what the export can and cannot show, for example that it has no figures for before the first date.
 - The assistant does not invent figures, trends or causes that are not in the file, and it resolves nothing: it reports what the data shows and leaves any decision about what to build to the user. Its own verify cycles on the report belong to the skill and are not a decision taken for the user.

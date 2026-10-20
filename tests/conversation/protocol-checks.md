@@ -12,29 +12,33 @@ says, even when no EO-n or MN-n item of the sample names it.
 Read every question in the transcript as the agent asked it: a question is a question the agent put to the
 user, whatever its wording.
 
-## The intake exception
+## Questions before a work exists
 
-Questions asked **while a user starts or chooses a work, or repairs its record** are intake questions. They are asked before the
-work has a usable record, so they are not written as `Pending` before they are shown. These are the intake
-questions:
+Before a work exists we are in the design stage. Every question asked then, with its answer, is recorded
+in a design document under `.aid/design/`, in its `## Questions` table, written `Pending` before the
+question is shown and updated right after the answer. A question asked before any document exists opens
+one (`.aid/design/<slug>.md`). The design-stage skills open no work and write nothing under `.aid/works/`.
+These are such questions:
 
 - what the user wants, when a start gives no request;
 - which kind of work fits, when the reading of the request is unsure;
 - whether the request is a new work or the continuation of an existing one;
 - the short name of a work;
-- the recovery confirmation, which proposes repairing a work record that is missing or inconsistent, and
-  writes nothing before the user's yes;
-- the confirmation to cancel a named work, which touches no record until the user answers.
+- every question a design-stage skill asks.
 
-The outcome of an intake question is recorded where it lands: in the new work's intent and name when the
-work is created, or in the chosen work's own record on resume. If the user does not answer an intake
-question, nothing is created and nothing needs resuming.
+The record is the design document. When a build skill opens the work from it, the document is listed in the
+work's sources and its questions are copied into the work's record. Check 10 applies to these questions in
+full: the record write comes before the question turn and the outcome after the answer, in the design
+document. A sample that expects the record of a question asked before a work exists reads it in the
+`.aid/design/` document.
 
-Check 10 does not apply to an intake question's missing `Pending` entry or its missing outcome entry. The
-judge does not fail a sample on that basis. Every other check applies to intake questions.
+Two questions concern a work that already exists and are the only exceptions: the recovery confirmation,
+which proposes repairing a work record that is missing or inconsistent and writes nothing before the user's
+yes, and the confirmation to cancel a named work, which touches no record until the user answers. Check 10
+does not apply to their missing `Pending` entry or outcome entry.
 
 Questions asked while setting up the project's settings or connections, and questions asked while building
-the knowledge base, are **not** intake questions. Check 10 applies to them in full.
+the knowledge base, are not design-stage questions. Check 10 applies to them in full.
 
 ## The checks
 
@@ -74,10 +78,11 @@ the knowledge base, are **not** intake questions. Check 10 applies to them in fu
    - Evidence: `transcript.md`, the subject and the position ("question n of m") in each question's first
      line, and the order in which the questions come.
 
-7. **Break offered.** After each group, and at each change of subject, the agent offers a break and names the
+7. **Break offered.** When the subject changes between one group and the next, the agent offers a break and names the
    next subject, for example "That's all on {subject}. Take a break, or go on to {next}?". A break offer
    decides nothing; an answer to it is not a question answer.
-   - Evidence: `transcript.md`, the agent turn that ends a group or changes the subject.
+   A break is not offered after the last group. The check applies only when the subject changes between groups.
+   - Evidence: `transcript.md`, the agent turn that ends a group before a change of subject.
 
 8. **Follow-ups come at once.** A follow-up question comes straight after the question that raised it, inside
    the same group. A follow-up asked later, or in another group, fails.
@@ -91,9 +96,10 @@ the knowledge base, are **not** intake questions. Check 10 applies to them in fu
 
 10. **Every question and answer is recorded.** Each question is written to the record as `Pending` before it is
     shown: the record write appears in `transcript.md` before the question turn. Its outcome is written right
-    after the answer, with `answered_by` set. A skipped question is recorded `Skipped`, stays open, and can be
+    after the answer, with `answered_by` set; `answered_by: --` is valid when the session has no git name,
+    and does not fail. A skipped question is recorded `Skipped`, stays open, and can be
     resumed later by the same user or another one. A question shown with no record write, or an answer with no
-    outcome written, fails. The intake exception above applies to intake questions only. A ticket skill has no
+    outcome written, fails. The exception above for an existing work's recovery and cancel confirmations applies to those only. A ticket skill has no
     shell and so no writer: a question it asks is recorded nowhere, and this check does not apply to it
     (see "Where each record lives" in the question protocol).
     - Evidence: `transcript.md`, the record writes (tool calls with their target paths) and their order

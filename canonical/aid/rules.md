@@ -80,8 +80,8 @@ Read `.aid/connectors/INDEX.md`.
 
 - Match a request by its meaning, not its wording, to the skill guide below. A question about this
   project starts no work: answer it from the Knowledge Base, citing sources.
-- One skill fits: propose its workflow in one line, with your recommendation, then stop; change no project file
-  until the user agrees, however small. Several: choose, asking once only if you can't. None: carry on without one.
+- One skill fits: ask one confirmation question in the protocol form (its workflow in one line, your recommendation),
+  then stop; change no project file until the user agrees. Several: choose, asking once if you can't. None: carry on.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the
   chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
@@ -101,10 +101,12 @@ Read `.aid/connectors/INDEX.md`.
 
 Every question to the user follows `.aid/runtime/templates/question-protocol.md`. In short:
 
+- A question is any message that waits on the user's reply, a go-ahead, a clarification and "what next" included.
 - One question per message, on one topic. Never put two questions in one message.
 - Record it before you show it, `Pending`, where the protocol's "Where each record lives" says (for a
-  work, `writeback-state.sh --ask`), and record the reply with `--answer`. A question asked before any
-  work exists is the protocol's intake exception.
+  work, `writeback-state.sh --ask`), and record the reply with `--answer`. Before a work exists we are in
+  the design stage: every question asked then, with its answer, is recorded in a design document under
+  `.aid/design/` (`--ask --design`), and a build skill takes that document into the work it opens.
 - Show it in this form, in plain text, never through the host tool's question picker:
 
 ```text

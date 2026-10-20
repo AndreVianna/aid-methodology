@@ -9,10 +9,11 @@ branch. This is the Concern B counterpart to Concern A's `.aid/works/` container
 Consulted by: `/aid-orchestrate` (its start-or-resume flow creates each new work
 through § 3a), the direct-entry shortcut engine's INTAKE
 (`.aid/runtime/templates/shortcut-engine.md`), `aid-describe`, and the
-collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
+collapse/standalone starters `aid-review`, `aid-research`,
 `aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
 `aid-update-document`. Each references THIS file at its allocation step rather
-than re-implementing the logic.
+than re-implementing the logic. The design starters (`aid-design`, `aid-design-<kind>`, `aid-brainstorm`)
+do not use the gate: the design stage opens no work (`design-lifecycle.md`).
 
 > **Where the gate sits.** It runs at the exact point a starter would otherwise
 > allocate `work-NNN` (scan `.aid/works/`, pick the next number, create the
@@ -130,8 +131,10 @@ The gate performs the steps below in this order, and only then hands the new wor
      --reading <type from step 3> --request '<the user's words>' \
      --skill <calling skill> --step <its first step> \
      [--phase <phase>] [--depth lite|full] [--path lite|full] [--minimum-grade <grade>] \
-     [--reason '<why the reading holds>'] [--phases <P1,P2,...>]
+     [--reason '<why the reading holds>'] [--phases <P1,P2,...>] [--seed <design file>]
    ```
+
+   A build skill whose seed exists in `.aid/design/` passes `--seed <file>`: the seed is added to the new work's `sources:` and every row of its `## Questions` table is copied into the work's `qa` list as a new `Q<n>` entry (state, answer and `answered_by` kept). The design document is left unchanged.
 
    A caller that was handed an intent (the reason and the phases it chose) passes `--reason` and `--phases` here, so the work starts with them; the writer's `--intent` sets them later.
 
