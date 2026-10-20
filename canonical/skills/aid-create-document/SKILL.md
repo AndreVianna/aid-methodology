@@ -90,7 +90,7 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
 - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
-  (`aid-create-document`), its first step (`AUTHOR`, the first step that runs once the work exists: INTAKE and INTAKE-ASK ran before it, and the user's words go into `intent.request`), `--path lite`, and a kebab-case slug from
+  (`aid-create-document`), its first step (`AUTHOR`, the first step that runs once the work exists: INTAKE and INTAKE-ASK ran before it, and the user's words go into `intent.request`), `--path lite`, `--seed .aid/design/document.md` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record), and a kebab-case slug from
   the subject. The gate's `§ 3a` step 2 creates and enters the worktree
   (`worktree-lifecycle.sh create <work-id> <name>`),
   **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through

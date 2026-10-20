@@ -9,7 +9,7 @@ description: >
   source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into
   backlog.md with `/aid-create-backlog` once it is ready. For direction rather than items,
   use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently
-  verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+  verified by aid-reviewer (full verify).
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<items> -- the items to define and prioritize, and any tech-debt.md rows to accept"
 ---
@@ -45,8 +45,8 @@ State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> 
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
    you want to define and prioritize, and are there `tech-debt.md` rows you're ready to
-   accept into the plan?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-design-backlog`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
+   accept into the plan?") and wait: acquire `.aid/design/` first (below), then record the question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/backlog.md --category Scope --impact High --context '<the question, as shown>' --suggested '<your suggestion>' --asked-by aid-design-backlog`, which opens the seed document (`status: draft`) when it does not exist yet, and record the reply with `--answer --design .aid/design/backlog.md --id <id> --state Answered --value '<the reply>'`.
+2. **Name the seed; open no work.** The seed is `.aid/design/backlog.md`. This skill allocates nothing through the Work Initiation Gate and writes nothing under `.aid/works/`: a work is opened later, by a build skill or `/aid-orchestrate`, which takes the seed into it. Record every question with `--ask --design .aid/design/backlog.md` and its reply with `--answer --design`, and track the step with `--step INTAKE --design .aid/design/backlog.md`, all through `.aid/runtime/scripts/execute/writeback-state.sh`.
 3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure
    the folder exists and seed its `README.md` on first use, before writing anything.
 4. **Read the existing seed, if one is present.** `.aid/design/backlog.md` --
@@ -56,9 +56,9 @@ State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> 
 
 **State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
-saved step on resume, and never routes; the work record alone decides where a work continues.
+saved step on resume, and never routes; the seed's `step:` and `step_detail:` frontmatter alone decide where a design resumes.
 
-**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
+**Advance:** CHAIN → [State: DESIGN].
 
 ---
 
@@ -85,7 +85,7 @@ its per-item confirmation, happen at `/aid-create-backlog` or `/aid-update-backl
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
-IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
+IMPEDIMENT, and the impediment is recorded with `--step VERIFY --design .aid/design/backlog.md --detail 'impediment: <reason>'`.
 
 **Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
@@ -97,7 +97,7 @@ Present the seed clearly. Assert no resolution --
 the user decides whether to iterate further (declining the approval below changes the seed in place) or realize it now
 (`/aid-create-backlog`).
 
-Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-backlog --step PRESENT --covers 'the seed .aid/design/backlog.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/backlog.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+Then ask the user to approve the result, through the question protocol, and record the approval on the seed. Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/backlog.md --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-backlog` (it prints the question's id, `D<n>`), and bring the step up to date with `--step PRESENT --design .aid/design/backlog.md --detail 'presented; waiting for D<n>'`. An approval cannot be skipped: the step stays open until the user approves or declines. Once it is answered, record the answer with `--answer --design .aid/design/backlog.md --id D<n> --state Answered --value '<Approved, or Declined with the changes asked>'`, and end the step with the advance below.
 If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
 
 **Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
@@ -106,7 +106,7 @@ If the user declines or asks for changes, DESIGN iterates the seed with exactly 
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer. The seed
+Record the step with `--step DONE --design .aid/design/backlog.md --detail 'approved'`. The seed
 stays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog`, not
 here.
 
@@ -117,10 +117,9 @@ here.
 - **`design` never writes `.aid/knowledge/` and never writes production code**
   (`design-lifecycle.md § The three stages`), without exception -- including
   `tech-debt.md`, which is proposed from, never written to, here.
-- **`phase` is not driven** by this skill (`design-lifecycle.md § Skill shape --
-  Allocation`).
+- **No work is opened** by this skill, and nothing is written under `.aid/works/`; the seed's `## Questions` table is its question record.
 - **Full verify**, per `design-lifecycle.md`, unlike a light single-pass check.
 - **Iterative, not terminal** -- re-invocation rewrites `## Current direction` and
   accumulates `## Options considered`; the user decides when to stop.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** set the STATE lifecycle through the writer at every transition.
+- **Tracking:** set the seed's `step:` through `--step --design` at every transition.

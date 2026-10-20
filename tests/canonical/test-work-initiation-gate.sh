@@ -35,7 +35,7 @@
 #                                          guard that § 3b never mislabels
 #                                          `locate` as fail-closed/exit-1
 #   Group G  starter coverage:             SPEC AC-11  (all TEN affected starters
-#                                          consult the shared gate), extended
+#                                          consult the shared gate; aid-design is design-stage and no longer a starter), extended
 #                                          (work-018 feature-002) with each
 #                                          starter's own worktree-create reference
 #                                          and its create-before-allocate file-order
@@ -392,7 +392,7 @@ assert_output_contains "$section_3b" "exits 0 on every resolution" \
 
 # ===========================================================================
 echo ""
-echo "=== Group G: all TEN affected work-starters consult the shared gate (SPEC AC-11) ==="
+echo "=== Group G: all NINE affected work-starters consult the shared gate (SPEC AC-11) ==="
 
 # Each starter references the gate at its allocation point rather than
 # re-implementing the new-vs-continuation logic.
@@ -401,7 +401,6 @@ STARTERS=(
     "canonical/skills/aid-describe/SKILL.md"
     "canonical/skills/aid-review/SKILL.md"
     "canonical/skills/aid-research/SKILL.md"
-    "canonical/skills/aid-design/SKILL.md"
     "canonical/skills/aid-report/SKILL.md"
     "canonical/skills/aid-test/SKILL.md"
     "canonical/skills/aid-prototype/SKILL.md"
@@ -412,7 +411,7 @@ STARTERS=(
     # Its twin binding in STARTER_ALLOC_ANCHOR below must move with it.
     "canonical/skills/aid-update-document/SKILL.md"
 )
-assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under coverage"
+assert_eq "${#STARTERS[@]}" "9" "G: exactly nine affected work-starters under coverage"
 
 # Per-starter anchor for the create-before-allocate ordering check below: the first line,
 # after the `worktree-lifecycle.sh create` mention, that is this starter's own
@@ -425,7 +424,6 @@ declare -A STARTER_ALLOC_ANCHOR=(
     ["canonical/skills/aid-describe/SKILL.md"]="creates the work record through the writer"
     ["canonical/skills/aid-review/SKILL.md"]="STATE.yml"
     ["canonical/skills/aid-research/SKILL.md"]="STATE.yml"
-    ["canonical/skills/aid-design/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-report/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-prototype/SKILL.md"]="**then** allocate (\`"
@@ -462,7 +460,6 @@ declare -A STARTER_COVERAGE_ID=(
     ["canonical/skills/aid-describe/SKILL.md"]="GG02-aid-describe"
     ["canonical/skills/aid-review/SKILL.md"]="GG03-aid-review"
     ["canonical/skills/aid-research/SKILL.md"]="GG04-aid-research"
-    ["canonical/skills/aid-design/SKILL.md"]="GG05-aid-design"
     ["canonical/skills/aid-report/SKILL.md"]="GG06-aid-report"
     ["canonical/skills/aid-test/SKILL.md"]="GG07-aid-test"
     ["canonical/skills/aid-prototype/SKILL.md"]="GG08-aid-prototype"
@@ -484,8 +481,8 @@ G_COVERAGE_IDS=()
 for rel in "${STARTERS[@]}"; do
     G_COVERAGE_IDS+=("${STARTER_COVERAGE_ID[$rel]:-}")
 done
-assert_eq "$(printf '%s\n' "${G_COVERAGE_IDS[@]}" | sort -u | grep -c '.')" "10" \
-    "GG00: the ten Group G ordering coverage IDs are all present and pairwise distinct"
+assert_eq "$(printf '%s\n' "${G_COVERAGE_IDS[@]}" | sort -u | grep -c '.')" "9" \
+    "GG00: the nine Group G ordering coverage IDs are all present and pairwise distinct"
 
 for rel in "${STARTERS[@]}"; do
     f="${REPO_ROOT}/${rel}"
