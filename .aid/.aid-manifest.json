@@ -588,7 +588,7 @@
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
-          "sha256": "c17b86aff5bb50c1cfc95473576b8a9e8dbc74fc71dc5791e96f9b689e255379"
+          "sha256": "41b285acffdd6915cdec7bf4a12c2dcfffd5abdb073c59756267317c0e683ef2"
         },
         {
           "path": "aid-plan/SKILL.md",
@@ -656,7 +656,7 @@
         },
         {
           "path": "aid-specify/SKILL.md",
-          "sha256": "fd6be9389e5ad1b105506ee064a38c96969dbb8a593f372f552bb69c60119293"
+          "sha256": "98f061b0ed2d567b48e280eaf23baceab7ea23f1978058eb1203df0fa902009c"
         },
         {
           "path": "aid-specify/references/handling-outcomes.md",
@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "b9c2dbb74e906b5dfe3173587c2c8b91108b73d67229ee6a55ca8046ef062a1a"
+          "sha256": "a22d2f602818e44fcde03fc7c4a406199e4230e07674fef0212e38ded11aba3f"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1422,7 +1422,7 @@
         },
         {
           "path": "templates/skill-steps.md",
-          "sha256": "271c339bc21339c2a71e8509f4ecb7aa1a50c889318e0f51c58bba776ab56c18"
+          "sha256": "72405cf08cd8e678b19fa97c679d2caf0d884108398cefea4a790ffe4ba0dce1"
         },
         {
           "path": "templates/specs/technical-specification-template.md",
@@ -1446,7 +1446,7 @@
         },
         {
           "path": "templates/work-initiation-gate.md",
-          "sha256": "c8b0c972753303ea3dbd4a7de9568147de7230c9ab9332a74ac91aab69317244"
+          "sha256": "cf5835f8b5ffb219838fb47770e7b5431ac00f1e8e66ab4d2caae580ee787b61"
         },
         {
           "path": "templates/work-state-template.yml",

@@ -172,7 +172,7 @@ The gate allocates **nothing**. The work's record -- `intent.reading`, `active_s
 
    | # | Chosen work's state | Resume entry point |
    |---|---|---|
-   | 1 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh |
+   | 1 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh. A finished work is never reopened: offer no reopen and raise none of its open questions |
    | 2 | `--check` reports the record missing or inconsistent | The recovery below; once the user confirms and `--repair` has written, continue at row 3 |
    | 3 | The record (every other open work) | `active_skill` at its saved `step`; with an open call, inside the called skill. A halted Lite work resumes at its doorway skill's APPROVAL-HALT step, which asks the approval while it is still open; once it was given, the step only tells the user to run `/aid-execute` |
 
