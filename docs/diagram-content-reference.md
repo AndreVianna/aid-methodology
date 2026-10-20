@@ -109,7 +109,7 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
   deleted; do not reintroduce them)), **Render** (`generate-profile` skill), **Observation**.
 - **Source of truth:** `.aid/knowledge/module-map.md` · skill count = `ls -1d canonical/skills/*/ | wc -l` (112) ·
   agent count = `ls -1d canonical/agents/*/ | wc -l` (7).
-- **Update when:** the skill count (**112**) or agent count (**8**) changes; a plane/module is added;
+- **Update when:** the skill count (**112**) or agent count (**7**) changes; a plane/module is added;
   the shortcut catalog is renamed or moved.
 
 ---
@@ -180,5 +180,4 @@ verified by their own tests — do NOT "fix" them to Describe/Define here:
   (asserted by `tests/canonical/test-pipeline-status-walkthrough.sh` + `test-work-state-template.sh`,
   and parsed by the dashboard reader). Renaming it is a deeper canonical + dashboard + tests change.
 - The literal **`## Interview State`** STATE.md section name.
-- The **`aid-interviewer`** agent (never renamed).
 - Lowercase **"interview"** (the conversational act).

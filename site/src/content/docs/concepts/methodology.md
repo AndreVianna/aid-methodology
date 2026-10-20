@@ -804,12 +804,11 @@ flowchart TB
         direction LR
         LB["aid-architect"]:::large
     end
-    subgraph M["Medium tier — 6 default · workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
+    subgraph M["Medium tier — 5 default · workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
         direction LR
         MA["aid-developer"]:::med
         MB["aid-operator"]:::med
         MD["aid-tech-writer"]:::med
-        ME["aid-interviewer"]:::med
         MF["aid-researcher"]:::med
         MG["aid-reviewer"]:::med
     end
@@ -820,16 +819,16 @@ flowchart TB
     L -. "reviewer tier ≥ executor tier" .-> M -.-> S
 ```
 
-*8 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
+*7 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
 
-AID dispatches 8 specialist agents across three model tiers. The key design invariant: **the reviewer's tier is always ≥ the executor's tier.** The agent that writes never grades its own work.
+AID dispatches 7 specialist agents across three model tiers. The key design invariant: **the reviewer's tier is always ≥ the executor's tier.** The agent that writes never grades its own work.
 
 ### The Three Tiers
 
 These are **default** tiers, not fixed ceilings. Each dispatch site picks the model tier **and** reasoning effort from the task's difficulty via a shared rubric (`agent-dispatch-tiering.md`), defaulting low and escalating the hard minority; effort is a second, independent lever (often better than switching tiers).
 
 - **Large (1 default):** `aid-architect`. The one role kept on the top tier by default — architecture and design decomposition, where reasoning depth genuinely pays off. Escalates to `xhigh` effort for hard decompositions.
-- **Medium (6 default):** `aid-developer`, `aid-operator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, document, interview, research/KB-author, and review. `aid-interviewer`, `aid-researcher`, and `aid-reviewer` default to Medium rather than Large; each escalates back to Large for genuinely hard work (complex requirement synthesis, deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
+- **Medium (5 default):** `aid-developer`, `aid-operator`, `aid-tech-writer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, document, research/KB-author, and review. `aid-researcher` and `aid-reviewer` default to Medium rather than Large; each escalates back to Large for genuinely hard work (deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
 - **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where larger-tier reasoning is unnecessary overhead.
 
 The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses the Knowledge Base Maintenance navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses the teal (`#0F766E`) shared by Plan and Detail in the Definition group because Medium agents handle operational execution (like Plan, Detail, and Execute). This is semantic overlap by design.
@@ -1397,7 +1396,7 @@ flowchart TB
 | **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
 | **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic — computed, not judged) plus project-defined quality checks |
-| **Agent model** | One agent per spec | 8 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
+| **Agent model** | One agent per spec | 7 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
 | **Post-delivery** | Not addressed | Monitor hands bugs back as fix requests, change requests as new-work requests |

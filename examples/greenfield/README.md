@@ -105,7 +105,7 @@ full path (or a condensed SPEC for the lite path).
 /aid-describe
 ```
 
-The interviewer agent leads you through a conversational Q&A. For this project the
+`aid-describe` leads you through a conversational Q&A. For this project the
 questions cover:
 
 - What problem does this solve? Who are the users?

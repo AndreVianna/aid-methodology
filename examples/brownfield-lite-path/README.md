@@ -102,13 +102,13 @@ would have proceeded to produce `REQUIREMENTS.md` with a `### Feature NNN` secti
 
 ## Step 4 — CONDENSED-INTAKE: Filling the Spec Slots
 
-Having confirmed the lite path, `aid-describe` invokes the `interviewer` agent
-in **CONDENSED-INTAKE** state. Instead of the full multi-session requirements
+Having confirmed the lite path, `aid-describe` asks the questions itself, in the
+main conversation, in **CONDENSED-INTAKE** state. Instead of the full multi-session requirements
 gathering that the full path uses, CONDENSED-INTAKE is a focused slot-fill:
 a short conversation that gathers only what is needed to write the work-root
 `REQUIREMENTS.md`.
 
-The `interviewer` asks targeted questions:
+`aid-describe` asks targeted questions:
 
 1. **What is the root cause as you understand it?**
    > "The `update_order()` function in `order_repository.py` modifies the database
@@ -129,14 +129,14 @@ The `interviewer` asks targeted questions:
    > "None. `invalidate()` already exists on the cache class; this is a call-site
    > omission, not a missing feature."
 
-CONDENSED-INTAKE ends when the `interviewer` has enough to write the spec. The
-`interviewer` then drafts the **work-root REQUIREMENTS.md** and presents it for approval.
+CONDENSED-INTAKE ends when `aid-describe` has enough to write the spec. It
+then drafts the **work-root REQUIREMENTS.md** and presents it for approval.
 
 ---
 
 ## Step 5 — Work-Root REQUIREMENTS.md (Sample Output)
 
-The `interviewer` produces a single `REQUIREMENTS.md` at the work root. Notice what is
+`aid-describe` produces a single `REQUIREMENTS.md` at the work root. Notice what is
 absent: there is no `REQUIREMENTS.md`, no `features/` folder, and no `PLAN.md`.
 The lite path collapses all of that into one document.
 
@@ -279,7 +279,7 @@ For recurring patterns like this bug fix, AID ships seed recipes at
 `intended-behavior`) and the body contains `## spec` and `## tasks` blocks
 with those placeholders in place.
 
-To use it, the `interviewer` agent fills a JSON file with the slot values for
+To use it, `aid-describe` fills a JSON file with the slot values for
 this specific bug and calls `parse-recipe.sh`:
 
 ```
@@ -328,7 +328,7 @@ two-tier review.
                                      sub-path: LITE-BUG-FIX
       │
       ▼
-[CONDENSED-INTAKE]  (interviewer agent)
+[CONDENSED-INTAKE]  (aid-describe, main conversation)
   Slot-fill conversation → work-root REQUIREMENTS.md
   Director approves REQUIREMENTS.md
       │

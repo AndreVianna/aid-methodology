@@ -23,7 +23,7 @@ If you are new to AID, read [The AID Methodology](/concepts/methodology/) first.
 2. **Philosophy** — why rigor + AI beats Agile's rigor compromise
 3. **The Knowledge Base** — the 14-document living specification that makes every subsequent task faster
 4. **The Phases** — what each phase produces and when to skip it
-5. **The Agent Model** — the eight specialist agents and how they are dispatched
+5. **The Agent Model** — the seven specialist agents and how they are dispatched
 6. **Feedback Loops** — the 11 formal pathways for upstream revision
 7. **Artifacts Reference** — every named file the methodology produces
 8. **Case Studies** — greenfield, brownfield full path, brownfield lite path
