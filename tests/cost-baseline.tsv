@@ -416,7 +416,7 @@ skill-refs	aid-fix	0
 skill-refs	aid-housekeep	88551
 skill-refs	aid-migrate	0
 skill-refs	aid-monitor	6917
-skill-refs	aid-orchestrate	19075
+skill-refs	aid-orchestrate	19212
 skill-refs	aid-plan	23211
 skill-refs	aid-prototype	0
 skill-refs	aid-prototype-ui	0
@@ -539,7 +539,7 @@ skill-self	aid-report	8847
 skill-self	aid-research	11149
 skill-self	aid-review	11918
 skill-self	aid-set-connector	14851
-skill-self	aid-specify	11784
+skill-self	aid-specify	12396
 skill-self	aid-summarize	15208
 skill-self	aid-test	8565
 skill-self	aid-test-data-quality	1338
@@ -638,10 +638,10 @@ template	shortcut-scaffolding/document.md	6270
 template	shortcut-scaffolding/fix.md	7359
 template	shortcut-scaffolding/prototype.md	5049
 template	shortcut-scaffolding/test-experiment.md	7511
-template	skill-steps.md	20695
+template	skill-steps.md	21392
 template	specs/technical-specification-template.md	2053
 template	state-machine-chaining.md	5836
 template	subagent-heartbeat-protocol.md	12841
 template	task-detail-template.md	2430
-template	work-initiation-gate.md	15416
+template	work-initiation-gate.md	15505
 template	worktree-lifecycle.md	5704
