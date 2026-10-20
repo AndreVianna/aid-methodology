@@ -166,7 +166,8 @@ continues at come only from its work record.
 
 **Saving the step.** Every step saves itself on entry, before any work, with
 `bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-specify --name <STEP> --detail '<where>'`,
-where `<STEP>` is one of INITIALIZE, CONTINUE, SPIKE, BLOCKED, REVIEW or DONE. The detail holds what the step has
+where `<STEP>` is one of INITIALIZE, CONTINUE, SPIKE, BLOCKED, REVIEW or DONE. On a resume, validate the saved step
+first: a step whose artifact is missing writes no `--step` and goes to recovery. The detail holds what the step has
 settled: the work, the feature and the section being specified. When the work record does not already name
 `aid-specify` (the user typed `/aid-specify`; no skill handed the work on), the first step first records the typed
 start: `--handoff --to aid-specify --step INITIALIZE --why 'user ran the command' --returns no`, with no `--phase`.
