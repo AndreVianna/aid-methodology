@@ -15,7 +15,7 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO
 #
 # Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
 # a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -589,10 +589,68 @@ Hello.
 
 - frobnicate changed.txt
 EOF
+cat > "$T/samples/feature-900/s-protocol.md" <<'EOF'
+---
+id: s-protocol
+covers: AC-8, AC-28 -- a sample whose judge also gets the protocol checklist
+fixture: stub
+---
+
+## User
+
+I need help with the feature.
+
+## Answer sheet
+
+- The feature is the stub feature.
+
+## Expected outcome
+
+1. The assistant replies.
+
+## Must not
+
+1. Push anything.
+
+## Checks
+
+- exists changed.txt
+EOF
+cat > "$T/samples/feature-900/s-ac11.md" <<'EOF'
+---
+id: s-ac11
+covers: AC-11 -- a sample whose judge does not get the protocol checklist
+fixture: stub
+---
+
+## User
+
+I need help with the feature.
+
+## Answer sheet
+
+- The feature is the stub feature.
+
+## Expected outcome
+
+1. The assistant replies.
+
+## Must not
+
+1. Push anything.
+
+## Checks
+
+- exists changed.txt
+EOF
 printf '# Stub fixture\n' > "$T/fixtures/stub/README.md"
 printf 'print("stub")\n' > "$T/fixtures/stub/src/app.py"
 printf 'USER-BRIEF-MARK\nStand-in simulated-user brief for the suite.\n' > "$T/briefs/simulated-user.md"
 printf 'JUDGE-BRIEF-MARK\nStand-in judge brief for the suite.\n' > "$T/briefs/judge.md"
+printf 'PROTOCOL-CHECKS-MARK\nStand-in protocol checklist for the suite.\n' > "$T/briefs/protocol-checks.md"
+# the same briefs without the checklist: a run of an AC-8 or AC-28 sample reads it and must exit 2
+mkdir -p "$T/briefs-nocheck"
+cp "$T/briefs/simulated-user.md" "$T/briefs/judge.md" "$T/briefs-nocheck/"
 
 # --- mutations: a copy of run.py (or of a brief) with one behaviour broken ----
 # mutate.py SRC DST OLD NEW [OLD NEW...]: writes DST from SRC with each OLD replaced by NEW; every OLD
@@ -684,6 +742,26 @@ need_onbranch_move() { STUB_MOVE_REF=1 need onbranchmove invoke onbranchmove end
 need_grammar() { STUB_PUSH=1 need grammar invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
 need_flaky()   { need flaky invoke flaky end-after-one flaky --sample s-pass --runs 3; }
 need_clean3()  { need clean3 invoke clean3 end-after-one clean --sample s-pass --runs 3; }
+need_proto()   { need proto invoke proto end-after-one clean --sample s-protocol --runs 1; }
+need_ac11()    { need ac11 invoke ac11 end-after-one clean --sample s-ac11 --runs 1; }
+# the mutant run: the judge is never given the checklist, though the sample covers AC-28 (PQ04)
+need_protom() {
+    started protom && return 0
+    make_mutant protom 'protocol = ctx["protocol_checks"] if needs_protocol_checks(sample) else None' \
+        'protocol = None' || fail "PQ04 the protocol mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" need protom invoke protom end-after-one clean --sample s-protocol --runs 1
+}
+# the no-checklist run: an AC-8 or AC-28 sample whose briefs folder has no protocol-checks.md (PQ03)
+run_nocheck() {  # KEY RUNNER: run.py runs in the background, and its pid is recorded for the cleanup
+    local key="$1" runner="$2"
+    env CONV_STUB_LOG="$T/log/$key.jsonl" STUB_USER=end-after-one STUB_JUDGE=clean \
+        "$PY" "$runner" --feature 900 --sample s-protocol --runs 1 --samples-dir "$T/samples" \
+        --fixtures-dir "$T/fixtures" --briefs-dir "$T/briefs-nocheck" > "$T/log/$key.out" 2>&1 < /dev/null &
+    local pid=$!
+    echo "$pid" >> "$T/log/run-pids"
+    wait "$pid"
+    echo $? > "$T/log/$key.rc"
+}
 # the cap run: 12 turns with no <<END>> (CP); the agent's environment under a parent session and a model
 # override (EN); the worktree and the large-file stubs (DF12, JD); its judge reply is clean
 need_cap() {
@@ -1547,6 +1625,40 @@ group_cap() {
         "CP05 the run folder records the 12 agent turns"
 }
 
+# ---------------------------------------------------------------- PROTO
+# The judge's input carries protocol-checks.md for a sample whose covers holds AC-8 or AC-28, and no other.
+group_protocol() {
+    echo "--- PROTO"
+    need_proto
+    need_ac11
+    need_protom
+    need nocheck run_nocheck nocheck "$RUNNER"
+    make_mutant nocheckm 'if any(needs_protocol_checks(sample) for sample in samples):' 'if False:' \
+        || fail "PQ05 the missing-checklist mutation did not apply"
+    need nocheckm run_nocheck nocheckm "$MUT_PATH"
+    await_runs
+    local marker="PROTOCOL-CHECKS-MARK"
+    assert_eq "$(grep -c -F -- "$marker" "$T/log/proto.judge-prompt")" 1 \
+        "PQ01 the judge input of an AC-28 sample contains the checklist text"
+    assert_eq "$(grep -c -x -F -- "## protocol-checks.md" "$T/log/proto.judge-prompt")" 1 \
+        "PQ01b the checklist is one section of the judge input, under its own heading"
+    assert_eq "$(grep -c -F -- "$marker" "$T/log/ac11.judge-prompt")" 0 \
+        "PQ02 the judge input of an AC-11 sample does not contain the checklist text"
+    assert_exit_eq "$(cat "$T/log/nocheck.rc")" 2 \
+        "PQ03 an AC-28 sample with no protocol-checks.md exits 2"
+    if [ -e "$T/log/nocheck.jsonl" ]; then
+        fail "PQ03b the missing-checklist exit happens before any agent or helper call"
+    else
+        pass "PQ03b the missing-checklist exit happens before any agent or helper call"
+    fi
+    assert_output_contains "$(cat "$T/log/nocheck.out")" "protocol-checks.md" \
+        "PQ03c the error names the missing checklist"
+    expect_fail "PQ04 a judge input with no checklist fails PQ01" \
+        test "$(grep -c -F -- "$marker" "$T/log/protom.judge-prompt")" = 1
+    expect_fail "PQ05 a run that does not check for the checklist fails PQ03" \
+        test "$(cat "$T/log/nocheckm.rc")" = 2
+}
+
 # ---------------------------------------------------------------- CODEX
 group_codex() {
     echo "--- CODEX"
@@ -1723,6 +1835,7 @@ want SAMPLES && group_samples
 want VSAMPLES && group_vsamples
 want CAP && group_cap
 want CODEX && group_codex
+want PROTO && group_protocol
 
 test_summary
 exit $?

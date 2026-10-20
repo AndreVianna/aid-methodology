@@ -13,7 +13,8 @@ Usage:
 Exit codes:
   0  every run passes (--validate: every selected sample parses)
   1  any failure (a run failed, or --validate or a malformed sample found an error)
-  2  invocation error (bad arguments, unknown sample or host, missing briefs, no claude)
+  2  invocation error (bad arguments, unknown sample or host, missing briefs or protocol-checks.md
+     for a sample that covers AC-8 or AC-28, no claude)
 
 Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding transcript.jsonl,
 transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger) and model.txt (the model the
@@ -30,6 +31,8 @@ Sample file (samples/feature-NNN/<id>.md):
                      on-branch (optional: the run starts on a new branch of that name, made from the
                      fixture baseline, as when the user works in the work's own checkout);
                      any other key is kept and ignored (Feature 002's samples add skills:)
+                     a covers that names AC-8 or AC-28 also gets protocol-checks.md (in the briefs
+                     folder) as a section of the judge's input, after checks.txt
   ## User            the first paragraph is the opening message; the whole section is the persona
   ## Answer sheet    all the simulated user knows
   ## Expected outcome  items the judge rules on one by one
@@ -101,6 +104,8 @@ AGENT_TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 MODEL_ENV = "AID_CONV_MODEL"
 REQUIRED_KEYS = ("id", "covers", "fixture")
+PROTOCOL_CHECKS = "protocol-checks.md"  # the judge's checklist for the question protocol, in the briefs folder
+PROTOCOL_COVERS_RE = re.compile(r"\bAC-(8|28)\b")  # the criteria whose samples the judge checks against it
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
 CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called", "ref-unchanged")
 # the credential files under HOME, never recorded in files.diff: the known credential file names, and private
@@ -243,6 +248,11 @@ def load_sample(path: Path) -> Sample:
         raise ValueError("missing section(s): " + ", ".join(f"## {name}" for name in missing))
     checks = [parse_check(line) for line in sections["Checks"].splitlines() if line.strip()]
     return Sample(path=path, id=meta["id"], meta=meta, sections=sections, checks=checks)
+
+
+def needs_protocol_checks(sample: Sample) -> bool:
+    """True when the sample's covers holds AC-8 or AC-28: the judge then also gets protocol-checks.md."""
+    return PROTOCOL_COVERS_RE.search(sample.meta.get("covers", "")) is not None
 
 
 def sample_ids_match(path: Path, wanted: str) -> bool:
@@ -1008,12 +1018,15 @@ def installed_reviewer_body(fixture: Path) -> str:
 
 
 def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, diff: str,
-          checks_txt: str, helper_dir: Path, env: dict) -> str:
+          checks_txt: str, helper_dir: Path, env: dict, protocol: str | None) -> str:
+    """protocol is the text of protocol-checks.md, or None when the sample does not cover AC-8 or AC-28."""
     system = installed_reviewer_body(fixture) + "\n\n" + judge_brief
+    protocol_part = "" if protocol is None else f"## protocol-checks.md\n\n{protocol}\n\n"
     prompt = (
         f"## transcript.md\n\n{transcript_md}\n"
         f"## files.diff\n\n```diff\n{diff or '(no changes)'}\n```\n\n"
         f"## checks.txt\n\n{checks_txt}\n"
+        f"{protocol_part}"
         f"## Expected outcome\n\n{sample.sections['Expected outcome']}\n\n"
         f"## Must not\n\n{sample.sections['Must not']}\n"
     )
@@ -1089,8 +1102,9 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if ok is False]
         transcript_md = render_transcript_md(transcript)
         try:
+            protocol = ctx["protocol_checks"] if needs_protocol_checks(sample) else None
             ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, judge_view(chunks),
-                           checks_txt, helper_dir, env)
+                           checks_txt, helper_dir, env, protocol)
             has_table, pending = ledger_status(ledger)
             if not has_table:
                 reasons.append("judge: no 7-column ledger table in the output")
@@ -1185,6 +1199,14 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as exc:
         print(f"error: cannot read a brief: {exc}", file=sys.stderr)
         return 2
+    protocol_checks = ""
+    if any(needs_protocol_checks(sample) for sample in samples):
+        try:
+            protocol_checks = (args.briefs_dir / PROTOCOL_CHECKS).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"error: a sample covers AC-8 or AC-28, so the judge needs {PROTOCOL_CHECKS}: {exc}",
+                  file=sys.stderr)
+            return 2
 
     work_root = Path(tempfile.mkdtemp(prefix="aid-conv-bundle-"))
     try:
@@ -1200,6 +1222,7 @@ def main(argv: list[str] | None = None) -> int:
             "real_home": Path(os.environ.get("HOME", str(Path.home()))),
             "user_brief": user_brief,
             "judge_brief": judge_brief,
+            "protocol_checks": protocol_checks,
             "model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,
             "codex_model": os.environ.get("AID_CODEX_MODEL") or "",  # empty: the Codex CLI's default model
         }
