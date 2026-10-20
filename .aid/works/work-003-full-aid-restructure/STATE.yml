@@ -506,6 +506,10 @@ review_history:
     event: 'Delivery-002 gate fixes (Q163) and second resync'
     outcome: 'Fixes in 4b527f91; resync committed alone as b65def86'
     notes: 'next: the full suite, then the maintainer runs /reload-skills, then samples 002-05, 002-20, 002-21 and 002-21b at 3 runs each'
+  - date: '2026-10-20'
+    event: 'Delivery-002 gate, second attempt (samples)'
+    outcome: 'Full suite: 165 of 175 pass, the 9 machine-limit suites fail, test-chat-node-federation passes alone; tracking proof holds for all 40 tasks (all A+). Samples: 002-05 3/3; 002-21 2/3 (one run gave no recommendation); 002-20 0/3 (questions bundled with the repair question, step names shown, one run repaired before the yes); 002-21b 0/3 (offers to reopen, raises Q1)'
+    notes: 'Waiting on the maintainer: how to handle 002-20, 002-21 and 002-21b'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
