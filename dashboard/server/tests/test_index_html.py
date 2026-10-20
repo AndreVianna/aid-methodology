@@ -33,6 +33,8 @@ Python 3.11+ stdlib only. Deterministic.
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -1540,6 +1542,125 @@ class TestFeature002WorkCardLines(unittest.TestCase):
         for banned in ("step_map", "STEP_", "stepMap", "STEP_NAMES", "steps.forEach"):
             self.assertNotIn(banned, self.card_snippet,
                              f"work card must show no step names or maps ({banned})")
+
+
+class TestTask079CardLinesPerFixture(unittest.TestCase):
+    """
+    task-079 (Feature 002 section 8): the work card's lines for each fixture of
+    dashboard/reader/tests/fixtures/task079/.
+
+    Each fixture is read by the Python reader and serialized as the server sends
+    it (_ser_work); _renderWorkCard from home.html then runs under node:vm
+    against a small stand-in for the DOM, and the text of its p-lines is compared
+    with expected.json. The path-summary line is not a Feature 002 line and is
+    left out of the comparison.
+    """
+
+    _PATH_LINE_PREFIXES = ("Full path:", "Lite path", "[Identifying path]")
+
+    # Renders each work through the page's own functions; prints JSON of the
+    # text of every p element of each card, in order.
+    _HARNESS = r"""
+const fs = require('fs');
+const vm = require('vm');
+const input = JSON.parse(fs.readFileSync(0, 'utf8'));
+const page = fs.readFileSync(input.page, 'utf8');
+
+function extractFunction(src, name) {
+  const head = 'function ' + name + '(';
+  const start = src.indexOf(head);
+  if (start === -1) throw new Error('missing function ' + name);
+  const open = src.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') { depth--; if (depth === 0) return src.slice(start, i + 1); }
+  }
+  throw new Error('unterminated function ' + name);
+}
+
+function makeElement(tag) {
+  return {
+    tagName: tag, className: '', textContent: '', title: '', href: '', style: {},
+    children: [],
+    classList: { add: function () {} },
+    appendChild: function (c) { this.children.push(c); return c; },
+    setAttribute: function () {},
+  };
+}
+
+const phaseOrder = page.match(/var PHASE_ORDER = \[[^\]]*\];/)[0];
+const preExec = page.match(/var PRE_EXEC_STEPS = \d+;/)[0];
+const names = ['_fmtLocalDateTime', '_formatRecipe', '_pathSummary', '_readinessPct',
+  '_executionStats', '_renderProgress', 'makeLifecycleBadge', '_renderWorkCard'];
+const code = [phaseOrder, preExec].concat(names.map((n) => extractFunction(page, n))).join('\n');
+const ctx = vm.createContext({ document: { createElement: makeElement } });
+vm.runInContext(code + '\nthis.__render = _renderWorkCard;', ctx);
+
+function pTexts(el, out) {
+  if (el.tagName === 'p') out.push(el.textContent);
+  for (const c of el.children) pTexts(c, out);
+  return out;
+}
+
+const result = {};
+for (const [id, work] of Object.entries(input.works)) {
+  result[id] = pTexts(ctx.__render(work), []);
+}
+process.stdout.write(JSON.stringify(result) + '\n');
+"""
+
+    @classmethod
+    def setUpClass(cls):
+        from dashboard.reader.tests.test_task079_phase_fixtures import (
+            load_expected,
+            load_works,
+        )
+        cls.works_text = load_works()
+        cls.expected = load_expected()
+
+    def _serialized_works(self) -> dict:
+        from dashboard.reader.tests.test_task079_phase_fixtures import (
+            read_python_works,
+            write_repo,
+        )
+
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            root = tmp / "repo"
+            write_repo(root, self.works_text)
+            return read_python_works(root)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def _card_lines(self, works: dict) -> dict:
+        payload = json.dumps({"page": str(_INDEX_HTML), "works": works})
+        proc = subprocess.run(
+            ["node", "-e", self._HARNESS],
+            input=payload, capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(proc.returncode, 0, f"card harness failed: {proc.stderr[:800]}")
+        return json.loads(proc.stdout)
+
+    @unittest.skipUnless(shutil.which("node") is not None, "node not available on PATH")
+    def test_each_fixture_card_shows_its_expected_lines(self):
+        works = self._serialized_works()
+        rendered = self._card_lines(works)
+        self.assertEqual(sorted(rendered), sorted(self.expected["works"]))
+        for work_id, exp in self.expected["works"].items():
+            with self.subTest(work=work_id):
+                lines = [t for t in rendered[work_id]
+                         if not t.startswith(self._PATH_LINE_PREFIXES)]
+                self.assertEqual(lines, exp["card_lines"],
+                                 f"card lines of {work_id}")
+
+    @unittest.skipUnless(shutil.which("node") is not None, "node not available on PATH")
+    def test_record_warning_text_is_the_spec_text(self):
+        rendered = self._card_lines(self._serialized_works())
+        warning = self.expected["record_warning"]
+        self.assertIn(warning, rendered["work-109-missing-record"])
+        self.assertIn(warning, rendered["work-110-inconsistent-record"])
+        self.assertNotIn(warning, rendered["work-104-building"])
 
 
 if __name__ == "__main__":

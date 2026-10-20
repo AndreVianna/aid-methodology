@@ -1,0 +1,173 @@
+@@ work-101-definition
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "no"
+lifecycle: Running
+phase: Definition
+active_skill: aid-describe
+step: "2"
+step_detail: asking about scope
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-102-specification
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "no"
+lifecycle: Paused-Awaiting-Input
+phase: Specification
+active_skill: aid-specify
+step: "1"
+step_detail: drafting the technical spec
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+qa:
+  - id: 1
+    category: Scope
+    impact: High
+    state: Pending
+    context: which login methods
+    suggested: No
+@@ work-103-planning
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "no"
+lifecycle: Running
+phase: Planning
+active_skill: aid-plan
+step: "2"
+step_detail: grouping features into deliveries
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-104-building
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: "3"
+step_detail: running task-004
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-105-building-during-call
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: "3"
+step_detail: waiting on the KB
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+handoffs:
+  - at: "2026-10-02T09:00:00Z"
+    from: aid-execute
+    from_step: "3"
+    from_detail: "--"
+    to: aid-kb-update
+    why: the KB is stale
+    returns: yes
+    returned: "--"
+@@ work-106-ci
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Running
+phase: CI
+active_skill: aid-deploy
+step: "1"
+step_detail: waiting for the release gate
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-107-completed
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Completed
+phase: CI
+active_skill: none
+step: "--"
+step_detail: "--"
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-108-old-phase-names
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+step: "3"
+step_detail: running task-005
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full
+@@ work-109-missing-record
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "no"
+lifecycle: Running
+phase: Definition
+active_skill: aid-describe
+step: "2"
+step_detail: reviewing scope
+updated: "2026-10-01T12:00:00Z"
+@@ work-110-inconsistent-record
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-10-01"
+minimum_grade: A
+user_approved: "yes"
+lifecycle: Completed
+phase: CI
+active_skill: aid-execute
+step: "--"
+step_detail: "--"
+updated: "2026-10-01T12:00:00Z"
+intent:
+  reading: Add a login page
+  depth: full

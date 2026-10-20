@@ -3,7 +3,8 @@
 # mapping and stage rail, which no other suite runs.
 #
 # Covers: the stage-rail test of home.html (renderStageRail, a gate criterion),
-# and the Node twins of the Python phase-mapping and intent-phase tests.
+# the Node twins of the Python phase-mapping and intent-phase tests, and the
+# work fixtures of each phase read by the Node reader (task-079).
 #
 # Usage:
 #   bash test-dashboard-node.sh
@@ -22,6 +23,7 @@ NODE_TESTS=(
     "dashboard/server/tests/test_home_stage_rails.mjs"
     "dashboard/server/tests/test_task048_phase_mapping.mjs"
     "dashboard/server/tests/test_task031_intent_phases.mjs"
+    "dashboard/server/tests/test_task079_phase_fixtures.mjs"
 )
 
 if ! command -v node >/dev/null 2>&1; then

@@ -1,0 +1,118 @@
+{
+  "_about": "task-079 (work-003 Feature 002 section 8): expected values for works.txt, read by both dashboard readers and rendered by the work card. card_lines are the card's p-line texts in order, minus the path-summary line (not a Feature 002 line).",
+  "record_warning": "This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes",
+  "works": {
+    "work-101-definition": {
+      "phase": "Definition",
+      "lifecycle": "Running",
+      "step": "2",
+      "step_detail": "asking about scope",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": ["asking about scope"]
+    },
+    "work-102-specification": {
+      "phase": "Specification",
+      "lifecycle": "Paused-Awaiting-Input",
+      "step": "1",
+      "step_detail": "drafting the technical spec",
+      "open_call": null,
+      "pending": 1,
+      "record_status": "ok",
+      "card_lines": ["drafting the technical spec", "Waiting for your answer (1)"]
+    },
+    "work-103-planning": {
+      "phase": "Planning",
+      "lifecycle": "Running",
+      "step": "2",
+      "step_detail": "grouping features into deliveries",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": ["grouping features into deliveries"]
+    },
+    "work-104-building": {
+      "phase": "Building",
+      "lifecycle": "Running",
+      "step": "3",
+      "step_detail": "running task-004",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": ["running task-004"]
+    },
+    "work-105-building-during-call": {
+      "phase": "Building",
+      "lifecycle": "Running",
+      "step": "3",
+      "step_detail": "waiting on the KB",
+      "open_call": {
+        "to": "aid-kb-update",
+        "why": "the KB is stale",
+        "returns_to": "Building"
+      },
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": [
+        "waiting on the KB",
+        "Away in /aid-kb-update -- back to Building after"
+      ]
+    },
+    "work-106-ci": {
+      "phase": "CI",
+      "lifecycle": "Running",
+      "step": "1",
+      "step_detail": "waiting for the release gate",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": ["waiting for the release gate"]
+    },
+    "work-107-completed": {
+      "phase": "CI",
+      "lifecycle": "Completed",
+      "step": null,
+      "step_detail": null,
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": []
+    },
+    "work-108-old-phase-names": {
+      "phase": "Building",
+      "lifecycle": "Running",
+      "step": "3",
+      "step_detail": "running task-005",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "ok",
+      "card_lines": ["running task-005"]
+    },
+    "work-109-missing-record": {
+      "phase": "Definition",
+      "lifecycle": "Running",
+      "step": "2",
+      "step_detail": "reviewing scope",
+      "open_call": null,
+      "pending": 0,
+      "record_status": "missing",
+      "card_lines": [
+        "reviewing scope",
+        "This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes"
+      ]
+    },
+    "work-110-inconsistent-record": {
+      "phase": "CI",
+      "lifecycle": "Completed",
+      "step": null,
+      "step_detail": null,
+      "open_call": null,
+      "pending": 0,
+      "record_status": "inconsistent",
+      "card_lines": [
+        "This work's record is incomplete: the agent will ask you to confirm a repair when the work resumes"
+      ]
+    }
+  }
+}
