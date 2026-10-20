@@ -1,0 +1,3 @@
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [MEDIUM] | Pending | docs/aid-methodology.md | 821 | The count re-sync changed only the phrases test-doc-counts.sh asserts, so the same file now says "7 agents" in its repository tree (line ~) but still "8 specialist agents" at 819, 821 and 1396 (copied to site/src/content/docs/concepts/methodology.md 823, 825, 1400 by sync:docs); a reader sees two agent counts in one document | `git show 71c9b9f8 -- docs/aid-methodology.md` changes one line only; `git grep -n "8 specialist agents" -- docs site/src` finds six hits; canonical/agents/ now holds 7 directories; severity: judged |
