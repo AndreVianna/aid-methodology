@@ -48,7 +48,7 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Executing
+delivery_state: Gated
 # [W] Small | Medium | Large
 gate_tier: Small
 # [W]
