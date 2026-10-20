@@ -3448,6 +3448,40 @@ assert_eq "$(w29_absent "${S32}/.aid/works/work-003-bad/STATE.yml")" "absent" "3
 w32 "$S32" --seed .aid/design/my-thing.md --step s2 --skill aid-fix --name s2
 assert_eq "$RC32" "5" "32e: --seed with a mode other than --create exits 5"
 
+# --- 32e2: --seed found in the main worktree, copied into the work's worktree -----
+echo ""
+echo "--- 32e2: --create --seed run inside a git worktree finds an untracked design in the main checkout ---"
+M32="${R32}/gitmain"
+W32="${R32}/gitwt"
+mkdir -p "${M32}/.aid/design"
+(cd "$M32" && git init -q . && git config user.name Ada && git config user.email a@example.com \
+    && echo base > README.md && git add README.md && git commit -q -m base \
+    && git worktree add -q -b work-009-x "$W32") >/dev/null 2>&1
+cp "$D32" "${M32}/.aid/design/x.md"
+mkdir -p "${W32}/.aid/works/work-009-x" "${M32}/outside"
+echo "stray" > "${M32}/outside/y.md"
+assert_eq "$(w29_absent "${W32}/.aid/design/x.md")" "absent" "32e2: the worktree does not hold the untracked design"
+w32 "$W32" --create --work-dir .aid/works/work-009-x --reading 'new capability' --request 'build it' \
+    --skill aid-create --step s1 --seed .aid/design/x.md
+assert_eq "$RC32" "0" "32e2: --create --seed from inside the worktree exits 0"
+assert_file_exists "${W32}/.aid/design/x.md" "32e2: the design is copied into the worktree"
+assert_eq "$(cksum < "${W32}/.aid/design/x.md")" "$(cksum < "${M32}/.aid/design/x.md")" "32e2: the copy equals the main-tree file"
+SW32="${W32}/.aid/works/work-009-x/STATE.yml"
+assert_file_contains "$SW32" "ref: '.aid/design/x.md'" "32e2: sources names the relative design path"
+assert_eq "$(grep -c '^  - id: Q' "$SW32")" "2" "32e2: the questions moved into the qa"
+mkdir -p "${W32}/.aid/works/work-010-y"
+w32 "$W32" --create --work-dir .aid/works/work-010-y --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed "${M32}/.aid/design/x.md"
+assert_eq "$RC32" "0" "32e2: the main tree's absolute path is accepted"
+mkdir -p "${W32}/.aid/works/work-011-z"
+w32 "$W32" --create --work-dir .aid/works/work-011-z --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed "${M32}/outside/y.md"
+assert_eq "$RC32" "5" "32e2: a path outside both roots' .aid/design exits 5"
+w32 "$W32" --create --work-dir .aid/works/work-011-z --reading 'new capability' --request r \
+    --skill aid-create --step s1 --seed .aid/design/nowhere.md
+assert_eq "$RC32" "5" "32e2: a file in neither root exits 5"
+assert_eq "$(w29_absent "${W32}/.aid/works/work-011-z/STATE.yml")" "absent" "32e2: a refused --seed creates no record"
+
 # --- 32f: --by is removed --------------------------------------------------------
 echo ""
 echo "--- 32f: --by is an unknown argument ---"

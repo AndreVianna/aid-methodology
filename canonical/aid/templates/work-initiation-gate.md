@@ -162,7 +162,7 @@ The gate performs the steps below in this order, and only then hands the new wor
      [--reason '<why the reading holds>'] [--phases <P1,P2,...>] [--seed <design file>]
    ```
 
-   A build skill whose seed exists in `.aid/design/` passes `--seed <file>`, and so does a starter that recorded questions before the work existed (that document): the seed is added to the new work's `sources:` and every row of its `## Questions` table is copied into the work's `qa` list as a new `Q<n>` entry (state, answer and `answered_by` kept). The design document is left unchanged.
+   A build skill whose seed exists in `.aid/design/` passes `--seed <file>`, and so does a starter that recorded questions before the work existed (that document): the seed is added to the new work's `sources:` and every row of its `## Questions` table is copied into the work's `qa` list as a new `Q<n>` entry (state, answer and `answered_by` kept). The design document is left unchanged. The design document was written in the main checkout, before this work's worktree existed, so `--seed` finds it there and copies it into the work's worktree at the same relative path.
 
    A caller that was handed an intent (the reason and the phases it chose) passes `--reason` and `--phases` here, so the work starts with them; the writer's `--intent` sets them later.
 

@@ -197,7 +197,10 @@
 #       and category are kept; impact is Medium). The design document is left unchanged.
 #       FILE must be inside <project root>/.aid/design/ and exist (exit 5 otherwise). The
 #       project root is the git top level, else the current directory; the same rule holds
-#       for every --design and --rename-design path.
+#       for every --design and --rename-design path. --seed alone also accepts a file in the
+#       MAIN worktree's .aid/design/ (the work's own worktree does not hold a design written
+#       just before it): it is looked up in the project root first, else in the main worktree,
+#       and a file found only there is copied to the same relative path in the current tree.
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
@@ -354,7 +357,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,318p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,321p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -2458,10 +2461,9 @@ mode_create() {
     if [[ -n "$PHASES_ARG" ]]; then wb_phase_list "$PHASES_ARG"; fi
     local seed_abs="" seed_rel=""
     if [[ -n "$SEED_ARG" ]]; then
-        wb_design_path "$SEED_ARG" "--seed"
+        wb_seed_path "$SEED_ARG"
         seed_abs="$DESIGN_ABS"
         seed_rel="$DESIGN_REL"
-        [[ -f "$seed_abs" ]] || die "--seed file does not exist: $SEED_ARG" 5
     fi
 
     local template
@@ -2821,6 +2823,48 @@ wb_design_path() {
     [[ "$out" == "$root"/.aid/design/?* ]] || die "$opt '$raw' must be a file inside this project's .aid/design/" 5
     DESIGN_ABS="$out"
     DESIGN_REL=".aid/design/${out#"$root"/.aid/design/}"
+}
+
+# wb_seed_path FILE: resolves a --seed FILE into DESIGN_ABS / DESIGN_REL. The file is looked
+# up in this project root's .aid/design/ first, else in the main worktree's .aid/design/
+# (the parent of the git common dir); those two roots are the only ones allowed. A file
+# found only in the main worktree is copied to the same relative path in this tree, so the
+# work branch carries it. Exits 5 when the path is outside both or the file is in neither.
+wb_seed_path() {
+    local raw="$1" abs part out="" parts root main common rel
+    root="$(git rev-parse --show-toplevel 2>/dev/null)" || root=""
+    if [[ -z "$root" ]]; then root="$(pwd -P)"; fi
+    root="${root%/}"
+    main=""
+    common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
+    if [[ -n "$common" ]]; then main="$(dirname "${common%/}")"; fi
+    abs="$raw"
+    [[ "$abs" == /* ]] || abs="$(pwd -P)/$abs"
+    IFS=/ read -ra parts <<< "$abs"
+    for part in "${parts[@]}"; do
+        case "$part" in
+            ''|.) ;;
+            ..) out="${out%/*}" ;;
+            *) out="$out/$part" ;;
+        esac
+    done
+    if [[ "$out" == "$root"/.aid/design/?* ]]; then
+        rel=".aid/design/${out#"$root"/.aid/design/}"
+    elif [[ -n "$main" && "$out" == "$main"/.aid/design/?* ]]; then
+        rel=".aid/design/${out#"$main"/.aid/design/}"
+    else
+        die "--seed '$raw' must be a file inside this project's .aid/design/ (or the main checkout's)" 5
+    fi
+    if [[ -f "$root/$rel" ]]; then
+        :
+    elif [[ -n "$main" && "$main" != "$root" && -f "$main/$rel" ]]; then
+        mkdir -p "$(dirname "$root/$rel")" && cp "$main/$rel" "$root/$rel" \
+            || die "cannot copy --seed file into $root/$rel" 1
+    else
+        die "--seed file does not exist: $raw" 5
+    fi
+    DESIGN_ABS="$root/$rel"
+    DESIGN_REL="$rel"
 }
 
 # wb_design_cell VALUE: VALUE as one table cell: line breaks become spaces, `|` is escaped.
