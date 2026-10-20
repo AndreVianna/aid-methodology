@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L37-L47" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L38-L48" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
@@ -67,11 +67,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L37-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L37-L47) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L37-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L37-L53)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L38-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L38-L48) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L38-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L38-L54)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L57-L65" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L58-L66" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -83,37 +83,37 @@ the built client/adapter lands. **Never writes `.aid/knowledge/` and never write
 production code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L57-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L57-L65) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L57-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L57-L67)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L58-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L58-L66) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L58-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L58-L68)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L71-L74" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L72-L75" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L71-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L71-L76)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L72-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L72-L77)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L80-L83" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L81-L84" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L80-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L80-L88)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L81-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L81-L89)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L92-L95" wrap
+~~~~plaintext title="canonical/skills/aid-design-integration/SKILL.md#L93-L96" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-integration/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L92-L95) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L92-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L92-L95)
+[Source: `canonical/skills/aid-design-integration/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L93-L96)

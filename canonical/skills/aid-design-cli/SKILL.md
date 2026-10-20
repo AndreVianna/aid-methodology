@@ -27,9 +27,10 @@ the built command is `/aid-create-cli`'s job, not this one's.
 - **Step rules:** the advance words, the step procedure and the work record are
   `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**, as
-`design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
-entry line on each state.
+`design-lifecycle.md § Skill shape` defines it.
 
 ---
 

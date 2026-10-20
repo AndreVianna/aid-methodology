@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L41-L50" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L42-L51" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What system or
@@ -66,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L41-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L41-L50) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L41-L56`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L41-L56)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L42-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L42-L51) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L42-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L42-L57)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L60-L66" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L61-L67" wrap
 ## State: DESIGN
 
 Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -80,33 +80,33 @@ in INTAKE. What this artifact's seed must settle: **the components, their bounda
 interactions, the invariants, and what is deliberately NOT a component**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L60-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L60-L66) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L60-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L60-L84)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L61-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L61-L85)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L88-L91" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L89-L92" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L88-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L88-L91) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L88-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L88-L93)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L89-L92) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L89-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L89-L94)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L97-L100" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L98-L101" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L97-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L97-L105)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L98-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L101) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L98-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L106)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L109-L113" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L110-L114" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
@@ -114,4 +114,4 @@ persists at `.aid/design/architecture.md`; consumption happens at
 `/aid-create-architecture`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L109-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L109-L113) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L109-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L109-L113)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L110-L114) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L110-L114)

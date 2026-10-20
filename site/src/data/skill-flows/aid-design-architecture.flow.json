@@ -17,15 +17,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 41,
-        "endLine": 50,
+        "startLine": 42,
+        "endLine": 51,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What system or\n   subsystem do you want to design -- its components, boundaries, and invariants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-design-architecture` given to the gate's `--create`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/architecture.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 41,
-        "endLine": 56,
+        "startLine": 42,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What system or\n   subsystem do you want to design -- its components, boundaries, and invariants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-design-architecture` given to the gate's `--create`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/architecture.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over)."
       }
@@ -39,15 +39,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 60,
-        "endLine": 66,
+        "startLine": 61,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nResolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/architecture.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the components, their boundaries and\ninteractions, the invariants, and what is deliberately NOT a component**."
       },
       "detail": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 60,
-        "endLine": 84,
+        "startLine": 61,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nResolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/architecture.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the components, their boundaries and\ninteractions, the invariants, and what is deliberately NOT a component**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C1**\n(build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a hardcoded\nfilename. Resolve C1 against the project's declared doc-set (`.aid/settings.yml`\n`knowledge.doc_set`), falling back to the C1 row of\n`.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and **confirm the resolution\nwith the user** before writing. Write the resolved path into the seed's **`## Destination`**\nsection (required for a class-1 seed). C1's default set holds both `project-structure.md`\nand `architecture.md`; this skill resolves to the document describing the system's shape\nand **never** `project-structure.md`, which describes the repo layout. Where the\nrealization is genuinely ambiguous, **ask -- never pick silently**.\n\n**Writes only `.aid/design/architecture.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code -- the `design` invariant (`design-lifecycle.md`).\n\nThe destination confirmation is a blocking question, asked before the dispatch writes anything: this step pauses on it until the user answers.\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -64,15 +64,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 88,
-        "endLine": 91,
+        "startLine": 89,
+        "endLine": 92,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 88,
-        "endLine": 93,
+        "startLine": 89,
+        "endLine": 94,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
@@ -86,15 +86,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 97,
-        "endLine": 100,
+        "startLine": 98,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nPresent the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 97,
-        "endLine": 105,
+        "startLine": 98,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nPresent the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).\n\nThen ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-architecture --step PRESENT --covers 'the seed .aid/design/architecture.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/architecture.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.\nIf the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.\n\n**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes."
       }
@@ -111,15 +111,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 109,
-        "endLine": 113,
+        "startLine": 110,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer. The seed\npersists at `.aid/design/architecture.md`; consumption happens at\n`/aid-create-architecture`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 109,
-        "endLine": 113,
+        "startLine": 110,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer. The seed\npersists at `.aid/design/architecture.md`; consumption happens at\n`/aid-create-architecture`."
       }
@@ -134,8 +134,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 56,
-        "endLine": 56,
+        "startLine": 57,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over)."
       }
@@ -148,8 +148,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 84,
-        "endLine": 84,
+        "startLine": 85,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -162,8 +162,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 93,
-        "endLine": 93,
+        "startLine": 94,
+        "endLine": 94,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
@@ -176,8 +176,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 93,
-        "endLine": 93,
+        "startLine": 94,
+        "endLine": 94,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped."
       }
@@ -190,8 +190,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 106,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes."
       }
@@ -204,8 +204,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 106,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes."
       }

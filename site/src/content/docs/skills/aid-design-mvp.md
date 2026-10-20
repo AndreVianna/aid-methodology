@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L41-L51" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L42-L52" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
@@ -67,11 +67,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L41-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L51) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L41-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L57)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L42-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L42-L52) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L42-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L42-L58)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L61-L66" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L62-L67" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -80,11 +80,11 @@ exists. Draws out: **the line -- what is in the first shippable slice, what defe
 the reason for each cut.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L61-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L61-L66) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L61-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L61-L73)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L62-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L62-L67) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L62-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L62-L74)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L77-L81" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L78-L82" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -92,11 +92,11 @@ defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escal
 IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L77-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L81) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L77-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L83)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L78-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L78-L82) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L78-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L78-L84)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L87-L91" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L88-L92" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
@@ -104,15 +104,15 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 (`/aid-create-mvp`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L87-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L91) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L87-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L96)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L88-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L88-L92) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L88-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L88-L97)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L100-L103" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L101-L104" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
 stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L100-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L100-L103) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L100-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L100-L103)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L101-L104)

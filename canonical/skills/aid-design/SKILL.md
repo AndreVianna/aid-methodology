@@ -27,8 +27,10 @@ It fills the DESIGN lite gap (DESIGN is a task type, but there was no lite entry
   to `/aid-create-document`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> HANDOFF? ->
-DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+DONE**.
 
 Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
 this skill keeps only its own step table.

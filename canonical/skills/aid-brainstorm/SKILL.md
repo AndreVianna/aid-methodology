@@ -22,9 +22,10 @@ whole deliverable, and the user decides where it goes next.
   answerable is the distinction (FR-7).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**, as
-`design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
-entry line on each state.
+`design-lifecycle.md § Skill shape` defines it.
 
 Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
 this skill keeps only its own step table.

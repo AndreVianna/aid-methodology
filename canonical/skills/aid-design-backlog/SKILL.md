@@ -35,8 +35,9 @@ seed into `backlog.md` -- including moving accepted rows out of `tech-debt.md` -
 - **Step rules:** the advance words, the step procedure and the work record are
   `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
-State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**. Print
-the `[State: NAME] -- {purpose}` entry line on each state.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
+State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**.
 
 ---
 

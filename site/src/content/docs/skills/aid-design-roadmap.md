@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L41-L52" wrap
+~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L42-L53" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
@@ -68,11 +68,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L41-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L41-L52) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L41-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L41-L58)
+[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L42-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L42-L53) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L42-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L42-L59)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L62-L67" wrap
+~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L63-L68" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -81,11 +81,11 @@ exists. Draws out: **direction and its *why*; what is committed vs. merely wante
 sequencing rationale; the alternatives being rejected and why.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L62-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L62-L67) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L62-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L62-L74)
+[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L63-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L63-L68) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L63-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L63-L75)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L78-L82" wrap
+~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L79-L83" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -93,11 +93,11 @@ defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escal
 IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L78-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L78-L82) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L78-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L78-L84)
+[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L79-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L79-L83) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L79-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L79-L85)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L88-L92" wrap
+~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L89-L93" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
@@ -105,11 +105,11 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 (`/aid-create-roadmap`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L88-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L88-L92) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L88-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L88-L97)
+[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L89-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L89-L93) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L89-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L89-L98)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L101-L105" wrap
+~~~~plaintext title="canonical/skills/aid-design-roadmap/SKILL.md#L102-L106" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer. The seed
@@ -117,4 +117,4 @@ stays at `.aid/design/roadmap.md` -- consumption happens at `/aid-create-roadmap
 here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L101-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L101-L105) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L101-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L101-L105)
+[Source: `canonical/skills/aid-design-roadmap/SKILL.md#L102-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L102-L106) · [full step: `canonical/skills/aid-design-roadmap/SKILL.md#L102-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-roadmap/SKILL.md#L102-L106)
