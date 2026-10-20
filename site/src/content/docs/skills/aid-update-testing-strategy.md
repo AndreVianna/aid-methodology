@@ -54,40 +54,17 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L76" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L53" wrap
 ## State: INTAKE
 
-1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
-   change in the testing strategy or the gate policy?") and wait.
-2. **No seed is required.** The change stated in this run is a sufficient input, and this
-   skill completes without a seed. **Read and consume one when present** at
-   `.aid/design/testing-strategy.md`, carrying its `## Current direction` into the
-   destinations and deleting it once realized.
-3. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &
-   testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;
-   otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`
-   `knowledge.doc_set`, falling back to the C6 row of
-   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
-   with the user before writing**. Never resolve silently.
-4. **Read both destinations** whole, and note each one's `source:` field. An absent
-   destination is written nothing: tell the user to run `/aid-create-testing-strategy` for that document.
-   When neither document exists, allocate nothing and end the run.
-5. **Ask, every run, which derived outputs to update alongside this one.** This question is
-   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
-   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
-   between runs. The question is asked afresh each time, and UPDATE applies the answer.
-6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
-7. **Allocate** once a destination is present, so a route leaves no work behind. Go through the Work
-   Initiation Gate exactly as the contract's Allocation rule requires
-   (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with
-   `initiator: aid-update-testing-strategy`, saved step `UPDATE` (INTAKE runs before the record and saves nothing), and `--seed .aid/design/testing-strategy.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
+Every question this step asks (the opening, the destination confirmation and the derived-outputs question) is asked before the work exists, so each is recorded in a design document, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design <file> --category <category> --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<your recommendation>' --asked-by aid-update-testing-strategy` before it is shown (it prints the question's id), then `--answer --design <file> --id <the printed id> --state Answered|Skipped|Assumed --value '<the reply>'` after the reply. `<file>` is `.aid/design/testing-strategy.md` when that seed exists, otherwise `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, stamped at the first question and reused for the whole run. A question recorded in the seed leaves the rest of the seed untouched.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L76) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L81)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L53) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L51-L83)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L85-L91" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L87-L93" wrap
 ## State: UPDATE
 
 **Before the first edit,** copy every file this step will edit or delete (the destination, each output the user
@@ -97,36 +74,36 @@ again (after VERIFY or a requested change), a file already under `rollback/` is 
 the original, not an earlier revision.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L85-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L85-L91) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L85-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L85-L100)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L87-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L87-L93) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L87-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L87-L102)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L104-L107" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L104-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L104-L107) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L104-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L104-L109)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L111)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L113-L116" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L118" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the revision, say which C6 half each change
 went to, name every output touched, and assert that a consumed seed is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L113-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L113-L116) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L113-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L113-L129)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L118) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L131)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L133-L135" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L135-L137" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L133-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L133-L135) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L133-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L133-L137)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L135-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L135-L137) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L135-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L135-L139)

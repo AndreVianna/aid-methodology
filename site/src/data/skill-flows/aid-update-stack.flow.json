@@ -18,16 +18,16 @@
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
         "startLine": 51,
-        "endLine": 74,
+        "endLine": 53,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n3. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and\n   write nothing: tell the user to run `/aid-create-stack`, and end the run.\n5. **Ask, every run, which derived outputs to update alongside this one.** This question is\n   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this\n   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried\n   between runs. The question is asked afresh each time, and UPDATE applies the answer.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work\n   Initiation Gate exactly as the contract's Allocation rule requires\n   (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with\n   `initiator: aid-update-stack`, saved step `UPDATE` (INTAKE runs before the record and saves nothing), and `--seed .aid/design/stack.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven."
+        "excerpt": "## State: INTAKE\n\nEvery question this step asks (the opening, the destination confirmation and the derived-outputs question) is asked before the work exists, so each is recorded in a design document, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design <file> --category <category> --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<your recommendation>' --asked-by aid-update-stack` before it is shown (it prints the question's id), then `--answer --design <file> --id <the printed id> --state Answered|Skipped|Assumed --value '<the reply>'` after the reply. `<file>` is `.aid/design/stack.md` when that seed exists, otherwise `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, stamped at the first question and reused for the whole run. A question recorded in the seed leaves the rest of the seed untouched."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
         "startLine": 51,
-        "endLine": 79,
+        "endLine": 81,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n3. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and\n   write nothing: tell the user to run `/aid-create-stack`, and end the run.\n5. **Ask, every run, which derived outputs to update alongside this one.** This question is\n   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this\n   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried\n   between runs. The question is asked afresh each time, and UPDATE applies the answer.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work\n   Initiation Gate exactly as the contract's Allocation rule requires\n   (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with\n   `initiator: aid-update-stack`, saved step `UPDATE` (INTAKE runs before the record and saves nothing), and `--seed .aid/design/stack.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.\n\nEvery `--step` call after the allocation passes in its `--detail` the change, the destination, the derived outputs the user\nnamed and the complexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN → [State: UPDATE]; HALT when the destination is absent."
+        "excerpt": "## State: INTAKE\n\nEvery question this step asks (the opening, the destination confirmation and the derived-outputs question) is asked before the work exists, so each is recorded in a design document, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design <file> --category <category> --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<your recommendation>' --asked-by aid-update-stack` before it is shown (it prints the question's id), then `--answer --design <file> --id <the printed id> --state Answered|Skipped|Assumed --value '<the reply>'` after the reply. `<file>` is `.aid/design/stack.md` when that seed exists, otherwise `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, stamped at the first question and reused for the whole run. A question recorded in the seed leaves the rest of the seed untouched.\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n3. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and\n   write nothing: tell the user to run `/aid-create-stack`, and end the run.\n5. **Ask, every run, which derived outputs to update alongside this one.** This question is\n   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this\n   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried\n   between runs. The question is asked afresh each time, and UPDATE applies the answer.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work\n   Initiation Gate exactly as the contract's Allocation rule requires\n   (`.aid/runtime/templates/work-initiation-gate.md` § 3a is the shape), with\n   `initiator: aid-update-stack`, saved step `UPDATE` (INTAKE runs before the record and saves nothing), and `--seed .aid/design/stack.md` on the gate's `--create` when that seed exists, or `--seed` the untitled design document when INTAKE recorded its questions there instead (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.\n\nEvery `--step` call after the allocation passes in its `--detail` the change, the destination, the derived outputs the user\nnamed and the complexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN → [State: UPDATE]; HALT when the destination is absent."
       }
     },
     {
@@ -39,15 +39,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 83,
-        "endLine": 89,
+        "startLine": 85,
+        "endLine": 91,
         "sourceKind": "skill",
         "excerpt": "## State: UPDATE\n\n**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user\nnamed in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same\nrelative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs\nagain (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores\nthe original, not an earlier revision."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 83,
-        "endLine": 98,
+        "startLine": 85,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "## State: UPDATE\n\n**Before the first edit,** copy every file this step will edit or delete (the destination, each output the user\nnamed in INTAKE, a consumed seed and, for a promotion, `tech-debt.md`) into `rollback/` in the work folder, under the same\nrelative path, so PRESENT can restore them if the user declines. Copy only once: when UPDATE runs\nagain (after VERIFY or a requested change), a file already under `rollback/` is kept, so a decline restores\nthe original, not an earlier revision.\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -64,15 +64,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 102,
-        "endLine": 105,
+        "startLine": 104,
+        "endLine": 107,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 102,
-        "endLine": 107,
+        "startLine": 104,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -86,15 +86,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 111,
-        "endLine": 114,
+        "startLine": 113,
+        "endLine": 116,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nPresent the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 111,
-        "endLine": 127,
+        "startLine": 113,
+        "endLine": 129,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nPresent the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone.\n\nThen ask the approval question: keep this revision, change it, or decline it. It is an approval under\n`.aid/runtime/templates/question-protocol.md`: record it with `--ask` (category `Approval`, `covers` the revision), set\n`lifecycle` to `Paused-Awaiting-Input` and the pause reason through the writer, and ask. The question pauses this step\nwhere it stands and cannot be skipped. Once it is answered, record the answer with `--answer` and set `lifecycle` back to\n`Running` through the writer (`skill-steps.md` part 3). Then:\n\n- **Approve:** the revision stays as written.\n- **Change:** the changes the user asks for go into the step detail, and UPDATE applies them; the verify runs again.\n- **Decline:** copy every file saved under `rollback/` back to its place (a consumed seed included), so the Knowledge\n  Base is as it was before this run and nothing lands.\n\n**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes."
       }
@@ -111,15 +111,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 131,
-        "endLine": 133,
+        "startLine": 133,
+        "endLine": 135,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 131,
-        "endLine": 135,
+        "startLine": 133,
+        "endLine": 137,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer (`--pipeline --field Lifecycle --value Completed`), which also clears the saved skill and step.\n\n**Advance:** HALT."
       }
@@ -134,8 +134,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 81,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: UPDATE]; HALT when the destination is absent."
       }
@@ -148,8 +148,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 100,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -162,8 +162,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
+        "startLine": 109,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -176,8 +176,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
+        "startLine": 109,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: UPDATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -190,8 +190,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 129,
+        "endLine": 129,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes."
       }
@@ -204,8 +204,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 129,
+        "endLine": 129,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes."
       }
@@ -218,8 +218,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 129,
+        "endLine": 129,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE] when the user approves; CHAIN → [State: DONE] when the user declines (the revision is rolled back first); CHAIN → [State: UPDATE] when the user asks for changes."
       }
