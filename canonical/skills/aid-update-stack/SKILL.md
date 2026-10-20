@@ -30,8 +30,9 @@ none of its rules.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE -> UPDATE -> VERIFY -> PRESENT -> DONE**, as
-`design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}` entry
-line on each state.
+`design-lifecycle.md § Skill shape` defines it.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

@@ -61,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L45-L58" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L46-L59" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
@@ -78,22 +78,22 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L45-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L45-L58) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L45-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L45-L60)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L46-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L46-L59) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L46-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L46-L61)
 
 <a id="fragment-n2"></a>**2 · `GUARD`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L64-L67" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L65-L68" wrap
 ## State: GUARD
 
 **Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty
 `## Open questions` section per `design-lifecycle.md`'s detection rule.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L64-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L64-L67) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L64-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L64-L74)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L65-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L65-L68) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L65-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L65-L75)
 
 <a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L78-L83" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L79-L84" wrap
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case
@@ -102,22 +102,22 @@ determined in INTAKE. The worker never asks the user: it returns the questions b
 conversation asks them, through the question protocol.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L78-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L83) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L78-L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L78-L182)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L79-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L79-L84) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L79-L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L79-L183)
 
 <a id="fragment-n4"></a>**4 · `REGISTER`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L186-L189" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L187-L190" wrap
 ## State: REGISTER
 
 **On creation only** (destination was absent in INTAKE). Write two surfaces atomically
 in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L186-L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L186-L189) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L186-L201`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L186-L201)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L187-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L187-L190) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L187-L202`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L187-L202)
 
 <a id="fragment-n5"></a>**5 · `VERIFY`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L205-L209" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L206-L210" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -125,24 +125,24 @@ defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs esca
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L205-L209`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L205-L209) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L205-L211`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L205-L211)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L206-L210`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L206-L210) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L206-L212`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L206-L212)
 
 <a id="fragment-n6"></a>**6 · `PRESENT`** — hard stop -- the user decides · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L215-L217" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L216-L218" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the realized document clearly. Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L215-L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L215-L217) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L215-L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L215-L227)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L216-L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L216-L218) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L216-L228`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L216-L228)
 
 <a id="fragment-n7"></a>**7 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L231-L233" wrap
+~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L232-L234" wrap
 ## State: DONE
 
 Set the lifecycle to `Completed` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L231-L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L231-L233) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L231-L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L231-L233)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L232-L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L232-L234) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L232-L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L232-L234)
