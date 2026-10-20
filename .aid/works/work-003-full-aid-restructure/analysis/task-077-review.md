@@ -1,0 +1,4 @@
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [MEDIUM] | Pending | .aid/knowledge/decisions.md | 758 | D32's Amends line still says D15's agent count "is now eight" while the same entry's Status (line 761) was changed to say the folder holds seven and D15 now says seven; the edit left D32 contradicting itself and D15 | D15 heading/line 95 say 7; line 761 says "holds seven"; line 758 unchanged "now eight"; severity: judged |
+| 2 | [LOW] | Pending | .aid/knowledge/decisions.md | 787 | D15's status (line 340) and the index row (line 95) say D15 is "amended by D32 and D33", but D33's own Amends line names only D17; the two-way link is one-sided, so a reader of D33 does not learn it changes the agent count | `git grep -n '^- \*\*Amends' decisions.md` returns only lines 758 and 787; line 787 names D17 only; severity: judged |
