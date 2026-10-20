@@ -93,9 +93,7 @@ to directly.
 | GATE | below | `aid-reviewer` (Large) | CHAIN → APPROVAL-HALT when both passes clear; CHAIN → GATE when a pass is below the floor and the circuit breaker has not tripped; HALT when the circuit breaker has blocked the work |
 | APPROVAL-HALT | below | inline | CHAIN → CAPTURE when the requirements must change; CHAIN → DETAIL when only the task set must change; HALT when approved or dropped |
 
-Print the state-entry line on entry to each state (`[State: NAME] -- {one-line
-purpose}`), matching the convention every other AID skill uses. On entry, before its work,
-each state saves its own step: `bash .aid/runtime/scripts/execute/writeback-state.sh --step
+On entry to each state, before its work, the state saves its own step: `bash .aid/runtime/scripts/execute/writeback-state.sh --step
 --skill {name} --name <STATE>` (`.aid/runtime/templates/skill-steps.md`, the step procedure).
 INTAKE is the exception: the work does not exist until its Step 4 creates it, with
 `--step INTAKE`. Route each completed state's `**Advance:**` per
@@ -103,6 +101,8 @@ INTAKE is the exception: the work does not exist until its Step 4 creates it, wi
 which asks the approval, reads the answer, and then either loops back or halts. A question that
 comes up in INTAKE or CAPTURE pauses that state where it stands, and the state goes on once it is answered (skill-steps.md,
 "Questions, at any point").
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 **Agent dispatch (C-2).** Authoring states (CAPTURE/SPEC/PLAN/DETAIL) dispatch
 `aid-architect` (Large tier -- design work, mirroring how `aid-describe`'s former
@@ -231,9 +231,9 @@ Read `.aid/runtime/templates/shortcut-catalog.yml`. Find the row whose `name` eq
 `{name}`. Record `default_type`, `group`, `intent`, `alias_of` from that row.
 
 - **Row not found** (a shipped doorway with no matching catalog row -- a build/catalog
-  drift, not a user error): STOP. Print:
-  `[State: INTAKE] ERROR -- no shortcut-catalog.yml row for '{name}'. This is a build
-  defect, not a usage error; report it.` Do not guess a `default_type`.
+  drift, not a user error): STOP. Tell the user, in one plain line, that no
+  shortcut-catalog.yml row exists for '{name}', that this is a build defect and not a usage
+  error, and that it must be reported. Do not guess a `default_type`.
 
 ### Step 2: Resolve the description
 
@@ -904,7 +904,7 @@ necessary but not sufficient -- the human gate below is the other half.
 Print a summary the user can approve or reject:
 
 ```
-[State: APPROVAL-HALT] -- flattened work ready for approval; nothing has executed.
+Flattened work ready for approval; nothing has executed.
 
 work-{NNN}-{slug}  (/{name})
   REQUIREMENTS.md
