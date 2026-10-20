@@ -53,7 +53,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | CHAIN → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L73) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L135)
+[Source: `canonical/skills/aid-detail/SKILL.md#L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L73) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L146)
 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** — Existing task files found, and the task list was previously… · _entry_
 
@@ -61,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW when the user reopens; CHAIN → DONE when the user keeps the list |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L74) · [full step: `canonical/skills/aid-detail/references/confirm.md#L1-L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/confirm.md#L1-L17)
+[Source: `canonical/skills/aid-detail/SKILL.md#L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L74) · [full step: `canonical/skills/aid-detail/references/confirm.md#L1-L26`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/confirm.md#L1-L26)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — Existing task files found; re-review against current… · _step_
 

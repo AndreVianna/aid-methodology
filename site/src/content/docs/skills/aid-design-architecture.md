@@ -99,7 +99,7 @@ interactions, the invariants, and what is deliberately NOT a component**.
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-architecture`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-architecture/SKILL.md#L98-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L101) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L98-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L106)

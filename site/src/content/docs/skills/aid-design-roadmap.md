@@ -101,7 +101,7 @@ IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user decides whether to iterate further (re-invoke this skill) or realize it now
+the user decides whether to iterate further (declining the approval below changes the seed in place) or realize it now
 (`/aid-create-roadmap`).
 ~~~~
 

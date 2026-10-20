@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 228,
-        "endLine": 228,
+        "startLine": 233,
+        "endLine": 233,
         "sourceKind": "skill",
         "excerpt": "| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |"
       },
       "detail": {
         "file": "canonical/skills/aid-define/references/state-feature-decomposition.md",
         "startLine": 1,
-        "endLine": 26,
+        "endLine": 25,
         "sourceKind": "worker",
-        "excerpt": "# State: FEATURE-DECOMPOSITION\n\nRequirements are approved and `REQUIREMENTS.md § 11 Features` has no feature sections yet; decompose Functional Requirements (§5) into discrete, independently implementable features, each a `### Feature NNN` subsection of §11.\n\nEmit pipeline phase (silent state-write only — no output; a failed write stops the run):\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Agent:** This is design work. Dispatch with `subagent_type: aid-architect`.\n\n▶ aid-architect starting (~2–4 min)\nRead `references/feature-decomposition.md`. The worker does Steps 1 and 2 only (analyze, propose): it returns\nthe proposed feature table and its open questions, and never asks the user. If it fails, say why in one plain line.\n\nThe main conversation puts the approval of the feature list to the user (`feature-decomposition.md` Steps 2 and 3),\nthrough the question protocol. It is a blocking question: this step pauses on it where it stands, with its detail\nsaying the list is proposed and the approval is open, until the user answers. An adjustment is applied and the list\nis put again. Once the list is approved, the same step dispatches aid-architect again to write the feature\nsections and update the meta-documents (`feature-decomposition.md` Steps 4 and 5), then goes on.\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline).\n"
+        "excerpt": "# State: FEATURE-DECOMPOSITION\n\nRequirements are approved and `REQUIREMENTS.md § 11 Features` has no feature sections yet; decompose Functional Requirements (§5) into discrete, independently implementable features, each a `### Feature NNN` subsection of §11.\n\nEmit pipeline phase (silent state-write only — no output; a failed write stops the run):\n```\nbash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification\nbash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Agent:** This is design work. Dispatch with `subagent_type: aid-architect`.\n\n▶ aid-architect starting (~2–4 min)\nRead `references/feature-decomposition.md`. The worker does Steps 1 and 2 only (analyze, propose): it returns\nthe proposed feature table and its open questions, and never asks the user. If it fails, say why in one plain line.\n\nThe main conversation puts the approval of the feature list to the user (`feature-decomposition.md` Steps 2 and 3),\nthrough the question protocol. It is a blocking question, and an approval: record it first with `--ask --category Approval --covers` as `feature-decomposition.md` Step 2 says, and bring the step detail up to date with `--step` (the list is proposed, the approval is open, with its id). Set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. This step pauses on it where it stands until the user approves or declines; an approval cannot be skipped. Record the answer with `--answer --id <id>` and set the lifecycle back to `Running`. An adjustment is applied and the list\nis put again. Once the list is approved, the same step dispatches aid-architect again to write the feature\nsections and update the meta-documents (`feature-decomposition.md` Steps 4 and 5), then goes on.\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline).\n"
       }
     },
     {
@@ -36,17 +36,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 229,
-        "endLine": 229,
+        "startLine": 234,
+        "endLine": 234,
         "sourceKind": "skill",
         "excerpt": "| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | CHAIN → DONE |"
       },
       "detail": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
         "startLine": 1,
-        "endLine": 45,
+        "endLine": 47,
         "sourceKind": "worker",
-        "excerpt": "# State: CROSS-REFERENCE\n\nRequirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and record a question for each gap.\n\n**Agent:** Adversarial validation. Dispatch with `subagent_type: aid-reviewer` **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`).\n\n**Dispatch package:** render `references/reviewer-brief.md` with:\n- `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)\n- `{{CONTEXT}}` = `REQUIREMENTS.md was just approved and N features were decomposed from §5 Functional Requirements. This is the cross-reference pass that validates requirements + feature boundaries against the KB and codebase before any feature reaches /aid-specify.`\n\nInclude in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):\n- **Ledger lifecycle:** \"Append new findings as rows with Status: Pending to\n  `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file\n  first if it exists. Output per `.aid/runtime/templates/reviewer-ledger-schema.md` —\n  ONE table, no narrative. After writing the ledger, run:\n  `bash .aid/runtime/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`\n  and include the grade in your return message.\"\n\nThen append the reviewer's share of the process body from `references/cross-reference.md`\n(sections 6a to 6c: load context, cross-reference, grade) so the subagent has the per-step execution\ndetail. Sections 6d to 6f are the main conversation's: it presents the findings, records each question\nwith `writeback-state.sh --ask`, asks them through the question protocol, and wraps up. The subagent never\nasks; it lists its open questions in its report.\n\n▶ aid-reviewer starting (~1–2 min)\nWait for completion. If it fails, say why in one plain line.\n\nAfter aid-reviewer returns, run grade.sh on the ledger to confirm the grade:\n\n```bash\nbash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md\n```\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\nThe cross-reference questions pause this step where it stands (a blocking question). After each answer the step\napplies it (`cross-reference.md` § 6e) and, once every question is answered or skipped, records the cross-reference\n(§ 6f); only then does the step end.\n\n**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied.\n"
+        "excerpt": "# State: CROSS-REFERENCE\n\nRequirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and record a question for each gap.\n\n**Agent:** Adversarial validation. Dispatch with `subagent_type: aid-reviewer` **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`).\n\n**Dispatch package:** render `references/reviewer-brief.md` with:\n- `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)\n- `{{CONTEXT}}` = `REQUIREMENTS.md was just approved and N features were decomposed from §5 Functional Requirements. This is the cross-reference pass that validates requirements + feature boundaries against the KB and codebase before any feature reaches /aid-specify.`\n\nInclude in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):\n- **Ledger lifecycle:** \"Append new findings as rows with Status: Pending to\n  `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file\n  first if it exists. Output per `.aid/runtime/templates/reviewer-ledger-schema.md` —\n  ONE table, no narrative. After writing the ledger, run:\n  `bash .aid/runtime/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`\n  and include the grade in your return message.\"\n\nThen append the reviewer's share of the process body from `references/cross-reference.md`\n(sections 6a to 6c: load context, cross-reference, grade) so the subagent has the per-step execution\ndetail. Sections 6d to 6f are the main conversation's: it presents the findings, asks the questions the\nreviewer listed through the question protocol (each is already `Pending` in the work's `qa`, recorded by the\nreviewer with `--ask`; the main conversation does not record it a second time, and answers it by its id with\n`--answer`), and wraps up. The subagent never asks; it records its open questions and lists them, with their\nids, in its report.\n\n▶ aid-reviewer starting (~1–2 min)\nWait for completion. If it fails, say why in one plain line.\n\nAfter aid-reviewer returns, run grade.sh on the ledger to confirm the grade:\n\n```bash\nbash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md\n```\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\nThe cross-reference questions pause this step where it stands (a blocking question). After each answer the step\napplies it (`cross-reference.md` § 6e) and, once every question is answered or skipped, records the cross-reference\n(§ 6f); only then does the step end.\n\n**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied.\n"
       }
     },
     {
@@ -61,17 +61,17 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 230,
-        "endLine": 230,
+        "startLine": 235,
+        "endLine": 235,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | CHAIN → CROSS-REFERENCE when the user picks [2]; HALT when the user picks another option |"
       },
       "detail": {
         "file": "canonical/skills/aid-define/references/state-done.md",
         "startLine": 1,
-        "endLine": 46,
+        "endLine": 49,
         "sourceKind": "worker",
-        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nPrint:\n\n```\nInterview for {work} is complete and approved.\n\n[1] Add more information — reopen for additional input\n[2] Re-run cross-reference validation\n[3] Done — nothing to add\n```\n\n- **[1] Add more information:**\n  - Ask: _\"What would you like to add or change?\"_\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — print: `For requirements-level changes, run\n    /aid-describe {work} to reopen the requirements interview.` then HALT.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated.` and show the menu again.\n\n- **[2] Re-run cross-reference:**\n  - Go on to CROSS-REFERENCE for a fresh validation pass\n\n- **[3] Done:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\nThe menu is a blocking question, asked through the question protocol: this step pauses on it until the user\nanswers. A requirements-level change hands off to `/aid-describe` in one plain line.\n\n**Before the run ends (the HALT case below), record why it stops** through the writer, so the work is never left\n`Running` with nothing running: `--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then\n`--pipeline --field \"Pause Reason\" --value '<why>'`. The reason is 'Requirements change requested -- run /aid-describe {work}'\nafter a requirements-level change in [1], and 'Features defined and cross-referenced -- run /aid-specify {work}' after [3].\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option.\n"
+        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nTell the user, in one plain line, that the interview for {work} is complete and approved. Then ask one question, in\nthe protocol's form. Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Requirements --impact Low --context '<the question, as shown>' --suggested 'Done' --asked-by aid-define --step DONE` (it prints the question's id), and record the answer with `--answer --id <id>`:\n\n```text\nRequirements -- question 1 of 1 -- importance: low\nIs there anything to add or check before I close this?\nWhy I ask: the requirements and features are complete and cross-referenced, so nothing more runs unless you ask.\nMy recommendation: nothing to add -- close it, and move on to the specification.\n  1. Nothing to add, close it (recommended)\n  2. Run the cross-reference validation again\n  3. Add more information (reopen for additional input)\nOr answer in your own words, ask me to explain, or skip this question.\n```\n\n- **Add more information:**\n  - Ask, as a new question in the protocol's form (recorded first with `--ask`): \"What would you like to add or change?\"\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — say in one plain line that requirements-level changes are made in `/aid-describe {work}`, which reopens the requirements interview; then HALT.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated.` and show the menu again.\n\n- **Run the cross-reference validation again:**\n  - Go on to CROSS-REFERENCE for a fresh validation pass\n\n- **Nothing to add:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\nThe menu is a blocking question, asked through the question protocol: this step pauses on it until the user\nanswers. A requirements-level change hands off to `/aid-describe` in one plain line.\n\n**Before the run ends (the HALT case below), record why it stops** through the writer, so the work is never left\n`Running` with nothing running: `--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then\n`--pipeline --field \"Pause Reason\" --value '<why>'`. The reason is 'Requirements change requested -- run /aid-describe {work}'\nafter a requirements-level change, and 'Features defined and cross-referenced -- run /aid-specify {work}' after the user closes it.\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option.\n"
       }
     }
   ],
@@ -84,8 +84,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-feature-decomposition.md",
-        "startLine": 25,
-        "endLine": 25,
+        "startLine": 24,
+        "endLine": 24,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline)."
       }
@@ -98,8 +98,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-feature-decomposition.md",
-        "startLine": 25,
-        "endLine": 25,
+        "startLine": 24,
+        "endLine": 24,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline)."
       }
@@ -112,8 +112,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
-        "startLine": 44,
-        "endLine": 44,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied."
       }
@@ -126,8 +126,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
-        "startLine": 44,
-        "endLine": 44,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied."
       }
@@ -140,8 +140,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-done.md",
-        "startLine": 45,
-        "endLine": 45,
+        "startLine": 48,
+        "endLine": 48,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option."
       }

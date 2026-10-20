@@ -46,24 +46,24 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FEATURE-DECOMPOSITION`** — Requirements are approved and REQUIREMENTS.md § 11 Features… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L228" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L233" wrap
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L228`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L228) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L26`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L26)
+[Source: `canonical/skills/aid-define/SKILL.md#L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L233) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L25`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L25)
 
 <a id="fragment-n2"></a>**2 · `CROSS-REFERENCE`** — Requirements are approved and features exist but… · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L229" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L234" wrap
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L229`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L229) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L45)
+[Source: `canonical/skills/aid-define/SKILL.md#L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L234) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L47)
 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L230" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L235" wrap
 | DONE | `references/state-done.md` | `inline` | CHAIN → CROSS-REFERENCE when the user picks [2]; HALT when the user picks another option |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L230`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L230) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L46)
+[Source: `canonical/skills/aid-define/SKILL.md#L235`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L235) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L49)

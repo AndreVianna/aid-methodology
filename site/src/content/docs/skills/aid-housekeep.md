@@ -64,7 +64,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA when it did not stall; HALT when it stalled |
 ~~~~
 
-[Source: `canonical/skills/aid-housekeep/SKILL.md#L201`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L201) · [full step: `canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L886`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L886)
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L201`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L201) · [full step: `canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L890`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L890)
 
 <a id="fragment-n3"></a>**3 · `SUMMARY-DELTA`** — SUMMARY-DELTA checks whether kb.html needs to be… · _exit_ · HALT
 
@@ -72,7 +72,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP when it did not stall; HALT when it stalled |
 ~~~~
 
-[Source: `canonical/skills/aid-housekeep/SKILL.md#L202`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L202) · [full step: `canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L348`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L348)
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L202`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L202) · [full step: `canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L345`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L345)
 
 <a id="fragment-n4"></a>**4 · `CLEANUP`** — CLEANUP is the terminal gated stage of /aid-housekeep. · _step_
 
@@ -80,7 +80,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-housekeep/SKILL.md#L203`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L203) · [full step: `canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L533`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L533)
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L203`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L203) · [full step: `canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L536`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L536)
 
 <a id="fragment-n5"></a>**5 · `DONE`** — DONE is the terminal state. · _exit_ · HALT
 

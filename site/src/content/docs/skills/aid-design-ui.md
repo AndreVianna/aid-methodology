@@ -101,7 +101,7 @@ component/page lands. **Never writes `.aid/knowledge/` and never writes producti
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-ui`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-ui`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-ui/SKILL.md#L84-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L84-L87) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L84-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L84-L92)

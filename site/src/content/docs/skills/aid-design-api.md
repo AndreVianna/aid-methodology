@@ -101,7 +101,7 @@ built endpoint lands. **Never writes `.aid/knowledge/` and never writes producti
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-api`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-api`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-api/SKILL.md#L79-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-api/SKILL.md#L79-L82) · [full step: `canonical/skills/aid-design-api/SKILL.md#L79-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-api/SKILL.md#L79-L87)

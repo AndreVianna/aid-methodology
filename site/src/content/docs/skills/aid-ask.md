@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-ask/SKILL.md'
 
 - **`name`** — aid-ask
 - **`description`** — Answer a question about this project, with citations. Use this skill when you want to know something -- how a part of the system works, what a document says, where a piece of work stands -- and you want a grounded answer rather than a guess. It reads three sources: the Knowledge Base, the live codebase, and any AID work currently in flight, and cites whichever it used, by document name, file path, or work reference. When those sources genuinely cannot answer, it says so instead of inventing an answer, and records the gap so it feeds back into improving the Knowledge Base. Trivial questions are answered inline; broad investigations are dispatched read-only. The only thing it ever writes is that recorded gap.
-- **`allowed-tools`** — Read Glob Grep Agent Write Edit
+- **`allowed-tools`** — Read Glob Grep Agent Write Edit Bash
 - **`argument-hint`** — &lt;question>  — a free-form question about the project
 
 [Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)

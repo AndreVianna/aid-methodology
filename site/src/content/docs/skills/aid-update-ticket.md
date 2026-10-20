@@ -98,8 +98,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L216" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L226" wrap
 ### State 6 — WRITE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L216`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L216)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L226)

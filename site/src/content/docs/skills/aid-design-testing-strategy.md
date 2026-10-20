@@ -100,7 +100,7 @@ which gates block a merge, and who may waive one**.
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now
+the user iterates (declining the approval below changes the seed in place) or realizes it now
 (`/aid-create-testing-strategy`).
 ~~~~
 

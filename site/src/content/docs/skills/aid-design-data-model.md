@@ -102,7 +102,7 @@ code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-data-model`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-data-model/SKILL.md#L82-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L82-L85) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L82-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L82-L90)

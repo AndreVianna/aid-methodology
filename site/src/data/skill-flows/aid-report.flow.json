@@ -46,7 +46,7 @@
         "startLine": 55,
         "endLine": 64,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What data should I analyze, and what\n   question about it?\"). The answer is the subject; the path and complexity are then set from it.\n2. **Guided path** -> scope *which data, which metrics, what question*.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What data should I analyze?\"). The\n   answer is the subject; the path and complexity are then set from it.\n2. **Guided path** -> scope *which metrics, what question about it*, one question at a time.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {

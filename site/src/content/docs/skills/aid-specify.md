@@ -94,7 +94,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L191) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L95)
+[Source: `canonical/skills/aid-specify/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L191) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L98)
 
 <a id="fragment-n6"></a>**6 · `DONE`** — Spec is Ready and has met the minimum grade; this feature's… · _exit_ · HALT
 

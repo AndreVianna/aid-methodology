@@ -42,8 +42,8 @@ flowchart TB
   n3 -->|"once the user has picked the connector"| n4
   n4 --> n5
   n5 --> n6
-  n6 -. "on [2] Edit , with the user's requested change folded into the payload" .-> n4
-  n6 -->|"once the user has chosen [1] File it"| n7
+  n6 -. "when the user chooses to edit it first, with the user's requested change folded…" .-> n4
+  n6 -->|"once the user has chosen to file it"| n7
   n7 --> n8
   class n1 aidExit
   class n2 aidExit
@@ -116,16 +116,16 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n7"></a>**7 · `FILE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L217" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L226" wrap
 ### State 6 — FILE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L217)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L226)
 
 <a id="fragment-n8"></a>**8 · `RETURN-REF`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L234" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L243" wrap
 ### State 7 — RETURN-REF
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L234`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L234)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L243`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L243)

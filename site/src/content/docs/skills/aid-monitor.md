@@ -65,7 +65,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L192) · [full step: `canonical/skills/aid-monitor/references/state-route.md#L1-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-route.md#L1-L63)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L192) · [full step: `canonical/skills/aid-monitor/references/state-route.md#L1-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-route.md#L1-L74)
 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 

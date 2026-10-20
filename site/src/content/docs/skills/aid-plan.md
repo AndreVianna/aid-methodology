@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW when the user approves the sequence; HALT when the user declines the plan |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L143) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L238)
+[Source: `canonical/skills/aid-plan/SKILL.md#L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L143) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L237`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L237)
 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** · _entry_
 

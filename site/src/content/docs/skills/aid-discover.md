@@ -34,7 +34,7 @@ flowchart TB
   n7(["DONE<br/>DONE confirms discovery is complete and user-approved; it…"])
   n1 --> n2
   n2 --> n3
-  n3 -->|"if Pending Q&amp;A entries with Impact: Required exist"| n4
+  n3 -->|"if any Pending Q&amp;A entry exists (whatever its impact label)"| n4
   n3 -->|"when none exists"| n5
   n4 -->|"when any answer implies a doc change"| n5
   n4 -->|"when no answer does, zero questions are Pending and the grade is at least the…"| n6
@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L219`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L219) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L315`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L315)
+[Source: `canonical/skills/aid-discover/SKILL.md#L219`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L219) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L313`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L313)
 
 <a id="fragment-n2"></a>**2 · `GENERATE`** — GENERATE generates KB documents that are missing or still… · _exit_ · HALT
 
@@ -75,7 +75,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW; HALT on greenfield |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L220`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L220) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1069`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1069)
+[Source: `canonical/skills/aid-discover/SKILL.md#L220`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L220) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1098`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1098)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — REVIEW grades all declared KB documents for accuracy… · _decision_
 
@@ -83,15 +83,15 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A when a question is pending; CHAIN → FIX when none is |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L221) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L657`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L657)
+[Source: `canonical/skills/aid-discover/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L221) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L651`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L651)
 
-<a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
+<a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to an answer or a… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L222" wrap
 | Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX when an answer implies a doc change; CHAIN → APPROVAL when none does |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L222) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L66)
+[Source: `canonical/skills/aid-discover/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L222) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L71)
 
 <a id="fragment-n5"></a>**5 · `FIX`** — FIX applies Q&amp;A answers and reviewer feedback to bring KB… · _decision_
 
@@ -107,7 +107,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE; HALT on a consideration |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L224) · [full step: `canonical/skills/aid-discover/references/state-approval.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-approval.md#L1-L39)
+[Source: `canonical/skills/aid-discover/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L224) · [full step: `canonical/skills/aid-discover/references/state-approval.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-approval.md#L1-L46)
 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE confirms discovery is complete and user-approved; it… · _exit_ · HALT
 
@@ -115,4 +115,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DONE | `references/state-done.md` | inline | CHAIN → REVIEW when the user reopens; HALT when the user keeps the discovery |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L225) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L73)
+[Source: `canonical/skills/aid-discover/SKILL.md#L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L225) · [full step: `canonical/skills/aid-discover/references/state-done.md#L1-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-done.md#L1-L84)

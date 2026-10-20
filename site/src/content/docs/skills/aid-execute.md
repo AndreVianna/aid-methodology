@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | CHAIN → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L191) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L783`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L783)
+[Source: `canonical/skills/aid-execute/SKILL.md#L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L191) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L780`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L780)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — Task output goes through a lightweight quick-check pass by… · _exit_ · HALT
 
@@ -90,7 +90,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L195) · [full step: `canonical/skills/aid-execute/references/state-re-run.md#L1-L18`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-re-run.md#L1-L18)
+[Source: `canonical/skills/aid-execute/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L195) · [full step: `canonical/skills/aid-execute/references/state-re-run.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-re-run.md#L1-L21)
 
 <a id="fragment-n6"></a>**6 · `DELIVERY-GATE`** — Per-delivery quality gate — runs once per delivery as the… · _exit_ · HALT
 
@@ -98,4 +98,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L196`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L196) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L518`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L518)
+[Source: `canonical/skills/aid-execute/SKILL.md#L196`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L196) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L515`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L515)

@@ -100,7 +100,7 @@ build/test tooling WITH VERSIONS, plus the alternatives rejected and why**.
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-stack`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-stack`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-stack/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L97-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L97-L105)

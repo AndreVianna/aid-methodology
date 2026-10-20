@@ -161,8 +161,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
         "excerpt": "### Step 5: Validate"
       },
@@ -177,8 +177,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 134,
-        "endLine": 134,
+        "startLine": 141,
+        "endLine": 141,
         "sourceKind": "skill",
         "excerpt": "### Step 6: Save in place"
       },
@@ -196,8 +196,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 143,
-        "endLine": 143,
+        "startLine": 150,
+        "endLine": 150,
         "sourceKind": "skill",
         "excerpt": "### Step 7: Confirm"
       },
@@ -311,8 +311,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
         "excerpt": "### Step 5: Validate"
       }
@@ -325,8 +325,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 134,
-        "endLine": 134,
+        "startLine": 141,
+        "endLine": 141,
         "sourceKind": "skill",
         "excerpt": "### Step 6: Save in place"
       }
@@ -339,8 +339,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 143,
-        "endLine": 143,
+        "startLine": 150,
+        "endLine": 150,
         "sourceKind": "skill",
         "excerpt": "### Step 7: Confirm"
       }

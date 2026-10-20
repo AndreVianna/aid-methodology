@@ -103,8 +103,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 216,
-        "endLine": 216,
+        "startLine": 226,
+        "endLine": 226,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -176,8 +176,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 214,
-        "endLine": 214,
+        "startLine": 224,
+        "endLine": 224,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }
@@ -190,8 +190,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 214,
-        "endLine": 214,
+        "startLine": 224,
+        "endLine": 224,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }

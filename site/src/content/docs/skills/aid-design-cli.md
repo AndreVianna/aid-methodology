@@ -101,7 +101,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cli`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-cli`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-cli/SKILL.md#L79-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L79-L82) · [full step: `canonical/skills/aid-design-cli/SKILL.md#L79-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L79-L87)

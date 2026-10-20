@@ -76,7 +76,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L144) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L50)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L144) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L57)
 
 <a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _decision_
 
@@ -92,7 +92,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L146) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L21)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L146) · [full step: `canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L28`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-fix-decision.md#L1-L28)
 
 <a id="fragment-n5"></a>**5 · `RE-VERIFY`** — The user chose to fix the failed checks here. · _decision_
 

@@ -49,7 +49,7 @@
         "startLine": 61,
         "endLine": 73,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"Which document should I update, and what\n   change?\"). The answer is the target and the change; the path and complexity are then set from it.\n2. **Document does not resolve** -> ask which document is meant, or suggest\n   `/aid-create-document` if the user meant a new one. In that case nothing is allocated, and the run\n   ends there naming that skill.\n3. **Guided path** -> scope the change.\n4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2)."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"Which document should I update?\"). The\n   answer is the target; the path and complexity are then set from it.\n2. **Document does not resolve** -> ask which document is meant, or suggest\n   `/aid-create-document` if the user meant a new one. In that case nothing is allocated, and the run\n   ends there naming that skill.\n3. **Guided path** -> ask what change is wanted, then scope it, one question at a time.\n4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2)."
       }
     },
     {

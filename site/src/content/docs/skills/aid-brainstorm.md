@@ -96,7 +96,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
+the user iterates (declining the approval below changes the seed in place), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 ~~~~
 

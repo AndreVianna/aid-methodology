@@ -102,7 +102,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-integration`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-integration/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-integration/SKILL.md#L81-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-integration/SKILL.md#L81-L89)

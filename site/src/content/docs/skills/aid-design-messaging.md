@@ -102,7 +102,7 @@ invariant (`design-lifecycle.md`).
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user iterates (re-invoke this skill) or realizes it now (`/aid-create-messaging`).
+the user iterates (declining the approval below changes the seed in place) or realizes it now (`/aid-create-messaging`).
 ~~~~
 
 [Source: `canonical/skills/aid-design-messaging/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L80-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L80-L88)

@@ -46,7 +46,7 @@
         "startLine": 53,
         "endLine": 63,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What direction do you want to validate, and\n   what would tell you it works?\"). The answer is the direction; the path and complexity are then\n   set from it.\n2. **Guided path** -> scope the direction, the success signal and the fidelity.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What direction do you want to validate?\").\n   The answer is the direction; the path and complexity are then\n   set from it.\n2. **Guided path** -> scope the success signal (what would tell you it works) and the fidelity, one question at a time.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {

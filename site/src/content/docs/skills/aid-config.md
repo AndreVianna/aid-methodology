@@ -152,24 +152,24 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n10"></a>**10 · `STEP-5`** — Validate · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L130" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L137" wrap
 ### Step 5: Validate
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L130)
+[Source: `canonical/skills/aid-config/SKILL.md#L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L137)
 
 <a id="fragment-n11"></a>**11 · `STEP-6`** — Save in place · _step_
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L134" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L141" wrap
 ### Step 6: Save in place
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L134)
+[Source: `canonical/skills/aid-config/SKILL.md#L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L141)
 
 <a id="fragment-n12"></a>**12 · `STEP-7`** — Confirm · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L143" wrap
+~~~~plaintext title="canonical/skills/aid-config/SKILL.md#L150" wrap
 ### Step 7: Confirm
 ~~~~
 
-[Source: `canonical/skills/aid-config/SKILL.md#L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L143)
+[Source: `canonical/skills/aid-config/SKILL.md#L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md#L150)

@@ -102,7 +102,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "on [3] Cancel (nothing is sent or filed)"
+        "handoff": "when the user cancels (nothing is sent or filed)"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
@@ -122,8 +122,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 217,
-        "endLine": 217,
+        "startLine": 226,
+        "endLine": 226,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       },
@@ -141,8 +141,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 234,
-        "endLine": 234,
+        "startLine": 243,
+        "endLine": 243,
         "sourceKind": "skill",
         "excerpt": "### State 7 — RETURN-REF"
       },
@@ -252,28 +252,28 @@
       "from": "n6",
       "to": "n4",
       "kind": "loop-back",
-      "condition": "on [2] Edit , with the user's requested change folded into the payload",
+      "condition": "when the user chooses to edit it first, with the user's requested change folded…",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 214,
-        "endLine": 215,
+        "startLine": 223,
+        "endLine": 224,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
+        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen to file it; **CHAIN** → [State: COMPOSE] when the user chooses to edit it first,\nwith the user's requested change folded into the payload; **HALT** when the user cancels (nothing is sent or filed)."
       }
     },
     {
       "from": "n6",
       "to": "n7",
       "kind": "branch",
-      "condition": "once the user has chosen [1] File it",
+      "condition": "once the user has chosen to file it",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 214,
-        "endLine": 215,
+        "startLine": 223,
+        "endLine": 224,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,\nwith the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed)."
+        "excerpt": "**Advance:** **CHAIN** → [State: FILE] once the user has chosen to file it; **CHAIN** → [State: COMPOSE] when the user chooses to edit it first,\nwith the user's requested change folded into the payload; **HALT** when the user cancels (nothing is sent or filed)."
       }
     },
     {
@@ -284,8 +284,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 232,
-        "endLine": 232,
+        "startLine": 241,
+        "endLine": 241,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → [State: RETURN-REF] (continue inline)."
       }
