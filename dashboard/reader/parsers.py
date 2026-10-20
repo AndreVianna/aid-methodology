@@ -83,6 +83,10 @@ class ParsedWork:
         "started",
         "minimum_grade",
         "user_approved",
+        "step",
+        "step_detail",
+        "open_call",
+        "record_status",
     )
 
     def __init__(self) -> None:
@@ -110,6 +114,11 @@ class ParsedWork:
         self.started: Optional[str] = None
         self.minimum_grade: Optional[str] = None
         self.user_approved: Optional[bool] = None
+        # work-003 Feature 002 section 6: the saved step, the open call, the record
+        self.step: Optional[str] = None
+        self.step_detail: Optional[str] = None
+        self.open_call: Optional[dict] = None
+        self.record_status: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -1287,8 +1296,8 @@ def parse_state_md(
         carries no `lifecycle` key at all (an absent/empty/truncated file);
       - reads `lifecycle_history` for the work's `created` date (the first
         entry whose `event` is "Work created", newest-last per the template);
-      - reads `qa` for pending_inputs (flattened-Lite-only AUTHORED Cross-phase
-        Q&A; DERIVED on the full path, where no `qa` key is present at all).
+      - reads `qa` for pending_inputs (AUTHORED on every layout; the open
+        entries: state Pending or Skipped).
 
     work_dir is required for the fallback IMPEDIMENT scan (KI-003, unchanged
     derive_lifecycle behavior); if absent, the IMPEDIMENT check is skipped.
@@ -1352,6 +1361,7 @@ def parse_state_md(
 
     _apply_identity_frontmatter(data, pw)
     _apply_intent_phases(data, pw)
+    _apply_work_record(data, pw)
 
     # `lifecycle_history` (AUTHORED) -> pw.created: the first entry (append-
     # only, newest LAST per the template) whose `event` is "Work created".
@@ -1366,16 +1376,15 @@ def parse_state_md(
                     pw.created = date_val
                 break
 
-    # `qa` (flattened-Lite-only AUTHORED Cross-phase Q&A; absent/DERIVED on
-    # the full path, where reader.py's hierarchical assembly unions per-
-    # delivery Q&A instead) -> pending_inputs, Pending entries only.
+    # `qa` (AUTHORED on every layout, work-level) -> pending_inputs: the open
+    # entries only (state Pending or Skipped; work-003 Feature 002 section 6).
     qa_list = data.get("qa")
     if isinstance(qa_list, list):
         for entry in qa_list:
             if not isinstance(entry, dict):
                 continue
             state_val = entry.get("state")
-            if isinstance(state_val, str) and state_val.strip().lower() == "pending":
+            if isinstance(state_val, str) and state_val.strip().lower() in _OPEN_QA_STATES:
                 pw.pending_inputs.append(PendingInput(
                     question_id=_qa_question_id(entry.get("id")),
                     category=_none_if_null(entry.get("category")),
@@ -1445,7 +1454,7 @@ class ParsedDeliveryState:
       - delivery_state: SD-8 lifecycle enum (authored, not derived from tasks)
       - updated, block_reason, block_artifact from `delivery_lifecycle`
       - delivery_gate_issue_list from `delivery_gate.issue_list`
-      - pending_inputs from `qa` (Pending entries)
+      - pending_inputs from `qa` (open entries)
       - tasks: [] always (the derived Tasks State rollup is never authored in
         this file; kept only so the reader.py call sites that read `pds.tasks`
         need no change -- always empty, exactly the pre-existing behavior for
@@ -1562,7 +1571,7 @@ def parse_delivery_state_md(
       - `gate_tier` / `gate_grade` / `gate_timestamp` (top-level scalars)
       - `delivery_lifecycle.updated` / `.block_reason` / `.block_artifact`
       - `delivery_gate.issue_list`
-      - `qa` -> pending_inputs (Pending entries only)
+      - `qa` -> pending_inputs (open entries: Pending or Skipped)
 
     The delivery_state is the INDEPENDENTLY AUTHORED SD-8 enum
     (Pending-Spec | Specified | Executing | Gated | Done | Blocked). It is
@@ -1637,7 +1646,7 @@ def parse_delivery_state_md(
                 if not isinstance(entry, dict):
                     continue
                 state_val = entry.get("state")
-                if isinstance(state_val, str) and state_val.strip().lower() == "pending":
+                if isinstance(state_val, str) and state_val.strip().lower() in _OPEN_QA_STATES:
                     pds.pending_inputs.append(PendingInput(
                         question_id=_qa_question_id(entry.get("id")),
                         category=_none_if_null(entry.get("category")),
@@ -1840,6 +1849,96 @@ def _none_if_null(val: object) -> Optional[str]:
     if not isinstance(val, str):
         return None
     return None if _is_null(val) else val
+
+
+# ---------------------------------------------------------------------------
+# Work record and open call (work-003 Feature 002 section 6). record_status
+# applies the field rules of writeback-state.sh --check, except its installed-
+# skill rule, which needs the tool's skills folder that only --check knows.
+# Both readers compute the same values (dashboard/server/reader.mjs twins).
+# ---------------------------------------------------------------------------
+
+_TERMINAL_LIFECYCLES = ("Completed", "Canceled")
+# A `qa` entry is open until it is answered; Skipped is open too (Feature 002 § 6).
+_OPEN_QA_STATES = ("pending", "skipped")
+
+
+def _scalar_or_none(val: object) -> Optional[str]:
+    """Return the stripped string, or None when absent, not a string, or a null sentinel."""
+    if not isinstance(val, str):
+        return None
+    vv = val.strip()
+    return None if _is_null(vv) else vv
+
+
+def _apply_work_record(data: dict, pw: ParsedWork) -> None:
+    """Map `step`, `step_detail`, the open call and record_status onto pw.
+
+    Runs after the phase is mapped: an open call returns to the phase the work
+    is in (a call never changes the phase; writeback-state.sh --handoff refuses
+    --phase with --returns yes).
+    """
+    pw.step = _scalar_or_none(data.get("step"))
+    pw.step_detail = _scalar_or_none(data.get("step_detail"))
+    handoffs = data.get("handoffs")
+    pw.open_call = _open_call(handoffs, pw.phase)
+    pw.record_status = _record_status(data, handoffs)
+
+
+def _open_call(handoffs: object, phase: Optional[Phase]) -> Optional[dict]:
+    """Return the newest handoffs entry that is an open call, or None.
+
+    An open call is `returns: yes` with `returned` unset (`--`). Mirrors
+    WB_HANDOFF_OPEN_AWK in writeback-state.sh: the last such entry wins.
+    """
+    if not isinstance(handoffs, list):
+        return None
+    found: Optional[dict] = None
+    for entry in handoffs:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("returns") == "yes" and _scalar_or_none(entry.get("returned")) is None:
+            found = entry
+    if found is None:
+        return None
+    return {
+        "to": _scalar_or_none(found.get("to")),
+        "why": _scalar_or_none(found.get("why")),
+        "returns_to": phase.value if phase is not None else None,
+    }
+
+
+def _record_status(data: dict, handoffs: object) -> str:
+    """Return ok, missing or inconsistent by the field rules of --check.
+
+    A finished work (Completed or Canceled) is inconsistent when it still names a
+    saved skill. Any other work is missing when it has no intent.reading, no saved
+    skill, or no saved step; it is inconsistent when a handoffs entry is malformed
+    (returns not yes or no, or a pass with returned set). missing wins when both hold.
+    """
+    life = _scalar_or_none(data.get("lifecycle"))
+    skill = _scalar_or_none(data.get("active_skill"))
+    if skill == "none":
+        skill = None
+    if life in _TERMINAL_LIFECYCLES:
+        return "inconsistent" if skill is not None else "ok"
+
+    intent = data.get("intent")
+    reading = _scalar_or_none(intent.get("reading")) if isinstance(intent, dict) else None
+    step = _scalar_or_none(data.get("step"))
+    if reading is None or skill is None or step is None:
+        return "missing"
+
+    if isinstance(handoffs, list):
+        for entry in handoffs:
+            if not isinstance(entry, dict):
+                return "inconsistent"
+            returns = entry.get("returns")
+            if returns not in ("yes", "no"):
+                return "inconsistent"
+            if returns == "no" and _scalar_or_none(entry.get("returned")) is not None:
+                return "inconsistent"
+    return "ok"
 
 
 def _qa_question_id(raw_id: object) -> str:

@@ -2848,6 +2848,75 @@ function _applyIntentPhases(data, pw) {
     .map((v) => v.trim());
 }
 
+// Work record and open call (work-003 Feature 002 section 6). Twins of the
+// Python _apply_work_record / _open_call / _record_status in parsers.py.
+// recordStatus applies the field rules of writeback-state.sh --check, minus
+// its installed-skill rule (only --check knows the tool's skills folder).
+const TERMINAL_LIFECYCLES = ["Completed", "Canceled"];
+// A qa entry is open until answered; Skipped is open too (Feature 002 section 6).
+const OPEN_QA_STATES = ["pending", "skipped"];
+
+function _scalarOrNull(val) {
+  if (typeof val !== "string") return null;
+  const vv = val.trim();
+  return isNull(vv) ? null : vv;
+}
+
+function _applyWorkRecord(data, pw) {
+  // Maps step, step_detail, the open call and record_status onto pw. Runs
+  // after the phase is mapped: an open call returns to the phase the work is in.
+  pw.step = _scalarOrNull(data.step);
+  pw.stepDetail = _scalarOrNull(data.step_detail);
+  const handoffs = Array.isArray(data.handoffs) ? data.handoffs : null;
+  pw.openCall = _openCall(handoffs, pw.phase);
+  pw.recordStatus = _recordStatus(data, handoffs);
+}
+
+function _openCall(handoffs, phase) {
+  // The newest handoffs entry that is an open call (returns yes, returned unset).
+  if (!handoffs) return null;
+  let found = null;
+  for (const entry of handoffs) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    if (entry.returns === "yes" && _scalarOrNull(entry.returned) === null) found = entry;
+  }
+  if (found === null) return null;
+  return {
+    to: _scalarOrNull(found.to),
+    why: _scalarOrNull(found.why),
+    returns_to: phase ? phase : null,
+  };
+}
+
+function _recordStatus(data, handoffs) {
+  // ok | missing | inconsistent. A finished work (Completed or Canceled) is
+  // inconsistent when it still names a saved skill. Any other work is missing
+  // with no intent.reading, no saved skill or no saved step; inconsistent with
+  // a malformed handoffs entry. missing wins when both hold.
+  const life = _scalarOrNull(data.lifecycle);
+  let skill = _scalarOrNull(data.active_skill);
+  if (skill === "none") skill = null;
+  if (TERMINAL_LIFECYCLES.includes(life)) {
+    return skill !== null ? "inconsistent" : "ok";
+  }
+
+  const intent = data.intent;
+  const reading = intent && typeof intent === "object" && !Array.isArray(intent)
+    ? _scalarOrNull(intent.reading)
+    : null;
+  const step = _scalarOrNull(data.step);
+  if (reading === null || skill === null || step === null) return "missing";
+
+  if (handoffs) {
+    for (const entry of handoffs) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return "inconsistent";
+      if (entry.returns !== "yes" && entry.returns !== "no") return "inconsistent";
+      if (entry.returns === "no" && _scalarOrNull(entry.returned) !== null) return "inconsistent";
+    }
+  }
+  return "ok";
+}
+
 function parseStateMd(text, workId, workDir) {
   // Parse a work-root STATE.yml document into a ParsedWork-shaped plain
   // object. Twin of Python parse_state_md() (work-009-refactor task-003,
@@ -2865,9 +2934,8 @@ function parseStateMd(text, workId, workDir) {
   //   - reads `lifecycle_history` for the work's `created` date (the first
   //     entry whose `event` is "Work created", newest-last per the
   //     template);
-  //   - reads `qa` for pendingInputs (flattened-Lite-only AUTHORED
-  //     Cross-phase Q&A; DERIVED on the full path, where no `qa` key is
-  //     present at all).
+  //   - reads `qa` for pendingInputs (AUTHORED on every layout; the open
+  //     entries: state Pending or Skipped).
   const label = workId ? workId + "/STATE.yml" : "STATE.yml";
   const [data, warnings] = parseStateDocument(text, { fileLabel: label });
 
@@ -2893,6 +2961,10 @@ function parseStateMd(text, workId, workDir) {
     started: null,
     minimumGrade: null,
     userApproved: null,
+    step: null,
+    stepDetail: null,
+    openCall: null,
+    recordStatus: null,
   };
 
   const lifecyclePresent = _applyPipelineFrontmatter(data, pw);
@@ -2939,6 +3011,7 @@ function parseStateMd(text, workId, workDir) {
 
   _applyIdentityFrontmatter(data, pw);
   _applyIntentPhases(data, pw);
+  _applyWorkRecord(data, pw);
 
   // lifecycle_history (AUTHORED) -> pw.created: the first entry (append-only,
   // newest LAST per the template) whose event is "Work created".
@@ -2956,15 +3029,14 @@ function parseStateMd(text, workId, workDir) {
     }
   }
 
-  // qa (flattened-Lite-only AUTHORED Cross-phase Q&A; absent/DERIVED on the
-  // full path, where the hierarchical assembly unions per-delivery Q&A
-  // instead) -> pendingInputs, Pending entries only.
+  // qa (AUTHORED on every layout, work-level) -> pendingInputs: the open
+  // entries only (state Pending or Skipped; work-003 Feature 002 section 6).
   const qaList = data.qa;
   if (Array.isArray(qaList)) {
     for (const entry of qaList) {
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
       const stateVal = entry.state;
-      if (typeof stateVal === "string" && stateVal.trim().toLowerCase() === "pending") {
+      if (typeof stateVal === "string" && OPEN_QA_STATES.includes(stateVal.trim().toLowerCase())) {
         pw.pendingInputs.push({
           question_id: qaQuestionId(entry.id),
           category: noneIfNull(entry.category),
@@ -3370,6 +3442,10 @@ function readWork(workDir, workId) {
     started: pw.started,
     minimum_grade: pw.minimumGrade,
     user_approved: pw.userApproved,
+    step: pw.step,
+    step_detail: pw.stepDetail,
+    open_call: pw.openCall,
+    record_status: pw.recordStatus,
   });
 
   return [workModel, parseWarnings, bytesRead, text, statePathLabel];
@@ -3813,7 +3889,7 @@ function _parseDeliveryStateMd(text, deliveryId) {
   //   - gate_tier / gate_grade / gate_timestamp (top-level scalars)
   //   - delivery_lifecycle.updated / .block_reason / .block_artifact
   //   - delivery_gate.issue_list
-  //   - qa -> pendingInputs (Pending entries only)
+  //   - qa -> pendingInputs (open entries: Pending or Skipped)
   // deliveryState is the INDEPENDENTLY AUTHORED SD-8 enum, NOT derived from
   // the task rollup (SD-9); pds.tasks stays [] always (the derived Tasks
   // State rollup is never authored in this file). Called by BOTH the
@@ -3895,7 +3971,7 @@ function _parseDeliveryStateMd(text, deliveryId) {
       for (const entry of qaList) {
         if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
         const stateVal = entry.state;
-        if (typeof stateVal === "string" && stateVal.trim().toLowerCase() === "pending") {
+        if (typeof stateVal === "string" && OPEN_QA_STATES.includes(stateVal.trim().toLowerCase())) {
           pds.pendingInputs.push({
             question_id: qaQuestionId(entry.id),
             category: noneIfNull(entry.category),
@@ -4362,6 +4438,10 @@ function _readWorkFlat(workDir, workId) {
     started: pw.started,
     minimum_grade: pw.minimumGrade,
     user_approved: pw.userApproved,
+    step: pw.step,
+    step_detail: pw.stepDetail,
+    open_call: pw.openCall,
+    record_status: pw.recordStatus,
   });
 
   return [workModel, parseWarnings, bytesRead, workText, stateLabel];
@@ -4651,6 +4731,10 @@ function _readWorkHierarchical(workDir, workId) {
     started: pw.started,
     minimum_grade: pw.minimumGrade,
     user_approved: pw.userApproved,
+    step: pw.step,
+    step_detail: pw.stepDetail,
+    open_call: pw.openCall,
+    record_status: pw.recordStatus,
   });
 
   return [workModel, parseWarnings, bytesRead, workText, stateLabel];
@@ -4844,6 +4928,10 @@ function _reconcileSameWork(copies) {
     started: winnerWm.started,
     minimum_grade: winnerWm.minimum_grade,
     user_approved: winnerWm.user_approved,
+    step: winnerWm.step,
+    step_detail: winnerWm.step_detail,
+    open_call: winnerWm.open_call,
+    record_status: winnerWm.record_status,
   });
 
   return [reconciled, winnerText, winnerLabel];
@@ -5124,6 +5212,10 @@ function _buildWorkModel(wm) {
     started: wm.started !== undefined ? wm.started : null,
     minimum_grade: wm.minimum_grade !== undefined ? wm.minimum_grade : null,
     user_approved: wm.user_approved !== undefined ? wm.user_approved : null,
+    step: wm.step !== undefined ? wm.step : null,
+    step_detail: wm.step_detail !== undefined ? wm.step_detail : null,
+    open_call: wm.open_call ? Object.assign({}, wm.open_call) : null,
+    record_status: wm.record_status !== undefined ? wm.record_status : null,
   };
   // Carry branch_label as a non-enumerable property so the reconcile logic can
   // read it (wm.branch_label) without it appearing in JSON.stringify output.

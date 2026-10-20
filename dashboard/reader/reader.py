@@ -343,6 +343,10 @@ def _reconcile_same_work(
         started=winner_wm.started,
         minimum_grade=winner_wm.minimum_grade,
         user_approved=winner_wm.user_approved,
+        step=winner_wm.step,
+        step_detail=winner_wm.step_detail,
+        open_call=winner_wm.open_call,
+        record_status=winner_wm.record_status,
     )
     return reconciled, winner_text, winner_label
 
@@ -998,6 +1002,10 @@ def _read_work(
         started=pw.started,
         minimum_grade=pw.minimum_grade,
         user_approved=pw.user_approved,
+        step=pw.step,
+        step_detail=pw.step_detail,
+        open_call=pw.open_call,
+        record_status=pw.record_status,
     )
 
     return work_model, parse_warnings, bytes_read, text, state_label
@@ -1188,7 +1196,7 @@ def _read_work_flat(
             )
             work_text = ""
 
-    # Parse the work-level state document for pipeline/lifecycle fields + Cross-phase Q&A
+    # Parse the work-level state document for pipeline/lifecycle fields + qa
     pw: ParsedWork = parse_state_md(work_text, work_id=work_id, work_dir=work_dir)
     parse_warnings.extend(pw.parse_warnings)
 
@@ -1361,6 +1369,10 @@ def _read_work_flat(
         started=pw.started,
         minimum_grade=pw.minimum_grade,
         user_approved=pw.user_approved,
+        step=pw.step,
+        step_detail=pw.step_detail,
+        open_call=pw.open_call,
+        record_status=pw.record_status,
     )
 
     return work_model, parse_warnings, bytes_read, work_text, state_label
@@ -1385,7 +1397,7 @@ def _read_work_hierarchical(
     Union views assembled:
       - tasks[]: one TaskModel per task, state from the per-task state file
       - deliverables[]: one DeliverableRef per delivery, delivery_state from the delivery state file
-      - pending_inputs: union of all delivery Cross-phase Q&A (Pending entries)
+      - pending_inputs: union of the work-level qa and all delivery qa (open entries)
 
     Work-level lifecycle is read from the work state file if present;
     otherwise legacy fallback fires (same as monolithic path).
@@ -1510,7 +1522,7 @@ def _read_work_hierarchical(
         pds = parse_delivery_state_md(delivery_state_text, delivery_id=delivery_id)
         parse_warnings.extend(pds.parse_warnings)
 
-        # Accumulate pending Q&A from this delivery's Cross-phase Q&A
+        # Accumulate open qa entries from this delivery's STATE.yml
         all_pending_inputs.extend(pds.pending_inputs)
 
         # ---- Enumerate tasks under this delivery ----
@@ -1651,6 +1663,10 @@ def _read_work_hierarchical(
         started=pw.started,
         minimum_grade=pw.minimum_grade,
         user_approved=pw.user_approved,
+        step=pw.step,
+        step_detail=pw.step_detail,
+        open_call=pw.open_call,
+        record_status=pw.record_status,
     )
 
     return work_model, parse_warnings, bytes_read, work_text, state_label

@@ -766,7 +766,7 @@ def derive_lifecycle(
         )
 
     # ---- Prio 4: Paused-Awaiting-Input (LEGACY-COMPAT) ----
-    # pending_inputs non-empty (Q{N} with Status: Pending under ## Cross-phase Q&A).
+    # pending_inputs non-empty (open qa entries: state Pending or Skipped).
     # Live works (created after M5) emit Lifecycle: Paused-Awaiting-Input via M5 producers.
     # Retained for legacy works. DELIBERATELY EXCLUDES the top-blockquote **User Approved:**
     # field (SM-2 prio-4 note): that field is the terminal work-completion gate; using it

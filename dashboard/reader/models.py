@@ -342,7 +342,7 @@ class TaskModel:
 
 @dataclass
 class PendingInput:
-    """A ### Q{N} entry under ## Cross-phase Q&A (Pending) with Status: Pending."""
+    """An open `qa` entry: state Pending or Skipped (work-003 Feature 002 section 6)."""
     question_id: str      # e.g. "Q1"
     category: Optional[str] = None
     impact: Optional[str] = None
@@ -427,6 +427,16 @@ class WorkModel:
                                              # case-insensitive) or the legacy header-blockquote
                                              # `**User Approved:**` line; work-level approval,
                                              # distinct from KB KbStateRef.summary_approved.
+    # --- work-003 Feature 002 section 6: the saved step, the open call, the record ---
+    step: Optional[str] = None               # STATE.yml `step`; None when absent or `--`
+    step_detail: Optional[str] = None        # STATE.yml `step_detail`; None when absent or `--`
+    open_call: Optional[dict] = None         # the newest handoffs entry still open (returns yes,
+                                             # returned --): {"to", "why", "returns_to"}, where
+                                             # returns_to is the work's phase; None when no call
+                                             # is open
+    record_status: Optional[str] = None      # "ok" | "missing" | "inconsistent" (the field rules
+                                             # of writeback-state.sh --check, minus its installed-
+                                             # skill rule); None when no record was read
 
 
 # ---------------------------------------------------------------------------

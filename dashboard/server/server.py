@@ -757,7 +757,8 @@ def _ser_work(obj) -> dict:
     """Serialize WorkModel in declared field order.
 
     Field order ends with the work-003-state-schema task-002 additions:
-    kind, started, minimum_grade, user_approved.
+    kind, started, minimum_grade, user_approved; then the work-003 Feature 002
+    section 6 additions: step, step_detail, open_call, record_status.
     """
     return {
         "work_id":        obj.work_id,
@@ -786,6 +787,10 @@ def _ser_work(obj) -> dict:
         "started":        obj.started,
         "minimum_grade":  obj.minimum_grade,
         "user_approved":  obj.user_approved,
+        "step":           obj.step,
+        "step_detail":    obj.step_detail,
+        "open_call":      dict(obj.open_call) if obj.open_call is not None else None,
+        "record_status":  obj.record_status,
     }
 
 
