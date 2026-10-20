@@ -16,6 +16,8 @@ argument-hint: "work-001 (required if multiple works)  [--reset] clear deliverie
 Break each deliverable from PLAN.md into small, sequential, testable tasks.
 Each task = one agent session = one reviewable unit = one human review.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 ## ⚠️ Pre-flight Checks
 
 ### Check 1: Locate Work
@@ -63,29 +65,6 @@ continues at come only from its work record.
 - No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
 - At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **CONFIRM** (the reopen question, then **REVIEW** on a yes or **DONE** on a no)
 - Tasks complete and grade ≥ minimum → **DONE**
-
-Print the state-entry line and "you are here" map:
-
-**FIRST-RUN:**
-```
-[State: FIRST-RUN] — No task files yet; begin proposing task breakdown per deliverable.
-aid-detail  ▸ you are here
-  [● FIRST-RUN ] → [ REVIEW ] → [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] — Existing tasks found; re-review against current PLAN.md and SPECs.
-aid-detail  ▸ you are here
-  [✓ FIRST-RUN ] → [● REVIEW ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Task list approved and meets minimum grade.
-aid-detail  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
-```
 
 ## Dispatch
 

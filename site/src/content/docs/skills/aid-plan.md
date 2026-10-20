@@ -48,32 +48,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No PLAN.md found; begin dependency mapping and deliverable… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L164" wrap
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L143" wrap
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | CHAIN → REVIEW when the user approves the sequence; HALT when the user declines the plan |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L164`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L164) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L238)
+[Source: `canonical/skills/aid-plan/SKILL.md#L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L143) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L238)
 
 <a id="fragment-n2"></a>**2 · `CONFIRM`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L165" wrap
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L144" wrap
 | CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L165`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L165) · [full step: `canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13)
+[Source: `canonical/skills/aid-plan/SKILL.md#L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L144) · [full step: `canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/confirm-reopen.md#L1-L13)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — PLAN.md exists and was previously completed; re-review… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L166" wrap
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L145" wrap
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE when the grade meets minimum and all delivery folders are created; CHAIN → FIRST-RUN when the grade is below minimum and the deliverables are fixable; HALT when the sequence is invalidated |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L166) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L76)
+[Source: `canonical/skills/aid-plan/SKILL.md#L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L145) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L76)
 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L167" wrap
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L146" wrap
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L167`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L167)
+[Source: `canonical/skills/aid-plan/SKILL.md#L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L146)

@@ -6,12 +6,6 @@ The task is already Done and the user has re-invoked /aid-execute; the router co
 
 When the task is already `Done` and the user runs `/aid-execute task-NNN` again:
 
-```
-[State: RE-RUN] — Task already Done; confirming whether to reopen for review.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● RE-RUN ]
-```
-
 1. Ask, through the question protocol: _"This task is marked Done. Do you want to reopen it for
    review? Is there something specific you want to re-examine?"_ The question is blocking, so this
    step pauses on it until the user answers.

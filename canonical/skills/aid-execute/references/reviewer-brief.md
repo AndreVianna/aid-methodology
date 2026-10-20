@@ -73,6 +73,12 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   - If the severity came from a file-level override, record the resolved severity and the
     overriding file's `why` in the Evidence cell.
 
+### What to report
+  Report only issues that affect the work: a step that cannot be built, a check that would fail on
+  the real files, a contradiction with another part of the document or the task, or a decision the
+  user has to make. Exact counts, word-for-word comparisons and wording or cosmetic points are not
+  findings.
+
 OUT OF SCOPE (do NOT grade against):
   - The executor agent's process or working notes
   - Code outside the task's stated Scope (other deliveries, other tasks)

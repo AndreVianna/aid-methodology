@@ -10,15 +10,7 @@ file is entered, the guard has already passed (all tasks are `Done`).
 
 ## State Entry Trigger
 
-Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures):
-
-```
-[State: DELIVERY-GATE] — Per-delivery quality gate running.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● DELIVERY-GATE ]
-```
-
-Print this state-entry banner before proceeding to Step 0.
+Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures).
 
 Advance delivery lifecycle to Gated (silent state-write -- no output; a failed write stops the run):
 ```bash
@@ -310,10 +302,7 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Append to the `qa` sequence in `deliveries/delivery-NNN/STATE.yml` (SD-5:
-  the delivery gate writes to its OWN delivery STATE.yml, not the shared work STATE.yml,
-  to preserve the disjoint-write property -- two delivery branches cannot collide) →
-  suggest `/aid-specify`
+- **SPEC** → Record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the SPEC issue>' --suggested '<the recommendation>' --asked-by aid-execute`, then ask it through the question protocol → suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 

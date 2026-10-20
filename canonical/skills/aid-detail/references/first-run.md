@@ -96,7 +96,7 @@ Once approved:
 delivery-001 tasks written. Moving to delivery-002.
 ```
 
-> **No graded gate here.** FIRST-RUN chains into `[State: REVIEW]`
+> **No graded gate here.** FIRST-RUN chains into the review step
 > (`references/review.md`), which already dispatches `aid-reviewer` at
 > `{{SCOPE}} = whole-list` over every delivery's `DETAIL.md` plus the full PLAN.md,
 > writing the same ledger scope. A per-delivery gate
@@ -127,8 +127,6 @@ delivery-002: {Name} → tasks 005–008
 Total: {n} tasks in {m} deliverables.
 Execution graphs written to PLAN.md.
 ```
-
-[State: FIRST-RUN] complete.
 
 The approval in Step 2 is a blocking question: this step pauses on it where it stands (its detail says which delivery's
 proposal awaits approval), and goes on with Step 3 once it is answered.

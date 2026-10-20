@@ -11,6 +11,8 @@ argument-hint: "work-001 (required if multiple works)  [--reset] clear PLAN.md a
 
 Sequence features into deliverables where each is a functional MVP that works on its own.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 ## Core Principle
 
 Plan answers ONE question: **"In what order do we deliver, and does each delivery
@@ -46,7 +48,7 @@ Each deliverable follows the same cycle:
                             #  definition: objective, scope, gate criteria) + execution graph
     deliveries/
       delivery-NNN/           <- CREATED by aid-plan per delivery approved in PLAN.md
-        STATE.yml              <- OUTPUT: delivery lifecycle (initial delivery_state: Pending-Spec) + gate key + qa key
+        STATE.yml              <- OUTPUT: delivery lifecycle (initial delivery_state: Pending-Spec) + gate key
 ```
 
 > Note: `deliveries/delivery-NNN/` must exist before `aid-detail` nests `tasks/task-NNN/` under it.
@@ -122,29 +124,6 @@ start: `--handoff --to aid-plan --step FIRST-RUN --why 'user ran the command' --
 - PLAN.md exists, grade below minimum or not yet graded → **CONFIRM** (the step asks if anything specific should be re-examined, then **REVIEW**)
 - PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
 
-Print the state-entry line and "you are here" map:
-
-**FIRST-RUN:**
-```
-[State: FIRST-RUN] — No PLAN.md found; begin dependency mapping and deliverable sequencing.
-aid-plan  ▸ you are here
-  [● FIRST-RUN ] → [ REVIEW ] → [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] — PLAN.md exists; re-review deliverables against current SPECs and KB.
-aid-plan  ▸ you are here
-  [✓ FIRST-RUN ] → [● REVIEW ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Plan is complete and meets minimum grade.
-aid-plan  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
-```
-
 ## Inputs
 
 - **All feature SPECs** — requirements, tech spec, priority, acceptance criteria
@@ -166,28 +145,19 @@ aid-plan  ▸ you are here
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE when the grade meets minimum and all delivery folders are created; CHAIN → FIRST-RUN when the grade is below minimum and the deliverables are fixable; HALT when the sequence is invalidated |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, its `**Advance:**` line decides the next move, as
 [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an
 open call returns to the caller.
 
-**DONE (inline):** When DONE is detected, print:
-
-```
-[State: DONE] — Plan is complete and meets minimum grade.
-aid-plan  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
-
-Plan is approved and up to date. Run /aid-plan again with --reset to restart.
-```
+**DONE (inline):** When DONE is detected, print the closing line: "Plan is approved and up to date. Run /aid-plan again with --reset to restart."
 
 ---
 
 ## Feedback Loops
 
 - **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Specify:** SPEC ambiguous → append to the `qa` sequence in the relevant delivery's `STATE.yml`
-- **→ Interview:** Priority unclear → append to the `qa` sequence in the relevant delivery's `STATE.yml`
+- **→ Specify:** SPEC ambiguous → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the ambiguity>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol
+- **→ Interview:** Priority unclear → record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Priority --impact <High|Medium|Low> --context '<the priority question>' --suggested '<the recommendation>' --asked-by aid-plan`, then ask it through the question protocol
 
 ## Output
 
@@ -269,7 +239,7 @@ Seeded from `.aid/runtime/templates/delivery-state-template.yml` with:
 - `delivery_state: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)
 - `delivery_lifecycle.updated:` set to the current UTC timestamp
 - `Branch:` set to `aid/work-NNN-delivery-NNN` (inferred from the folder/worktree, not authored)
-- `delivery_gate` and `qa` keys left at their template defaults (filled by `aid-execute`)
+- `delivery_gate` key left at its template default (filled by `aid-execute`)
 
 A delivery created with ZERO tasks still renders correctly at `Pending-Spec`. The
 DERIVED task rollup for this delivery (assembled at read time from
