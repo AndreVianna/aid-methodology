@@ -25,7 +25,7 @@ reads while the grade is computed from this one.
 
 | Severity | Meaning |
 |----------|---------|
-| **Minor** | Cosmetic, style, trivial improvement. Does not affect functionality. |
+| **Minor** | Trivial improvement. Does not affect functionality. |
 | **Low** | Minor convention deviation, could be better but works correctly. |
 | **Medium** | Incorrect behavior (non-critical), missing edge case, incomplete coverage. |
 | **High** | Blocks functionality, security risk, data integrity concern. |

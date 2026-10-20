@@ -2,7 +2,7 @@
 
 The engine's continuous read-and-ask process for inferring the user's knowledge level and
 role. Called by Step 4 (CALIBRATION SHAPING) of the five-step selector in
-`references/elicitation-engine.md` to shape move depth. The NFR-7 envelope applied to the
+`references/elicitation-engine.md` to shape move depth. The question form applied to the
 calibration ASK is defined in `references/advisor-stance.md`.
 
 ---
@@ -95,10 +95,10 @@ The calibration ASK may probe any of:
 - Software / requirements practice -- have they done this kind of work before?
 - AID familiarity -- have they used AID's pipeline before?
 
-### NFR-7 envelope on the calibration ASK
+### Question form on the calibration ASK
 
-Like every question the engine emits, the calibration ASK MUST carry the full NFR-7
-envelope (defined in `references/advisor-stance.md`): a concrete `Suggested:` inferred
+Like every question the engine emits, the calibration ASK MUST carry the full question form
+(defined in `references/advisor-stance.md`): a concrete `Suggested:` inferred
 from what the analyst has already read, and a `Why:` explaining why that level fits and
 why knowing it matters to the conversation.
 
@@ -116,15 +116,13 @@ right depth.
 
 How familiar are you with requirements and design work of this kind?
 
-Suggested: You are experienced in this domain and have done similar requirements work
+My recommendation: You are experienced in this domain and have done similar requirements work
 before, so I will pitch questions at a technical level and skip the teaching scaffolds
 unless you ask.
-Why: Knowing your level lets me calibrate depth from the start rather than over- or
+Why I ask: Knowing your level lets me calibrate depth from the start rather than over- or
 under-explaining; correct me if I have read this wrong.
 
-[1] Accept this
-[2] Not applicable
-[3] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 After the user responds, the engine updates calibration state and records the answer before
@@ -147,7 +145,7 @@ must read as different conversations.
 
 **AC-4 divergence test:** two dogfood transcripts on the same prompt -- one Expert persona,
 one Novice persona -- must demonstrate (a) the calibration ASK fired as an early follow-up
-(never turn 1) carrying an NFR-7 envelope, and (b) the Expert run used fewer why-steps and
+(never turn 1) carrying the question form, and (b) the Expert run used fewer why-steps and
 confirm-and-move while the Novice run drew out, taught, and used more example-probes. The
 two transcripts must read as different conversations.
 
@@ -155,7 +153,7 @@ two transcripts must read as different conversations.
 creative gaps when calibration state is Novice (or the user is reading as deferential on
 a given turn), apply the open-first question order defined in
 `references/advisor-stance.md` Rule G1a, rather than the standard straw-man-first order.
-The NFR-7 envelope (Suggested: and Why:) remains present in both orders; only the framing
+The question form (Suggested: and Why:) remains present in both orders; only the framing
 of the context sentences and the Why: copy changes. Expert and Mixed states keep the
 standard straw-man-first order. Low-stakes or convergent gaps keep the standard order
 regardless of calibration state.

@@ -16,7 +16,7 @@ final confirmation.
 
 ---
 
-## Step 0 — State-entry: write run-state fields and print banner
+## Step 0 — State entry: write run-state fields
 
 Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`
 directly):
@@ -29,14 +29,6 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
 bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
-
-Print the `[State: CLEANUP]` banner from `SKILL.md § State Detection`:
-
-```
-[State: CLEANUP] — Sweeping stale work-area artifacts.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [✓ SUMMARY-DELTA ] → [● CLEANUP ] → [ DONE ]
 ```
 
 > **`--cleanup-only` inputs guard (AC10):** When `**Mode:** cleanup-only` is
@@ -74,7 +66,7 @@ non-zero exit print the error and abort:
 
 ```
 ⚠️  cleanup-classify.sh failed (exit $CLASSIFY_EXIT). See stderr above.
-    Cannot continue CLEANUP — re-run /aid-housekeep after resolving the issue.
+    Cannot continue CLEANUP until the issue is resolved.
 ```
 
 `$CANDIDATES` is newline-separated; each line is a pipe-delimited candidate
@@ -172,43 +164,41 @@ Tier-2 — review: hand-authored files (unchecked):
   [ ] .aid/some-loose-file.md  (tracked)  — review: Tier-2: loose .aid/ file (hand-authored, not in a known scan root)
 ```
 
-Use `AskUserQuestion` to present the checklist and ask the user to toggle items:
+Ask the user, in plain text through `.aid/runtime/templates/question-protocol.md`, to toggle the items. Housekeeping keeps no work record, so record each cleanup question with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --project --category Cleanup --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-housekeep` before it is shown, and its reply with `--answer --project --id Q<n> --state Answered --value '<the reply>'`. Show the rendered checklist with this question:
 
 ```
-Use AskUserQuestion:
-"Here is the list of stale .aid/ artifacts identified for cleanup.
+Stale .aid/ artifacts -- importance: high
+Which of these stale artifacts should be deleted?
+Why I ask: deleting an untracked item cannot be undone.
+My recommendation: keep the Tier-0 items checked, and check a Tier-1/2 item only after reviewing it.
 
 <RENDERED CHECKLIST>
 
-Toggle any items you want to change (check or uncheck), then confirm your final
-selection.
-
 - Tier-0 items are pre-checked (clearly safe: temp, cache, stray reports).
-- Tier-1/2 items are unchecked — review before selecting.
+- Tier-1/2 items are unchecked -- review before selecting.
 - Items marked (git rm) are tracked by git and will be staged for deletion
   (recoverable from git history). Items marked (untracked) will be deleted
   with rm -rf (not in git history).
 
-Reply with your final confirmed list of items to delete, or reply 'cancel' to
-skip all deletions."
+Reply with your final confirmed list of items to delete, or 'cancel' to skip all deletions.
+You may also ask me to explain, or skip this question.
 ```
 
 Capture the user's confirmed selection as `CONFIRMED_MAIN[]` (the paths the
 user checked at confirm time). If the user replies `cancel` or confirms an
 empty selection, set `CONFIRMED_MAIN=()`.
 
-### Step 3b — Explicit-confirm prompts for (i)✓/(ii)✗ work folders
+### Step 3b — Explicit-confirm questions for (i)✓/(ii)✗ work folders
 
-For EACH candidate in the explicit-confirm pool, issue a SEPARATE
-`AskUserQuestion` that states the specific discrepancy (why signal (ii)
-disagrees). Use the `GATE` field's reason text (the part after
+For EACH candidate in the explicit-confirm pool, ask a SEPARATE question, through the protocol,
+that states the specific discrepancy (why signal (ii) disagrees). Use the `GATE` field's reason text (the part after
 `explicit-confirm:`).
 
-Example prompt (one per explicit-confirm folder):
+Example question (one per explicit-confirm folder):
 
 ```
-Use AskUserQuestion:
-"Work folder '.aid/works/work-003-example' shows a discrepancy:
+Stale work folders -- question {n} of {m} -- importance: high
+Work folder '.aid/works/work-003-example' shows a discrepancy:
 
   Signal (i) — merged to master: PASS (PR is MERGED)
   Signal (ii) — STATE.md concluded: FAIL — <why: e.g. STATUS is 'Executing', no merged Deploy row>
@@ -217,14 +207,17 @@ This folder's PR appears merged, but its STATE.md does not show a Deployed
 + merged-PR terminal state. This could mean in-flight work was merged, or the
 STATE.md was not updated.
 
-Delete this folder?
-- Yes — add '.aid/works/work-003-example' to the deletion set (git rm)
-- No — skip this folder (leave it on disk)"
+Should this folder be deleted?
+Why I ask: the discrepancy may mean in-flight work was merged.
+My recommendation: no -- the work is not confirmed finished, so leave it on disk.
+  1. No -- skip this folder, leave it on disk (recommended)
+  2. Yes -- add '.aid/works/work-003-example' to the deletion set (git rm)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Populate `CONFIRMED_EXPLICIT[]` with any folders the user says "yes" to.
 
-The checklist and every explicit-confirm prompt are asked inside this step; it continues at Step 4
+The checklist and every explicit-confirm question are asked inside this step; it continues at Step 4
 once each is answered.
 
 ---
@@ -316,7 +309,7 @@ for path in "${CONFIRMED_ALL[@]}"; do
     else
         ahead=1   # safe side: origin/master unresolvable → assume potentially-ahead
     fi
-    # → issue the AskUserQuestion below. On confirm, push "$work_id|$WT_PATH|<force|noforce>".
+    # → ask the question below. On confirm, push "$work_id|$WT_PATH|<force|noforce>".
 done
 ```
 
@@ -332,12 +325,12 @@ from inside a work's own worktree; see `state-preflight.md` Check 4). If
 neither a branch nor a worktree exists, teardown is skipped for that folder
 (nothing to remove) and `locate` is not called.
 
-Issue a **separate** `AskUserQuestion` for each folder that reaches this point
+Ask a **separate** question, through the protocol, for each folder that reaches this point
 (i.e., every Tier-1 folder with a branch or worktree present):
 
 ```
-Use AskUserQuestion:
-"'.aid/works/work-099-done' is confirmed for deletion. It also has an isolated worktree:
+Worktree cleanup -- question {n} of {m} -- importance: high
+'.aid/works/work-099-done' is confirmed for deletion. It also has an isolated worktree:
 
   Worktree : <WT_PATH>            (status: <WT_STATUS>)
   Branch   : work-099
@@ -346,9 +339,12 @@ Use AskUserQuestion:
   [ if ahead ]  ⚠ branch work-099 has commits NOT on master (unmerged).
 
 Also remove this worktree and prune branch work-099?
-- Keep — leave the worktree and branch intact (default).
-- Remove — git worktree remove + prune the work-099 branch.
-  [ if dirty/ahead ]  Removing DISCARDS the uncommitted/unmerged work above."
+Why I ask: removing the worktree is the only step here that discards work.
+My recommendation: keep it -- nothing is lost by leaving the worktree and branch intact.
+  1. Keep -- leave the worktree and branch intact (recommended)
+  2. Remove -- git worktree remove + prune the work-099 branch.
+     [ if dirty/ahead ]  Removing DISCARDS the uncommitted/unmerged work above.
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Semantics:
@@ -357,13 +353,13 @@ Semantics:
 - **Confirm (Remove), clean case (`dirty=0 && ahead=0`):** record
   `"$work_id|$WT_PATH|noforce"` into `CONFIRMED_WT[]`.
 - **Confirm (Remove), dirty/ahead case:** removal requires an **additional
-  explicit confirmation** (shown inline in the prompt above) before it may be
+  explicit confirmation** (shown inline in the question above) before it may be
   recorded as `force`; only then record `"$work_id|$WT_PATH|force"`. Without
   that second explicit confirm, treat the response as Decline (NFR3 edge
   case) — never silently escalate to `--force`.
 
 No worktree or branch is ever removed without appearing in a confirmed
-`AskUserQuestion` response first (NFR1, mirroring the folder-deletion
+answer first (NFR1, mirroring the folder-deletion
 invariant in Step 5).
 
 Every teardown offer is asked inside this step; it continues at Step 5 once each is answered.
@@ -525,8 +521,8 @@ Omit the `Worktrees removed:` block entirely when `WT_RESULTS[]` is empty (no
 teardown was offered or confirmed for this run). `Cleanup Stage: passed` still
 reflects the folder deletions/commit in Steps 5–6 (unaffected by a worktree
 teardown failure) — a `failed`/`wt-only` entry is a reported worktree-teardown
-outcome, not a Cleanup-stage failure; the user re-runs `/aid-housekeep` (or
-handles the leftover worktree/branch manually) to retry teardown separately.
+outcome, not a Cleanup-stage failure; the leftover worktree/branch is handled
+manually.
 
 **D2 coordination note:** This stage sweeps any residual
 `verify-deterministic-report.json` / `verify-advisory-report.json` under

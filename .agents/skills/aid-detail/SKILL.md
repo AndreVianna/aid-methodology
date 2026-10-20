@@ -16,6 +16,8 @@ argument-hint: "work-001 (required if multiple works)  [--reset] clear deliverie
 Break each deliverable from PLAN.md into small, sequential, testable tasks.
 Each task = one agent session = one reviewable unit = one human review.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 ## ⚠️ Pre-flight Checks
 
 ### Check 1: Locate Work
@@ -26,7 +28,7 @@ Each task = one agent session = one reviewable unit = one human review.
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id`
 3. Single record → auto-select it
-4. Multiple records → list them, ask user to choose
+4. Multiple records → list them, and ask which one, as one question in the protocol's form (`.aid/runtime/templates/question-protocol.md`)
 5. Zero records on any worktree → **STOP.** "No works found. Run `/aid-describe` first."
 
 ### Locate + Enter the Work's Worktree
@@ -63,29 +65,6 @@ continues at come only from its work record.
 - No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
 - At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **CONFIRM** (the reopen question, then **REVIEW** on a yes or **DONE** on a no)
 - Tasks complete and grade ≥ minimum → **DONE**
-
-Print the state-entry line and "you are here" map:
-
-**FIRST-RUN:**
-```
-[State: FIRST-RUN] — No task files yet; begin proposing task breakdown per deliverable.
-aid-detail  ▸ you are here
-  [● FIRST-RUN ] → [ REVIEW ] → [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] — Existing tasks found; re-review against current PLAN.md and SPECs.
-aid-detail  ▸ you are here
-  [✓ FIRST-RUN ] → [● REVIEW ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Task list approved and meets minimum grade.
-aid-detail  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
-```
 
 ## Dispatch
 

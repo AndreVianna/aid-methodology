@@ -16,6 +16,8 @@ argument-hint: "<what changed / what to update in the KB>"
 
 State machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 Analyzes how a prompt-driven instruction lands in the Knowledge Base,
 confirms the correct understanding and the exact scope with the user BEFORE
 any edit, then applies only that confirmed delta through the same
@@ -44,9 +46,9 @@ skill references that boundary but does not own it.
 
 **Human-gated, twice (NFR-6/C4/AC13, HL-1).** Analysis and scope-planning
 are automatic; the change to KB content cannot proceed to APPLY without an
-explicit human `[1] Confirm` at CONFIRM (the root fix -- scope is vetoed
+explicit human confirmation at CONFIRM (the root fix -- scope is vetoed
 BEFORE any edit exists), and cannot proceed to DONE without a second explicit
-human `[1] Approved` at APPROVAL. No auto-apply path exists at either gate.
+human approval at APPROVAL. No auto-apply path exists at either gate.
 
 **State machine -- the steps move by `.aid/runtime/templates/skill-steps.md`, which
 sets the advance words and what each one does. Two human gates by design: CONFIRM
@@ -57,18 +59,17 @@ before commit.**
 > aid-update-kb  > Pre-flight ISOLATE runs first, every invocation
 >   [ ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
 >                                 ^ human gate                             ^ human gate
->                                 [1] chains to APPLY / DONE; [2] re-scopes; [3] halts at CONFIRM
+>                                 confirm/approve chains to APPLY / DONE; adjust re-scopes; cancel halts at CONFIRM
 > ```
 
 CONFIRM and APPROVAL are the two human gates. Each one asks the user in the
 conversation, and the question pauses the step where it stands until the user
-answers; neither can be skipped. Answering `[1]` (CONFIRM's `Confirm` / APPROVAL's
-`Approved`) continues straight through to APPLY / DONE within the same invocation
+answers; neither can be skipped. Answering Confirm (CONFIRM) or Approved (APPROVAL) continues straight through to APPLY / DONE within the same invocation
 (`state-confirm.md`'s and `state-approval.md`'s own Advance lines say so
-explicitly, and the Dispatch table below agrees). CONFIRM `[2] Adjust` loops back to
+explicitly, and the Dispatch table below agrees). CONFIRM Adjust loops back to
 SCOPE (or ANALYZE if the understanding itself changes) inside the same invocation, as a
 fresh clean-context SCOPE dispatch; the user's answer is taken in the chat. CONFIRM
-`[3] Cancel` HALTs. APPROVAL `[2] Additional consideration` re-scopes back to
+Cancel HALTs. APPROVAL Additional consideration re-scopes back to
 SCOPE (never blindly back to APPLY) in the same way. REVIEW's FIX loop (REVIEW's
 own fix pass -> REVIEW again, inside the one step) repeats until `grade >= minimum_grade AND teach-back PASS AND act-back PASS`,
 bounded to Confirmed Scope only (HL-7).
@@ -169,7 +170,7 @@ resolved the same way as every Rung B candidate: by comparing the stored
     Print and STOP:
 
     ```
-    [Pre-flight] ISOLATE: this session is already inside a paused
+    This session is already inside a paused
     /aid-update-kb run for a DIFFERENT instruction --
       Stored prompt:   <RUNG_A_PROMPT>
       This invocation: <the current invocation's instruction>
@@ -204,13 +205,12 @@ is fine -- this is a text-equality check, never a semantic/fuzzy one):
   STOP:
 
   ```
-  [Pre-flight] ISOLATE found more than one live run for this exact
+  Found more than one live run for this exact
   instruction -- ambiguous, cannot silently pick one:
     <matching worktree path 1>
     <matching worktree path 2> ...
-  Resume one explicitly (cd into its worktree and re-run /aid-update-kb
-  "<same instruction>" from there), or rephrase to a distinct instruction to
-  start a fresh run. STOP.
+  Resume one explicitly (cd into its worktree and continue the run from
+  there), or rephrase to a distinct instruction to start a fresh run. STOP.
   ```
 
   Do not continue to 2b or 2c until the user responds -- exit without
@@ -226,7 +226,7 @@ TS="$(date +%Y%m%d%H%M)"
 BRANCH="aid/update-kb-${TS}"
 GCD="$(git rev-parse --git-common-dir 2>/dev/null)" || GCD=""
 if [ -z "$GCD" ]; then
-  echo "[Pre-flight] ISOLATE failed -- not a git repository. STOP."
+  echo "Isolation failed -- not a git repository. STOP."
   exit 1   # never fall back to the caller's own tree
 fi
 MAIN_ROOT="$(cd "$(dirname "$GCD")" && pwd -P)"
@@ -235,7 +235,7 @@ mkdir -p "$WT_ROOT"
 UPDATEKB_WT="${WT_ROOT}/update-kb-${TS}"
 
 if ! git worktree add "$UPDATEKB_WT" -b "$BRANCH" master >/dev/null 2>&1; then
-  echo "[Pre-flight] ISOLATE failed -- 'git worktree add' could not create"
+  echo "Isolation failed -- 'git worktree add' could not create"
   echo "$UPDATEKB_WT on branch $BRANCH off master. STOP."
   exit 1   # fail-closed -- never run in the caller's tree/branch
 fi
@@ -371,71 +371,20 @@ reformatted between states):
 | `**Scope Plan:**` | SCOPE (replaces the legacy `Change Plan`) | the minimal (doc, change-type, description, Traces-to, Kind) table |
 | `**Not-Changing:**` | SCOPE | docs considered but excluded, with reasons (HL-5) |
 | `**Confirm Questions:**` | SCOPE | the questions CONFIRM presents |
-| `**Confirmed:**` | CONFIRM (`[1]` only) | `yes` -- the HL-1 gate; APPLY is unreachable without it |
-| `**Confirmed At:**` | CONFIRM (`[1]`) | ISO-8601 confirmation timestamp |
-| `**Confirmed Scope:**` | CONFIRM (`[1]`) | the frozen doc set -- the scope contract for APPLY/REVIEW |
-| `**Pre-APPLY baseline:**` | CONFIRM (`[1]`) | git HEAD (or `clean`) captured before APPLY's first edit -- REVIEW's scope-diff guard and any re-scope revert both diff against this |
-| `**Adjustments:**` | CONFIRM (`[1]`/`[2]`) | free text, or the user's answers folded in, or `--`; read by SCOPE/ANALYZE Step 1 as the authorized re-plan input on a loop-back (HL-8/AC-9) |
+| `**Confirmed:**` | CONFIRM (Confirm only) | `yes` -- the HL-1 gate; APPLY is unreachable without it |
+| `**Confirmed At:**` | CONFIRM (Confirm) | ISO-8601 confirmation timestamp |
+| `**Confirmed Scope:**` | CONFIRM (Confirm) | the frozen doc set -- the scope contract for APPLY/REVIEW |
+| `**Pre-APPLY baseline:**` | CONFIRM (Confirm) | git HEAD (or `clean`) captured before APPLY's first edit -- REVIEW's scope-diff guard and any re-scope revert both diff against this |
+| `**Adjustments:**` | CONFIRM (Confirm/Adjust) | free text, or the user's answers folded in, or `--`; read by SCOPE/ANALYZE Step 1 as the authorized re-plan input on a loop-back (HL-8/AC-9) |
 | `**Edited Docs:**` | APPLY | the docs actually edited (unchanged field name from today) |
 | `**APPLY Completed:**` | APPLY | ISO-8601 timestamp |
 | `**Scope-diff:**` | REVIEW (Step 4, every outcome -- 4(a) incomplete-APPLY, 4(b) HARD FAIL, 4(c) PASS, 4(d) below-gate) | this pass's disk-derived scope-fidelity verdict; read back by APPROVAL Step 1 for its summary banner |
 | `**Review Grade:**` / `**Review Teach-back:**` / `**Review Act-back:**` / `**Review Completed:**` | REVIEW | unchanged from today |
 | `**User Approved:**` / `**Approved At:**` | APPROVAL | unchanged from today |
-| `**Consideration:**` | APPROVAL (`[2]`, Step 3) | free-text summary of the user's re-scope consideration (`Q{N} -- <one-line summary>`); read by SCOPE Step 1 as an authorized re-plan input, the same way `**Adjustments:**` is (HL-8/AC-9) |
+| `**Consideration:**` | APPROVAL (Additional consideration, Step 3) | free-text summary of the user's re-scope consideration (`Q{N} -- <one-line summary>`); read by SCOPE Step 1 as an authorized re-plan input, the same way `**Adjustments:**` is (HL-8/AC-9) |
 
 `**Change Plan:**` no longer exists anywhere in this schema -- SCOPE's
 `**Scope Plan:**` replaces it.
-
-**State-entry banners.** At the start of each state, print the matching banner:
-
-**ANALYZE:**
-```
-[State: ANALYZE] -- Building the Impact Map: how and where the instruction lands in the KB.
-aid-update-kb  > you are here
-  [* ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**SCOPE:**
-```
-[State: SCOPE] -- Turning the Impact Map into the minimal Scope Plan + Not-Changing list.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [* SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**CONFIRM:**
-```
-[State: CONFIRM] -- Human gate: confirm understanding + scope before any edit.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [* CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**APPLY:**
-```
-[State: APPLY] -- Applying only the Confirmed Scope's targeted summary+pointer edits.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [* APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] -- Scope-diff guard, then grading the changed KB docs through f005's four-mandate panel.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [* REVIEW ] -> [ APPROVAL ] -> [ DONE ]
-```
-
-**APPROVAL:**
-```
-[State: APPROVAL] -- Human gate: confirm the approved changes before committing.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [* APPROVAL ] -> [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] -- Restamp approved_at_commit:, commit, and clean run-state.
-aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [+ APPROVAL ] -> [* DONE ]
-```
 
 ---
 
@@ -466,7 +415,7 @@ aid-update-kb  > you are here
 > **Clean-context dispatch (ANALYZE/SCOPE, HL-8/AC-9).** Both dispatches
 > receive ONLY the verbatim `/aid-update-kb` instruction (the `**Prompt:**`
 > field from run-state), plus -- **if this is a re-plan loop-back** (CONFIRM
-> `[2] Adjust`, APPROVAL `[2]`, or REVIEW 4(b) "accept") -- the run-state's
+> Adjust, APPROVAL Additional consideration, or REVIEW 4(b) "accept") -- the run-state's
 > recorded `**Adjustments:**`/`**Consideration:**` field: the user's
 > explicit gate-time re-plan guidance, given AT the gate as part of the
 > instruction dialogue -- part of THIS run's own instruction+confirmation
@@ -504,8 +453,7 @@ aid-update-kb  > you are here
 > is edited-but-not-yet-approved is correctly `suspect` to f007, never
 > falsely current.
 
-On state entry, print `[State: NAME]` + the "you are here" banner from State
-Detection above. When a state completes, its `**Advance:**` line decides the next move, as
+When a state completes, its `**Advance:**` line decides the next move, as
 `.aid/runtime/templates/skill-steps.md` § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Step rules:** The steps move as `.aid/runtime/templates/skill-steps.md` § The advance words sets.

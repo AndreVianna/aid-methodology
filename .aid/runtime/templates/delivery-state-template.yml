@@ -3,7 +3,7 @@
 # This is the DELIVERY-LEVEL STATE.yml template -- FULL PATH ONLY. It lives at
 # .aid/works/work-NNN-{name}/deliveries/delivery-NNN/STATE.yml. (A lite work
 # has exactly one delivery and no deliveries/ folder at all -- its Delivery
-# Lifecycle / Delivery Gate / Cross-phase Q&A are AUTHORED directly in the
+# Lifecycle / Delivery Gate are AUTHORED directly in the
 # work-root STATE.yml instead; see work-state-template.yml.) It is divided
 # into three zones:
 #   FRONTMATTER (single writer = this delivery's branch, machine-parsed
@@ -11,7 +11,7 @@
 #     (top-level keys, verbatim).
 #   AUTHORED (single writer = this delivery's branch, YAML structures under a
 #     key) -- delivery_lifecycle (Updated/Block Reason/Block Artifact),
-#     delivery_gate (Issue List), qa (delivery-scoped Cross-phase Q&A).
+#     delivery_gate (Issue List). `qa` is kept empty: no question is written here.
 #   DERIVED (read-only, assembled at read time) -- Tasks State (rollup from
 #     per-task STATE.yml files in tasks/task-NNN/STATE.yml). NOT represented
 #     here -- no key at all.
@@ -65,16 +65,9 @@ delivery_lifecycle:
 #   issue_list: severity-tagged strings, or [] when the gate passed clean
 delivery_gate:
   issue_list: []
-# [A] single writer: this delivery's branch (via the delivery-gate step of
-#     aid-execute). delivery-gate SPEC Q&A is written here, NOT into the
-#     shared work-level STATE.yml, to preserve the disjoint-write property
-#     (two delivery branches cannot collide on this file). The work-level
-#     Cross-phase Q&A is a DERIVED union of all delivery Q&A plus any
-#     work-owner-authored work-level entries. KB Q&A targets
-#     .aid/knowledge/STATE.md (separate file). One entry per question:
-#   - id / category (e.g. Architecture, Requirements, Security) /
-#     impact: High | Medium | Low /
-#     state: Pending | Answered | Skipped | Assumed /
-#     context / suggested / answer / applied_to
+# [A] `qa` (the delivery-level Cross-phase Q&A) is retired as a question home: no question is written here. Every question
+#     asked while working on a work, the delivery-gate SPEC question included, is recorded in the
+#     WORK's STATE.yml `qa` list with `writeback-state.sh --ask` (question-protocol.md § Where each
+#     record lives), and the work's resume asks it. KB questions target .aid/knowledge/STATE.md.
 qa: []
 # DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.

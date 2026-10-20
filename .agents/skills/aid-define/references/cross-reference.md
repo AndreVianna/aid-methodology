@@ -67,22 +67,17 @@ No blocking issues found. Requirements are consistent with the Knowledge Base.
 I have {N} questions to resolve these. Let's go through them one at a time.
 ```
 
-## 6e. Create Q&A Entries and Ask
+## 6e. Record Questions and Ask
 
-For each finding, add a Q&A entry to the `qa` sequence in STATE.yml:
+Each finding that needs the user is already a `Pending` question in the work's `qa` sequence: the
+reviewer recorded it with `writeback-state.sh --ask` (category, impact, context, suggested, `--asked-by aid-reviewer`)
+and listed its id in its report. The main conversation does not record it a second time. If the main conversation
+finds a gap of its own that the reviewer did not record, it records that one with `--ask` first, with
+`--asked-by aid-define`.
 
-```markdown
-### Q{N}
-
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** {High|Medium|Low|Required}
-- **Status:** Pending
-- **Context:** {why this matters; what evidence was found; surfaced by /aid-define (cross-reference)}
-- **Suggested:** {answer if inferrable from KB/code, or "—"}
-```
-
-Then present them one at a time using State 2 (Q&A mode) logic. These questions are asked by the main
-conversation only, through the question protocol; a worker records them and lists them in its report.
+Then present them one at a time through the question protocol, using the ids the reviewer listed. These questions are
+asked by the main conversation only; a worker records them and lists them in its report. Record each answer with
+`--answer --id <id>` (`--state Answered`, or `Skipped`) before the next question.
 
 After each answer:
 1. Update REQUIREMENTS.md

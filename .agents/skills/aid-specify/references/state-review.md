@@ -4,8 +4,11 @@ All sections complete; re-review entire spec against current KB and codebase.
 
 The spec was completed previously (the work `STATE.yml`'s `features:` entry has `state: Ready`).
 
-**Ask first:** _"This feature spec is marked Ready. Do you want to reopen it for review?
-Is there something specific you want to re-examine?"_
+**Ask first** (one question, recorded with `--ask` before it is shown):
+_"This feature spec is marked Ready. Do you want to reopen it for review?"_
+Why I ask: a Ready spec is only reviewed again when you want it. My recommendation: leave it
+Ready unless something changed since it was approved. If the user names a specific concern in
+the reply, take it as context for the review; do not ask a second question for it.
 
 If user confirms → set feature status to `In Discussion`, continue below.
 If user declines → the spec stays Ready; the step ends at once, on DONE.

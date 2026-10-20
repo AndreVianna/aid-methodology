@@ -14,7 +14,7 @@ assigned yet.
 
 ### Step 1: Dispatch the Panel
 
-Print: `[Review 1/3] Dispatching review panel...`
+Print one plain line: `Reviewing the knowledge base.`
 
 **Pre-dispatch: run the coverage oracle**
 
@@ -262,8 +262,6 @@ file named in its prompt). The four scratch ledgers are short-lived transients; 
 canonical `{{SCOPE}}.md` ledger (the file `grade.sh` and FIX use) is untouched
 until Step 2.
 
-Print: `[Review 1/3] Panel dispatched (4 mandates, parallel). Waiting for all 4...`
-
 Wait for all 4 to complete. Record per-mandate actual time.
 
 ---
@@ -353,8 +351,6 @@ M3 concurrently; the clean-context act-back reviewer handles M4 concurrently.
 **A3 capability-probe:** if parallel dispatch is unavailable, dispatch Dispatch 1 first
 (wait for completion), then Dispatch 2, then Dispatch 3.
 
-Print: `[Review 1/3] Panel dispatched (collapsed: 3 dispatches, 4 mandates). Waiting...`
-
 Wait for all three to complete. Record actual time per dispatch.
 
 ---
@@ -394,7 +390,7 @@ source file. Findings are tagged `[ACTBACK]`.
 
 ### Step 2: Aggregate + Grade
 
-Print: `[Review 2/3] Aggregating panel findings...`
+Print one plain line: `Combining the panel findings.`
 
 **2a. Merge the scratch ledgers into the single canonical ledger**
 
@@ -547,8 +543,6 @@ rm -f \
 
 ### Step 3: Post-Process and Report
 
-Print: `[Review 3/3] Review complete.`
-
 Resolve the minimum grade:
 
 ```bash
@@ -579,13 +573,11 @@ If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via
 Print:
 ```
 Grade: {grade} | Essence: {PASS|FAIL} | Assertiveness: {PASS|FAIL} -> {Ready|NOT Ready}
-[Review 3/3] Grade: {grade}. Minimum: {min}.
+Minimum: {min}.
 ```
 
-Print: `[State: REVIEW] complete.`
-
-**Advance:** **CHAIN** → [State: Q-AND-A] if Pending Q&A entries with Impact: Required
-exist; **CHAIN** → [State: FIX] when none exists. Both continue inline.
+**Advance:** **CHAIN** → [State: Q-AND-A] if any Pending Q&A entry exists (whatever its
+impact label); **CHAIN** → [State: FIX] when none exists. Both continue inline.
 
 ---
 

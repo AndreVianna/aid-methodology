@@ -20,8 +20,10 @@ rather than an open question.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> ANALYZE -> VERIFY (loop) -> PRESENT [user
-resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+resolves] -> HANDOFF? -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -54,9 +56,9 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 
-1. **Empty argument** -> the bootstrapping question ("What data should I analyze, and what
-   question about it?"). The answer is the subject; the path and complexity are then set from it.
-2. **Guided path** -> scope *which data, which metrics, what question*.
+1. **Empty argument** -> the bootstrapping question ("What data should I analyze?"). The
+   answer is the subject; the path and complexity are then set from it.
+2. **Guided path** -> scope *which metrics, what question about it*, one question at a time.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
 **Advance:** ASK → [State: ALLOCATE].

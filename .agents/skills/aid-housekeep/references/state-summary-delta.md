@@ -26,7 +26,6 @@ non-zero:
 ```
 ⚠️  SUMMARY-DELTA requires **KB Stage:** to be 'passed' or 'skipped'.
     Current value: <$KB_STAGE>
-    Re-run /aid-housekeep — it will route to the correct stage automatically.
 ```
 
 This is a defensive restatement of the C1 ordering invariant (feature-001 SPEC
@@ -40,9 +39,9 @@ confirmation that the KB is approved before any HTML is generated.
 
 ---
 
-## Step 1 — State-entry banner
+## Step 1 — State entry
 
-Write the run-state fields and print the state-entry banner.
+Write the run-state fields.
 
 Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
@@ -54,14 +53,6 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
 bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
-
-Print the state-entry banner from `SKILL.md § State Detection`:
-
-```
-[State: SUMMARY-DELTA] — Checking whether the visual summary needs regeneration.
-aid-housekeep  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ KB-DELTA ] → [● SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]
 ```
 
 Then warn the user about the possible V1 human gate (NFR3 transparency):
@@ -341,13 +332,11 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 
-Print the resume banner, then end the run:
+Print the stall line, then end the run:
 
 ```
 ⏸  /aid-housekeep paused at SUMMARY-DELTA — <stall-reason>.
-   Fix: <actionable instruction, e.g. "correct the failing diagram and re-run /aid-summarize,
-        or re-run /aid-housekeep to retry from SUMMARY-DELTA">.
-   Resume: the next /aid-housekeep run picks up at SUMMARY-DELTA (not job 1).
+   Fix: <actionable instruction, e.g. "correct the failing diagram">.
 ```
 
 **No commit** is made in this branch.

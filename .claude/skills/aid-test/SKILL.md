@@ -21,8 +21,9 @@ verify, present, printed-suggestion handoff). The three `test-*` kind-siblings
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> RUN -> VERIFY (loop) -> PRESENT [human] ->
 HANDOFF? -> DONE**.
-Print the `[State: NAME] -- {purpose}` entry line on each state.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

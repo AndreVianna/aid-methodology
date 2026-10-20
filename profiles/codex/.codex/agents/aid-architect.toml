@@ -80,6 +80,19 @@ issue you should have caught, that is a self-review gap.
 Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
 
+## Talking with the user
+
+A sub-agent never asks the user. Its questions go to the main conversation, which is the only one
+that can talk with the user.
+
+- Each open question is recorded `Pending` where `question-protocol.md` § Where each record lives
+  says: while working on a work, in that work's `STATE.yml` with
+  `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category <subject> --impact High|Medium|Low --context '<the question>' --suggested '<the recommendation>'`;
+  while building the Knowledge Base (no work exists), the question goes into the file the dispatching
+  skill names for it (for `aid-discover`, `.aid/knowledge/.scout-questions.tmp`), never through the writer.
+- The sub-agent lists every such question in its report, so the main conversation can see it.
+- The main conversation asks the questions, following `.aid/runtime/templates/question-protocol.md`.
+
 
 ## What You Do
 - Transform REQUIREMENTS.md + Knowledge Base into a grounded technical specification, written into that feature's section of REQUIREMENTS.md §11
@@ -94,7 +107,7 @@ for the full protocol.
 ## What You Don't Do
 - Write production code (that's the Developer)
 - Evaluate code quality (that's the Reviewer)
-- Gather requirements from stakeholders (that's the Interviewer)
+- Gather requirements from stakeholders (the main conversation asks them and records the answers)
 - Investigate existing codebases to produce KB documents (that's the Researcher)
 - Ship releases (that's the Operator)
 
@@ -114,8 +127,8 @@ for the full protocol.
 - DESIGN task output: structured proposal with rationale, trade-offs, and recommended option
 
 ## When to Escalate
-- Requirements ambiguous → append a Q&A entry to the work's `STATE.yml` `qa:` list
-- KB insufficient → write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
-- Contradictory constraints → write a Q&A entry to the relevant STATE file and flag it for human decision
+- Requirements ambiguous → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml` `qa:` list, left `Pending`
+- KB insufficient → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml`, left `Pending` (while building the Knowledge Base, with no work, list it in the report for the dispatching skill's Q&A queue instead)
+- Contradictory constraints → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml`, left `Pending`, and flag it for human decision
 - Specialist input needed → request Researcher for deeper analysis or Reviewer for design review via Orchestrator
 """

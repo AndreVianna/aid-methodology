@@ -607,11 +607,9 @@ Blocked tasks (transitive descendants of failed ancestors):
 
 Per-delivery quality gate: SKIPPED (tasks Failed/Blocked — interlock active)
 
-Next steps:
-  1. Resolve the Impediment(s) listed above.
-  2. Re-run the failed task(s): /aid-execute task-{NNN}
-  3. Resume the delivery: /aid-execute delivery-{DDD}
-     The pool will re-admit blocked tasks whose dependencies become Done.
+What to fix:
+  Resolve the Impediment(s) listed above. The pool then re-admits the failed task(s) and the
+  blocked tasks whose dependencies become Done.
 ```
 
 **State invariants at fixed point (Case B):**
@@ -629,14 +627,13 @@ Next steps:
   when the pool exhausted all forward progress. This is normal for partially-
   ordered deliveries and is NOT the same as being Blocked.
 
-**Resume semantics:** After the user resolves a failure (fixes and re-runs the
-failed task), a fresh `aid-execute delivery-{DDD}` invocation re-initializes
+**Resume semantics:** After the user resolves a failure (fixes the
+failed task), a fresh `aid-execute delivery-{DDD}` start re-initializes
 the pool (PD-1). Previously-Done tasks stay Done. The newly-resolved task
 becomes Done. Tasks that were Blocked because of the resolved task are reset
 to Pending and will be admitted to the pool as their dependencies clear.
 
-**STOP.** Do not proceed to the delivery gate. The user resolves failures and
-re-invokes `aid-execute`.
+**STOP.** Do not proceed to the delivery gate. The user resolves the failures; say plainly which tasks failed and stop.
 
 ### PD-6: Graceful Degradation (MaxConcurrent = 1)
 
@@ -740,7 +737,7 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated 
 
 Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor -- this overrides the skill's default `agent: aid-developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: aid-architect`; an IMPLEMENT task uses `subagent_type: aid-developer` (matches the default).
 
-**Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task -> subagent_type={executor}` (substituting actual values).
+**Before dispatching, print:** `Dispatching {executor} for {Type} task -> subagent_type={executor}` (substituting actual values).
 
 Dispatch metadata is narrated via the closing `✓ ... done` bracket (always, not conditional); this task's own `dispatch_log` entry
 (full path: this task's `STATE.yml`; flat path: `tasks_lifecycle.task-{NNN}.dispatch_log`)

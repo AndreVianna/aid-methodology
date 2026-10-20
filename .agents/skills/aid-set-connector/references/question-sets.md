@@ -88,13 +88,17 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 
 ## Asking, per project convention
 
-Use `AskUserQuestion` for every field the table above marks "yes"/"only if…" — never silently
+Ask in the question form of `.aid/runtime/templates/question-protocol.md`, one field per message, for every field the table above marks "yes"/"only if…" — never silently
 assume a suggested value. For each:
 
-- Include a **"Keep prefilled value"** option whose description shows the resolved prefill (or
-  states "no default — type your own" when precedence resolved to blank).
-- Include 1–2 topical suggestion options drawn from the table above (e.g. `auth_method`:
-  `none`, `token`, `pat`, `oauth` as separate suggestion options, trimmed to what's relevant).
-- **Never set the `preview` field** — it switches `AskUserQuestion` to a side-by-side layout that
-  suppresses the auto-injected `Other` free-text input, which this flow needs (instance specifics
-  — org/host/domain, VAR names — are never fully enumerable as fixed options).
+- Give the **Why I ask** (what the field is used for) and a **My recommendation** line: when
+  precedence resolved a prefill, recommend it ("keep `<prefill>`") as the first option, marked
+  recommended; when it resolved to blank, recommend the most common topical suggestion for the field,
+  with its reason. Never offer a "no default" or "type your own" option — a blank is not an answer; the
+  free answer belongs on the closing line.
+- Offer 1–2 topical suggestion options drawn from the table above (e.g. `auth_method`:
+  `none`, `token`, `pat`, `oauth` as separate suggestion options, trimmed to what's relevant), only when
+  two or more are valid.
+- **The closing line always allows a free answer** — the flow needs it, because instance specifics
+  (org/host/domain, VAR names) are never fully enumerable as fixed options; the user may also ask for an
+  explanation or skip the question.

@@ -34,8 +34,10 @@ here binding a genre/format hint.
 - **Genre structures** (ADR / C4 / runbook / ...): `.aid/runtime/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> AUTHOR -> VERIFY (loop) -> PRESENT [human
-gate] -> PLACE (on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+gate] -> PLACE (on approval) -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

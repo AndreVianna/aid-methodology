@@ -1,55 +1,46 @@
 # State: Q-AND-A
 
-STATE.md `## Cross-phase Q&A` has entries with `**Status:** Pending`; resolve them one at a time before continuing.
+The work's `qa` (STATE.yml) has open entries (`state: Pending` or `state: Skipped`); resolve them one at a time before continuing. A `Skipped` entry stays open and is offered again here, to the same user or to another one.
 
 These may come from:
 - Cross-reference analysis (State 6)
-- Loopback from downstream phases (e.g., `/aid-specify` injected a question)
+- Loopback from downstream phases (e.g., `/aid-specify` recorded a question with `--ask`)
 - Review findings
 
 ### Step 1: Load and Filter
 
-Read `## Cross-phase Q&A` section of STATE.md. Collect all entries with `**Status:** Pending`.
+Read the work's `qa`. Collect all entries with `state: Pending` or `state: Skipped`.
 
-**Before presenting each question, filter:**
+**Before asking each question, filter:**
 
-1. **Already answered in REQUIREMENTS.md?** → Set status to `Answered`, fill answer,
-   cite the section. Skip to next.
-2. **Answered in KB?** → Set status to `Answered`, fill answer, cite KB document. Skip.
-3. **Inferrable from context?** → Keep but ensure `**Suggested:**` answer exists.
+1. **Already answered in REQUIREMENTS.md?** → record it `Assumed`, with the section it is answered in:
+   `bash .aid/runtime/scripts/execute/writeback-state.sh --answer --id Q<n> --state Assumed --value '<answer>' --applied-to '<section>'`.
+   Skip to next.
+2. **Answered in KB?** → record it `Assumed` the same way, citing the KB document. Skip.
+3. **Inferrable from context?** → Keep it, and make sure its `suggested` answer exists.
 
-After filtering, sort remaining Pending by impact: **High → Medium → Low**.
+After filtering, sort the remaining open entries by impact: **High → Medium → Low**.
 
-If zero remain: `[Q&A] All questions resolved from existing material.` and exit.
+If zero remain, say that every question is resolved from existing material, and stop this step.
 
-Print: `[Q&A] {N} questions for user input.`
+Otherwise say how many questions need the user's input.
 
 ### Step 2: Ask One at a Time
 
-For each Pending question:
-
-```
-IQ{N}: [{Category}: {Impact}] {question text}
-
-Context: {why this matters}
-Source: {who injected this — /aid-specify feature-001, cross-reference, etc.}
-
-Suggested: {suggestion if present}
-
-[1] Skip / Not applicable
-[2] Accept suggestion (only if Suggested exists)
-[3] Your answer: ___
-```
+For each open question, ask it in the question form of `.aid/runtime/templates/question-protocol.md`:
+its category and importance label on the first line, the question, **Why I ask** (who injected it and
+why it matters), **My recommendation** (its `suggested` answer), and the closing line that allows a
+free answer, an explanation or a skip.
 
 **Wait for the user's response before asking the next.**
 
 ### Step 3: Record
 
-Based on the user's response, update the entry in STATE.md `## Cross-phase Q&A`:
+Record each outcome with `writeback-state.sh --answer` right after the user answers:
 
-- **[1] Skip:** Set `**Status:** Skipped`
-- **[2] Accept suggestion:** Set `**Status:** Answered`, copy suggestion to `**Answer:**`
-- **[3] Answer:** Set `**Status:** Answered`, record text in `**Answer:**`
+- **Skip:** `--answer --id Q<n> --state Skipped`. The question stays open and is offered again later.
+- **Accept the suggestion:** `--answer --id Q<n> --state Answered --value '<suggested>' --by '<user>'`.
+- **The user's own answer:** `--answer --id Q<n> --state Answered --value '<text>' --by '<user>'`.
 
 **Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.
 
@@ -58,7 +49,6 @@ as the answer requires.
 
 ### Step 4: Continue Until Done
 
-When all questions addressed:
-`[Q&A] Complete. {answered} answered, {skipped} skipped.`
+When all questions are addressed, say how many were answered and how many were skipped.
 
 **Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

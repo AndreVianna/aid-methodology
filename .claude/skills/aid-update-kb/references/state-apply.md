@@ -25,15 +25,13 @@ that has been edited but not yet approved is correctly `suspect` to
 `current`.
 
 **Scope boundary (HL-2/HL-5).** APPLY edits ONLY the docs listed in
-`**Confirmed Scope:**` -- the frozen contract CONFIRM's `[1] Confirm` wrote.
+`**Confirmed Scope:**` -- the frozen contract CONFIRM's Confirm answer wrote.
 It never opportunistically touches a domain-adjacent or `suspect` doc that
 is not itself in `Confirmed Scope`, and it never grows the edit past what a
 Scope Plan item's `Description` actually describes. REVIEW's scope-diff
 guard (`state-review.md § Step 0`) hard-fails on any divergence between the
 disk-derived edited set and `Confirmed Scope` -- APPLY exists to make that
 guard pass, not to be graded around.
-
-Print the `[State: APPLY]` banner from `SKILL.md § State Detection`.
 
 ---
 
@@ -48,7 +46,7 @@ it never trusts `**Edited Docs:**` as its input, because it must cover BOTH
 re-scope scenarios this redesign has, and only one of them is ever
 self-reported:
 
-- **APPROVAL `[2]` shrinking a scope that legitimately included the dropped
+- **APPROVAL Additional consideration shrinking a scope that legitimately included the dropped
   doc** -- that doc WAS processed by a prior APPLY pass, so it IS listed in
   `**Edited Docs:**`.
 - **A stray out-of-scope edit REVIEW's Step 0 scope-diff guard caught (Step
@@ -89,14 +87,14 @@ run `HEAD` has not moved -- commits only happen at DONE -- so plain
 baseline). Print:
 
 ```
-[APPLY] Re-scope revert: <doc> reverted to Pre-APPLY baseline (disk-changed
+Re-scope revert: <doc> reverted to Pre-APPLY baseline (disk-changed
 but not in current Confirmed Scope; disk-derived -- reverted whether or not
 it was ever in a prior Edited Docs self-report).
 ```
 
 The working tree must never carry an edit broader than the *currently*
 confirmed scope -- this is the exact failure mode the re-scope revert closes
-(HL-7/AC-5), for BOTH the self-reported (APPROVAL `[2]`) and the
+(HL-7/AC-5), for BOTH the self-reported (APPROVAL Additional consideration) and the
 never-self-reported (REVIEW 4(b) decline) case.
 
 Docs in `DISK_CHANGED` that ARE still in the current `Confirmed Scope` keep
@@ -107,7 +105,7 @@ is already correctly present).
 
 This step is idempotent on a normal first pass (`DISK_CHANGED` reflects
 nothing to revert until a re-scope actually shrinks `Confirmed Scope`) and
-is the mechanism `state-approval.md § Step 3 [2]` and `state-review.md § 4(b)`'s
+is the mechanism `state-approval.md § Step 3` and `state-review.md § 4(b)`'s
 "decline" resolution both point to.
 
 ---
@@ -121,7 +119,7 @@ the boundary.
 
 Process only the Scope Plan rows whose doc appears in `**Confirmed Scope:**`,
 in order. A Scope Plan row whose doc is NOT in `Confirmed Scope` (e.g. a stale
-row from a SCOPE pass before a CONFIRM `[2] Adjust` loop-back rewrote the
+row from a SCOPE pass before a CONFIRM Adjust loop-back rewrote the
 plan) is skipped -- it was never confirmed, so APPLY never touches it.
 
 **Re-entry (HL-7, idempotency).** On a normal first pass every bounded row
@@ -306,6 +304,6 @@ Update `<STATE_FILE>`:
 **APPLY Completed:** <ISO-8601 timestamp>
 ```
 
-Print: `[APPLY] {N} doc(s) edited. Advancing to REVIEW.`
+Print: `{N} doc(s) edited.`
 
 **Advance:** CHAIN → REVIEW (continue inline).

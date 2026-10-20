@@ -19,8 +19,8 @@ field. Read-only; ANALYZE never edits a file.
 **Re-plan re-entry vs. same-pass resume.** ANALYZE is re-entered two
 distinct ways, and they are NOT the same thing: (1) the ungroundable-concept
 ASK (Step 4) resumes the *same* pass after the user supplies a definition
--- Step 0 below keeps the existing `**Prompt:**` and proceeds; (2) `[2]
-Adjust` at CONFIRM, when the adjustment corrects the **Understanding**
+-- Step 0 below keeps the existing `**Prompt:**` and proceeds; (2) Adjust
+at CONFIRM, when the adjustment corrects the **Understanding**
 itself, sets `**State:** ANALYZE` for a genuine **re-plan** pass -- this is
 the loop-back HL-8's authorized-input carve-out (below) is for. Either way,
 ANALYZE runs Steps 1-5 again; the re-plan case additionally receives the
@@ -73,7 +73,7 @@ but if it is ever reached, do NOT silently proceed on the stale
 `**Prompt:**`:
 
 ```
-[ANALYZE] Resumed run-state Prompt does not match the current invocation's
+Resumed run-state Prompt does not match the current invocation's
 instruction -- refusing to silently continue a different request. This
 should be unreachable via Pre-flight ISOLATE (both rungs prompt-match before
 resuming); STOP and report to the Orchestrator/user.
@@ -81,8 +81,6 @@ resuming); STOP and report to the Orchestrator/user.
 
 If they do not match, HALT -- do not proceed to Step 1 with a mismatched
 Prompt.
-
-Print the `[State: ANALYZE]` banner from `SKILL.md § State Detection`.
 
 ---
 
@@ -96,8 +94,8 @@ The dispatch prompt contains ONLY:
 - The verbatim instruction (`**Prompt:**` from run-state) -- word for word,
   never paraphrased, never supplemented with anything discussed earlier in
   this conversation (HL-8/AC-9).
-- **On a re-plan re-entry only** (this ANALYZE entry follows CONFIRM's `[2]
-  Adjust` where the adjustment corrects the Understanding itself -- see
+- **On a re-plan re-entry only** (this ANALYZE entry follows CONFIRM's
+  Adjust where the adjustment corrects the Understanding itself -- see
   above): the recorded `**Adjustments:**` field verbatim, plus its full
   `Q{N}` entry read from `.aid/knowledge/STATE.md ## Q&A (Pending)` (already
   covered by the read access below). This is the user's explicit gate-time
@@ -210,7 +208,7 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
      ```
      ### Q{N}
      - **Category:** Update-KB / Ungroundable Concept
-     - **Impact:** Required
+     - **Impact:** High
      - **Status:** Pending
      - **Context:** /aid-update-kb ANALYZE cannot ground the term "<term>" from
        the available artifacts. The instruction states: "<relevant excerpt>".
@@ -230,7 +228,7 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
   3. Print:
 
      ```
-     [ANALYZE] Pausing -- concept "<term>" cannot be grounded from available
+     Pausing -- concept "<term>" cannot be grounded from available
      artifacts. Q{N} appended to .aid/knowledge/STATE.md. Provide a definition
      or source pointer.
      ```
@@ -257,7 +255,7 @@ escalation was triggered:
 **State:** SCOPE
 ```
 
-Print: `[ANALYZE] Impact Map ready. {N} location(s) recorded. Advancing to SCOPE.`
+Print: `Impact Map ready. {N} location(s) recorded.`
 
 **Advance:** CHAIN → SCOPE (continue inline).
 
@@ -266,7 +264,7 @@ Impact Map -- the instruction does not describe anything KB-relevant),
 print:
 
 ```
-[ANALYZE] No KB-relevant location identified for the supplied instruction.
+No KB-relevant location identified for the supplied instruction.
 Verify the instruction describes a concrete change to the project that
 should be reflected in the Knowledge Base. If the change is purely internal
 (e.g. a refactor with no observable contract change), no KB update is needed.

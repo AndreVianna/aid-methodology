@@ -1,15 +1,13 @@
 # State: CONFIRM
 
 CONFIRM is the **new pre-apply human gate** -- the root fix this redesign
-exists for (HL-1). No KB file is edited before this gate returns `[1]
-Confirm`. It is selected when the run-state file records `**State:**
+exists for (HL-1). No KB file is edited before this gate returns an
+approved scope. It is selected when the run-state file records `**State:**
 CONFIRM`.
 
-**Pattern reuse.** Shaped like this skill's own APPROVAL-gate pattern (`[1]`/
-`[2]` prompt, ASK), plus a `[3] Cancel` exit, but gates
+**Pattern reuse.** Shaped like this skill's own APPROVAL-gate pattern (one approval question, ASK),
+plus a cancel exit, but gates
 SCOPE before any edit exists rather than the finished edits.
-
-Print the `[State: CONFIRM]` banner from `SKILL.md § State Detection`.
 
 ---
 
@@ -27,7 +25,7 @@ CONFIRM is presenting a stale/different run, print the stored `**Prompt:**`
 verbatim as its own line, before the Understanding:
 
 ```
-[CONFIRM] KB update scope
+KB update scope
 
 Instruction: <the **Prompt:** field, verbatim -- the exact request this run is confirming>
 
@@ -47,22 +45,34 @@ Open questions:
 
 ## Step 2: Ask for explicit user confirmation
 
-```
-[1] Confirm -- freeze this scope, proceed to APPLY
-[2] Adjust: ___ (free text -- corrects understanding or scope; loops back)
-[3] Cancel -- stop here, no edit made
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`. One question per
+message, each recorded `Pending` in `.aid/knowledge/STATE.md ## Q&A (Pending)` before it is shown and
+updated when it is answered.
+
+1. **Open questions first.** Ask each open question from `**Confirm Questions:**` on its own, in the
+   question form, with its Why I ask and My recommendation. CONFIRM does not advance past unanswered
+   Contradictions or open questions per HL-3/HL-4; fold the user's answers into
+   `**Adjustments:**` either way.
+2. **Then one approval question**, never combined with an open question:
+
+```text
+KB update scope -- question 1 of 1 -- importance: high
+Shall I freeze this scope and start the edits?
+Why I ask: no KB file is edited before you approve the scope.
+My recommendation: yes -- the scope above matches your instruction and leaves the rest of the KB untouched.
+  1. Confirm -- freeze this scope and apply it (recommended)
+  2. Adjust -- you tell me what to correct in the understanding or scope
+  3. Cancel -- stop here, no edit made
+Or answer in your own words, or ask me to explain. This approval cannot be skipped.
 ```
 
-Wait for the user's explicit response. Answering any open questions is part
-of a `[1]`/`[2]` response -- CONFIRM does not advance past unanswered
-Contradictions/open questions per HL-3/HL-4; fold the user's answers into
-`**Adjustments:**` either way. Do not advance until a response is received.
+Wait for the user's explicit response. Do not advance until a response is received.
 
 ---
 
 ## Step 3: Process the response
 
-### [1] Confirm
+### Confirm
 
 Freeze the confirmed scope and capture the pre-APPLY baseline (HL-1, and the
 baseline REVIEW's scope-diff guard and any later re-scope revert both need --
@@ -91,16 +101,16 @@ Scope Plan item (same doc-path + parenthetical convention as the existing
 rest of the run: APPLY may only touch it, and REVIEW's scope-diff guard
 hard-fails on any divergence between it and the disk-derived edited set.
 
-Print: `[CONFIRM] Confirmed. {N} doc(s) in scope. Advancing to APPLY.`
+Print: `Confirmed. {N} doc(s) in scope.`
 
 The step ends with CHAIN to APPLY (see the Advance line at the end of this file).
 
 ---
 
-### [2] Adjust: ___
+### Adjust
 
 Record the adjustment as a new Q&A entry in `.aid/knowledge/STATE.md ## Q&A
-(Pending)` (mirrors the existing APPROVAL `[2]` convention):
+(Pending)` (mirrors the existing APPROVAL consideration convention):
 
 ```
 ### Q{N}
@@ -127,7 +137,7 @@ against the corrected understanding before SCOPE re-plans.
 Print:
 
 ```
-[CONFIRM] Adjustment recorded as Q{N} in .aid/knowledge/STATE.md.
+Adjustment recorded as Q{N} in .aid/knowledge/STATE.md.
 Re-planning now; this gate returns once SCOPE has re-planned.
 ```
 
@@ -136,7 +146,7 @@ the Advance line at the end of this file).
 
 ---
 
-### [3] Cancel
+### Cancel
 
 No edit has been made yet (HL-1 -- CONFIRM gates APPLY, and APPLY has not
 run). Clean up and stop:
@@ -148,7 +158,7 @@ rm -f "$STATE_FILE"
 Print:
 
 ```
-[CONFIRM] Cancelled -- no KB edit made. Run-state cleaned.
+Cancelled -- no KB edit made. Run-state cleaned.
 ```
 
 **Advance:** CHAIN → APPLY when the user confirms; CHAIN → SCOPE when the user adjusts; CHAIN → ANALYZE when the adjustment corrects the Understanding itself; HALT when the user cancels.

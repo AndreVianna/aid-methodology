@@ -10,16 +10,14 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`
+**Agent:** This is design work. Dispatch with `subagent_type: aid-architect`.
 
 ▶ aid-architect starting (~2–4 min)
 Read `references/feature-decomposition.md`. The worker does Steps 1 and 2 only (analyze, propose): it returns
-the proposed feature table and its open questions, and never asks the user.
-✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}
+the proposed feature table and its open questions, and never asks the user. If it fails, say why in one plain line.
 
 The main conversation puts the approval of the feature list to the user (`feature-decomposition.md` Steps 2 and 3),
-through the question protocol. It is a blocking question: this step pauses on it where it stands, with its detail
-saying the list is proposed and the approval is open, until the user answers. An adjustment is applied and the list
+through the question protocol. It is a blocking question, and an approval: record it first with `--ask --category Approval --covers` as `feature-decomposition.md` Step 2 says, and bring the step detail up to date with `--step` (the list is proposed, the approval is open, with its id). Set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. This step pauses on it where it stands until the user approves or declines; an approval cannot be skipped. Record the answer with `--answer --id <id>` and set the lifecycle back to `Running`. An adjustment is applied and the list
 is put again. Once the list is approved, the same step dispatches aid-architect again to write the feature
 sections and update the meta-documents (`feature-decomposition.md` Steps 4 and 5), then goes on.
 

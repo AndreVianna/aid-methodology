@@ -219,7 +219,7 @@ believed. Rule and worked examples:
 ## Feedback Loops
 
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
-- **→ Specify:** SPEC missing detail for scope → write Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Specify:** SPEC missing detail for scope → record the gap as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the gap>' --suggested '<the recommendation>' --asked-by aid-detail`, then ask it through the question protocol and record the reply with `--answer --id Q<n> --state Answered --value '<the reply>'`
 - **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
 
 ## Ticket Suggestion (conditional)

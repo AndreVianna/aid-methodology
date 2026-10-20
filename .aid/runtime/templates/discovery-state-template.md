@@ -72,7 +72,7 @@ This is the single state file for the **Discovery area** — persistent project 
 ### Q{N}
 
 - **Category:** {category, e.g., Architecture, Security, UX}
-- **Impact:** {High|Medium|Low|Required}
+- **Impact:** {High|Medium|Low}
 - **Status:** Pending | Answered | Skipped
 - **Context:** {why this matters; what the downstream phase observed; cite a durable anchor (file + symbol) if applicable}
 - **Suggested:** {answer if inferrable, or —}

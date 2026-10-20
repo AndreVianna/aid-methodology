@@ -21,3 +21,5 @@ Execute `.agents/skills/aid-test/SKILL.md` exactly as written, with the verifica
 freshness / completeness / uniqueness -- and the pass/fail threshold per check). Report
 per-check pass/fail with thresholds. Substitute only the invocation name
 (`/aid-test-data-quality`) in any printed usage example. Findings route to `/aid-fix`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

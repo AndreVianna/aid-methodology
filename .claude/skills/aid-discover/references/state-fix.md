@@ -18,7 +18,7 @@ Partition the Pending+Recurred rows by the `Doc` column. The output is a map `{f
 
 From the partitioned ledger rows (Step 0b), list affected documents ordered by worst severity.
 Prioritize: [CRITICAL] → [HIGH] → [MEDIUM].
-Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-agents in parallel...`
+Print one plain line: `{N} documents have open findings; fixing them in parallel.`
 
 ### Step 2: Dispatch Parallel FIX Agents (one per affected file)
 
@@ -41,7 +41,7 @@ Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-
 
 Print before dispatch:
 ```
-[Fix] Dispatching {N} parallel FIX agents:
+Fixing {N} documents in parallel:
   ▶ aid-tech-writer (file: architecture.md, ~{ETA}, heartbeat: ...) starting
   ▶ aid-tech-writer (file: module-map.md, ~{ETA}, heartbeat: ...) starting
   ...
@@ -64,8 +64,8 @@ After ALL parallel agents return:
      case "$out_path" in ''|\#*) continue ;; esac
      out_path="${out_path#"${out_path%%[![:space:]]*}"}"
      out_path="${out_path%"${out_path##*[![:space:]]}"}"
-     echo "[Fix] Regenerating $out_path ..."
-     eval "$build_cmd" || echo "[Fix] WARNING: build failed for $out_path"
+     echo "Regenerating $out_path ..."
+     eval "$build_cmd" || echo "WARNING: build failed for $out_path"
    done < .aid/runtime/templates/generated-files.txt
    ```
 4. Confirm each registered generated file now exists on disk:
@@ -76,18 +76,18 @@ After ALL parallel agents return:
      out_path="${out_path#"${out_path%%[![:space:]]*}"}"
      out_path="${out_path%"${out_path##*[![:space:]]}"}"
      if [[ ! -f "$out_path" ]]; then
-       echo "[Fix] WARNING: $out_path missing after regenerate (Step 3 build command failed)"
+       echo "WARNING: $out_path missing after regenerate (Step 3 build command failed)"
        missing=$((missing + 1))
      fi
    done < .aid/runtime/templates/generated-files.txt
-   [[ $missing -eq 0 ]] || echo "[Fix] $missing generated file(s) missing — investigate before commit"
+   [[ $missing -eq 0 ]] || echo "$missing generated file(s) missing — investigate before commit"
    ```
    (Semantic re-verification of KB docs against source happens in REVIEW state, not here.)
 5. Run any smoke tests relevant to changes.
 6. Single `git commit` listing which files each agent touched + the regenerated outputs in `.aid/generated/`.
 7. `git push`.
 
-Print: `[Fix] Improving {document}... {old grade} → {new grade}` for each.
+Print for each: `Improved {document}: {old grade} → {new grade}`.
 
 ### Step 5: Verify Meta-Documents (MANDATORY after every fix pass)
 
@@ -97,13 +97,13 @@ After ALL primary fixes, verify and update in order:
 3. **README.md** — completeness table still accurate?
 4. **AGENTS.md** — build commands, conventions, architecture stale?
 
-Print: `[Fix] Verifying 4 meta-documents...`
+Print one plain line: `Checking the four meta-documents.`
 
 ### Step 6: Re-Review (MANDATORY — Do NOT Self-Evaluate)
 
 **Dispatch aid-reviewer again.** The fixer CANNOT evaluate its own work.
 
-Print: `[Fix 2/3] Re-reviewing after fixes...`
+Print one plain line: `Re-reviewing the fixes.`
 
 Read `references/reviewer-prompt.md` for the full prompt. Before dispatch, read `references/document-expectations.md` and substitute its full contents for
 the `{{DOCUMENT_EXPECTATIONS}}` placeholder in the appended `reviewer-prompt.md` body — identical
@@ -118,8 +118,6 @@ Wait for completion.
 
 Read new `.aid/knowledge/STATE.md`. Verify Review History preserved (append, not replace under `## Review History`).
 
-Print: `[Fix 3/3] Complete. Grade: {old} → {new}.`
-
-Print: `[State: FIX] complete.`
+Print: `Fixes done. Grade: {old} → {new}.`
 
 **Advance:** **CHAIN** → [State: REVIEW] if grade < minimum (rerun review); **CHAIN** → [State: APPROVAL] if grade ≥ minimum. Both continue inline.

@@ -9,7 +9,7 @@ description: >
   gates the write, and carries the level choice when you did not give one. It returns the
   new ticket's id only after you confirm; nothing is filed, and no local file is written,
   before that.
-allowed-tools: Read Glob Grep AskUserQuestion
+allowed-tools: Read Glob Grep
 argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"
 ---
 
@@ -35,7 +35,7 @@ directly by name.
 `PARSE-ARGS → RESOLVE-CONNECTOR → [PICK-CONNECTOR] → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — and
 advances by the words of [`skill-steps.md`](../../aid/templates/skill-steps.md). The connector pick
 (`PICK-CONNECTOR`, only when two or more match) and CONFIRM are blocking questions: the user decides
-there, through one `AskUserQuestion` exchange answered inline, so a single invocation still runs
+there, through questions asked one at a time in plain text and answered inline, so a single invocation still runs
 every state through to `RETURN-REF` (or an earlier stop or cancel) without exiting mid-run.
 
 **Read-only until CONFIRM.** `RESOLVE-CONNECTOR`, `COMPOSE`, and `LEVEL-RESOLVE` only ever read —
@@ -47,6 +47,8 @@ after that confirm.
 **Writes no local file.** This skill's only external effect is the host-MCP ticket file (`FILE`
 state, gated behind confirm) — there is no `Write`/`Edit` tool in `allowed-tools`, and no file
 under this repo is ever touched: the three ticket skills persist nothing locally.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -107,8 +109,8 @@ Resolve which connector to use via the shared
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) §
 "Connector-Resolution Ladder" — first match wins, exactly as read/update use it: explicit
 `--connector <stem>` (validated `issue-tracker`; an unknown/ineligible stem stops the run, no
-silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent) or an
-`AskUserQuestion` among two-or-more → the host tool's own issue-tracker MCP → the verbatim
+silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent) or
+a question in plain text among two-or-more → the host tool's own issue-tracker MCP → the verbatim
 `no issue-tracker connector found.` notify-and-exit. This state does not re-describe the ladder
 further than that. When a connector resolves silently, `$CONNECTOR` holds its stem for every later
 state; when two or more match, State 2a settles it.
@@ -119,8 +121,8 @@ A connector resolves silently as the explicit stem, the sole match or the host M
 
 ### State 2a — PICK-CONNECTOR
 
-Reached only when two or more catalogued `issue-tracker` connectors match. One `AskUserQuestion`
-lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
+Reached only when two or more catalogued `issue-tracker` connectors match. One question, asked in
+plain text, lists the candidate stems (their descriptor `name`) and the user picks one; the picked stem becomes
 `$CONNECTOR` for every later state. This is a connector choice, never a write confirm, and nothing
 is sent to any tracker here.
 
@@ -184,37 +186,46 @@ only reads -- no new silent behaviour and no new write. Per
 
 ### State 5 — CONFIRM
 
-A single in-run `AskUserQuestion` exchange (one tool call, never two prompts across turns) per
+Two questions at most, asked one per message, each answered inline, in the question form of
+`.aid/runtime/templates/question-protocol.md` (**Why I ask**, **My recommendation**, never the host
+tool's picker), per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Write Preview +
-Confirm Gate" — a blocking question (`skill-steps.md`): the user decides here, and the exchange is
-asked and answered inline. It carries up to two parts, both resolved within this same call:
+Confirm Gate" — a blocking question (`skill-steps.md`): the user decides here. Nothing is recorded: a ticket
+skill has no shell and keeps no record of its questions.
 
-- **Level pick** (only when the level is still unset after `COMPOSE` — no explicit `--level` and
-  none inferable from the description): an `epic | story | task` choice, presented against the
-  tracker's real available issue-types just queried at `LEVEL-RESOLVE`. **This is the confirm
-  gate's own level pick — there is no separate pre-write prompt.** A description-inferred level is
-  instead surfaced in the payload preview below, for explicit confirmation, not re-asked as a fresh
-  pick.
-- **Payload confirm** (always): the **exact** payload that will be sent — `$CONNECTOR`, the
-  description, the **concrete resolved issue-type** (or the graceful-degradation note from
-  `LEVEL-RESOLVE`), and the parent link (or a no-hierarchy / no-parent note from `COMPOSE`) —
-  followed by:
-  ```
-  [1] File it · [2] Edit · [3] Cancel
-  ```
+1. **Level pick** (only when the level is still unset after `COMPOSE` — no explicit `--level` and
+   none inferable from the description): its own question, on that one topic, asked first. It offers
+   `epic`, `story` or `task` against the tracker's real available issue-types just queried at
+   `LEVEL-RESOLVE`, with the recommended one first. **This is the confirm gate's own level pick —
+   there is no separate pre-write prompt.** A description-inferred level is instead surfaced in the
+   payload preview below, for explicit confirmation, not re-asked as a fresh pick.
+2. **Payload confirm** (always, in its own message, after the level is settled): the **exact**
+   payload that will be sent — `$CONNECTOR`, the description, the **concrete resolved issue-type**
+   (or the graceful-degradation note from `LEVEL-RESOLVE`), and the parent link (or a
+   no-hierarchy / no-parent note from `COMPOSE`) — followed by one question in the form:
+   ```text
+   File this ticket -- question 1 of 1 -- importance: high
+   File the ticket shown above in {tracker}?
+   Why I ask: nothing is written to the tracker until you say yes.
+   My recommendation: file it as shown.
+     1. File it (recommended)
+     2. Edit it first
+     3. Cancel
+   Or answer in your own words, or ask me to explain.
+   ```
 
 **No silent level default, ever:** if the level is unset or uninferable, the pick above is
-mandatory before `[1] File it` can be chosen — there is no path from `COMPOSE`/`LEVEL-RESOLVE`
+mandatory before the payload can be confirmed — there is no path from `COMPOSE`/`LEVEL-RESOLVE`
 straight to `FILE` that skips this gate.
 
 The confirm is a blocking question: this state pauses on it until the user answers.
 
-**Advance:** **CHAIN** → [State: FILE] once the user has chosen `[1] File it`; **CHAIN** → [State: COMPOSE] on `[2] Edit`,
-with the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed).
+**Advance:** **CHAIN** → [State: FILE] once the user has chosen to file it; **CHAIN** → [State: COMPOSE] when the user chooses to edit it first,
+with the user's requested change folded into the payload; **HALT** when the user cancels (nothing is sent or filed).
 
 ### State 6 — FILE
 
-Reached **only** after an explicit `[1] File it` confirm. Writes via the host MCP
+Reached **only** after an explicit "file it" confirm. Writes via the host MCP
 (`consumption-protocol.md`'s recipe):
 
 1. File the ticket with the resolved issue-type (or the degraded plain-issue + optional
@@ -252,7 +263,7 @@ the new ticket". This `SKILL.md` does not duplicate those examples.
 ## Write-zone
 
 This skill's **only** external effect is the host-MCP ticket file at `FILE`, gated behind the
-`CONFIRM` state's explicit `[1] File it` — never before it. It never writes to `.aid/connectors/`,
+`CONFIRM` state's explicit "file it" answer — never before it. It never writes to `.aid/connectors/`,
 never invokes `/aid-discover` or `/aid-set-connector`, and (having no `Write`/`Edit` tool) never
 touches any file under this repo.
 

@@ -76,6 +76,12 @@ OUT-OF-SCOPE FINDINGS POLICY:
   destination (the upstream skill the observation belongs to) in Description/Evidence.
   Do NOT count toward severity totals or the grade.
 
+### What to report
+  Report only issues that affect the work: a step that cannot be built, a check that
+  would fail on the real files, a contradiction with another part of the document, or
+  a decision the user must make. Exact counts, word-for-word comparisons, and wording
+  or cosmetic points are not findings.
+
 DELIVERABLES:
   - BEFORE dispatching: render this brief to
     `.aid/works/{work}/briefs/<scope>-cycle-<N>.md` and, from that same step, run

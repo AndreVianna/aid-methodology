@@ -11,6 +11,8 @@ argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 
 Read the type. Do the work. Review it. Fix it. Ship it.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 ## ⚠️⚠️ MANDATORY: write task State AS IT CHANGES -- read this first
 
 > **Whoever executes this task -- the main/orchestrator agent running it
@@ -120,36 +122,6 @@ Read the task's `State`:
 
 Apply the routing table in `## State Detection` below.
 
-Print the state-entry line and "you are here" map:
-
-**EXECUTE:**
-```
-[State: EXECUTE] — Running the executor agent to produce task deliverables.
-aid-execute  ▸ you are here
-  [● EXECUTE ] → [ REVIEW ] → [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] — Grading task output against acceptance criteria with a clean-context reviewer.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [● REVIEW ] → [ DONE ]
-```
-
-**FIX:**
-```
-[State: FIX] — Resuming a task saved at FIX: applying its CODE-issue fixes, then REVIEW.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [● FIX ] → [ REVIEW ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Grade meets minimum; task complete.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [● DONE ]
-```
-
 ## State Detection
 
 State detection reads the files on disk, every run; nothing inferred from conversation
@@ -223,7 +195,6 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **ASK** → stop for the user through the question protocol, then continue to the step the line names.
@@ -251,7 +222,7 @@ dispatch in this skill.
       known-issues.md         ← issues to watch for
       deliveries/
         delivery-NNN/
-          STATE.yml              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
+          STATE.yml              ← delivery lifecycle (SD-8, AUTHORED) + gate + derived task rollup
           tasks/
             task-NNN/
               DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)

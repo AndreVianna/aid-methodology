@@ -237,8 +237,8 @@ Each grounding sub-agent receives the `## Grounding` prompt from
 
 Wait for ALL parallel grounding sub-agents to complete before proceeding to the next DETECT.
 
-Print: `[5b] Round {round}: {N} terms are still undefined; assigning {K} helpers to define them from the code and docs...`
-Print: `[5b] Round {round}: {G} terms defined, {D} set aside (not real project terms), {E} saved as questions for you.`
+Print: `Round {round}: {N} terms are still undefined; assigning {K} helpers to define them from the code and docs...`
+Print: `Round {round}: {G} terms defined, {D} set aside (not real project terms), {E} saved as questions for you.`
 
 ---
 
@@ -262,7 +262,7 @@ passes):
    cycle for those specific terms before declaring CLOSED.
 2. Print final summary:
    ```
-   [5b] CLOSED after {round} rounds, {clean_passes} clean passes.
+   CLOSED after {round} rounds, {clean_passes} clean passes.
         Concepts grounded: {G}  |  Dismissed: {D}  |  Escalated to Q&A: {E}
    ```
 
@@ -288,7 +288,7 @@ format** (Step 6b reads and consolidates this file — no new queue):
 - **Question:** What does `{term}` mean in this project? Where is it defined or described?
 ```
 
-Print: `[5b] Stopped after {round}/{max_rounds} passes. {N} terms still couldn't be defined from the project and are saved as questions for you.`
+Print: `Stopped after {round}/{max_rounds} passes. {N} terms still couldn't be defined from the project and are saved as questions for you.`
 
 This converts a silent miss into a caught human question (FR-32). A budget exhaust degrades
 to "surface the gaps", never "ship shallow silently".
@@ -334,7 +334,7 @@ Write the file as:
 - wave -> give it its own `### Wave` heading (do not bury concepts in a parenthetical)
 ```
 
-Print: `[5b] Exclusion review: {N} candidate terms to confirm (not-concept / descriptive / junk) + {M} glossary fixes recommended. Continue to confirm them.`
+Print: `Exclusion review: {N} candidate terms to confirm (not-concept / descriptive / junk) + {M} glossary fixes recommended. Continue to confirm them.`
 
 **Next, inside GENERATE:** its Step 5c (`references/state-generate.md`), which asks the user to confirm the candidates and persists the confirmed ones.
 

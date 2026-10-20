@@ -42,11 +42,21 @@ Based on the functional requirements, I've identified {N} features:
 | 001 | {Title} | {one-line description} | §5 FR-1, FR-2 | AC-1, AC-4 | Must |
 | 002 | {Title} | {one-line description} | §5 FR-3 | AC-2 | Must |
 | 003 | {Title} | {one-line description} | §5 FR-4 | AC-3, AC-5 | Should |
+```
 
+Then the main conversation asks the approval, as one question in the protocol's form. It blocks the work. Record it
+first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-define --step FEATURE-DECOMPOSITION --covers 'the feature list of REQUIREMENTS.md § 11'` (it prints the question's id),
+and record the answer with `--answer --id <id> --state Answered --value '<Approved, or the adjustment asked>' --applied-to 'REQUIREMENTS.md § 11'`
+once it comes. An approval cannot be skipped.
+
+```text
+Features -- question 1 of 1 -- importance: high
 Does this decomposition look right?
-
-[1] Approve as-is
-[2] Adjust — tell me what to change (add, remove, merge, split, rename)
+Why I ask: each feature becomes its own specification, so the boundaries need to be right before I write them.
+My recommendation: approve it -- every requirement and criterion is mapped to a feature.
+  1. Approve as it is (recommended)
+  2. Adjust it (tell me what to change: add, remove, merge, split, rename)
+Or answer in your own words or ask me to explain. An approval cannot be skipped.
 ```
 
 **Feature decomposition rules:**
@@ -65,8 +75,8 @@ table or they do not. State the gap rather than papering over it.
 
 ## Step 3: Process Response
 
-- **[1] Approve:** Write the feature sections (Step 4)
-- **[2] Adjust:** Modify the list per user feedback. Present again. Repeat until approved.
+- **Approve:** Write the feature sections (Step 4)
+- **Adjust:** Modify the list per user feedback. Present again. Repeat until approved.
 
 ## Step 4: Write the Feature Sections
 

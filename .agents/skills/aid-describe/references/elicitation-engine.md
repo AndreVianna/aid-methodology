@@ -16,8 +16,7 @@ works, and the feature implementations that invoke or extend the engine.
 - `.agents/skills/aid-describe/references/calibration.md` -- the continuous
   read+ask design, the `Unknown | Expert | Mixed | Novice` state, and the
   depth-shaping rules that Step 4 (CALIBRATION SHAPING) applies.
-- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
-  question-envelope template, the pre-emit self-check, and the five expert-advisor
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the question form, the pre-emit self-check, and the five expert-advisor
   user-move handlers that Step 5 (ENVELOPE + EMIT) applies.
 
 ---
@@ -68,7 +67,7 @@ The engine has exactly two parts:
   |  2. GAP SELECTION ...... pick highest-priority open gap (precedence table below)      |
   |  3. MOVE SELECTION ..... gap-type -> move-playbook.md firing table                   |
   |  4. CALIBRATION SHAPE .. calibration.md depth-shaping rules                          |
-  |  5. ENVELOPE + EMIT .... advisor-stance.md NFR-7 envelope; self-check; emit          |
+  |  5. ENVELOPE + EMIT .... question form (advisor-stance.md); self-check; emit         |
   |        |                                                                              |
   |        v                                                                              |
   |  READ answer --> record to record sink --> re-read calibration state                  |
@@ -97,18 +96,17 @@ the discipline D2 requires: an adaptive analyst, not a fixed questionnaire.
 ### Opener text
 
 ```
+Your project -- question 1 of 1 -- importance: high
 In a sentence or two -- what do you want to build or change, and what outcome
 are you after?
 
-Suggested: For example: "I want a small CLI tool that parses a config file and
+My recommendation: For example: "I want a small CLI tool that parses a config file and
            validates it against a schema, so that our team stops manually
            checking config files before each deploy."
-Why: Describing the pieces in your own words gives me the working vocabulary
+Why I ask: Describing the pieces in your own words gives me the working vocabulary
      for this project. I will use your terms, not impose mine -- so the more
      naturally you name the pieces, the more useful what follows will be.
-
-[1] Use the form above and share yours
-[2] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 ### Why the opener is NFR-7-compliant by construction
@@ -120,7 +118,7 @@ Self-Check) because both required fields are hardwired into its text:
   sees a full model answer and can accept its structure or substitute their own.
 - **Why:** the cue "describing the pieces in your own words gives me the working
   vocabulary... I will use your terms" fills the `Why:` slot. This is the calibration
-  rationale from D1 (STATE.md ## Cross-phase Q&A, decision D1, rationale point 2).
+  rationale from D1 (the work's `qa`, decision D1, rationale point 2).
 
 No self-check is needed: both fields are present by construction, not by inspection.
 
@@ -217,7 +215,7 @@ looks up the table every turn.
 | Missing fit criterion or testability of a requirement | Move 6: Rationale + testability probe |
 | Missing "why" behind a stated intent | Move 7: Bounded why-probe -- climb 2-3 whys, propose the inferred motive back, stop at the terminal value; NEVER the rote "five whys" |
 | A claim or term asserted with no concrete example | Move 8: Concrete-example probe |
-| A point that cannot be settled now | Move 9: Capture-and-defer (red-card) -- record to STATE.md ## Cross-phase Q&A and move on |
+| A point that cannot be settled now | Move 9: Capture-and-defer (red-card) -- record it with `--ask` in the work's `qa` and move on |
 
 **Delivery envelope.** Move 1 (Straw-man-first) and Move 10 (Mediate-then-defer and
 scribe) are not standalone gap responses. They are the delivery envelope that wraps
@@ -256,15 +254,16 @@ conversations (the AC-4 divergence test in calibration.md).
 
 ## Step 5 -- ENVELOPE + EMIT
 
-**Wrap the shaped question in the NFR-7 envelope, run the pre-emit self-check, then
+**Ask the shaped question in the question form, run the pre-emit self-check, then
 emit.**
 
 Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
 
-- **NFR-7 envelope template** (advisor-stance.md "The Envelope Template"): every
+- **Question form** (advisor-stance.md "Question Form"): every
   emitted question carries context, the question itself, a concrete `Suggested:`
-  answer, a grounded `Why:` rationale, and the accept/override options. All five
-  parts are non-optional.
+  answer, a grounded `Why:` rationale, and the free-answer closing line. The first line
+  of the form gives the topic, the question's place in its group and its importance. All of
+  these parts are non-optional.
 - **Pre-emit self-check** (advisor-stance.md "Enforcement 2: Self-Check"): before
   emitting, verify `Suggested:` is present and concrete (not blank, not "-") and
   `Why:` is present and grounded. If a concrete suggestion cannot be formed, propose
@@ -274,6 +273,10 @@ Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
   Handlers"): shape the response when the user signals "I don't know," "what do you
   recommend?," "explain the pros and cons," "explain it like I'm a junior," or asserts
   something the analyst judges mistaken.
+
+**Before the question is shown,** record it as `Pending` in the work's `qa` (the intake exception
+does not apply: the work exists): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<the section or topic>' --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<My recommendation>' --asked-by aid-describe --step <the host step: CONTINUE or DESCRIBE-SEED>` (it prints the question's id). The D1 opener is recorded the same way. When the user answers, record it right away with `--answer --id <id> --state <Answered|Skipped|Assumed> --value '<the answer>' --applied-to '<the REQUIREMENTS.md section>'`.
+An interview stopped mid-question therefore leaves that question `Pending`, and a resume asks it first.
 
 **After the user answers, before returning to Step 1:**
 

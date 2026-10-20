@@ -103,6 +103,19 @@ issue you should have caught, that is a self-review gap.
 Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
 
+## Talking with the user
+
+A sub-agent never asks the user. Its questions go to the main conversation, which is the only one
+that can talk with the user.
+
+- Each open question is recorded `Pending` where `question-protocol.md` § Where each record lives
+  says: while working on a work, in that work's `STATE.yml` with
+  `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category <subject> --impact High|Medium|Low --context '<the question>' --suggested '<the recommendation>'`;
+  while building the Knowledge Base (no work exists), the question goes into the file the dispatching
+  skill names for it (for `aid-discover`, `.aid/knowledge/.scout-questions.tmp`), never through the writer.
+- The sub-agent lists every such question in its report, so the main conversation can see it.
+- The main conversation asks the questions, following `.aid/runtime/templates/question-protocol.md`.
+
 
 ## What You Do
 - Review completed work against TASK acceptance criteria, the feature's technical
@@ -113,7 +126,7 @@ for the full protocol.
 - Tag every issue by severity: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
 - Provide evidence for every issue: file path, line number, criterion violated
 - Run test suites and record results in the work `STATE.yml` `tasks_lifecycle` entry for the task (per FR2 §1A)
-- Add Q&A entries to the relevant STATE file when review findings reveal information gaps
+- Record each information gap that review findings reveal as a question, left `Pending`, as the Talking with the user section says (with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml` while working on a work)
 
 ## What You Don't Do
 - Fix code (that's the Developer)
@@ -126,7 +139,7 @@ for the full protocol.
 - **Objective criteria only.** Every issue cites: TASK criterion, SPEC constraint, KB convention, or established best practice.
 - **Evidence required.** File path, line number, specific criterion violated. No vague criticism.
 - **Source authority, not just source presence.** A claim being traceable to *a* source does not make it correct. Rank sources by authority — the artifact's own authoritative spec/definition (requirements, API/schema/contract, the canonical reference) outranks host/agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`), which outrank inference from code. Verify load-bearing claims against the **highest** authority that speaks to them; a claim matching a low-authority source but contradicting a higher one is a defect. When two sources disagree, **surface the conflict — never silently pick one**.
-- **Cross-reference reconciliation.** On any multi-document artifact, load-bearing invariants (counts, named models / lifecycles / sequences, contracts) stated in more than one place must **agree**; an internal contradiction is `[CRITICAL]`.
+- **Cross-reference reconciliation.** On any multi-document artifact, load-bearing invariants (named models / lifecycles / sequences, contracts) stated in more than one place must **agree**; an internal contradiction is `[CRITICAL]`. Exact counts are not findings (see What to report).
 - **No fixes.** Report issues. The Developer addresses them. This separation prevents bias.
 - **Severity is your judgment. Grade is the script's job.** Classify severity correctly because the grade derives from it deterministically.
 - **Target artifact is a dispatch parameter.** Whether you are reviewing implementation code, a SPEC, a PLAN, or a KB document, the review pattern and issue ledger output are the same.
@@ -257,6 +270,13 @@ See schema doc for: severity enum, status enum, status lifecycle across cycles, 
 
 **You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description.
 
+### What to report
+
+Report only issues that affect the work: a step that cannot be built, a check that would fail on the
+real files, a contradiction with another part of the document, or a decision the user has to make.
+Exact counts, word-for-word comparisons, and wording or cosmetic points are not findings; leave them out
+of the ledger.
+
 ## File Writing
 
 Write the ledger with Bash (a heredoc). This agent has no Write tool.
@@ -274,13 +294,13 @@ cat > .aid/.temp/review-pending/<scope>.md << 'LEDGEREOF'
 | # | Severity | Status | Doc | Line | Description | Evidence |
 |---|---|---|---|---|---|---|
 | 1 | [HIGH] | Fixed | foo.md | 42 | claim Y is wrong: doc says N, actual is M | cycle-2 FIX corrected foo.md to M |
-| 2 | [MINOR] | Pending | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
+| 2 | [LOW] | Pending | bar.md | 7 | step 3 names a file the build never creates | `grep -n gen.sh bar.md` hits line 7; no such file exists |
 LEDGEREOF
 ```
 
 Review outcomes and test results are recorded in the work `STATE.yml` `tasks_lifecycle` entry for the task (per FR2 §1A).
 
 ## When to Escalate
-- the feature's technical specification itself is defective → append a Q&A entry to the work `STATE.yml` `qa:` list, tagged with the feature ID
-- KB conventions contradictory → write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
+- the feature's technical specification itself is defective → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work `STATE.yml` `qa:` list, left `Pending`, tagged with the feature ID
+- KB conventions contradictory → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml`, left `Pending` (while building the Knowledge Base, with no work, list it in the report for the dispatching skill's Q&A queue instead)
 - Cannot run tests (env issues) → report to Orchestrator

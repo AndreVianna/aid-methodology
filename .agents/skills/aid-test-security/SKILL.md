@@ -21,3 +21,5 @@ Execute `.agents/skills/aid-test/SKILL.md` exactly as written, with the verifica
 target surface + threat focus). Substitute only the invocation name (`/aid-test-security`)
 in any printed usage example. Findings route to `/aid-fix` (vulnerability kind) -- this only
 verifies + reports, never remediates. To AUTHOR security tests, use `/aid-create-test`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

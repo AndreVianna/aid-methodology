@@ -372,6 +372,4 @@ doc-set-level approval signal, which `/aid-discover` owns). A fresh GENERATE is 
 bash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no
 ```
 
-Print: `[State: GENERATE] complete.`
-
 **Advance:** **CHAIN** → [State: VALIDATE] (continue inline).

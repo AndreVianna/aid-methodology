@@ -70,6 +70,12 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   - If the severity came from a file-level override, record the resolved severity and the
     overriding file's `why` in the Evidence cell.
 
+### What to report
+  Report only issues that affect the work: a delivery that cannot be built or tested on its own, a
+  check that would fail on the real files, a contradiction with another part of the document, or a
+  decision the user has to make. Exact counts, word-for-word comparisons and wording or cosmetic
+  points are not findings.
+
 OUT OF SCOPE (do NOT grade against):
   - Per-task breakdown — that's /aid-detail's domain (a delivery has no "tasks" yet at /aid-plan time)
   - feature technical-specification content — that's /aid-specify's grade
@@ -81,7 +87,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
   `{{LEDGER}}`. Do NOT count toward severity totals
   or grade. Note the routing destination (PLAN | SPEC | KB | REQUIREMENTS) in
-  Description/Evidence so the coordinating skill can write the cross-phase Q&A entry.
+  Description/Evidence so the coordinating skill can record the question in the work's `qa`.
 
 DELIVERABLES:
   - BEFORE dispatching: render this brief to

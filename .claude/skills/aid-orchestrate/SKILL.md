@@ -2,7 +2,7 @@
 name: aid-orchestrate
 description: >
   Start, resume, close or cancel an AID work: find where it stands, size it and pick its phases. Use when a plain request starts, continues, closes or cancels a work.
-allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "[request]  -- what you want to do, in your own words"
 ---
 
@@ -11,6 +11,8 @@ argument-hint: "[request]  -- what you want to do, in your own words"
 `/aid-orchestrate` is the on-demand intake behind a plain request. It runs in the main
 conversation and dispatches no sub-agent: only the main conversation can talk with the user.
 The skill guide in `.aid/runtime/rules.md` sends a plain request here; a typed command never does.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ## Steps
 

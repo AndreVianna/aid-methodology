@@ -2,7 +2,7 @@
 
 APPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.
 
-**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`
+**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored.` and go on to MANUAL-CHECKLIST in the same run (the advance below).
 
 Print summary in the standard format:
 
@@ -23,7 +23,7 @@ Preview:  python -m http.server 8000   # then open
    Or open the file directly in your browser.
 ```
 
-Use `AskUserQuestion` to ask:
+Ask the user, through the question protocol, this question (its reason and recommendation come first):
 > Approve this summary?
 > - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`
 > - **Reject** — exit without recording
@@ -51,6 +51,4 @@ On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Kno
 This approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the
 user approves, rejects or asks for changes.
 
-Print: `[State: APPROVAL] complete.`
-
-**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).
+**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).

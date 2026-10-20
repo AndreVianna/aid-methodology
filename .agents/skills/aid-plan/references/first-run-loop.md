@@ -116,7 +116,6 @@ never authored here. Fill in the template's own keys:
   - `block_reason:` = --
   - `block_artifact:` = --
 - `gate_tier` / `gate_grade` / `gate_timestamp` and `delivery_gate.issue_list`: leave at template placeholders
-- `qa` key: leave as template placeholder (`[]`)
 - Tasks State: nothing to write -- it is DERIVED at read time from `tasks/task-NNN/STATE.yml`
   files, which do not exist yet for a new delivery
 
@@ -152,7 +151,7 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
   `{{LEDGER}}`. Read the existing file first if it exists.
   Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
-Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
+Print before dispatch: `Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
 
 ▶ aid-reviewer starting (~1–2 min)
 After writing, **review immediately:** Does it hold up?

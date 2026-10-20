@@ -14,8 +14,7 @@ analyst running it to surface conflicts before the work proceeds.
   (concrete-example probe, Family 8: Example Mapping) is the conceptual technique
   Layer A draws on; Move 10 (mediate-then-defer & scribe) records each resolved
   conflict before the check advances.
-- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
-  question-envelope template used to surface every mismatch and orphan to the user.
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the question form used to surface every mismatch and orphan to the user.
 - `.agents/skills/aid-describe/references/elicitation-engine.md` -- gap rank 1
   (open coherence conflict) routes the adaptive loop back to conflict resolution if a
   mismatch surfaces during elicitation; this procedure is the structured gate that runs
@@ -47,7 +46,7 @@ check is invoked -- either on the first pass or after a seed or REQUIREMENTS ame
 | B -- Structural cross-check | Deterministic | Requirement orphans (REQUIREMENTS terms with no seed concept); Seed orphans (seed concepts no requirement references) |
 
 Any finding from either layer is a conflict. Every conflict is surfaced to the user as
-an NFR-7 question and is a [HUMAN GATE] that blocks the work from proceeding until the
+a question in the question form and is a [HUMAN GATE] that blocks the work from proceeding until the
 user resolves it.
 
 ---
@@ -163,7 +162,7 @@ of the sufficiency bar (see Sufficiency-Bar Output).
 
 **Every mismatch (Layer A) and every orphan (Layer B) is a conflict.** After both
 layers complete, the analyst surfaces each conflict to the user one at a time using the
-NFR-7 question-envelope template
+question form
 (`.agents/skills/aid-describe/references/advisor-stance.md`). Every surfaced conflict
 carries a suggested resolution and a rationale -- a bare statement of the problem
 without a suggestion is a malformed emission.
@@ -176,15 +175,13 @@ surfaced it, and what the effect on the downstream phases would be]
 
 [The question: what does the user want to do about it?]
 
-Suggested: [a concrete proposed resolution -- e.g., add a glossary entry, clarify or
+My recommendation: [a concrete proposed resolution -- e.g., add a glossary entry, clarify or
             remove the REQUIREMENTS term, remove the orphan seed concept, or add a
             missing requirement]
-Why: [the rationale: why this conflict matters for the downstream phases, and why the
+Why I ask: [the rationale: why this conflict matters for the downstream phases, and why the
      suggested resolution is the right direction]
 
-[1] Accept the suggested resolution
-[2] Alternative: ___
-[3] Your answer: ___
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **[HUMAN GATE].** Work MUST NOT proceed to the greenfield-mode review gate while any
@@ -253,7 +250,7 @@ criterion AND the Requirement orphan set is empty.
 |---|-----------|--------|
 | 1 | Both layers always run. Neither can be skipped, even if Layer A finds no mismatches. | FR-3 / AC-5; feature-003 SPEC |
 | 2 | Both layers complete before any conflict is surfaced. The analyst does not interleave surfacing with the walk-through. | Process discipline: surfacing mid-walk risks missing a cascade |
-| 3 | Every conflict is surfaced as an NFR-7 question with a concrete Suggested resolution and a grounded Why rationale -- never as a bare list or a bare statement. | NFR-7; advisor-stance.md |
+| 3 | Every conflict is surfaced as a question in the question form with a concrete Suggested resolution and a grounded Why rationale -- never as a bare list or a bare statement. | NFR-7; advisor-stance.md |
 | 4 | The check BLOCKS the flow [HUMAN GATE] until all conflicts are resolved. Work does not proceed to the greenfield-mode review gate while any conflict remains open. | AC-5; feature-003 SPEC flow step 4 |
 | 5 | After any seed or REQUIREMENTS amendment, both layers re-run in full. | Re-Run Protocol |
 | 6 | Each resolved conflict is recorded by the analyst (Move 10 scribe) before the session moves to the next conflict. | move-playbook.md Move 10; NFR-1 process discipline |

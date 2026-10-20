@@ -17,6 +17,8 @@ argument-hint: "[--grade X] override minimum  [--theme default|brand-X]  [--rese
 
 State machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 Generates a single self-contained `kb.html` from a populated and approved
 `.aid/knowledge/` Knowledge Base. The output is a **newcomer-facing product** — visually
 rich, plain-language, and distinct from the KB itself (which is a dual-audience technical
@@ -119,57 +121,6 @@ The state-detection logic determines which mode this run executes:
 
 **Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — COV/T1/T2/T3/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2/NM = 68 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). COV is the resolved-doc-set coverage check (doc-set completeness gate: < 60% coverage forces Machine Grade F). T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) that replace the retired Mermaid D1/D2 checks; they assert readable text, minimal overlap, and correct layout for every authored visual. NM is the no-Mermaid-engine assertion (`validate-html-output.sh`). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** When Playwright is unavailable, T1/T2/T3 skip with a SKIP message and V1 carries the full visual-review responsibility (browser rendering required, not source inspection). Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
 
-Print the state-entry line and "you are here" map at the start of each mode:
-
-**PREFLIGHT:**
-```
-[State: PREFLIGHT] — Verifying prerequisites: KB approved, Node.js available, network reachable.
-aid-summarize  ▸ you are here
-  [● PREFLIGHT ] → [ STALE-CHECK ] → [ PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
-```
-
-**STALE-CHECK:**
-```
-[State: STALE-CHECK] — Comparing KB review date vs last summary date to determine if regeneration is needed.
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [● STALE-CHECK ] → [ PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
-```
-
-**PROFILE:**
-```
-[State: PROFILE] — Reading doc-set from .aid/settings.yml and domain from .aid/knowledge/STATE.md to derive the section manifest.
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [● PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
-```
-
-**GENERATE:**
-```
-[State: GENERATE] — Building kb.html from resolved doc-set and KB frontmatter (one section per resolved doc).
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [● GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
-```
-
-**VALIDATE:**
-```
-[State: VALIDATE] — Running machine-verifiable quality checks (visual fidelity, links, HTML, contrast).
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
-```
-
-**APPROVAL:**
-```
-[State: APPROVAL] — Both Machine and Human grades meet minimum; awaiting user approval.
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [● APPROVAL ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Summary approved and Summarization History updated.
-aid-summarize  ▸ you are here
-  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [✓ APPROVAL ] → [● DONE ]
-```
-
 ---
 
 ## Dispatch
@@ -183,11 +134,10 @@ aid-summarize  ▸ you are here
 | VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
 | MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |
 | FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
-| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → MANUAL-CHECKLIST (Human Grade still Pending) / CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
 | WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 > **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.

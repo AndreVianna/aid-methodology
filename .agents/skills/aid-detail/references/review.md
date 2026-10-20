@@ -63,8 +63,6 @@ Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh 
 For grades below minimum: re-enter the loop for affected deliverables.
 Update task files, create new ones, delete orphans, renumber if needed.
 
-[State: REVIEW] complete.
-
 **Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
 every artifact of the phase at once, which is the only vantage point from which a
 contradiction between two of them is visible. Run it on cycle 1 only -- that makes it

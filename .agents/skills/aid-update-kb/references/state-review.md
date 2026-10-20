@@ -26,8 +26,6 @@ modification (AC-7 -- the f005 panel itself is unchanged). This section
 supplies only the `aid-update-kb`-specific wiring, plus the two
 update-kb-specific checks that gate entry into it.
 
-Print the `[State: REVIEW]` banner from `SKILL.md § State Detection`.
-
 ---
 
 ## Step 0: Scope-diff guard (mechanical, runs FIRST, HL-7/AC-4)
@@ -65,8 +63,8 @@ descriptive context in Step 0c, below -- it is not the guard's input).
   never silently lets it through. Print:
 
   ```
-  [REVIEW] Scope-diff guard: HARD FAIL -- <doc> was edited but is not in
-  Confirmed Scope. Escalating to the user (Step 4(b) below) -- this guard
+  Scope-diff guard: HARD FAIL -- <doc> was edited but is not in
+  Confirmed Scope. Escalating to the user -- this guard
   never decides for itself whether an out-of-scope edit is accidental or
   genuinely needed.
   ```
@@ -85,7 +83,7 @@ descriptive context in Step 0c, below -- it is not the guard's input).
 Print:
 
 ```
-[REVIEW] Scope-diff guard: {PASS|HARD FAIL}. Disk-derived edited set:
+Scope-diff guard: {PASS|HARD FAIL}. Disk-derived edited set:
 {list}. Confirmed Scope: {list}.
 ```
 
@@ -211,7 +209,7 @@ Print:
 
 ```
 Scope-diff: PASS | Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT Ready}
-[Review 3/3] Grade: {grade}. Minimum: {min}.
+Grade: {grade}. Minimum: {min}.
 ```
 
 ---
@@ -238,7 +236,7 @@ Update `<STATE_FILE>`:
 **Scope-diff:** incomplete-APPLY -- <doc> confirmed but unedited
 ```
 
-Print: `[REVIEW] Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited. Returning to APPLY.`
+Print: `Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited.`
 
 This outcome ends the step with CHAIN to APPLY: `state-apply.md § Step 1` picks the doc back up -- it is
 still in `Confirmed Scope`.
@@ -259,9 +257,9 @@ entry to `.aid/knowledge/STATE.md ## Q&A (Pending)`:
   Confirmed Scope. This may be an accidental out-of-scope edit, or a
   genuinely needed addition the instruction implies but SCOPE/CONFIRM did
   not originally capture.
-- **Suggested:** If <doc> should be in scope, answer CONFIRM with `[2] Adjust`
+- **Suggested:** If <doc> should be in scope, answer CONFIRM with Adjust
   to re-enter SCOPE with the expanded need. If it should NOT be in scope,
-  answer CONFIRM with `[1] Confirm` without expanding it -- the next APPLY pass
+  answer CONFIRM with Confirm without expanding it -- the next APPLY pass
   reverts the out-of-scope edit automatically (`state-apply.md § Step 0`), no
   manual `git restore` required.
 ```
@@ -276,37 +274,37 @@ Update the run-state file:
 Print:
 
 ```
-[REVIEW] Scope-diff guard: HARD FAIL -- <doc> is outside Confirmed Scope.
+Scope-diff guard: HARD FAIL -- <doc> is outside Confirmed Scope.
 Escalated as Q{N} in .aid/knowledge/STATE.md -- grade-chasing may not
-expand scope (HL-7). CONFIRM asks it next.
+expand scope (HL-7). It is asked next.
 ```
 
 This outcome ends the step with CHAIN to CONFIRM, in the same run: the user answers in the conversation, and
 nothing is waited for outside it. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
-`[1]/[2]/[3]` prompt; Q{N} is the open item the user resolves through it --
-the two answers are NOT symmetric, and only one of them is a plain `[1]`:
+approval question; Q{N} is the open item the user resolves through it --
+the two answers are NOT symmetric, and only one of them is a plain Confirm:
 
-- **Decline** -- answer `[1] Confirm`. This re-freezes the existing
+- **Decline** -- answer Confirm. This re-freezes the existing
   `Confirmed Scope` verbatim, unchanged -- `<doc>` stays out of scope.
   `state-apply.md § Step 0`'s **disk-derived** re-scope revert then strips
   the out-of-scope edit automatically the next time APPLY runs, whether or
   not `<doc>` was ever present in a prior `**Edited Docs:**` self-report (it
   was not, here -- see `state-apply.md § Step 0` for why a self-report-keyed
   revert cannot do this, and why the revert is disk-derived instead).
-- **Accept** -- answer `[2] Adjust: <the reason to include <doc>>`, not
-  `[1]`. This is a genuine re-plan (the Scope Plan gains a row it did not
-  have before), so it routes through CONFIRM's own existing `[2] Adjust`
-  mechanism (`state-confirm.md § Step 3 [2]`) to `**State:** SCOPE` first --
+- **Accept** -- answer Adjust (with the reason to include <doc>), not
+  Confirm. This is a genuine re-plan (the Scope Plan gains a row it did not
+  have before), so it routes through CONFIRM's own existing Adjust
+  mechanism (`state-confirm.md § Step 3`) to `**State:** SCOPE` first --
   SCOPE re-dispatches `aid-architect` to add `<doc>` as a new Scope Plan item
   (`kind: in-scope` or `closure`, per Q{N}'s context), then auto-chains back
   to CONFIRM (`state-scope.md § Step 5`) to re-freeze the now-expanded
   `Confirmed Scope`. This matches the other two re-plan paths in this
-  redesign -- CONFIRM's own `[2] Adjust` and APPROVAL's `[2]` -- both of
+  redesign -- CONFIRM's own Adjust and APPROVAL's Additional consideration -- both of
   which also go through SCOPE, never straight to a CONFIRM re-freeze. (A
-  plain `[1] Confirm` can only re-freeze the Scope Plan it already has
+  plain Confirm can only re-freeze the Scope Plan it already has
   verbatim -- it has no mechanism to append `<doc>` as a new row, which is
-  why "accept" is answered as `[2] Adjust`, not `[1]`.) The recorded
-  `**Adjustments:**` field this `[2] Adjust` write produces is not just a
+  why "accept" is answered as Adjust, not Confirm.) The recorded
+  `**Adjustments:**` field this Adjust write produces is not just a
   state-transition marker -- SCOPE's dispatch (`state-scope.md § Step 1`)
   actually reads it (plus its `Q{N}` entry, naming `<doc>`) and folds it into
   the Scope Plan (HL-8's authorized-input carve-out); this is the real
@@ -326,7 +324,7 @@ Update `<STATE_FILE>`:
 **Review Completed:** <ISO-8601 timestamp>
 ```
 
-Print: `[State: REVIEW] complete. Advancing to APPROVAL.`
+Print: `Review complete.`
 
 This outcome ends the step with CHAIN to APPROVAL.
 
@@ -355,7 +353,7 @@ Update `<STATE_FILE>`:
 **Review Act-back:** <PASS|FAIL>
 ```
 
-Print: `[State: REVIEW] below gate -- entering FIX loop.`
+Print: `Below the gate -- entering the FIX loop.`
 
 Next, inside this step: Step 5 (FIX), below, which returns to Step 0. This outcome is not an ending: the fix
 pass and the review run again until the exit rule is met or an outcome above ends the step.
@@ -409,6 +407,6 @@ to fix), return to Step 0 of this state -- re-run the scope-diff guard
 (0a/0b) before re-dispatching the panel (Step 1). This closes the loop: FIX
 -> REVIEW Step 0 -> (guard PASS) -> panel -> 4(c) READY, or 4(d) FIX again.
 
-Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
+Print: `{N} finding(s) addressed, bounded to Confirmed Scope.`
 
 **Advance:** CHAIN → APPLY when an APPLY is incomplete; CHAIN → CONFIRM when an out-of-scope edit is on disk; CHAIN → APPROVAL when the review is READY.

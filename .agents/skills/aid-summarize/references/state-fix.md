@@ -27,12 +27,10 @@ When a MANUAL_POOL item failed (K1 partial/no, K2 partial/no) or the user left a
 
 1. **Expose** — restate the issue precisely. Quote the user's note or the failing checklist item. Name the specific HTML section(s) or claim(s) involved. Example: *"K1 scored partial — your note says the Schemas section only lists artifact names without the per-artifact schemas that `schemas.md` actually contains."*
 2. **Propose** — offer a concrete, specific fix. Example: *"Proposed: expand §5 Schemas to include the field-level schema table for each of the 15 artifacts, pulled from `schemas.md §2.1-§2.15`. Adds ~40 lines."*
-3. **Ask** — use `AskUserQuestion` to ask the user to (a) approve the proposed fix, (b) provide their own fix / direction, or (c) mark the issue as won't-fix (accept the lower score). Wait for the answer before editing.
+3. **Ask** — ask the user, through the question protocol, to (a) approve the proposed fix, (b) provide their own fix / direction, or (c) mark the issue as won't-fix (accept the lower score). Wait for the answer before editing.
 
 Apply only what the user confirms. Capture the resolution in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Manual Notes`. After all human-pool issues are resolved (or accepted as won't-fix), return to VALIDATE → MANUAL-CHECKLIST so the user can re-score.
 
 **Rationale:** machine-detected issues have one objective fix; human-detected / subjective issues do not — applying the agent's guess silently risks solving the wrong problem or overwriting the user's intent. The user is the judgment input; collaboration produces the right outcome.
-
-Print: `[State: FIX] complete.`
 
 **Advance:** **CHAIN** → [State: VALIDATE] (continue inline).

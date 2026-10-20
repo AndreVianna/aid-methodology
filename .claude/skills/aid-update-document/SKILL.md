@@ -25,8 +25,10 @@ the human gate (overwrite care is central).
 - **Genre structures:** `.aid/runtime/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> AUTHOR -> VERIFY (loop) -> PRESENT [human
-gate, diff] -> WRITE (on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+gate, diff] -> WRITE (on approval) -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -60,12 +62,12 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 
-1. **Empty argument** -> the bootstrapping question ("Which document should I update, and what
-   change?"). The answer is the target and the change; the path and complexity are then set from it.
+1. **Empty argument** -> the bootstrapping question ("Which document should I update?"). The
+   answer is the target; the path and complexity are then set from it.
 2. **Document does not resolve** -> ask which document is meant, or suggest
    `/aid-create-document` if the user meant a new one. In that case nothing is allocated, and the run
    ends there naming that skill.
-3. **Guided path** -> scope the change.
+3. **Guided path** -> ask what change is wanted, then scope it, one question at a time.
 4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
 **Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2).

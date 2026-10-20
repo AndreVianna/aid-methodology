@@ -33,7 +33,7 @@ RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade t
       what the code already does)
     - Feature decomposition completeness (every Must requirement maps to ≥1 feature)
     - Feature boundary clarity (no feature mixes unrelated concerns; no overlap)
-    - Gaps that warrant Q&A back to the user (record as Pending Q&A, not findings)
+    - Gaps that need a question to the user (record as Pending questions, not findings)
 
 DECLARED REVIEW CRITERIA (resolve; do not invent):
   Each artifact declares, or inherits, the criteria it must be true against. Resolve them
@@ -64,6 +64,12 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   - If the severity came from a file-level override, record the resolved severity and the
     overriding file's `why` in the Evidence cell.
 
+### What to report
+  Report only issues that affect the work: a step that cannot be built, a check that would
+  fail on the real files, a contradiction with another part of the document, or a user
+  decision that is still open. Exact counts, word-for-word comparisons and wording or
+  cosmetic points are not findings.
+
 OUT OF SCOPE (do NOT grade against):
   - `#### Technical Specification` subsections — /aid-specify hasn't run yet for
     these features; only the auto-generated feature scaffold is in scope here
@@ -78,7 +84,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
   `{{LEDGER}}`. Do NOT count toward severity
   totals or grade. Note the routing destination (KB, SPEC) in Description/Evidence
-  so the orchestrator can write the cross-phase Q&A entry.
+  so the orchestrator can record the question.
 
 DELIVERABLES:
   - BEFORE dispatching: render this brief to
@@ -93,10 +99,9 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
     `bash .aid/runtime/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
-  - Pending Q&A: write user-facing questions to the `qa` sequence in
-    `.aid/works/{work}/STATE.yml` (entries with `state: Pending`) -- the consolidated
-    work STATE.yml per FR2 area-STATE consolidation; the legacy `INTERVIEW-STATE.md`
-    is RETIRED -- so the next `/aid-define` run picks them up in Q&A mode
+  - Open questions for the user: a sub-agent never asks. Record each one as a `Pending`
+    question with `writeback-state.sh --ask` in the work's `qa` sequence, and list it in your
+    report; the main conversation asks it through the question protocol
   - The aid-reviewer NEVER edits REQUIREMENTS.md or SPEC scaffolds — only grades and lists issues
 ```
 
@@ -112,7 +117,7 @@ DELIVERABLES:
     requirements + feature boundaries against the KB and codebase before any
     feature reaches /aid-specify.
   ```
-  Do NOT include interview transcripts, the aid-interviewer's working notes, or
+  Do NOT include interview transcripts, the main conversation's working notes, or
   references to downstream skills.
 
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch

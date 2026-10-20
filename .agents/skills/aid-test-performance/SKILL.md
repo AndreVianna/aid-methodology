@@ -22,3 +22,5 @@ Execute `.agents/skills/aid-test/SKILL.md` exactly as written, with the verifica
 -- the threshold/SLO, and the environment; the result must be reproducible). Report
 measured-vs-threshold with the workload + environment noted. Substitute only the invocation
 name (`/aid-test-performance`) in any printed usage example. Findings route to `/aid-fix`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

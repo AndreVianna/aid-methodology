@@ -186,6 +186,8 @@ here and not restated.
 **States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE. The steps, advance words and
 record writes follow `.aid/runtime/templates/skill-steps.md`; this contract restates none of them.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 **Allocation.** Consult the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`) by running
 `bash .aid/runtime/scripts/works/enumerate-works.sh`. On new work, follow `work-initiation-gate.md`

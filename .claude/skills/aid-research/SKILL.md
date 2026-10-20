@@ -21,9 +21,10 @@ context, an optional authorized spike, verification, and a human-facing presenta
 - **Not a numbered pipeline phase**; it does not route to `/aid-execute`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> INVESTIGATE (-> PROPOSE-SPIKE?) -> VERIFY
-(loop) -> PRESENT [human resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line
-on each state.
+(loop) -> PRESENT [human resolves] -> HANDOFF? -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

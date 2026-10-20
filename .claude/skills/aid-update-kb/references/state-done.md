@@ -3,11 +3,9 @@
 DONE commits the approved KB changes and closes the run. It is selected when
 the run-state file records `**State:** DONE` and `**User Approved:** yes`.
 
-**Approval invariant.** DONE is only reachable after an explicit human `[1]`
+**Approval invariant.** DONE is only reachable after an explicit human approval
 at APPROVAL. If this state is entered without `**User Approved:** yes` in the
 run-state file, print an error and HALT without committing.
-
-Print the `[State: DONE]` banner from `SKILL.md § State Detection`.
 
 ---
 
@@ -43,8 +41,8 @@ Scope, nothing new to confirm:
 2. Print:
 
    ```
-   [DONE] Closure re-verification failed -- {N} undefined term(s) found.
-   Returning to APPLY now; it must define or cross-reference: <terms>.
+   Closure re-verification failed -- {N} undefined term(s) found.
+   Going back to the edits now; they must define or cross-reference: <terms>.
    ```
 
 3. Update the run-state file:
@@ -69,14 +67,14 @@ an edit outside the confirmed contract. Escalate to the user instead:
    ```
    ### Q{N}
    - **Category:** Update-KB / Closure Shortfall
-   - **Impact:** Required
+   - **Impact:** High
    - **Status:** Pending
    - **Context:** /aid-update-kb DONE's closure re-check found undefined
      term(s) <terms> that require an edit outside Confirmed Scope to fix
      (e.g. a new domain-glossary.md entry that was never a confirmed Scope
      Plan item).
    - **Suggested:** Confirm whether <terms>/<doc> should be added to scope.
-     If yes, answer CONFIRM with `[2] Adjust` to re-enter SCOPE with the
+     If yes, answer CONFIRM with Adjust to re-enter SCOPE with the
      expanded need.
    ```
 
@@ -90,9 +88,9 @@ an edit outside the confirmed contract. Escalate to the user instead:
 3. Print:
 
    ```
-   [DONE] Closure re-verification found undefined term(s) needing an
+   Closure re-verification found undefined term(s) needing an
    out-of-scope addition -- escalated as Q{N} in .aid/knowledge/STATE.md.
-   Closure-chasing may not expand scope (HL-7). CONFIRM asks it next.
+   Closure-chasing may not expand scope (HL-7). It is asked next.
    ```
 
 4. Do NOT commit. The step ends with CHAIN to CONFIRM, in the same run: the user answers in the
@@ -125,7 +123,7 @@ never leaves this branch):
 BRANCH=$(grep -m1 "^\*\*Branch:\*\*" "$STATE_FILE" | sed 's/^\*\*Branch:\*\* *//')
 CUR="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
 if [ -n "$BRANCH" ] && [ "$CUR" != "$BRANCH" ]; then
-  echo "[DONE] Current branch ($CUR) does not match this run's recorded"
+  echo "Current branch ($CUR) does not match this run's recorded"
   echo "branch ($BRANCH) -- refusing to commit on the wrong branch. STOP."
   exit 1
 fi
@@ -219,8 +217,6 @@ find .aid/.temp -maxdepth 1 -name 'UPDATEKB_STATE_*.md' -delete 2>/dev/null || t
 ## Step 6: Print closing summary
 
 ```
-[State: DONE] complete.
-
 KB update committed on branch: <Branch>
 Commit: <COMMIT_SHA>
 Docs updated ({N}):

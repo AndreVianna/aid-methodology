@@ -33,8 +33,9 @@ seed into `roadmap.md` is `/aid-create-roadmap`'s job, not this one's.
 - **Step rules:** the advance words, the step procedure and the work record are
   `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
-State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**. Print
-the `[State: NAME] -- {purpose}` entry line on each state.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
+State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**.
 
 ---
 
@@ -88,7 +89,7 @@ IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ## State: PRESENT (hard stop -- the user decides)
 
 Present the seed clearly. Assert no resolution --
-the user decides whether to iterate further (re-invoke this skill) or realize it now
+the user decides whether to iterate further (declining the approval below changes the seed in place) or realize it now
 (`/aid-create-roadmap`).
 
 Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-roadmap --step PRESENT --covers 'the seed .aid/design/roadmap.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/roadmap.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.

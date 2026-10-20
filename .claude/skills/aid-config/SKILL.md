@@ -6,7 +6,7 @@ description: >
   grade. A bare invocation prints every value in a table and, on the first run, creates
   `.aid/settings.yml` from the template. Passing a key -- `/aid-config` name -- views and
   updates that one setting interactively.
-allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "(none) view all  |  <key> view+update one (e.g., name, minimum_grade)"
 ---
 
@@ -24,6 +24,8 @@ for AID pipeline settings (grades, heartbeat, project identity).
 
 Examples: `/aid-config name`, `/aid-config minimum_grade`,
 `/aid-config source_control`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 
@@ -100,20 +102,27 @@ Print: `Current value of <key>: <value>`.
 
 ### Step 4: Prompt for new value
 
-Use `AskUserQuestion` for ALL keys with:
-- A `Keep current value` option (description: shows the current value)
-- 2–3 suggestion options from the Suggestions table below
+Ask for the new value for ALL keys, in plain text through the question protocol, with:
+- A `Keep current value` option (shows the current value)
+- 2–3 suggestion options from the Suggestions table below, the recommended one first
 
-Each option has only `label` + `description`. **Do NOT use the `preview` field** — the preview field switches the UI to a side-by-side layout that suppresses the auto-injected `Other` free-text input. With `description` only, the standard layout shows the `Other` field automatically and the user can always type a custom value.
+The options are numbered in the question. The closing line always lets the user type a value of their
+own, ask for an explanation, or skip the question.
 
-Do NOT add an explicit `Other` option in the options list — the tool injects it automatically (and only renders it correctly when no option carries a `preview`).
+For free-text-natural keys (`name`, `description`), the Suggestions table says `(no defaults)` — the
+question offers just `Keep current value`, and the user types the value in their own words.
 
-For free-text-natural keys (`name`, `description`), the Suggestions table says `(no defaults)` — render the question with just `Keep current value` + the auto-injected `Other` field; the user types their value into Other.
+Show each question in the protocol's form (one question per message):
 
-Question text format (keep brief, mention free-text via Other if the user might want it):
-
-```
-New value for <key>?  (pick a suggestion or type your own via 'Other')
+```text
+Settings -- question {n} of {m} -- importance: {high|medium|low}
+New value for <key>?
+Why I ask: {what the setting controls, in one short reason}
+My recommendation: {the suggested value, and why}
+  1. {the suggested value} (recommended)
+  2. Keep current value: {current value}
+  3. {another suggestion}
+Or answer in your own words (type a value of your own), ask me to explain, or skip this question.
 ```
 
 **Recording.** This skill keeps no work record, so each question it asks is recorded in the project
@@ -171,7 +180,7 @@ intended behavior, not a gap.
 
 ---
 
-## Suggestions table (for Mode 2 AskUserQuestion)
+## Suggestions table (for Mode 2 questions)
 
 | Key | Suggestions |
 |---|---|
@@ -182,7 +191,7 @@ intended behavior, not a gap.
 | `minimum_grade` | `A+`, `A`, `B+` |
 | `heartbeat_interval` | `0` (disabled), `1`, `5` |
 
-Always include a `Keep current value` option and let `AskUserQuestion`'s built-in `Other` field handle free-form input.
+Always include a `Keep current value` option; the closing line of the question lets the user type a free-form value.
 
 ---
 

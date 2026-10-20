@@ -188,9 +188,10 @@ written to the Knowledge Base state file instead, in the same states, until that
 
 ## The intake-question exception
 
-Questions asked **while starting or choosing a work** are not written with `--ask`, because no work
+Questions asked **while starting or choosing a work, or repairing its record** are not written with `--ask`, because no work
 record exists yet. They are: the question "what do you want?" on a bare start, which skill fits when
-the reading is unsure, whether to start new work or continue an existing one, a work's short name, and the
+the reading is unsure, whether to start new work or continue an existing one, a work's short name, the
+recovery confirmation, which proposes repairing a work record that is missing or inconsistent (`skill-steps.md` § Recovery; nothing is written before its yes), and the
 confirmation to cancel a named work (`/aid-orchestrate`; the work's own record is not paused or touched, and
 the answer is acted on at once).
 They are asked by the orchestrator, by the work-initiation gate (`.aid/runtime/templates/work-initiation-gate.md`),

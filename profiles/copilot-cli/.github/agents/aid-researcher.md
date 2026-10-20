@@ -84,6 +84,19 @@ issue you should have caught, that is a self-review gap.
 Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
 
+## Talking with the user
+
+A sub-agent never asks the user. Its questions go to the main conversation, which is the only one
+that can talk with the user.
+
+- Each open question is recorded `Pending` where `question-protocol.md` § Where each record lives
+  says: while working on a work, in that work's `STATE.yml` with
+  `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category <subject> --impact High|Medium|Low --context '<the question>' --suggested '<the recommendation>'`;
+  while building the Knowledge Base (no work exists), the question goes into the file the dispatching
+  skill names for it (for `aid-discover`, `.aid/knowledge/.scout-questions.tmp`), never through the writer.
+- The sub-agent lists every such question in its report, so the main conversation can see it.
+- The main conversation asks the questions, following `.aid/runtime/templates/question-protocol.md`.
+
 
 ## What You Do
 - Read and analyze code, documentation, logs, configuration, APIs, and any project artifacts
@@ -121,6 +134,6 @@ for the full protocol.
 
 ## When to Escalate
 - Cannot access a resource → report to Orchestrator
-- Requirements are ambiguous → append a Q&A entry to the work's `STATE.yml` `qa:` list
-- Evidence contradicts itself → document both sides, flag for human decision
-- Knowledge gap blocks another phase → write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
+- Requirements are ambiguous → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml` `qa:` list, left `Pending`
+- Evidence contradicts itself → document both sides, record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user), left `Pending`, and flag it for human decision
+- Knowledge gap blocks another phase → record the question with `.aid/runtime/scripts/execute/writeback-state.sh --ask` (options: Talking with the user) in the work's `STATE.yml`, left `Pending` (while building the Knowledge Base, with no work, list it in the report for the dispatching skill's Q&A queue instead)

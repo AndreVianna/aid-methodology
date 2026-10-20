@@ -11,20 +11,6 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 
 ### Step 0: Check Existing KB
 
-**First, trace the GENERATE front for the user** so every step ahead is visible (traceability —
-the user must always know what is being done and what is decided where). Print this once on entry:
-
-```
-[GENERATE] Building the Knowledge Base. The doc-set is NOT fixed up front — it is decided
-           by the domain, at the gates below:
-  [0c]  Build project index            (mechanical)
-  [0cx] Classify project DOMAIN         -> you confirm        (ASK)
-  [0d]  Propose DOC-SET from the domain -> you confirm        (ASK)   <- this is what decides which docs
-  [0e]  Harvest coined terms            (mechanical)
-  [0f]  Classify discovery PATH         -> you confirm        (ASK)
-  [1-5] Fan-out research -> closure -> review panel -> approval
-```
-
 Resolve the declared doc-set (see `references/doc-set-resolve.md`):
 ```bash
 raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
@@ -41,10 +27,10 @@ Scan `.aid/knowledge/` — files with only init template (`❌ Pending`) are tre
 Step 0d, so Step 0 must never print the default seed as if it were the target set:
 
 - **Doc-set already declared** (`raw` non-empty — a prior run confirmed one at Step 0d):
-  print `[0] Checking existing KB against the declared doc-set: P/N docs present.`
+  print `Checking existing KB against the declared doc-set: P/N docs present.`
 - **Doc-set NOT declared yet** (`raw` empty — fresh run, no domain confirmed): print
   ```
-  [0] Checking existing KB: P docs present (KB is empty / partial).
+  Checking existing KB: P docs present (KB is empty / partial).
       The doc-set is NOT decided yet — it is proposed at Step 0d, after you confirm the
       domain at Step 0cx. The default seed is used here ONLY as a fallback to detect an
       empty KB; it is never the committed set.
@@ -116,7 +102,7 @@ bash .aid/runtime/scripts/kb/build-project-index.sh \
 ```
 ✓ build-project-index done (record actual time)
 
-Print: `[0c] Building project index...` then on completion `[0c] Project index ready (N files, M lines)`.
+Print: `Building project index...` then on completion `Project index ready (N files, M lines)`.
 
 This is a deterministic shell script — no LLM dispatch. It runs fast (typically under 30 seconds even on large repos). The resulting `project-index.md` is markdown so humans can scan it.
 
@@ -128,7 +114,7 @@ Classify the project's **domain** from the project index and harvested source si
 by Step 0c. This runs immediately after the index is ready and **before** the doc-set proposal
 (Step 0d) because the confirmed domain is the anchor that drives the doc-set lookup.
 
-Print: `[0cx] Classifying project domain from source signals...`
+Print: `Classifying project domain from source signals...`
 
 #### Idempotent re-entry
 
@@ -190,19 +176,19 @@ After reading the signals:
 - **Insufficient / uncertain / dubious** — signals are absent, contradictory, or too sparse to
   classify with confidence (e.g. an empty repo, a repo with equal-weight signals in two
   unrelated domains, or a repo whose purpose is genuinely unclear from the files alone):
-  - Write a **Required Q&A entry** to `.aid/knowledge/STATE.md ## Q&A (Pending)` in the
+  - Write a `High` Q&A entry to `.aid/knowledge/STATE.md ## Q&A (Pending)` in the
     existing Q&A format:
     ```markdown
     ### Q{N}
     - **Category:** Domain
-    - **Impact:** Required
+    - **Impact:** High
     - **Status:** Pending
     - **Context:** {describe which signals were read and why they are insufficient or contradictory}
     - **Suggested:** {best-guess domain if any, or "—"}
     - **Question:** What is the primary domain of this project? Use one of the domain labels
       listed in Step 0cx (or describe a composite using `hybrid:<A>+<B>`).
     ```
-  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md.`
+  - Print: `Domain uncertain -- a question about it is recorded in STATE.md.`
   - Ask the Q&A through the question protocol. This step pauses on it. Do not proceed to Step 0d until
     the Q&A is answered and a domain is confirmed.
   - On the resume run (after the user answers the Q&A), read the user's answer as the domain,
@@ -225,15 +211,19 @@ Domain classification
 
   Proposed domain: software-cli
   Rationale: TypeScript + package.json + CLI command structure + no ML/data artefacts
-
-[1] Confirm  software-cli  (as proposed)
-[2] Override <type a different label>
 ```
 
-> **Domain proposal ready.**
-> - Type **`confirm`** (or press Enter) to accept as proposed.
-> - Or type the domain label you want to use instead (e.g. `methodology/tooling` or
->   `hybrid:software-cli+methodology/tooling`).
+Then ask, as one question in the protocol's form (record it first, as the SKILL's recording paragraph says):
+
+```text
+Project domain -- question 1 of 1 -- importance: high
+Is software-cli the right domain for this project?
+Why I ask: the domain decides which documents the knowledge base is made of.
+My recommendation: software-cli -- TypeScript, package.json and the CLI command structure all point to it.
+  1. Yes, software-cli (recommended)
+  2. A different domain (give its label, for example methodology/tooling or hybrid:software-cli+methodology/tooling)
+Or answer in your own words, ask me to explain, or skip this question.
+```
 
 **This is a genuine ASK.** Stop here after presenting. The user's choice
 (not the source signals alone) is the authoritative domain; an override is recorded as such.
@@ -266,7 +256,7 @@ When the user answers the question, in this conversation or in a later session t
    mirroring the `## Discovery Triage` override record. `**Re-classified:**` records the
    date/run-number so consecutive re-runs are traceable.)
 
-3. Print: `[0cx] Domain confirmed: <domain>. Proceeding to doc-set proposal.`
+3. Print: `Domain confirmed: <domain>. Proceeding to doc-set proposal.`
 
 4. Go on to Step 0d — the confirmed domain is the anchor the doc-set step consumes.
 
@@ -360,7 +350,7 @@ doc-set. This is a judgment step (not a script):
    - assign `presence` (`required` or `conditional[:<when>]`).
    Record provenance `auto-researched`.
 
-Print: `[0d] No curated matrix row for domain '<confirmed_domain>' — synthesizing doc-set from domain research.`
+Print: `No curated matrix row for domain '<confirmed_domain>' — synthesizing doc-set from domain research.`
 
 ---
 
@@ -423,9 +413,15 @@ Spine coverage:
 
 Then ask the user to confirm or edit:
 
-> **Doc-set proposal ready** (domain: `<confirmed_domain>`, provenance: `<curated|auto-researched>`). Review the diff and spine coverage above.
-> - Type **`confirm`** (or press Enter) to accept as proposed.
-> - Or provide edits in the pipe-delimited format: `filename|owner|presence[:when]` — one entry per line — and the confirmed set will be written to `.aid/settings.yml`.
+```text
+Knowledge-base documents -- question 1 of 1 -- importance: high
+Is this the right set of documents for the knowledge base (domain: <confirmed_domain>, provenance: <curated|auto-researched>)?
+Why I ask: the set decides which documents discovery writes; it is saved to .aid/settings.yml once you confirm.
+My recommendation: accept the set above -- it covers every spine dimension.
+  1. Accept the set as proposed (recommended)
+  2. Edit it (give the changes as lines of `filename|owner|presence[:when]`)
+Or answer in your own words, ask me to explain, or skip this question.
+```
 
 **This is a genuine ASK.** Stop here after presenting the proposal.
 
@@ -499,7 +495,7 @@ Run the deterministic coined-term harvest after the doc-set is confirmed and bef
 researcher fan-out. This step has zero LLM cost and produces the
 `.aid/generated/candidate-concepts.md` anchor that all deep-dive agents receive.
 
-Print: `[0e] Harvesting coined terms...`
+Print: `Harvesting coined terms...`
 
 ```bash
 bash .aid/runtime/scripts/kb/harvest-coined-terms.sh \
@@ -509,7 +505,7 @@ bash .aid/runtime/scripts/kb/harvest-coined-terms.sh \
   --top 60
 ```
 
-On completion print: `[0e] Candidate concepts ready (K candidates, M cross-source)`.
+On completion print: `Candidate concepts ready (K candidates, M cross-source)`.
 
 **Degrade-gracefully:** if the script fails (empty repo, no git, permission error) log a
 warning and continue with an empty `candidate-concepts.md` (same pattern as Step 0c). Never
@@ -530,7 +526,7 @@ block the fan-out on a harvest failure.
 Run the deterministic recon pre-pass after Step 0e (RM4 is now available) and before Step 1
 (the fan-out is what the path scales -- decide before dispatching any agent).
 
-Print: `[0f] Recon: measuring project shape...`
+Print: `Recon: measuring project shape...`
 
 ```bash
 bash .aid/runtime/scripts/kb/recon-classify.sh \
@@ -541,7 +537,7 @@ bash .aid/runtime/scripts/kb/recon-classify.sh \
 ```
 
 On completion, read `.aid/generated/recon.md` and print:
-`[0f] Proposed path: <path> (source-files=N, LOC=M, dirs=D, concepts=C)`
+`Proposed path: <path> (source-files=N, LOC=M, dirs=D, concepts=C)`
 
 **Degrade-gracefully:** if the script fails, log a warning and default to `brownfield-small`
 (conservative). The human-confirm gate is the safety net.
@@ -576,10 +572,19 @@ Recon measured this project:
 
 Proposed discovery path: brownfield-large
   (full machinery: researcher fan-out + full 4-mandate review panel + batched closure loop)
+```
 
-[1] Confirm  brownfield-large  (as proposed)
-[2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
-[3] Override greenfield        (no source yet => signpost + HALT: run /aid-describe to define the project; the KB fills in as you build)
+Then ask, as one question in the protocol's form (recorded first, as the SKILL's recording paragraph says):
+
+```text
+Discovery path -- question 1 of 1 -- importance: high
+Should I discover this project as brownfield-large?
+Why I ask: the path decides how much machinery runs: a full fan-out and review panel, or a single pass.
+My recommendation: brownfield-large -- the project tripped all three large thresholds.
+  1. brownfield-large, the full machinery (recommended)
+  2. brownfield-small: a single understand-pass; one reviewer runs the mandates as sequential passes
+  3. greenfield: no source yet, so I stop with a signpost to /aid-describe; the KB fills in as you build
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **This is a genuine ASK** (C4 human-gated; the path is measured but
@@ -616,7 +621,7 @@ Then **branch on the confirmed path**:
 - **Greenfield:** **do NOT chain to Step 1.** Print the **signpost and HALT** --
 
   ```
-  [0f] Greenfield detected: ~no source to discover yet.
+  Greenfield detected: ~no source to discover yet.
        Nothing to discover yet -- run /aid-describe to define the project;
        the KB fills in as you build, via re-triage once code lands.
   ```
@@ -648,7 +653,7 @@ as missing — e.g. one the `ELICIT` state's E1 branch reset to `Pending` becaus
 source set changed — so the pre-scan re-runs and re-inventories it (KI-008; previously the bare
 existence check would have skipped it even after such a reset).
 
-Print: `[1/5] Pre-scan: mapping project structure and external sources...`
+Print: `Pre-scan: mapping project structure and external sources...`
 
 Read `references/agent-prompts.md` section `## Scout` for the full prompt. Substitute the
 external docs placeholder with actual paths (or the "no docs" variant). Pass
@@ -677,7 +682,7 @@ only ever run for the two brownfield paths.
   integrator + quality docs) in one prompt, covering the declared set in one pass. Skip the
   per-lane target-list computation below; instead assemble all declared-set targets and dispatch
   one agent. The prompt it receives is the combined foundation reference block (below) plus the
-  full target list. Print `[2-5/5] Single understand-pass (brownfield-small): covering all targets in one pass...`
+  full target list. Print `Single understand-pass (brownfield-small): covering all targets in one pass...`
 
 Dispatch every discovery `aid-researcher` (fan-out or single-pass) at its default Medium
 tier and **`low` reasoning effort** -- discovery is retrieval / cataloguing, and depth does
@@ -857,7 +862,7 @@ bash .aid/runtime/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
 Run both, even if the first fails, so one round reports every defect rather than uncovering the
 second only after the first is fixed.
 
-- **Both exit 0 (clean):** print `[5a] Authoring gate: clean.` and CHAIN to Step 5b.
+- **Both exit 0 (clean):** print `Authoring gate: clean.` and CHAIN to Step 5b.
 - **Either exits 1 (violations):** each script lists its own findings — `kb-citation-lint.sh` as
   `doc:line -> file.ext:LINE`, `lint-frontmatter.sh` as `[FM-MISSING]`/`[FM-INVALID]`. Do NOT
   proceed. Partition the violations by KB doc, resolve each doc's owner from the declared doc-set
@@ -933,7 +938,7 @@ For brownfield-large they are empty (use settings defaults); for brownfield-smal
 in f004's SPEC (Step 5b); f006 supplies the per-path values through it. No nested settings
 mutation; no `yq`.
 
-Print: `[5b] Defining the project's key terms and making sure the knowledge base explains every important term it uses (project size: ${confirmed_path}; up to ${max_rounds} passes)...`
+Print: `Defining the project's key terms and making sure the knowledge base explains every important term it uses (project size: ${confirmed_path}; up to ${max_rounds} passes)...`
 
 ▶ aid-architect (defining key terms + self-containment check) starting (~variable)
 Follow `references/state-closure.md` for the full loop body.
@@ -945,7 +950,7 @@ existing Q&A format (Category: `Concept`, Impact: `High`, Status: Pending) so St
 consolidates them into `STATE.md ## Q&A (Pending)`. **Step 6b is unchanged** -- the closure
 loop simply feeds the same pipe.
 
-Print on completion: `[5b] Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
+Print on completion: `Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
 
 ### Step 5c: Confirm term exclusions (ASK)
 
@@ -961,8 +966,7 @@ reached zero): skip this step and CHAIN to Step 6.
 Otherwise, present the candidates to the user in plain language, e.g.:
 
 ```
-A few terms couldn't be defined as project concepts. I'd like to set them aside so the
-knowledge-base self-check can finish. Please confirm which are safe to exclude:
+The terms below could not be defined as project concepts:
 
   Not real concepts (field values / skill names):   in progress, user approved, aid-execute
   Descriptions, not coined terms:                    quick check findings, state detection
@@ -970,8 +974,19 @@ knowledge-base self-check can finish. Please confirm which are safe to exclude:
 
   (These look like real concepts missing a clean glossary entry -- I'll fix the glossary
    instead of excluding them: concept spine -> Spine, wave -> its own entry.)
+```
 
-Reply: confirm all  |  exclude only <list>  |  none
+Then ask, as one question in the protocol's form (recorded first, as the SKILL's recording paragraph says):
+
+```text
+Glossary terms -- question 1 of 1 -- importance: medium
+May I set these terms aside, so the knowledge-base self-check can finish?
+Why I ask: a term is excluded only after you confirm it is not a project concept.
+My recommendation: exclude all of them -- none is a coined project term.
+  1. Exclude all of them (recommended)
+  2. Exclude only some (name them)
+  3. Exclude none
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 **This is a genuine ASK.** Stop after presenting.
@@ -983,7 +998,7 @@ never add an unconfirmed term). The DETECT step reads this list on every future 
 `read-setting.sh --path discovery.term_exclusions`), so confirmed exclusions are never re-asked. For the
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
-`[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
+`Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
 **Next, inside this step:** Step 6 (inside this state), once the user has replied and the confirmed terms are written.
 
 ### Step 6: Generate README.md and INDEX.md
@@ -1045,10 +1060,10 @@ table, so it MUST reflect the confirmed set, never the default seed.
 - **Question:** {the actual question}
 ```
 
-**Required Q&A entry** (inject if not present): Category: Features, Impact: Required, Status: Pending.
+**High-impact Q&A entry** (inject if not present): Category: Features, Impact: High, Status: Pending.
 Adapt question to project type (web app, API, library, mobile, CLI, or generic).
 
-Print: `[STATE.md] Updated with {N} Q&A questions. Grade: Pending.`
+Print: `Updated with {N} Q&A questions. Grade: Pending.`
 
 ### Step 7: Update Project Config Files
 
@@ -1075,10 +1090,8 @@ consumes. Writing it here (producer-side, once, at the end of GENERATE) ensures 
 in REVIEW always finds a fresh, authoritative copy that matches the confirmed doc-set for this
 run.
 
-Print: `[N/N] Generation complete — Knowledge Base ready.` (where N = declared-set size)
+Print: `Generation complete — Knowledge Base ready.` (where N = declared-set size)
 
 (File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
-
-Print: `[State: GENERATE] complete.`
 
 **Advance:** **CHAIN** → [State: REVIEW] (continue inline); **HALT** when the confirmed discovery path is greenfield (Step 0f prints the signpost and ends the step before any generation).

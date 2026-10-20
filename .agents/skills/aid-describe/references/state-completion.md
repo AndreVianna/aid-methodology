@@ -59,26 +59,25 @@ the `# Requirements` H1, before `## 1. Objective`).
   and it is NOT free-form authored independently. Compose it by distilling the Objective
   into one sentence (the agent writes this sentence; the user confirms it).
 
-**Present to the user:**
+**Present to the user**, as one question in the protocol's form. Record it first with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Requirements --impact Medium --context '<the question, as shown>' --suggested 'Looks good' --asked-by aid-describe --step COMPLETION` (it prints the question's id), and record the answer with `--answer --id <id> --state <Answered|Skipped> --value '<the answer>' --applied-to 'REQUIREMENTS.md identity block'` once it comes:
 
-```
-Before I present the summary, here are the identity fields I will write into
-REQUIREMENTS.md:
-
-- **Name:** {composed Title Case name}
-- **Description:** {one sentence derived from ## 1. Objective}
-
-Do these look right, or would you like to adjust either?
-
-[1] Looks good
-[2] Adjust Name: ___
-[3] Adjust Description: ___
+```text
+Requirements -- question 1 of 1 -- importance: medium
+Shall I write this Name and Description at the top of REQUIREMENTS.md?
+  Name: {composed Title Case name}
+  Description: {one sentence derived from ## 1. Objective}
+Why I ask: they are the work's title and summary on the dashboard.
+My recommendation: write them as shown -- they come straight from the objective.
+  1. Write them as shown (recommended)
+  2. Change the Name or the Description (tell me which)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Process feedback:
-- **[1]:** proceed with the composed values.
-- **[2] / [3]:** accept the user's correction and update the relevant value. Confirm once
-  more before proceeding.
+- **Write as shown:** proceed with the composed values.
+- **A change:** accept the user's correction and update the relevant value. Confirm once
+  more before proceeding (a new question, in the same form).
 
 Once confirmed, write the two lines into `.aid/works/{work}/REQUIREMENTS.md`, replacing the
 `*(pending)*` seeds:
@@ -106,6 +105,8 @@ the requirement that the assembled intent be reflected back to the user before a
 surface any re-confirmable assumptions (advisor-stance.md Rule G1b) here so the user
 can revisit them.
 
+Show the summary first:
+
 ```
 I believe I have enough information. Here's a summary:
 
@@ -114,20 +115,29 @@ I believe I have enough information. Here's a summary:
 **Key features:** [bullet list of must-haves from §5]
 **Main constraints:** [bullet list from §7]
 **Target users:** [list from §3]
-
-Is there anything else we should consider, or are the requirements ready?
-
-[1] Approved — requirements are ready
-[2] Additional consideration: ___
 ```
 
-The summary approval is put to the user through the question protocol. An approval cannot be skipped: it
-blocks the work, so this step pauses on it, with this step saved, until the user approves or adds a
-consideration. Step 5 (Process Approval Response) follows, inside this step, once the user answers.
+Then ask the approval, as one question in the protocol's form. It blocks the work, so this step pauses on it
+(`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-describe --step COMPLETION --covers 'the requirements REQUIREMENTS.md, with the small decisions confirmed here'`
+(it prints the question's id), bring the step detail up to date with `--step` (done: summary shown; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. Include the small decisions recorded `Assumed` so far, to be confirmed in this one approval.
+
+```text
+Requirements -- question 1 of 1 -- importance: high
+Are the requirements above ready for the next phase?
+Why I ask: approval lets the work move on to the feature breakdown; nothing moves on without it.
+My recommendation: approve -- the summary matches what we settled and the quality check passed.
+  1. Approve (recommended)
+  2. Not yet -- there is something more to consider (tell me what)
+Or answer in your own words or ask me to explain. An approval cannot be skipped.
+```
+
+An approval cannot be skipped: the step stays paused, with this step saved, until the user approves or adds a
+consideration. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or the consideration>' --applied-to 'REQUIREMENTS.md'` and set the lifecycle back to `Running` through the writer. Step 5 (Process Approval Response) follows, inside this step.
 
 ### Step 5: Process Approval Response
 
-- **[1] Approved:**
+- **Approved:**
   - Set `**Interview State:** Approved` in STATE.md `## Interview State`
   - Add Review History entry in STATE.md `## Interview State`
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
@@ -149,7 +159,7 @@ consideration. Step 5 (Process Approval Response) follows, inside this step, onc
     ```
   - Name the next skill in one plain line: `/aid-define {work}` decomposes the approved requirements into features. Then end the step with the HALT case of the advance line below; it does NOT auto-chain.
 
-- **[2] Additional consideration:**
+- **A consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
   - Update STATE.md `## Interview State` section statuses if needed
   - End the step with the CHAIN case of the advance line below, which returns to the interview loop for any new gaps

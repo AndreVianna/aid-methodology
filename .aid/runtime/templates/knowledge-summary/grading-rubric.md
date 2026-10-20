@@ -308,7 +308,7 @@ Coverage check: 10/22 resolved docs referenced in HTML (45%)
 
 Machine Grade: F (COV coverage < 60% -- completeness gate failed)
 Overall Grade: F
-   Re-run /aid-summarize -> it will enter FIX state and add missing sections.
+   The summary moves to its FIX step and adds the missing sections.
 ```
 
 ```

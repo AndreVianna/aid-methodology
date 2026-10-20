@@ -7,7 +7,7 @@ and type-specific review checklists for the reviewer agent.
 
 | Severity | Meaning |
 |----------|---------|
-| **Minor** | Cosmetic, style, trivial. Does not affect functionality. |
+| **Minor** | Trivial improvement. Does not affect functionality. |
 | **Low** | Convention deviation, could be better but works correctly. |
 | **Medium** | Incorrect behavior, missing edge case, incomplete coverage. |
 | **High** | Blocks functionality, security risk, data integrity concern. |

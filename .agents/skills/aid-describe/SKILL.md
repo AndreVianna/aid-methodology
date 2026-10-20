@@ -16,16 +16,19 @@ argument-hint: "[work-001] resume work"
 
 State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [approval, then HALT: /aid-define].
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 ## Agents Involved
 
-aid-describe is **multi-agent** — different states use different agents.
+aid-describe is run by the main conversation, the only one that asks the user. Its states differ
+only in what they do, not in who asks.
 
-| State | Phase | Agent | Why |
-|-------|-------|-------|-----|
-| 1–4 | Conversational interview | `aid-interviewer` | Empathetic dialogue, deterministic advancing |
-| DESCRIBE-SEED | Greenfield KB seed authoring (aid-describe step per D3) | `aid-interviewer` + dispatches `aid-reviewer` for step 5 | Engine-driven 5-element seed elicitation + doc authoring + coherence check + greenfield-mode review gate |
+| State | Phase | Worker | Why |
+|-------|-------|--------|-----|
+| 1–4 | Conversational interview | inline (main conversation) | Empathetic dialogue, deterministic advancing; every question is asked through the question protocol |
+| DESCRIBE-SEED | Greenfield KB seed authoring (aid-describe step per D3) | inline; dispatches `aid-reviewer` for step 5 | Engine-driven 5-element seed elicitation + doc authoring + coherence check + greenfield-mode review gate |
 
-The frontmatter default `agent: aid-interviewer` covers States 1–4. DESCRIBE-SEED also uses `aid-interviewer`, additionally dispatching `aid-reviewer` for its step 5 greenfield-mode review gate.
+No sub-agent asks the user. DESCRIBE-SEED dispatches `aid-reviewer` for its step 5 greenfield-mode review gate, and that reviewer records its open questions and lists them in its report.
 
 Gather requirements from a human stakeholder through the **seasoned-analyst elicitation
 engine** (`references/elicitation-engine.md`): one fixed D1 opener followed by a
@@ -40,7 +43,7 @@ immediately.
 .aid/
   knowledge/           <- shared KB (populated by /aid-discover)
   work-001-name/       <- one work = one interview cycle
-    STATE.md           <- process (§§ Interview State, Cross-phase Q&A, Features State...)
+    STATE.md           <- process (§§ Interview State, Features State...; open questions are the work's `qa`)
     REQUIREMENTS.md    <- product (clean document, only project information)
     features/          <- product (one folder per feature, created by /aid-define)
       feature-001-name/
@@ -121,18 +124,24 @@ Present the gate's single new-vs-continuation question, showing the enumerated l
 (group by `work_id`; annotate each with its `[phase · lifecycle]` and worktree/branch
 label from the helper's record columns):
 
-```
-Works already exist. Is this a NEW work, or a CONTINUATION of an existing one?
+This is an intake question, so it is not recorded with `--ask` (no work record exists yet). Show it in the
+protocol's form, with the list above it:
 
+```text
 Existing works:
   work-001-user-auth        [Definition · Running]                (main)
   work-002-reporting        [Planning · Running]                 (main)
   work-016-numberless-...   [Specification · Paused-Awaiting-Input] (worktree: work-016)
 
-[N] New work
-[1] Continue work-001-user-auth
-[2] Continue work-002-reporting
-[3] Continue work-016-numberless-...
+Your work -- question 1 of 1 -- importance: high
+Is this a new work, or a continuation of one of those above?
+Why I ask: a continuation picks up where that work stopped; a new work starts a fresh record.
+My recommendation: {the one that fits the request best, and why; a new work when none fits}
+  1. New work
+  2. Continue work-001-user-auth
+  3. Continue work-002-reporting
+  4. Continue work-016-numberless-...
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Wait for the response, then act per the gate:
@@ -161,7 +170,7 @@ All paths below are relative to `.aid/works/{work}/`.
 
 ```plaintext
 State 1:  No STATE.md (§ Interview State)                           -> FIRST-RUN
-State 2:  STATE.md § Cross-phase Q&A has Pending entries            -> Q-AND-A
+State 2:  the work's qa has open entries, Pending or Skipped (STATE.yml) -> Q-AND-A
 State 3:  Interview State: In Progress, incomplete                  -> CONTINUE
 State GS: Interview State: In Progress, all done,
           greenfield (no brownfield KB on disk) + seed not complete -> DESCRIBE-SEED
@@ -175,8 +184,8 @@ Approved: Interview State: Approved                                 -> hand-off 
 1. Check for `STATE.md` in the work folder and look for the `## Interview State` section
 2. If missing → **State 1: FIRST-RUN**
 3. If exists:
-   a. Check `## Cross-phase Q&A` section for entries with `**Status:** Pending`
-   b. If Pending entries exist → **State 2: Q-AND-A**
+   a. Check the work's `qa` (STATE.yml) for entries with `state: Pending` or `state: Skipped` (both are open)
+   b. If open entries exist → **State 2: Q-AND-A**
    c. Read `**Interview State:**` field in `## Interview State`
       - If State is `In Progress`:
         - Read Section Status table under `## Interview State`
@@ -191,46 +200,8 @@ Approved: Interview State: Approved                                 -> hand-off 
           - If greenfield AND seed not done → **State GS: DESCRIBE-SEED**
           - Otherwise → **State 4: COMPLETION**
       - If State is `Approved`:
-        - Print: `[aid-describe] Requirements for {work} are approved. Run /aid-define {work} to decompose into features.`
+        - Print: Requirements for {work} are approved. Run /aid-define {work} to decompose into features.
         - HALT
-
-Print the state-entry line and "you are here" map. Examples for each state:
-
-**FIRST-RUN:**
-```
-[State: FIRST-RUN] — Start a new interview from scratch; create STATE.md and REQUIREMENTS.md scaffold.
-aid-describe  ▸ you are here
-  [● FIRST-RUN ] → [ Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ /aid-define ]
-```
-
-**Q-AND-A:**
-```
-[State: Q-AND-A] — Resolve pending cross-phase questions before continuing.
-aid-describe  ▸ you are here
-  [✓ FIRST-RUN ] → [● Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ /aid-define ]
-```
-
-**CONTINUE:**
-```
-[State: CONTINUE] — Resume the conversational interview for incomplete sections.
-aid-describe  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● CONTINUE ] → [ COMPLETION ] → [ /aid-define ]
-```
-
-**COMPLETION:**
-```
-[State: COMPLETION] — All sections captured; run KB hydration and present requirements for approval.
-aid-describe  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [● COMPLETION ] → [ /aid-define ]
-```
-
-**DESCRIBE-SEED (greenfield full path — between CONTINUE and COMPLETION):**
-```
-[State: DESCRIBE-SEED] — Authoring forward-authored KB seed from elicited intent (greenfield mode).
-aid-describe  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [● DESCRIBE-SEED ] → [ COMPLETION ] → [ /aid-define ]
-  (greenfield seed authoring: 5-element seed + coherence check + greenfield-mode review gate)
-```
 
 ---
 
@@ -238,18 +209,13 @@ aid-describe  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | CHAIN → CONTINUE |
-| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED when the work is greenfield and its seed is not yet complete; CHAIN → COMPLETION when the work is brownfield, or its seed is already complete |
-| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |
-| COMPLETION | `references/state-completion.md` | `aid-interviewer` | CHAIN → CONTINUE when the user adds a consideration; HALT when the user approves, naming `/aid-define {work}` |
+| FIRST-RUN | `references/state-first-run.md` | inline | CHAIN → CONTINUE |
+| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → CONTINUE |
+| CONTINUE | `references/state-continue.md` | inline | CHAIN → DESCRIBE-SEED when the work is greenfield and its seed is not yet complete; CHAIN → COMPLETION when the work is brownfield, or its seed is already complete |
+| DESCRIBE-SEED | `references/state-describe-seed.md` | inline; dispatches `aid-reviewer` for step 5 | CHAIN → COMPLETION |
+| COMPLETION | `references/state-completion.md` | inline | CHAIN → CONTINUE when the user adds a consideration; HALT when the user approves, naming `/aid-define {work}` |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.
-- **WAIT** → say what the user must do outside the conversation, plainly, and stop.
-- **HALT** → print the closing summary and exit.
+Each state's `**Advance:**` word is applied as [`skill-steps.md`](../../aid/templates/skill-steps.md) defines it.
 
 ---
 
@@ -257,21 +223,12 @@ When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`]
 
 When a downstream phase (e.g., `/aid-specify`) needs clarification on requirements:
 
-1. The calling phase writes Q&A entries directly to the work's STATE.md
-   in the `## Cross-phase Q&A` section
-2. Next `/aid-describe {work}` run detects Pending Q&A → enters State 2 (Q-AND-A)
-3. Questions are presented to the user one at a time
-4. Answers are recorded in STATE.md `## Cross-phase Q&A` and REQUIREMENTS.md
+1. The calling phase records its question with `writeback-state.sh --ask` in the work's `qa`
+   (`Pending`, with `--asked-by` set to its own skill)
+2. Next `/aid-describe {work}` run detects open Q&A (Pending or Skipped) → enters State 2 (Q-AND-A)
+3. Questions are presented to the user one at a time, through the question protocol
+4. Each answer is recorded with `writeback-state.sh --answer` in the work's `qa`, and in REQUIREMENTS.md
 5. The affected `§ 11` feature section is updated if the answer bears on one feature
 
-**Q&A entry format for downstream phases to write:**
-
-```markdown
-### Q{N}
-
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** {High|Medium|Low|Required}
-- **Status:** Pending
-- **Context:** {why this matters — what the downstream phase found; cite the calling phase, e.g., "Surfaced by /aid-specify work-001/feature-001"}
-- **Suggested:** {answer if inferrable, or "—"}
-```
+The entry is the question record of `.aid/runtime/templates/question-protocol.md`, written by the
+writer; the calling phase does not write it by hand.

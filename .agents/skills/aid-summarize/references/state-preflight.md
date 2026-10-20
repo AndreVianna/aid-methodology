@@ -18,6 +18,4 @@ Run `.aid/runtime/scripts/summarize/summarize-preflight.sh` before any state. It
 If any check (1-5) fails, the script exits non-zero with a clear actionable message. Do NOT
 proceed; do NOT create any state files. Step 6 is best-effort only and never blocks.
 
-Print: `[State: PREFLIGHT] complete.`
-
 **Advance:** **CHAIN** → [State: STALE-CHECK] (continue inline).

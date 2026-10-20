@@ -10,15 +10,7 @@ file is entered, the guard has already passed (all tasks are `Done`).
 
 ## State Entry Trigger
 
-Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures):
-
-```
-[State: DELIVERY-GATE] — Per-delivery quality gate running.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● DELIVERY-GATE ]
-```
-
-Print this state-entry banner before proceeding to Step 0.
+Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures).
 
 Advance delivery lifecycle to Gated (silent state-write -- no output; a failed write stops the run):
 ```bash
@@ -77,7 +69,6 @@ from SPEC Data Model "Parallel-write coordination").**
 3. **Print AGGREGATE summary:**
 
    ```
-   [DELIVERY-GATE Step 0: AGGREGATE]
    Delivery: delivery-NNN
    Deferred [HIGH] issues found: {count from delivery-NNN-issues.md}
    ```
@@ -141,7 +132,6 @@ Read thresholds from `.aid/knowledge/STATE.md` (fields set at `/aid-config`):
 **Print SCORE result:**
 
 ```
-[DELIVERY-GATE Step 1: SCORE]
 Complexity score: {N}  (tasks={T}, depth={D}, risk={R}, consults={C})
 Gate reviewer tier: {Small | Medium | Large}
 ```
@@ -156,7 +146,7 @@ Dispatch the `aid-reviewer` agent at the **score-selected tier** (Small / Medium
 Large). Clean context — reviewer must NOT inherit any executor working notes.
 
 **Before dispatching, print:**
-`[DELIVERY-GATE Step 2] Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
+`Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
 
 Dispatch metadata is narrated via the closing `✓ ... done` bracket (never optional); a delivery-level gate reviewer dispatch has no
 `task-NNN` of its own, so unlike a per-task dispatch there is no `dispatch_log` entry
@@ -259,7 +249,6 @@ partial for now — the persisted `gate_grade` write is completed by the RECORD 
 on PASS):
 
 ```
-[DELIVERY-GATE Step 3: GRADE]
 Gate grade: {grade}   Minimum: {min}   Cycle: {N}
 ```
 
@@ -288,7 +277,7 @@ Reached only when grade < minimum and CODE issues remain.
 **Present all issues to the user:**
 
 ```
-[DELIVERY-GATE — Cycle {N} — Grade: {grade} — Minimum: {min}]
+Delivery gate, cycle {N}: grade {grade}, minimum {min}
 
 Gate reviewer issue list:
 
@@ -304,16 +293,13 @@ Deferred [HIGH]s from quick checks (from delivery-NNN-issues.md):
 Gate grade below minimum. Next steps:
 - CODE issues (#1, #3): I'll fix these once you approve.
 - TASK issues (#2): Task spec update needed. {explain}
-- SPEC issues: Would require re-running /aid-specify.
-- KB issues: Would require re-running /aid-discover.
+- SPEC issues: The specification needs an update.
+- KB issues: The Knowledge Base needs an update.
 ```
 
 **Non-CODE issues (TASK, SPEC, KB):**
-- **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Append to the `qa` sequence in `deliveries/delivery-NNN/STATE.yml` (SD-5:
-  the delivery gate writes to its OWN delivery STATE.yml, not the shared work STATE.yml,
-  to preserve the disjoint-write property -- two delivery branches cannot collide) →
-  suggest `/aid-specify`
+- **TASK** → Present to user with suggestion. The user updates the task.
+- **SPEC** → Record it as a question in the work's `qa` with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Specification --impact <High|Medium|Low> --context '<the SPEC issue>' --suggested '<the recommendation>' --asked-by aid-execute`, then ask it through the question protocol and record the reply with `writeback-state.sh --answer --id Q<n> --state Answered --value '<the reply>'` → suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 
@@ -341,9 +327,10 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-Ask the user, through the question protocol, to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB
-issues), and to update the TASK issues, before re-running `/aid-execute`. The question is blocking and stays
-open. **Next, inside this step:** the run ends here with the question open (the step's ending, below).
+This is a wait, not a question: the user must fix the upstream documents outside the conversation. Say
+plainly what must change and where (the SPEC issues in the specification, the KB issues in the Knowledge Base, the
+TASK issues in the tasks), and stop. The step stays saved, and its detail says what is waited for. **Next, inside
+this step:** the run ends here (the step's ending, below).
 
 ---
 
@@ -372,13 +359,12 @@ After the executor reports done:
 cycles** (same grade or worse), **STOP.**
 
 ```
-[DELIVERY-GATE] Circuit breaker triggered — grade has not improved after
+Circuit breaker triggered — grade has not improved after
 3 cycles ({grade-history}). Something systemic is wrong.
 
 Please inspect the delivery artifacts and the gate reviewer's issue list.
 Options:
-1. Resolve the root cause manually, then re-invoke /aid-execute to re-run
-   the gate from AGGREGATE.
+1. Resolve the root cause manually; the gate then runs again from AGGREGATE.
 2. Raise an IMPEDIMENT (architecture-conflict) if the issue is structural.
 ```
 
@@ -480,7 +466,7 @@ rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ### 6f: Emit DELIVERY-DONE
 
 ```
-[DELIVERY-GATE] Gate PASS — delivery-NNN is Done.
+Gate PASS — delivery-NNN is Done.
 Grade: {grade}  Cycles: {N}  Tier: {tier}
 
 ✅ Delivery complete. Branch aid/{work}-delivery-NNN is Done.

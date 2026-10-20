@@ -31,7 +31,8 @@ other purpose.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE -> GUARD -> REALIZE -> REGISTER -> VERIFY -> PRESENT -> DONE**.
-Print the `[State: NAME] -- {purpose}` entry line on each state.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

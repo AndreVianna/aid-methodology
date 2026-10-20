@@ -203,7 +203,9 @@ line for each problem and exits 9 when there is one. The problems are:
 The agent does not repair on its own. It tells the user what it found, and proposes the whole
 repaired record (the type, the skill and the step) as **one** confirmation question under the
 question protocol, with its recommendation. It is the only question of that turn; any other question
-waits until it is answered. Nothing is written before the user's yes, the work record included, and the
+waits until it is answered. Nothing is written before the user's yes, the work record included, so this
+question is not recorded with `--ask`: like the intake questions, it is asked while the record cannot be
+trusted (`question-protocol.md` § The intake-question exception lists it), and its answer is acted on at once. The
 question names no step: it says in plain words what is missing and what will be done again:
 
 - the skill and step come from the skill's own detection (for a work started before the record

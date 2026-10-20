@@ -21,9 +21,10 @@ criteria, where `/aid-ask` answers a free-form question.
   `/aid-fix`'s job.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> REVIEW -> VERIFY (loop) ->
-PRESENT-FINDINGS [human] -> PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
-(`[State: NAME] -- {one-line purpose}`), the convention every AID skill uses.
+PRESENT-FINDINGS [human] -> PUBLISH (on approval) -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

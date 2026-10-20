@@ -237,15 +237,6 @@ Write the content to the doc on disk before returning to STOP-CHECK.
 
 ## Step 1 -- Detect and Resume
 
-Print:
-```
-[State: DESCRIBE-SEED] -- Authoring forward-authored KB seed (greenfield mode).
-aid-describe > you are here
-  [* FIRST-RUN ] -> [* Q-AND-A ] -> [* CONTINUE ] -> [@ DESCRIBE-SEED ] -> [ COMPLETION ] -> [ /aid-define ]
-  (greenfield only: engine-driven 5-element seed + coherence check + greenfield-mode review gate)
-```
-(* = complete, @ = current state)
-
 Read STATE.md `## Seed Authoring`. If absent, write the initialization scaffold (see STATE.md
 Tracking above).
 
@@ -304,11 +295,11 @@ Run the engine's five-step selector every turn:
    - Unknown behavior / flow in a process-heavy domain: Move 4 -> `architecture.md`
    - Missing "why" behind a design choice: Move 7 (bounded why-probe) -> `decisions.md`
    - Claim without concrete example: Move 8 (concrete-example probe) -> any element
-   - Cannot settle now: Move 9 (capture-and-defer) -> record to STATE.md Cross-phase Q&A
+   - Cannot settle now: Move 9 (capture-and-defer) -> record it with `--ask` in the work's `qa`
 
 4. **CALIBRATION-SHAPING** -- delegate to `references/calibration.md` depth-shaping table.
 
-5. **ENVELOPE + EMIT** -- wrap in the NFR-7 envelope (`references/advisor-stance.md`); run
+5. **ENVELOPE + EMIT** -- ask it in the question form (`references/advisor-stance.md`); run
    pre-emit self-check; emit. One question per turn, never batch (engine invariant 1).
 
 After each user answer:
@@ -332,10 +323,18 @@ Here is what I have gathered for each seed element:
 - Technology stack (technology-stack.md): [summary of named language / runtime / framework]
 - Decisions (decisions.md): [summary of decisions, or "none recorded"]
 
-Does this accurately reflect your intent? Any corrections before I check coherence?
+```
 
-[1] Looks right, proceed
-[2] Correct: ___
+Then ask one question, in the protocol's form (record it first with `--ask --category Requirements --impact Medium`, and the answer with `--answer`):
+
+```text
+Seed -- question 1 of 1 -- importance: medium
+Does this accurately reflect your intent, before I check coherence?
+Why I ask: the coherence check runs against exactly what is shown above.
+My recommendation: proceed as it stands -- it matches what we settled.
+  1. Looks right, proceed (recommended)
+  2. Correct something (tell me what)
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Record any corrections before moving to step 3.
@@ -363,12 +362,11 @@ Propose an extension ONLY when the domain warrants it. Use the same propose->con
 I notice this project is [process/workflow-heavy | data/ML-heavy | integration-heavy].
 Would you like me to author [process-architecture.md | schemas.md | integration-map.md]
 as part of the seed?
-
-Suggested: [Yes, include it -- it is load-bearing for downstream phases on this project]
-Why: [because <domain signal> means <element> will be needed by aid-specify to act without KB-gap loopbacks]
-
-[1] Yes, add it to the seed
-[2] No, defer it to when code exists
+Why I ask: [because <domain signal> means <element> will be needed by aid-specify to act without KB-gap loopbacks]
+My recommendation: [Yes, include it -- it is load-bearing for downstream phases on this project]
+  1. Yes, add it to the seed (recommended)
+  2. No, defer it to when code exists
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 Domain signals and their extensions:
@@ -418,7 +416,7 @@ surfacing any conflict (coherence-check.md Invariant 2 -- do not interleave).
 
 **If any conflict is found (Layer A mismatch or Layer B orphan):**
 
-1. Surface each conflict one at a time using the NFR-7 conflict-surfacing template in
+1. Surface each conflict one at a time using the question form in
    `references/coherence-check.md` "Conflict Surfacing and Human Gate". Always include
    a concrete `Suggested:` resolution and a grounded `Why:` rationale -- never a bare
    problem statement.

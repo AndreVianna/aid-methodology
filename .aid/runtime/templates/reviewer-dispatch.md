@@ -337,6 +337,13 @@ The expected output. Always:
 - **Grade** computed per `.aid/runtime/templates/grading-rubric.md`
 - **OOS rows** (Status: OOS, with routing destination) as defined in OOS POLICY above
 
+### What to report
+
+Report only issues that affect the work: a step that cannot be built, a check that would fail on the
+real files, a contradiction with another part of the document, or a decision the user has to make.
+Exact counts, word-for-word comparisons, and wording or cosmetic points are not findings; leave them out
+of the ledger.
+
 ## Brief generation
 
 Each skill that dispatches a reviewer ships a brief template at

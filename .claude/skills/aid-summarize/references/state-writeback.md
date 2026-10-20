@@ -27,6 +27,4 @@ On failure (lock timeout, write error): mark `**Writeback Status:** failed` in
 
 On success: mark `**Writeback Status:** ok` in `## Knowledge Summary Status`, transition to DONE.
 
-Print: `[State: WRITEBACK] complete.`
-
 **Advance:** **CHAIN** → [State: DONE] (continue inline).
