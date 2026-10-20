@@ -24,7 +24,7 @@
 #       fire-once condition that makes CONTINUE emit the D1 opener; a second fixture ("one
 #       section Partial") proves the same condition correctly does NOT re-fire it.
 #
-# No agent is invoked; nothing here dispatches aid-interviewer/aid-reviewer.
+# No agent is invoked; nothing here dispatches aid-reviewer.
 #
 # Usage:
 #   bash tests/canonical/test-describe-full-only.sh [--verbose]

@@ -28,8 +28,7 @@ Suggested: {inferred content from codebase analysis}
 Why: {rationale for the inference -- grounded in the KB doc cited above}
 
 [1] Accept this
-[2] Not applicable
-[3] Your answer: ___
+[2] Your answer: ___
 ```
 
 Only update REQUIREMENTS.md after the user responds.
@@ -71,11 +70,10 @@ The skill handles both automatically:
 ## Question Design Principles
 
 Question design is governed by `references/move-playbook.md` (the ten moves and their
-gap-type firing table) and `references/advisor-stance.md` (the NFR-7 question-envelope
-template, the pre-emit self-check, and the five user-move handlers: "I don't know",
+gap-type firing table) and `references/advisor-stance.md` (the question form,
+the pre-emit self-check, and the five user-move handlers: "I don't know",
 "what do you recommend?", "explain the pros and cons", "explain it like I'm a junior",
-and mistaken assertion). Every question the engine emits is wrapped in the NFR-7
-envelope -- no bare, suggestion-less questions.
+and mistaken assertion). Every question the engine emits is asked in the question form -- no bare, suggestion-less questions.
 
 Conversational principles that supplement the move and stance docs:
 

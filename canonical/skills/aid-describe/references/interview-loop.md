@@ -23,7 +23,7 @@ next-move selector every turn after the D1 opener:
    (`references/move-playbook.md` gap-type firing table).
 4. **CALIBRATION SHAPING** -- Shape the chosen move's depth by calibration state
    (`references/calibration.md` depth-shaping table).
-5. **ENVELOPE + EMIT** -- Wrap in the NFR-7 question envelope and run the pre-emit
+5. **ENVELOPE + EMIT** -- Ask in the question form and run the pre-emit
    self-check (`references/advisor-stance.md`); emit one question; wait for the
    answer; record to the record sink; re-read calibration; return to Step 1.
 

@@ -237,15 +237,6 @@ Write the content to the doc on disk before returning to STOP-CHECK.
 
 ## Step 1 -- Detect and Resume
 
-Print:
-```
-[State: DESCRIBE-SEED] -- Authoring forward-authored KB seed (greenfield mode).
-aid-describe > you are here
-  [* FIRST-RUN ] -> [* Q-AND-A ] -> [* CONTINUE ] -> [@ DESCRIBE-SEED ] -> [ COMPLETION ] -> [ /aid-define ]
-  (greenfield only: engine-driven 5-element seed + coherence check + greenfield-mode review gate)
-```
-(* = complete, @ = current state)
-
 Read STATE.md `## Seed Authoring`. If absent, write the initialization scaffold (see STATE.md
 Tracking above).
 
@@ -304,11 +295,11 @@ Run the engine's five-step selector every turn:
    - Unknown behavior / flow in a process-heavy domain: Move 4 -> `architecture.md`
    - Missing "why" behind a design choice: Move 7 (bounded why-probe) -> `decisions.md`
    - Claim without concrete example: Move 8 (concrete-example probe) -> any element
-   - Cannot settle now: Move 9 (capture-and-defer) -> record to STATE.md Cross-phase Q&A
+   - Cannot settle now: Move 9 (capture-and-defer) -> record it with `--ask` in the work's `qa`
 
 4. **CALIBRATION-SHAPING** -- delegate to `references/calibration.md` depth-shaping table.
 
-5. **ENVELOPE + EMIT** -- wrap in the NFR-7 envelope (`references/advisor-stance.md`); run
+5. **ENVELOPE + EMIT** -- ask it in the question form (`references/advisor-stance.md`); run
    pre-emit self-check; emit. One question per turn, never batch (engine invariant 1).
 
 After each user answer:
@@ -418,7 +409,7 @@ surfacing any conflict (coherence-check.md Invariant 2 -- do not interleave).
 
 **If any conflict is found (Layer A mismatch or Layer B orphan):**
 
-1. Surface each conflict one at a time using the NFR-7 conflict-surfacing template in
+1. Surface each conflict one at a time using the question form in
    `references/coherence-check.md` "Conflict Surfacing and Human Gate". Always include
    a concrete `Suggested:` resolution and a grounded `Why:` rationale -- never a bare
    problem statement.

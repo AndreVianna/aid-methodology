@@ -14,8 +14,7 @@ elicitation / domain-discovery families.
 **Cross-references.**
 - `.agents/skills/aid-describe/references/elicitation-engine.md` -- the engine driver
   that runs the five-step next-move selector; the firing table below is its Step 3 input.
-- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
-  question-envelope template and expert-advisor behaviors; straw-man-first and
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the question form and expert-advisor behaviors; straw-man-first and
   mediate-then-defer & scribe (the delivery envelope) are fully specified there.
 
 ---
@@ -33,8 +32,8 @@ elicitation / domain-discovery families.
 
 Moves 1 and 10 are **not** standalone gap responses. They are the **delivery envelope**
 that every other move is emitted through: Move 1 opens the question; Move 10 closes the
-decision and writes it to the record. Every turn uses both. The NFR-7 question-envelope
-template (the `Suggested:` / `Why:` / `[1] Accept` block) is specified in
+decision and writes it to the record. Every turn uses both. The question form
+(the `Suggested:` / `Why:` / `[1] Accept` block) is specified in
 `.agents/skills/aid-describe/references/advisor-stance.md`.
 
 ---
@@ -60,8 +59,7 @@ Suggested: [a concrete proposed answer -- never blank, never "-"]
 Why: [the rationale grounded in the user's prior words, the KB, or expert judgment]
 
 [1] Accept this
-[2] Not applicable
-[3] Your answer: ___
+[2] Your answer: ___
 ```
 
 The straw-man guarantees a suggestion always exists, even for genuinely open creative
@@ -88,7 +86,7 @@ where disagreement is present. Closes the envelope.
 
 [User decides.]
 
-Got it: recording "[decision]" in [REQUIREMENTS.md section / STATE.md Cross-phase Q&A].
+Got it: recording "[decision]" in [REQUIREMENTS.md section / the work's qa].
 ```
 
 If the user accepts the straw-man suggestion, the analyst records the accepted answer
@@ -286,7 +284,7 @@ Why: if [term] cannot be illustrated concretely, it is probably under-defined an
 **What it is.** When a point cannot be settled in the current conversation -- it needs
 more research, a third party, or is genuinely unresolvable now -- record it as an open
 question and move on. This is the "red card" from Example Mapping: flag it, do not block.
-The sink is `STATE.md ## Cross-phase Q&A` (the open-question register the engine driver
+The sink is the work's `qa`, written with `--ask` (the open-question register the engine driver
 maintains).
 
 **When it fires.** Gap type: **a point that cannot be settled now**.
@@ -297,7 +295,7 @@ maintains).
 This one we cannot resolve right now -- [brief reason: needs more research / needs
 decision from [party] / genuinely unclear at this stage].
 
-I will record it in STATE.md ## Cross-phase Q&A as an open question with its downstream
+I will record it with `--ask` in the work's `qa` as an open question with its downstream
 risk noted, and we will revisit it.
 
 [Records: open question text, who needs to resolve it, downstream impact on the work.]
@@ -326,7 +324,7 @@ selected gap's type determines the move drawn from the playbook. The delivery en
 | Missing fit criterion or testability of a requirement | Move 6: Rationale + testability probe | Volere (5) |
 | Missing "why" behind a stated intent | Move 7: Bounded why-probe -- climb 2-3 whys, propose the inferred motive back, stop at the terminal value; NEVER the rote "five whys" | Five-Whys / Laddering (7) |
 | A claim or term asserted with no concrete example | Move 8: Concrete-example probe | Example Mapping (8) |
-| A point that cannot be settled now | Move 9: Capture-and-defer (red-card) -- record to STATE.md ## Cross-phase Q&A and move on | Example Mapping (8) |
+| A point that cannot be settled now | Move 9: Capture-and-defer (red-card) -- record it with `--ask` in the work's `qa` and move on | Example Mapping (8) |
 | Disagreement surfaced, or any turn at all | Delivery envelope: Move 1 (straw-man-first) + Move 10 (mediate-then-defer & scribe) -- these always wrap the chosen gap-response move; see advisor-stance.md | JAD (6) |
 
 ---
