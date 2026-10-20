@@ -20,8 +20,10 @@ rather than an open question.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> ANALYZE -> VERIFY (loop) -> PRESENT [user
-resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+resolves] -> HANDOFF? -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

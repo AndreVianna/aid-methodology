@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 39,
-        "endLine": 41,
+        "startLine": 41,
+        "endLine": 43,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 39,
-        "endLine": 55,
+        "startLine": 41,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists).\n\n1. **Check the target and the change.** Note whether the argument is empty. Do not ask here.\n2. **Locate + read the existing document.** Note whether it resolves; if it does not, INTAKE-ASK\n   asks which document is meant (or suggests `/aid-create-document` for a new one).\n3. **Pick the path** (fast if the document + change are clear; guided otherwise) and\n   **classify complexity** -> `aid-tech-writer` model/effort (sonnet/medium default; opus/high\n   for a large rewrite). Verifier tier >= producer.\n4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n5. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as\n   prior context before drafting; it is an input, never a substitute, and is not modified\n   by this run.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
@@ -39,15 +39,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 59,
-        "endLine": 61,
+        "startLine": 61,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:"
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 59,
-        "endLine": 71,
+        "startLine": 61,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"Which document should I update, and what\n   change?\"). The answer is the target and the change; the path and complexity are then set from it.\n2. **Document does not resolve** -> ask which document is meant, or suggest\n   `/aid-create-document` if the user meant a new one. In that case nothing is allocated, and the run\n   ends there naming that skill.\n3. **Guided path** -> scope the change.\n4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\n**Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2)."
       }
@@ -61,15 +61,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 75,
-        "endLine": 78,
+        "startLine": 77,
+        "endLine": 80,
         "sourceKind": "skill",
         "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 75,
-        "endLine": 93,
+        "startLine": 77,
+        "endLine": 95,
         "sourceKind": "skill",
         "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name\n  (`aid-update-document`), its saved step (`AUTHOR`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), and a kebab-case slug from the document.\n  The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the target document, the change, the path and the\ncomplexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN → [State: AUTHOR]."
       }
@@ -83,15 +83,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 97,
-        "endLine": 101,
+        "startLine": 99,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "## State: AUTHOR\n\nDispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised** document\n(a draft in the work folder, not yet written back), grounded in and accurate to the KB +\nproject source, preserving the document's existing genre structure."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 97,
-        "endLine": 103,
+        "startLine": 99,
+        "endLine": 105,
         "sourceKind": "skill",
         "excerpt": "## State: AUTHOR\n\nDispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised** document\n(a draft in the work folder, not yet written back), grounded in and accurate to the KB +\nproject source, preserving the document's existing genre structure.\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -108,15 +108,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 107,
-        "endLine": 111,
+        "startLine": 109,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\nSame as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**\nadversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`\n-> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 107,
-        "endLine": 113,
+        "startLine": 109,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\nSame as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**\nadversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`\n-> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).\n\n**Advance:** CHAIN → [State: PRESENT] when the check is clean; CHAIN → [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -130,15 +130,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 117,
-        "endLine": 120,
+        "startLine": 119,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against\nthe current file** + the target path. Await approval. Never writes `.aid/knowledge/`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 117,
-        "endLine": 122,
+        "startLine": 119,
+        "endLine": 124,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against\nthe current file** + the target path. Await approval. Never writes `.aid/knowledge/`.\n\n**Advance:** ASK → [State: WRITE]."
       }
@@ -152,15 +152,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 126,
-        "endLine": 130,
+        "startLine": 128,
+        "endLine": 132,
         "sourceKind": "skill",
         "excerpt": "## State: WRITE  (only on approval)\n\nIf the user declined, write nothing: the draft stays in the work folder, and the step goes on to\nDONE. Otherwise write the revision back to the existing document (the diff was already reviewed at\nPRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 126,
-        "endLine": 132,
+        "startLine": 128,
+        "endLine": 134,
         "sourceKind": "skill",
         "excerpt": "## State: WRITE  (only on approval)\n\nIf the user declined, write nothing: the draft stays in the work folder, and the step goes on to\nDONE. Otherwise write the revision back to the existing document (the diff was already reviewed at\nPRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).\n\n**Advance:** CHAIN → [State: DONE]."
       }
@@ -177,15 +177,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 136,
-        "endLine": 138,
+        "startLine": 138,
+        "endLine": 140,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step."
       },
       "detail": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 136,
-        "endLine": 140,
+        "startLine": 138,
+        "endLine": 142,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step.\n\n**Advance:** HALT."
       }
@@ -200,8 +200,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 55,
-        "endLine": 55,
+        "startLine": 57,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
@@ -214,8 +214,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 55,
-        "endLine": 55,
+        "startLine": 57,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the document does not resolve, the path is guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
@@ -228,8 +228,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 71,
-        "endLine": 71,
+        "startLine": 73,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: ALLOCATE]; HALT when the user meant a new document (item 2)."
       }
@@ -242,8 +242,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 93,
-        "endLine": 93,
+        "startLine": 95,
+        "endLine": 95,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: AUTHOR]."
       }
@@ -256,8 +256,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
+        "startLine": 105,
+        "endLine": 105,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -270,8 +270,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the check is clean; CHAIN → [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -284,8 +284,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the check is clean; CHAIN → [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
       }
@@ -298,8 +298,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 122,
-        "endLine": 122,
+        "startLine": 124,
+        "endLine": 124,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: WRITE]."
       }
@@ -312,8 +312,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-document/SKILL.md",
-        "startLine": 132,
-        "endLine": 132,
+        "startLine": 134,
+        "endLine": 134,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE]."
       }

@@ -30,3 +30,5 @@ name in any printed usage example (`/aid-create-diagram` instead of
 The work is recorded under `aid-create-document`, whose record alone decides a resume. So that a
 resumed work keeps the bound format (`diagram`), pass them in the `--detail` of every step the run
 enters (`format: diagram`), as `aid-create-document` ALLOCATE says.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

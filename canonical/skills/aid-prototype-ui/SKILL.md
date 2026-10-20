@@ -28,3 +28,5 @@ accessibility notes. Everything else (throwaway + isolated, `aid-architect` prod
 verify, resolves-nothing PRESENT, handoff to `/aid-create-ui`) is `aid-prototype`'s.
 Substitute only the invocation name (`/aid-prototype-ui`) in any printed usage example. For
 a KEPT UI design meant to be built, use `/aid-design`.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

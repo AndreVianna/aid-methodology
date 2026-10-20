@@ -29,3 +29,5 @@ Deeper genre structures: `.aid/runtime/templates/shortcut-scaffolding/document.m
 The work is recorded under `aid-create-document`, whose record alone decides a resume. So that a
 resumed work keeps the bound genre and format, pass them in the `--detail` of every step the run
 enters (`genre: ADR; format: markdown`), as `aid-create-document` ALLOCATE says.
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.

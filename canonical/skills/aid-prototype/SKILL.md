@@ -17,8 +17,10 @@ its output is **not** production. For a design you intend to **keep and build**,
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> BUILD -> VERIFY (light) -> PRESENT [user
-decides] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+decides] -> HANDOFF? -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 ---
 

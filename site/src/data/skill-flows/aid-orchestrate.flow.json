@@ -17,8 +17,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 27,
-        "endLine": 27,
+        "startLine": 29,
+        "endLine": 29,
         "sourceKind": "skill",
         "excerpt": "1. **Project question** (`PROJECT-QUESTION`). `references/check-intent.md` step 0 spots a question about the"
       },
@@ -33,8 +33,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 31,
-        "endLine": 31,
+        "startLine": 33,
+        "endLine": 33,
         "sourceKind": "skill",
         "excerpt": "2. **Check the reading** (`CHECK-READING`). `references/check-intent.md` steps 1 to 5 compare the request with"
       },
@@ -49,8 +49,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 34,
-        "endLine": 34,
+        "startLine": 36,
+        "endLine": 36,
         "sourceKind": "skill",
         "excerpt": "3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the"
       },
@@ -65,8 +65,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 37,
-        "endLine": 37,
+        "startLine": 39,
+        "endLine": 39,
         "sourceKind": "skill",
         "excerpt": "4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, in the same"
       },
@@ -84,8 +84,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 40,
-        "endLine": 40,
+        "startLine": 42,
+        "endLine": 42,
         "sourceKind": "skill",
         "excerpt": "5. **Read the answer** (`ACTION-HANDOVER`). The user's answer to SHOW-READING decides. A reading that matches an"
       },
@@ -103,8 +103,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 46,
-        "endLine": 46,
+        "startLine": 48,
+        "endLine": 48,
         "sourceKind": "skill",
         "excerpt": "5a. **Start an action skill** (`START-ACTION`). Start that skill in this turn, with the reading as an `intent:`"
       },
@@ -119,8 +119,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 50,
-        "endLine": 50,
+        "startLine": 52,
+        "endLine": 52,
         "sourceKind": "skill",
         "excerpt": "6. **Find or create the work** (`FIND-OR-CREATE`). `references/start-or-resume.md` section 3. A matching work is"
       },
@@ -135,8 +135,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 54,
-        "endLine": 54,
+        "startLine": 56,
+        "endLine": 56,
         "sourceKind": "skill",
         "excerpt": "6a. **Ask before going on** (`ASK-FIRST`). Ask one question when several works plausibly match"
       },
@@ -151,8 +151,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 61,
-        "endLine": 61,
+        "startLine": 63,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "7. **Record the intent** (`RECORD-INTENT`). `references/start-or-resume.md` section 6. The record's keys are set"
       },
@@ -170,8 +170,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 64,
-        "endLine": 64,
+        "startLine": 66,
+        "endLine": 66,
         "sourceKind": "skill",
         "excerpt": "8. **Cancel a named work** (`CANCEL`). `references/start-or-resume.md` section 5: one confirmation question,"
       },
@@ -189,8 +189,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 67,
-        "endLine": 67,
+        "startLine": 69,
+        "endLine": 69,
         "sourceKind": "skill",
         "excerpt": "9. **Close a work** (`CLOSE`). `references/size-and-route.md` section 3: when every task is `Done` (or, for an"
       },
@@ -208,8 +208,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 70,
-        "endLine": 70,
+        "startLine": 72,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "10. **Hand over** (`HAND-OVER`). The user approved the reading at SHOW-READING, so nothing more is asked. Start the"
       },
@@ -227,8 +227,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 75,
-        "endLine": 75,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "11. **During the work** (`DURING-WORK`). Load `references/external-sources.md` when a source is pulled in, applied"
       },
@@ -244,8 +244,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 29,
-        "endLine": 30,
+        "startLine": 31,
+        "endLine": 32,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CHECK-READING when the request is not a\n   project question; **HALT** when it is a project question."
       }
@@ -258,8 +258,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 32,
-        "endLine": 33,
+        "startLine": 34,
+        "endLine": 35,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CANCEL when the request names a work to cancel;\n   **CHAIN** → CLOSE when it names a work to close; otherwise **CHAIN** → SIZE-READING."
       }
@@ -272,8 +272,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 32,
-        "endLine": 33,
+        "startLine": 34,
+        "endLine": 35,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CANCEL when the request names a work to cancel;\n   **CHAIN** → CLOSE when it names a work to close; otherwise **CHAIN** → SIZE-READING."
       }
@@ -286,8 +286,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 32,
-        "endLine": 33,
+        "startLine": 34,
+        "endLine": 35,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CANCEL when the request names a work to cancel;\n   **CHAIN** → CLOSE when it names a work to close; otherwise **CHAIN** → SIZE-READING."
       }
@@ -300,8 +300,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 36,
-        "endLine": 36,
+        "startLine": 38,
+        "endLine": 38,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → SHOW-READING."
       }
@@ -314,8 +314,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 39,
-        "endLine": 39,
+        "startLine": 41,
+        "endLine": 41,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **ASK** → ACTION-HANDOVER."
       }
@@ -328,8 +328,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 43,
-        "endLine": 45,
+        "startLine": 45,
+        "endLine": 47,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → START-ACTION when the approved reading matches an\n   action skill; **CHAIN** → FIND-OR-CREATE when it matches none; **CHAIN** → CHECK-READING when the user corrects it;\n   **HALT** when the user declines."
       }
@@ -342,8 +342,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 43,
-        "endLine": 45,
+        "startLine": 45,
+        "endLine": 47,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → START-ACTION when the approved reading matches an\n   action skill; **CHAIN** → FIND-OR-CREATE when it matches none; **CHAIN** → CHECK-READING when the user corrects it;\n   **HALT** when the user declines."
       }
@@ -356,8 +356,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 43,
-        "endLine": 45,
+        "startLine": 45,
+        "endLine": 47,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → START-ACTION when the approved reading matches an\n   action skill; **CHAIN** → FIND-OR-CREATE when it matches none; **CHAIN** → CHECK-READING when the user corrects it;\n   **HALT** when the user declines."
       }
@@ -370,8 +370,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 52,
-        "endLine": 53,
+        "startLine": 54,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → ASK-FIRST when several works plausibly match;\n   otherwise **CHAIN** → RECORD-INTENT."
       }
@@ -384,8 +384,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 52,
-        "endLine": 53,
+        "startLine": 54,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → ASK-FIRST when several works plausibly match;\n   otherwise **CHAIN** → RECORD-INTENT."
       }
@@ -398,8 +398,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 60,
-        "endLine": 60,
+        "startLine": 62,
+        "endLine": 62,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → RECORD-INTENT."
       }
@@ -412,8 +412,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 63,
-        "endLine": 63,
+        "startLine": 65,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → HAND-OVER."
       }
@@ -426,8 +426,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 77,
-        "endLine": 78,
+        "startLine": 79,
+        "endLine": 80,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** → CHECK-READING when a new fact arrives;\n    **HALT** when none does."
       }
