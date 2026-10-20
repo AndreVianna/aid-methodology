@@ -1971,3 +1971,14 @@ qa:
     suggested: '1: writer only -- remove --by from the writer and from aid-describe'
     answer: '1 (maintainer).'
     applied_to: 'the delivery-003 gate fix round'
+  - id: Q171
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: --
+    step: --
+    context: 'Delivery-003 gate fix round design (analysis/delivery-003-gate-fix-design.md): A pre-work questions in .aid/design via --ask --design and --create --seed; B --by removed; C root causes 1 and 2; D smaller fixes; Sonnet fixer per area, capped review, resync, sample re-run.'
+    suggested: '1: approve as written'
+    answer: --
+    answered_by: --
+    applied_to: --
