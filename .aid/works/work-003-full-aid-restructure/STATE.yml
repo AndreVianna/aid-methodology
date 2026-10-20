@@ -1935,3 +1935,11 @@ qa:
     suggested: '1: add a short Asking the user section to rules.md with the form block and the core rules'
     answer: '1 (maintainer).'
     applied_to: 'canonical/aid/rules.md, in the delivery-003 review fix round'
+  - id: Q168
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'aid-orchestrate SKILL.md is 96 lines against the 80-line cap of REQUIREMENTS.md (94 before delivery-003) and references/start-or-resume.md 128 against 120; no suite checks the caps and no delivery-003 gate criterion names them.'
+    suggested: '1: file it in the backlog and trim aid-orchestrate in a later delivery that changes it'
+    answer: '1 (maintainer).'
+    applied_to: '.aid/knowledge/backlog.md W7-34'
