@@ -6,10 +6,10 @@ This file is the output of task-058 (RESEARCH) of delivery-003. It re-runs searc
 
 - **Base commit:** `7fe3aebc140e85a06056ad91f15432bba2367014` (the `task-058: In Progress` commit). The worktree was clean at the base (`git status --short` empty), so every search below, run from the worktree root with `git grep` and no tree argument, reads the base bytes.
 - **Excluded from every search:** `.aid/works/` (planning text: the task files, the proposal, the PLAN and REQUIREMENTS, and this file itself). Installed copies (`.claude/`, `.agents/`, `.aid/runtime/`, `.cursor/`, `profiles/`, `.aid/.aid-manifest.json`) are excluded from the row tables and counted in the Installed copies section; they are the resync's output, not an edit list. `recovery/` and `packages/` are excluded from the row tables and listed in the Delta.
-- **Owner classes.** (1) a task of delivery-003 (task-059 to task-081); (2) `installed copy (resync)`; (3) `history, left as is`, for `release-tracking.md`, `kb.html`, `coverage-accepted-removals.tsv` and `validate-diagram-content.mjs`; (4) `baseline, re-recorded at the gate`, for `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`; (5) `no change needed here (reason)`, used only for a hit in a file that no delivery-003 task names and that the spec leaves unchanged. Each class-5 file is listed in the Delta (D4) for the maintainer's ruling, because the task's owner classes do not name it.
+- **Owner classes.** (1) a task of delivery-003 (task-059 to task-081); (2) `installed copy (resync)`; (3) `history, left as is`, for `release-tracking.md`, `kb.html`, `coverage-accepted-removals.tsv` and `validate-diagram-content.mjs`; (4) `baseline, re-recorded at the gate`, for `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`; (5) `no change needed here (reason)`, used only for a hit in a file that no delivery-003 task names and that the spec leaves unchanged. Each class-5 file is listed in the Delta (D4) for the maintainer's ruling, because the task's owner classes do not name it. Class 5 names hits whose text needs no edit, so no task owns an edit for them.
 - **Generated doorways.** A `canonical/skills/aid-*/SKILL.md` whose first heading is `# Shortcut` is a generated doorway (34 of them). Its text comes from `shortcut-engine.md` (task-062) and changes through the builder, so its owner is `no change needed here (generated doorway ...)`, not a sweep task.
-- **Test step.** Every change in this task lies under `.aid/works/`. Per the work-folder-only rule, no suite runs and `select-suites.sh` is not run; no `run_generator.py` runs; there are no `.sh`, `.py` or `.mjs` changes to check. Scratch files are in `/tmp/claude-0/-home-user-aid-methodology/cd2e209b-dbef-5f81-874a-fdeb1e92d87f/scratchpad/t058/`.
-- **Reproducing a section.** Each Q section gives its command. Re-running it at the base reproduces the rows printed here; the row generator is `scratchpad/t058/gen.py` with its owner map `scratchpad/t058/own.py` (not part of the repository).
+- **Test step.** Every change in this task lies under `.aid/works/`. Per the work-folder-only rule, no suite runs and `select-suites.sh` is not run; no `run_generator.py` runs; there are no `.sh`, `.py` or `.mjs` changes to check. The generator and its helpers are in `.aid/works/work-003-full-aid-restructure/research/delivery-003-sites-tools/`.
+- **Reproducing a section.** Each Q section gives its command, run from the repository root at the base commit. Q8 is printed by `gen.py --q8` and Q9 by `ad13run.sh`; run with no argument, `gen.py` rewrites this file. The row generator is `.aid/works/work-003-full-aid-restructure/research/delivery-003-sites-tools/gen.py` with its owner map `own.py` beside it; `ad13run.sh` there is the AD13 counter.
 
 ## Contents
 
@@ -587,7 +587,7 @@ Hits: **50** lines in 23 files. The superseded proposal counted 18 files (D1).
 | 46 | `site/src/content/docs/skills/aid-describe.md:74` | `\| CONTINUE \| `references/state-continue.md` \| `aid-interviewer` \| CHAIN → DESCRIBE-SEED when the work is greenfield a...` | task-063 |
 | 47 | `site/src/content/docs/skills/aid-describe.md:82` | `\| DESCRIBE-SEED \| `references/state-describe-seed.md` \| `aid-interviewer` \| CHAIN → COMPLETION \|` | task-063 |
 | 48 | `site/src/content/docs/skills/aid-describe.md:90` | `\| COMPLETION \| `references/state-completion.md` \| `aid-interviewer` \| CHAIN → CONTINUE when the user adds a considera...` | task-063 |
-| 49 | `tests/canonical/test-describe-full-only.sh:27` | `# No agent is invoked; nothing here dispatches aid-interviewer/aid-reviewer.` | task-059 to task-069 (see Delta) |
+| 49 | `tests/canonical/test-describe-full-only.sh:27` | `# No agent is invoked; nothing here dispatches aid-interviewer/aid-reviewer.` | task-063 |
 | 50 | `tests/cost-baseline.tsv:4` | `agent	aid-interviewer/AGENT.md	2278` | baseline, re-recorded at the gate |
 
 ## Q3 question-record sites
@@ -645,7 +645,7 @@ git grep -n -i -E -e 'deliver[^ ]{0,30}(STATE\.yml|`qa`|\bqa\b)' -e '\bqa\b.{0,4
 | tests/canonical/fixtures/migrate/fixture/work-999-migration-test/STATE.md | 53 | no change needed here (test fixture of the old shape, read by the migration suites) |
 | tests/canonical/fixtures/migrate/fixture/work-999-migration-test/deliveries/delivery-001/STATE.md | 32 | no change needed here (test fixture of the old shape, read by the migration suites) |
 | tests/canonical/fixtures/migrate/fixture/work-999-migration-test/deliveries/delivery-002/STATE.md | 32 | no change needed here (test fixture of the old shape, read by the migration suites) |
-| tests/canonical/test-artifact-discipline.sh | 525 | task-078 (see Delta: also task-072, task-074) |
+| tests/canonical/test-artifact-discipline.sh | 525 | task-078 |
 | tests/canonical/test-disjoint-merge.sh | 26, 31, 41, 42, 289, 322, 376, 393, 423, 425, 429 | no change needed here (migration-era fixture of the delivery qa key; the edited files are not its subject) |
 | tests/canonical/test-migrate-hierarchy.sh | 7, 218, 229 | no change needed here (migration script suite; the spec keeps the migration) |
 | tests/canonical/test-work-state-template.sh | 41, 456, 465, 466 | no change needed here (asserts delivery-state-template.yml, which no task edits) |
@@ -882,7 +882,13 @@ Note on sample `002-13-mid-task-kb-update-returns`: its frontmatter names `aid-k
 
 ## Q8 Q106 suite map
 
-Command for each edit-list token: the suites under `tests/` (not fixtures), `site/scripts/__tests__/`, `site/src/lib/__tests__/` and the dashboard test folders that name the file or skill as a path (`canonical/skills/<name>/`, `<name>/SKILL.md`, `<name>/references/`), or, for file tokens, the file's name. Under `site/` a quoted skill name also counts (the site tests load skills by name). The matcher is in `scratchpad/t058/gen.py`; the command shape is:
+Command for each edit-list token: the suites under `tests/` (not fixtures), `site/scripts/__tests__/`, `site/src/lib/__tests__/` and the dashboard test folders that name the file or skill as a path (`canonical/skills/<name>/`, `<name>/SKILL.md`, `<name>/references/`), or, for file tokens, the file's name. Under `site/` a quoted skill name also counts (the site tests load skills by name). Command (prints this section and writes nothing; run from the repository root at the base commit):
+
+```bash
+python3 .aid/works/work-003-full-aid-restructure/research/delivery-003-sites-tools/gen.py --q8
+```
+
+Each token is matched with these two shapes; `<file name>`, `<skill>` and `<suites>` are filled in by the tool, not typed by hand:
 
 ```bash
 git grep -n -F -e '<file name>' -- tests site/scripts/__tests__ site/src/lib/__tests__ dashboard   # file tokens
@@ -994,7 +1000,7 @@ The row for a suite with `ADD to` is the reconciled edit list: those suites have
 Command: the five `ad13_check` patterns of `tests/canonical/test-artifact-discipline.sh` (lines 505 to 524), each run through the suite's own counter `ad13_count_class` (extracted unchanged, run on the tracked tree):
 
 ```bash
-bash /tmp/claude-0/-home-user-aid-methodology/cd2e209b-dbef-5f81-874a-fdeb1e92d87f/scratchpad/t058/ad13run.sh "$PWD"    # prints the five counts; the suite's ad13_count_class is copied verbatim into it
+bash .aid/works/work-003-full-aid-restructure/research/delivery-003-sites-tools/ad13run.sh "$PWD"    # prints one line per class, C1 to C5 in table order; ad13run.sh holds the suite's ad13_count_class unchanged
 ```
 
 | Class | Count at base | Ceiling in the suite today | Owner of the ceiling |
@@ -1012,10 +1018,10 @@ All five counts are at or below their ceilings today, so `test-artifact-discipli
 Command (every site test that reads a skill's or template's body by path or by quoted name):
 
 ```bash
-git grep -nE "'aid-[a-z0-9-]+'|canonical/(skills|aid/templates)/" -- site/scripts/__tests__ site/src/lib/__tests__
+git grep -n -o -I -E "'aid-[a-z0-9-]+'|canonical/skills/[^'\" \`)]+|canonical/aid/templates/[^'\" \`)]+" -- site/scripts/__tests__ site/src/lib/__tests__ | sort -u | wc -l
 ```
 
-Hits: **819** lines; one row below per (test, target). A target that is a skill folder takes the skill's owner (the test is re-pointed in that task, G11). Rows with `no change needed here` name no delivery-003 edit target.
+Hits: **883** (test, target) hits: one per distinct quoted skill name or skill/template path on a line of a site test, so a line naming two targets counts twice. One row below per (test, target); its Hits is its share of that count. A target that is a skill folder takes the skill's owner (the test is re-pointed in that task, G11). Rows with `no change needed here` name no delivery-003 edit target.
 
 | Site test | Target | Owner | Hits |
 |---|---|---|---|
@@ -1635,7 +1641,7 @@ This section is what the reconciled list changes against the superseded proposal
 - `tests/canonical/test-work-state-template.sh`: no change needed here (asserts delivery-state-template.yml, which no task edits)
 - `tests/cost-meter.py`: no change needed here (no delivery-003 task names this file; see Delta)
 
-- G11 (site tests): 213 (test, target) rows across 38 site test files name no delivery-003 edit target (fixture strings, template names and paths no task changes). Each is class 5 and needs no edit; they are not listed one by one here.
+- G11 (site tests): 213 (test, target) rows across 38 site test files name no delivery-003 edit target (fixture strings, template names and paths no task changes). Each is class 5 and needs no edit; they are all listed one by one in the G11 table (Site fixtures section), with that owner.
 
 Recovery and packaging snapshots, not live sources: `recovery/partial/...` (their files name the chaining rule, the reviewer dispatch and the Cross-phase heading) and `packages/` (a local build output, not tracked as source).
 
@@ -1750,4 +1756,6 @@ Recovery and packaging snapshots, not live sources: `recovery/partial/...` (thei
 **D11. Installed copies.** The installed trees carry every canonical hit (Installed copies). They are regenerated by the resync after the gate, with the full generator; no partial render and no `run_generator.py` in a live tree.
 
 **D12. Test step.** Changes lie only under `.aid/works/`; no suite runs (work-folder-only rule). The spawn-free checks have no `.sh`, `.py` or `.mjs` file to check.
+
+**D13. Run order of `tests/canonical/test-artifact-discipline.sh`.** The suite is on five tasks (see Suites on two tasks and the run order), and its one owner in Q3 is task-078. Run order: task-062, task-065, task-072 and task-074 each run before task-078 (dependency).
 
