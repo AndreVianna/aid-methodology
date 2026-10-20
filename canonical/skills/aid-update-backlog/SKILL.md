@@ -44,6 +44,8 @@ continues at come only from its work record.
 
 ## State: INTAKE
 
+Every question this step asks (the opening and the derived-outputs question) is asked before the work exists, so each is recorded in a design document, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design <file> --category <category> --impact <High|Medium|Low> --context '<the question, as shown>' --suggested '<your recommendation>' --asked-by aid-update-backlog` before it is shown (it prints the question's id), then `--answer --design <file> --id <the printed id> --state Answered|Skipped|Assumed --value '<the reply>'` after the reply. `<file>` is `.aid/design/backlog.md` when that seed exists, otherwise `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, stamped at the first question and reused for the whole run. A question recorded in the seed leaves the rest of the seed untouched.
+
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
    you like to revise in the backlog -- items to add, re-prioritize, promote from
    tech-debt.md, or move between sections?") and wait.
@@ -62,7 +64,7 @@ continues at come only from its work record.
 7. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
    `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
    `initiator: aid-update-backlog`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
-   record and saves nothing), and `--seed .aid/design/backlog.md` on the gate's `--create` when that seed exists (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
+   record and saves nothing), and `--seed .aid/design/backlog.md` on the gate's `--create` when that seed exists, or `--seed` the untitled design document when INTAKE recorded its questions there instead (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record). `phase` is not driven.
 
 Every `--step` call after the allocation passes in its `--detail` the subject, whether a seed was found, the
 derived outputs the user named and the complexity tier, so a resume finds them in the record.

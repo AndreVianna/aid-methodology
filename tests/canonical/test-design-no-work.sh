@@ -16,6 +16,7 @@
 #          lifecycle or other work-record flag appears; no Paused/Running lifecycle value is written
 #   DN-05  every design-stage skill records with --ask/--answer/--step --design
 #   DN-06  every create skill that realizes a seed passes --seed on the gate's --create
+#   DN-08  the hand-authored create/update skills that ask before they allocate record those questions with --ask --design
 #   DN-07  fixture: the writer's --ask / --answer / --step --design leave .aid/works/ unchanged
 #
 # Usage:
@@ -148,6 +149,19 @@ for f in canonical/aid/templates/shortcut-engine.md canonical/aid/templates/work
         pass "DN-06: ${f##*/} records its pre-work questions with --ask --design and --rename-design"
     else
         fail "DN-06: ${f} does not record its pre-work questions with --ask --design / --rename-design"
+    fi
+done
+
+# DN-08: the hand-authored skills that ask before they allocate record each pre-allocation question in a design document.
+for s in aid-update-architecture aid-update-backlog aid-update-cicd aid-update-mvp aid-update-roadmap aid-update-stack aid-update-testing-strategy \
+         aid-create-backlog aid-create-mvp aid-create-roadmap; do
+    f="${SKILLS_DIR}/${s}/SKILL.md"
+    [[ -f "$f" ]] || { fail "DN-08: ${f} is missing"; continue; }
+    text="$(tr '\n' ' ' < "$f" | tr -s ' ')"
+    if grep -q -F -e '--ask --design' <<< "$text" && grep -q -F -e '--answer --design' <<< "$text" && grep -q -F -e 'untitled-<YYYYMMDD-HHMMSS>.md' <<< "$text"; then
+        pass "DN-08: ${s} records its pre-allocation questions with --ask --design / --answer --design"
+    else
+        fail "DN-08: ${s} does not record its pre-allocation questions with --ask --design / --answer --design"
     fi
 done
 
