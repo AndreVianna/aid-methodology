@@ -12,7 +12,9 @@ argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec 
 Specify the technical implementation of a single feature through conversational refinement
 with the user.
 
-**The agent is a tech lead, not an interviewer.** It proposes concrete solutions grounded
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
+**The agent is a tech lead.** It proposes concrete solutions grounded
 in the existing architecture. The user validates, redirects, or deepens the discussion.
 
 **One feature at a time.** The feature path is a required argument.
@@ -43,21 +45,11 @@ Every section follows the same cycle:
                               no folders and no files of their own.
 ```
 
-> **Accuracy note.** Features State is **AUTHORED**, and it now has a real
-> target: the `features:` sequence in `work-state-template.yml`, one entry per
-> feature, created by `/aid-define` at decomposition and updated here as each
-> feature advances. It carried no key and was documented as a read-only DERIVED
-> view for as long as this note said so, which was wrong twice over -- nothing
-> derives it, and the mislabel made the `STATE.md` -> `STATE.yml` converter treat
-> a real row as proof that a work predated the per-unit hierarchy, so it refused
-> every work that had been through `/aid-define`. Cross-phase Q&A's `qa` key is
-> AUTHORED only at the delivery level (`delivery-state-template.yml`) or, on the
-> flattened Lite path, at the work level (`work-state-template.yml`) -- a
-> full-path work has no `qa` key at the work level at all (full-layout omission
-> rule), and `/aid-specify` runs before any delivery exists (Specify precedes
-> Plan), so a full-path work has no delivery yet to hold one either -- that half
-> of the gap is unchanged and is still a candidate follow-up. The Features State
-> half is closed: write `features[]` entries for real.
+> **Accuracy note.** Features State is **AUTHORED**: the `features:` sequence in
+> `work-state-template.yml` holds one entry per feature, created by `/aid-define` at
+> decomposition and updated here as each feature advances. Questions are recorded
+> through `writeback-state.sh --ask` and `--answer` in the work's STATE.yml, never in a
+> delivery's `qa`: this skill runs before any delivery exists (Specify precedes Plan).
 
 ---
 
@@ -130,7 +122,7 @@ three-digit number:
 
 **If §11 is absent or has no such subsection:** Exit with instruction to run
 `/aid-define` first (or `/aid-describe`, if REQUIREMENTS.md itself is missing).
-**If found:** Print: `[Resolved: REQUIREMENTS.md §11 / Feature 001 — {Title}]`
+**If found:** continue; the feature's `### Feature NNN — {Title}` heading names it.
 
 The number is exact, not a prefix match: sections are numbered, so there is nothing
 to disambiguate and no glob to widen.
@@ -186,49 +178,6 @@ is written again from its first pending section. Ask that repair question alone,
 step name and no state-entry line or map, and change no file, the work record included, before the
 user's yes. The first section's own question comes after the repair is written.
 
-Print the state-entry line and "you are here" map. Examples for INITIALIZE:
-
-```
-[State: INITIALIZE] — First run for this feature; load context, determine sections, begin The Loop.
-aid-specify ({feature})  ▸ you are here
-  [● INITIALIZE ] → [ CONTINUE ] → [ REVIEW ] → [ DONE ]
-```
-
-For CONTINUE:
-```
-[State: CONTINUE] — Resume The Loop (Propose → Discuss → Write → Review) for the next pending section.
-aid-specify ({feature})  ▸ you are here
-  [✓ INITIALIZE ] → [● CONTINUE ] → [ REVIEW ] → [ DONE ]
-```
-
-For REVIEW:
-```
-[State: REVIEW] — All sections complete; re-review entire spec against current KB and codebase.
-aid-specify ({feature})  ▸ you are here
-  [✓ INITIALIZE ] → [✓ CONTINUE ] → [● REVIEW ] → [ DONE ]
-```
-
-For DONE (Ready):
-```
-[State: DONE] — Spec is Ready and has met the minimum grade.
-aid-specify ({feature})  ▸ you are here
-  [✓ INITIALIZE ] → [✓ CONTINUE ] → [✓ REVIEW ] → [● DONE ]
-```
-
-**SPIKE:**
-```
-[State: SPIKE] — Feature has unknowns requiring investigation; spike work needed.
-aid-specify ({feature})  ▸ you are here
-  [✓ INITIALIZE ] → [ CONTINUE ] → [● SPIKE ] → [ REVIEW ] → [ DONE ]
-```
-
-**BLOCKED:**
-```
-[State: BLOCKED] — Feature has a pending loopback that must be resolved before continuing.
-aid-specify ({feature})  ▸ you are here
-  [✓ INITIALIZE ] → [ CONTINUE ] → [● BLOCKED ] → [ REVIEW ] → [ DONE ]
-```
-
 ---
 
 ## Dispatch
@@ -242,7 +191,6 @@ aid-specify ({feature})  ▸ you are here
 | REVIEW | `references/state-review.md` | `aid-reviewer` | CHAIN → DONE when the spec stays Ready; CHAIN → CONTINUE when below minimum and fixable; HALT when core assumptions are wrong |
 | DONE | `references/state-done.md` | `inline` | HALT |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
 ---

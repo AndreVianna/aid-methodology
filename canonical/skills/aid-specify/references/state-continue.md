@@ -68,7 +68,7 @@ When agreed:
 
 ### 4. Review
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 ▶ aid-reviewer starting (~1–2 min)
 
@@ -78,7 +78,7 @@ Immediately after writing, verify what was written:
 - Does it align with KB reality (architecture, coding standards, existing patterns)?
 - Does it reference real codebase artifacts (not hallucinated paths/classes)?
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
-✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
+If the reviewer fails, say why in one plain line.
 
 **Grade the section** using the universal rubric (`../../../aid/templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is

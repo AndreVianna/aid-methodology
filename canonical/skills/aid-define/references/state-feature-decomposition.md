@@ -10,12 +10,11 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`
+**Agent:** This is design work. Dispatch with `subagent_type: aid-architect`.
 
 ▶ aid-architect starting (~2–4 min)
 Read `references/feature-decomposition.md`. The worker does Steps 1 and 2 only (analyze, propose): it returns
-the proposed feature table and its open questions, and never asks the user.
-✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}
+the proposed feature table and its open questions, and never asks the user. If it fails, say why in one plain line.
 
 The main conversation puts the approval of the feature list to the user (`feature-decomposition.md` Steps 2 and 3),
 through the question protocol. It is a blocking question: this step pauses on it where it stands, with its detail

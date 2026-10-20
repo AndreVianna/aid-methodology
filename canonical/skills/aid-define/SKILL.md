@@ -29,6 +29,8 @@ cross-reference the
 result against the Knowledge Base and codebase. Produces `REQUIREMENTS.md §11` feature sections
 ready for `/aid-specify`.
 
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 **Precondition:** `## Interview State: Approved` must be present in `.aid/works/{work}/STATE.md`.
 If requirements are not yet approved, run `/aid-describe {work}` first to gather and
 approve requirements.
@@ -52,7 +54,8 @@ approve requirements.
 > Q&A-adjacent "Review History" list, as used below, do still carry no dedicated key -- they
 > describe this skill's aspirational tracking design rather than a writable structure, and
 > that remains an open schema gap. The **Review History** list now has a real target of its own,
-> the `review_history` sequence, and Cross-phase Q&A entries have the `qa` sequence.
+> the `review_history` sequence, and questions are recorded in the work's `qa` sequence through
+> `writeback-state.sh --ask` and `--answer`.
 
 **First run (after approval):** Decompose functional requirements into `REQUIREMENTS.md`
 §11 feature sections.
@@ -216,30 +219,6 @@ State 7:  **Path:** full, Interview State: Approved, features +
      - If cross-reference not yet done → **State 6: CROSS-REFERENCE**
      - If cross-reference already complete → **State 7: DONE**
 
-Print the state-entry line and "you are here" map. Examples for each state:
-
-**FEATURE-DECOMPOSITION:**
-```
-[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into § 11 feature sections.
-aid-define  ▸ you are here
-  (from /aid-describe: COMPLETION -> approved REQUIREMENTS)
-  [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ] → [ /aid-specify ]
-```
-
-**CROSS-REFERENCE:**
-```
-[State: CROSS-REFERENCE] — Validate REQUIREMENTS.md against KB and codebase; create Q&A for gaps.
-aid-define  ▸ you are here
-  [✓ FEATURE-DECOMPOSITION ] → [● CROSS-REFERENCE ] → [ DONE ] → [ /aid-specify ]
-```
-
-**DONE:**
-```
-[State: DONE] — Interview complete, approved, decomposed, and cross-referenced.
-aid-define  ▸ you are here
-  [✓ FEATURE-DECOMPOSITION ] → [✓ CROSS-REFERENCE ] → [● DONE ] → [ /aid-specify ]
-```
-
 ---
 
 ## Dispatch
@@ -250,7 +229,6 @@ aid-define  ▸ you are here
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | `references/state-done.md` | `inline` | CHAIN → CROSS-REFERENCE when the user picks [2]; HALT when the user picks another option |
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit.

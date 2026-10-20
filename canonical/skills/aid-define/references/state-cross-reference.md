@@ -1,8 +1,8 @@
 # State: CROSS-REFERENCE
 
-Requirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and create Q&A entries for gaps.
+Requirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and record a question for each gap.
 
-**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`).
+**Agent:** Adversarial validation. Dispatch with `subagent_type: aid-reviewer` **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`).
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)
@@ -18,15 +18,12 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
 
 Then append the reviewer's share of the process body from `references/cross-reference.md`
 (sections 6a to 6c: load context, cross-reference, grade) so the subagent has the per-step execution
-detail. Sections 6d to 6f are the main conversation's: it presents the findings, creates the Q&A entries
-and asks them through the question protocol, and wraps up. The subagent never asks; it lists its open
-questions in its report.
-
-Print before dispatch: `[State 6] Dispatching aid-reviewer for Cross-Reference validation.`
+detail. Sections 6d to 6f are the main conversation's: it presents the findings, records each question
+with `writeback-state.sh --ask`, asks them through the question protocol, and wraps up. The subagent never
+asks; it lists its open questions in its report.
 
 ▶ aid-reviewer starting (~1–2 min)
-Wait for completion.
-✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
+Wait for completion. If it fails, say why in one plain line.
 
 After aid-reviewer returns, run grade.sh on the ledger to confirm the grade:
 
