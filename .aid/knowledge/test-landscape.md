@@ -110,8 +110,8 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 |---|---|---|---|
 | Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
-| `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
-| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs`, `dashboard/server/tests/test_home_stage_rails.mjs` | Node `.mjs` server tests. The stage-rail test takes `PHASE_ORDER` and `renderStageRail` from `home.html` by name and runs them under `node:vm` against a stand-in for the page. Run by `tests/canonical/test-dashboard-node.sh`, together with `test_task048_phase_mapping.mjs` and `test_task031_intent_phases.mjs`; `test_server_node.mjs` is run by no suite. |
+| `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. The phase-layout cases: `dashboard/reader/tests/test_task079_phase_fixtures.py` reads one work fixture per phase (Definition to Completed, a work during a call, a work with old phase names, and works with a missing and an inconsistent record) through the Python reader; `dashboard/server/tests/test_index_html.py` checks the `PHASE_ORDER` and the card lines of `home.html`. Each test writes its own temporary repository from the fixture files. |
+| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs`, `dashboard/server/tests/test_home_stage_rails.mjs`, `dashboard/server/tests/test_task079_phase_fixtures.mjs` | Node `.mjs` server tests. The stage-rail test takes `PHASE_ORDER` and `renderStageRail` from `home.html` by name and runs them under `node:vm` against a stand-in for the page; it checks the stages drawn and the marked stage for works with different `intent.phases`. The phase-fixture test is the Node twin of the Python reader's fixture test and reads the same fixture files. Run by `tests/canonical/test-dashboard-node.sh`, together with `test_task048_phase_mapping.mjs` and `test_task031_intent_phases.mjs`; `test_server_node.mjs` is run by no suite. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
@@ -248,16 +248,43 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
 `bash-harness` lane of `.github/workflows/installer-tests.yml` (ubuntu, feature branches). The master
 `canonical-tests` job and the release `gate` reach them through `run-all.sh`.
 
-- **`tests/canonical/test-skill-steps.sh`** -- groups `SS-02`, `SS-03`, `SS-08`, `SS-11`, `SS-12` and `SS-14`
-  over `canonical/skills/`,
-  `canonical/aid/templates/`, `canonical/aid/scripts/`, `dashboard/` and the shared exempt list
-  `tests/canonical/skill-steps-exempt.tsv`. It covers the advance words (`CHAIN`, `ASK`, `WAIT`, `PASS`,
-  `CALL`, `HALT`) on `**Advance:**` lines, the citation of `skill-steps.md` by every skill that has a
-  Dispatch table or a `## State:` section, the old phase names kept out of logic, no hand-written
-  `lifecycle: Completed` or `Canceled`, and the rules that the work-initiation gate is the only creator of
-  the work record and the writer the only writer of it. Each exempt row names a skill or path that a later change rebuilds or retires; the
-  test fails when an exempt row no longer exists on disk, and under `AID_RELEASE_CHECK=1` while the list
-  is not empty.
+- **`tests/canonical/test-skill-steps.sh`** -- groups `SS-01` to `SS-14`; a group runs alone when named, as in `bash tests/canonical/test-skill-steps.sh SS-03`.
+  The trees they read are the ones the suite's header names: `canonical/skills/`, `canonical/agents/`,
+  `canonical/aid/templates/`, `canonical/aid/scripts/`, `chat-node/`, `dashboard/`, `docs/`, `examples/`,
+  `site/scripts/` and `site/src/content/`, the conversation samples and deferred list, and the shared exempt
+  list `tests/canonical/skill-steps-exempt.tsv`. The groups are:
+  - `SS-01`: no banner form (`[State: X]`, "you are here", "Re-run /aid-") under `canonical/skills/` or
+    `canonical/aid/templates/`, outside the advance lines.
+  - `SS-02`: `state-machine-chaining.md` is absent and cited nowhere; every `SKILL.md` with a Dispatch table
+    or a `## State:` section cites `skill-steps.md`.
+  - `SS-03`: every `**Advance:**` line names one of `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL`, `HALT`; no
+    PAUSE-FOR-USER word appears in `canonical/`.
+  - `SS-04`: every hand-authored `SKILL.md` cites `question-protocol.md`, except the never-asks list (each
+    listed skill must exist); no `AskUserQuestion` appears in any `allowed-tools`.
+  - `SS-05`: no `canonical/agents/aid-interviewer/`; the word "interviewer", in any case, appears in none of
+    the trees that carry the agents, skills, templates, docs, examples or site content.
+  - `SS-06`: no skill names `## Cross-phase Q&A`, and no line sends a question to a delivery-level `qa`.
+  - `SS-07`: nothing under `chat-node/` names the works folder or the state file (`STATE.yml`).
+  - `SS-08`: `work-state-template.yml` and `project-state-template.yml` parse through the dashboard reader
+    with no warning.
+  - `SS-09`: every asking skill has a conversation sample whose `skills:` names it and whose `covers` holds
+    AC-28, or a `skill:` row of `tests/conversation/deferred.tsv` that matches it.
+  - `SS-10`: `agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md`
+    includes it; no `AGENT.md` tells its agent to ask the user.
+  - `SS-11`: no old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic
+    in the tracked files the spec names, outside the legacy phase-map markers.
+  - `SS-12`: no hand-written `lifecycle: Completed` or `Canceled` under `canonical/skills/` or
+    `canonical/aid/templates/`, except the exempt entries marked for `SS-12`.
+  - `SS-13`: `aid-reviewer/AGENT.md`, `reviewer-dispatch.md` and every `reviewer-brief.md` have a
+    `### What to report` heading.
+  - `SS-14`: the work-initiation gate is the only creator of the work record (its § 3a runs
+    `writeback-state.sh --create` with `--reading`, `--skill` and `--step`); no skill or template writes
+    `initiator:` or a copied record block; the writer is the only writer of it; the fail-closed and recovery
+    rules sit in `skill-steps.md`; no skill routes a continuation by itself.
+
+  The shared exempt list serves `SS-03`, `SS-12` and `SS-14`. Each row names a skill or path that a later
+  change rebuilds or retires. The test fails when a row no longer exists on disk, and under
+  `AID_RELEASE_CHECK=1` while the list is not empty.
 - **`tests/canonical/test-never-merges.sh`** -- groups `NM-01` to `NM-04` over the tracked files under
   `canonical/`, `bin/`, `lib/`, `dashboard/`, `chat-node/`, `scripts/` and the release and install scripts,
   excluding every path with a `tests/` or `__tests__/` folder. It asserts that AID never runs a merge
@@ -291,6 +318,13 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
 - **Three runs per sample.** Each sample runs 3 times (`--runs`, default 3) and passes only if all 3
   runs pass. `tests/conversation/judge.md` rules each transcript, and records only the items of the
   sample's Expected outcome and Must not; a Pending row in the judge's ledger fails the run.
+- **The question-protocol checklist: `tests/conversation/protocol-checks.md`.** It is the judge's checklist for
+  the question protocol (`.aid/runtime/templates/question-protocol.md`). It holds one check for each rule of
+  that protocol and one for the importance label (`High`, `Medium` or `Low`; the retired `Required` label
+  fails). `run.py` adds it to the judge's brief for every sample whose `covers` holds AC-8 or AC-28, and for no
+  other sample; a sample of that kind whose briefs folder lacks the file exits with code 2. The judge reads only
+  `transcript.md`, `files.diff` and `checks.txt` against it, and a broken check is recorded only through the
+  Expected outcome or Must not item it bears on.
 - **Never in CI and never in `run-all.sh`.** `run-all.sh` discovers only `tests/canonical/test-*.sh`,
   and no workflow under `.github/workflows/` invokes `tests/conversation/`. The suite runs on the
   maintainer's machine.
@@ -428,7 +462,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
 | Shortcut engine / Lite path | Strong | catalog↔dirs parity, the six family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Skill guide and skill set | Moderate (static only) | `test-skill-guide.sh` (`SG-01`–`SG-06`): guide length, guide↔`canonical/skills/` match, line width, description shape, bundle install for each tool |
-| Skill step protocol and never-merge rules | Moderate (static only) | `test-skill-steps.sh` (`SS-02`, `SS-03`, `SS-08`, `SS-11`, `SS-12`, `SS-14`), `test-never-merges.sh` (`NM-01`–`NM-04`), `test-deferred-tests.sh` (`DT-01`, `DT-02`); the step behaviour itself is checked by the conversation samples |
+| Skill step protocol and never-merge rules | Moderate (static only) | `test-skill-steps.sh` (`SS-01`–`SS-14`), `test-never-merges.sh` (`NM-01`–`NM-04`), `test-deferred-tests.sh` (`DT-01`, `DT-02`); the step behaviour itself is checked by the conversation samples |
 | Agent behaviour (skill routing, conversations) | Not machine-gated in CI | `tests/conversation/` (run by hand, 3 runs per sample, judged by an agent); see [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites) |
 | Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
