@@ -1982,3 +1982,14 @@ qa:
     answer: '1 (maintainer).'
     answered_by: 'Claude'
     applied_to: 'the delivery-003 gate fix round'
+  - id: Q172
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: --
+    step: --
+    context: 'Final gate-fix verify found a new HIGH after the Q166 extra round: --create --seed takes the worktree copy of a committed .aid/design/<kind>.md, so questions recorded in the main checkout are lost (0 copied). Fix now (prefer the main checkout copy, small writer change + test) or file to backlog.'
+    suggested: '1: fix now, no further verify round'
+    answer: --
+    answered_by: --
+    applied_to: --
