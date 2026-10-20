@@ -2,7 +2,7 @@
 id: 002-13-mid-task-kb-update-returns
 covers: AC-38
 fixture: build-mid-task
-skills: aid-execute, aid-kb-update
+skills: aid-execute, aid-update-kb
 ---
 <!-- Waits for Features 004 and 007. -->
 
@@ -34,9 +34,9 @@ Persona: a developer on the notes team. Wants the task finished, and is glad to 
 
 ## Checks
 
-- tool-called Skill aid-kb-update
+- tool-called Skill aid-update-kb
 - contains .aid/works/work-001-sqlite-store/STATE.yml from: aid-execute
-- contains .aid/works/work-001-sqlite-store/STATE.yml to: aid-kb-update
+- contains .aid/works/work-001-sqlite-store/STATE.yml to: aid-update-kb
 - contains .aid/works/work-001-sqlite-store/STATE.yml why:
 - contains .aid/works/work-001-sqlite-store/STATE.yml from_step: EXECUTE
 - contains .aid/works/work-001-sqlite-store/STATE.yml from_detail: 'task-004

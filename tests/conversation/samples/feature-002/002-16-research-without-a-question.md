@@ -23,7 +23,7 @@ Persona: a developer on the notes team who knows that a decision is coming up bu
 
 ## Expected outcome
 
-- The assistant notices that the request names a topic (storage) but no concrete question to investigate, and asks for what is missing before it starts the research: the question itself, or the scoping questions that narrow it, each with its reason. These intake questions are asked before the work has a record, so the judge does not count their missing record against the protocol.
+- The assistant notices that the request names no question to investigate, and asks for one before it starts the research, with its reason. This opening question is the question protocol's intake exception, so the judge does not count it against the protocol. Any further scoping question follows the protocol in full.
 - Its questions for the user are scoped one topic at a time, each with a recommendation, and it does not ask a long list of them at once.
 - Once the storage question is clear, the assistant investigates it against the project's code and Knowledge Base and sets out the options it weighed, with what each one costs.
 - The assistant does not decide the storage question for the user; it presents the options and says the choice is the user's.
