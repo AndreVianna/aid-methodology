@@ -182,7 +182,7 @@ written to the Knowledge Base state file instead, in the same states, until that
 | Asked while | Record |
 |-------------|--------|
 | working on a work | the work's `STATE.yml`, in its `qa` list |
-| before a work exists (the design stage) | the design document under `.aid/design/`, in its `## Questions` table, with `--design`; a question asked before any document exists opens one |
+| before a work exists (the design stage) | the design document under `.aid/design/`, in its `## Questions` table, with `--design`; a question asked before the subject is known opens `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`, which `--rename-design <from> --to <to>` moves to `.aid/design/<slug>.md` once the subject is known |
 | building the Knowledge Base | the Knowledge Base state file, `.aid/knowledge/STATE.md` |
 | setting up the project (configure, connectors), in chat, or in any other skill that keeps no work record and can run the writer | the project file `.aid/STATE.yml`, with `--project` |
 | in a ticket skill (no shell, so no writer) | nothing: the skill's own questions (the connector pick, the confirmation) are not recorded |
@@ -192,7 +192,11 @@ written to the Knowledge Base state file instead, in the same states, until that
 Before a work exists we are in the design stage. Every question asked then, with its answer, is
 **recorded in the design document** under `.aid/design/`, in its `## Questions` table, with
 `--ask --design <file>` before it is shown and `--answer --design <file> --id D<n>` right after the
-answer. A question asked before any document exists opens one (`.aid/design/<slug>.md`, `status: draft`).
+answer. The table is `| id | question | answer | state | answered_by | category |`, and its ids (`D1`, `D2`, ...)
+are the ones the writer prints, never written by hand. A question asked before the subject is known opens
+`.aid/design/untitled-<YYYYMMDD-HHMMSS>.md` (`status: draft`); once the subject is known,
+`--rename-design <from> --to <to>` moves it to `.aid/design/<slug>.md`, or, when that document exists,
+appends its rows there and deletes the untitled one. Every `--design` path stays inside `.aid/design/`.
 These are such questions: "what do you want?" on a bare start, which skill fits when the reading is
 unsure, whether to start new work or continue an existing one, a work's short name, and every question a
 design-stage skill asks. Design-stage skills open no work.

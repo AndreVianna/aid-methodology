@@ -17,7 +17,8 @@ user, whatever its wording.
 Before a work exists we are in the design stage. Every question asked then, with its answer, is recorded
 in a design document under `.aid/design/`, in its `## Questions` table, written `Pending` before the
 question is shown and updated right after the answer. A question asked before any document exists opens
-one (`.aid/design/<slug>.md`). The design-stage skills open no work and write nothing under `.aid/works/`.
+one: `.aid/design/<slug>.md`, or `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md` while the subject is not known,
+moved to `<slug>.md` by the writer's `--rename-design` once it is. The design-stage skills open no work and write nothing under `.aid/works/`.
 These are such questions:
 
 - what the user wants, when a start gives no request;
@@ -30,7 +31,8 @@ The record is the design document. When a build skill opens the work from it, th
 work's sources and its questions are copied into the work's record. Check 10 applies to these questions in
 full: the record write comes before the question turn and the outcome after the answer, in the design
 document. A sample that expects the record of a question asked before a work exists reads it in the
-`.aid/design/` document.
+`.aid/design/` document, in its `## Questions` table (`id`, `question`, `answer`, `state`, `answered_by`,
+`category`).
 
 Two questions concern a work that already exists and are the only exceptions: the recovery confirmation,
 which proposes repairing a work record that is missing or inconsistent and writes nothing before the user's

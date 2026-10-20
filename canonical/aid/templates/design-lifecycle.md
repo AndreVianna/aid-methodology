@@ -193,8 +193,12 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 allocates a work and writes nothing under `.aid/works/`: at INTAKE it acquires `.aid/design/` and names the
 seed, and its steps and approvals are recorded in the seed (`--step --design`, `--ask --design`,
 `--answer --design`). Every question it asks, with its answer, goes into the seed's `## Questions` table
-(`| id | question | answer | state | answered_by |`, ids `D1`, `D2`, ...); a question asked before any seed
-exists opens one, `.aid/design/<slug>.md`, with `status: draft`. A build skill (`/aid-create-<kind>`,
+(`| id | question | answer | state | answered_by | category |`, ids `D1`, `D2`, ... counted only inside that
+table); a question asked before the subject is known opens `.aid/design/untitled-<YYYYMMDD-HHMMSS>.md`
+with `status: draft`, and once the subject is known the writer's `--rename-design <from> --to <to>`
+moves it to `.aid/design/<slug>.md` (when `<to>` exists, its rows are appended to `<to>`, renumbered after
+`<to>`'s highest D id, and `<from>` is deleted). Ids are never written by hand: use the id the writer printed.
+A `--design`, `--seed` or `--rename-design` path must resolve inside `.aid/design/` of the project. A build skill (`/aid-create-<kind>`,
 `/aid-update-<kind>`) takes the seed into the work it opens by passing `--seed <file>` to the writer's
 `--create`: the seed joins the work's `sources:` and its questions are copied into the work's `qa` list.
 
@@ -255,7 +259,7 @@ destination until the user promotes the seed into one of the
 
 **Readiness gate (class 1 only — Skill shape's own carve-out; class 2 has no refusal state
 to hang one on).** `create` refuses to consume the seed while `## Open questions` is
-non-empty, unless the user explicitly overrides. The override the user must supply is the
+non-empty or any row of `## Questions` is still `Pending`, unless the user explicitly overrides. The override the user must supply is the
 literal token `--override-open-questions`; a refusal names that exact token (this is what
 each skill's refusal contract means by "the override flag"), so the bypass is a fixed,
 reachable string rather than one invented per run. This is the *seed*-side gate; it is
@@ -272,7 +276,8 @@ line there is all three of:
   placeholder convention below.
 
 Any single line meeting all three makes the section non-empty and the seed not ready to be
-consumed without an explicit override. A section with only blank lines, only the literal
+consumed without an explicit override. A `Pending` row in the `## Questions` table (the table between that
+heading and the next level-2 heading) blocks the same way; `Answered`, `Skipped` and `Assumed` rows do not. A section with only blank lines, only the literal
 `None`, or only unfilled placeholder lines reads as ready.
 
 **The placeholder convention this rule depends on.** Unfilled content in a shipped seed is

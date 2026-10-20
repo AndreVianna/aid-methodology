@@ -61,6 +61,11 @@ Every step runs these six parts, in this order.
    resume the saved step is validated first (State Detection below): only a step that passes is
    entered again with `--step`. A mismatch writes nothing and goes to recovery, whose `--repair`
    saves the step once the user says yes.
+
+   A design-stage skill has no work record, so it writes the step to its design document instead:
+   `bash .aid/runtime/scripts/execute/writeback-state.sh --step <STEP> --design <file> [--detail '<where>']`
+   (no `--skill`, no `--name`). That is the only step write such a skill makes, and the same call, with
+   `--detail`, brings the detail up to date.
 2. **Work.** Inline, or by a worker. A worker returns its questions to the main conversation; it
    never asks them.
 3. **Questions, at any point.** The main conversation may ask the user anything at any point of a
@@ -70,7 +75,9 @@ Every step runs these six parts, in this order.
      bring its detail up to date with `--step`: what is done, and which question is open. Record each
      question with `--ask`. Set the lifecycle and the pause reason through the writer
      (`--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then
-     `--pipeline --field "Pause Reason" --value '<why>'`). Then ask.
+     `--pipeline --field "Pause Reason" --value '<why>'`). Then ask. A design-stage skill has no
+     lifecycle to set: it records the question with `--ask --design <file>`, keeps its step and
+     detail current with `--step <STEP> --design <file>`, and writes no pause.
    - Answered in the same conversation: record each answer with `--answer`, set the lifecycle back to
      `Running` (`--pipeline --field Lifecycle --value Running`), and continue the same step from
      where it stopped.
@@ -117,7 +124,8 @@ writer exits 1 and says so; the third way needs git, and the message says when g
 ### Before a work exists
 
 Before a work exists we are in the design stage. Steps that run then, such as a skill's intake and its
-new-or-continue question, save no step in a work record, because there is none yet. Their questions are
+new-or-continue question, save no step in a work record, because there is none yet; a design-stage skill
+saves its steps in its design document (part 1 of the step procedure). Their questions are
 asked through the question protocol, and every question asked before a work exists, with its answer, is
 recorded in a design document under `.aid/design/` (`--ask --design`, `--answer --design`; a question
 asked before any document exists opens one). When the gate creates the work, the user's words go into
@@ -145,8 +153,8 @@ only writes are:
 
 The questions it asks of such a work (which work the request continues, the work's open questions, the
 cancel confirmation) pause the step where it stands, as any blocking question does, but write no pause:
-the work's record is not touched until they are answered. The cancel confirmation is an intake question
-(`question-protocol.md`, The intake-question exception), and is not recorded with `--ask`.
+the work's record is not touched until they are answered. The cancel confirmation concerns a work that already exists, so it is not a design-stage question
+(`question-protocol.md` § Questions before a work exists), and is not recorded with `--ask`.
 
 Its `PASS` for a continued work runs no `--handoff` (part 4 of the step procedure does not apply): the
 record already names the skill and the step the work continues at, so the skill is started, in the same
@@ -207,8 +215,9 @@ The agent does not repair on its own. It tells the user what it found, and propo
 repaired record (the type, the skill and the step) as **one** confirmation question under the
 question protocol, with its recommendation. It is the only question of that turn; any other question
 waits until it is answered. Nothing is written before the user's yes, the work record included, so this
-question is not recorded with `--ask`: like the intake questions, it is asked while the record cannot be
-trusted (`question-protocol.md` § The intake-question exception lists it), and its answer is acted on at once. The
+question is not recorded with `--ask`: it is asked while the record cannot be
+trusted (`question-protocol.md` § Questions before a work exists names it among the two that concern an
+existing work), and its answer is acted on at once. The
 question names no step: it says in plain words what is missing and what will be done again:
 
 - the skill and step come from the skill's own detection (for a work started before the record

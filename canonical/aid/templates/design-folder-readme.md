@@ -33,7 +33,7 @@ the entries above or remove it by hand yourself. A seed kept past its own entry'
 second, stale description of a system that has moved on.
 
 A seed also holds the record of every question asked while it was shaped, in its `## Questions` table
-(`id`, `question`, `answer`, `state`, `answered_by`). Design skills open no work, and a skill that builds from
+(`id`, `question`, `answer`, `state`, `answered_by`, `category`). Design skills open no work, and a skill that builds from
 the seed takes those questions into the work it opens.
 
 Seeds for work that was never started are **kept** — that is the folder's whole purpose.

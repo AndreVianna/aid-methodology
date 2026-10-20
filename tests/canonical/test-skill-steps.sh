@@ -97,6 +97,7 @@ SS14_TEMPLATE_EXCEPTIONS=(
     canonical/aid/templates/delivery-state-template.yml
     canonical/aid/templates/task-state-template.yml
     canonical/aid/templates/work-initiation-gate.md
+    canonical/aid/templates/design-seed.md
 )
 
 # wants GROUP -- true when GROUP is selected (no filter, or the filter names it).
