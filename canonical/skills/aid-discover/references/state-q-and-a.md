@@ -59,7 +59,6 @@ remain, they MUST be resolved (self-answered or asked) before leaving this state
 **APPROVAL is unreachable while any question is Pending.**
 
 Print: `[Q&A] Complete — {self} self-answered (confirmed from source), {asked} answered by user, 0 Pending.`
-Print: `[State: Q-AND-A] complete.`
 
 The questions in Step 2 pause this step until they are answered; with no question put to the user, the step continues at once.
 

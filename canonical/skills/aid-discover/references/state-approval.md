@@ -33,8 +33,6 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 - **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
   Print: `[Approval] Consideration recorded as Q{N}.` The pending Q&A is addressed by the Q-AND-A state of the next run.
 
-Print: `[State: APPROVAL] complete.`
-
 The approval is a blocking question: this step pauses on it until the user answers.
 
 **Advance:** **CHAIN** → [State: DONE] on approval; **HALT** on a consideration.

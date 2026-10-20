@@ -120,6 +120,4 @@ Read new `.aid/knowledge/STATE.md`. Verify Review History preserved (append, not
 
 Print: `[Fix 3/3] Complete. Grade: {old} → {new}.`
 
-Print: `[State: FIX] complete.`
-
 **Advance:** **CHAIN** → [State: REVIEW] if grade < minimum (rerun review); **CHAIN** → [State: APPROVAL] if grade ≥ minimum. Both continue inline.

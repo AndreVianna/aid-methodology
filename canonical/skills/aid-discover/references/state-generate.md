@@ -11,20 +11,6 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 
 ### Step 0: Check Existing KB
 
-**First, trace the GENERATE front for the user** so every step ahead is visible (traceability —
-the user must always know what is being done and what is decided where). Print this once on entry:
-
-```
-[GENERATE] Building the Knowledge Base. The doc-set is NOT fixed up front — it is decided
-           by the domain, at the gates below:
-  [0c]  Build project index            (mechanical)
-  [0cx] Classify project DOMAIN         -> you confirm        (ASK)
-  [0d]  Propose DOC-SET from the domain -> you confirm        (ASK)   <- this is what decides which docs
-  [0e]  Harvest coined terms            (mechanical)
-  [0f]  Classify discovery PATH         -> you confirm        (ASK)
-  [1-5] Fan-out research -> closure -> review panel -> approval
-```
-
 Resolve the declared doc-set (see `references/doc-set-resolve.md`):
 ```bash
 raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
@@ -1078,7 +1064,5 @@ run.
 Print: `[N/N] Generation complete — Knowledge Base ready.` (where N = declared-set size)
 
 (File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
-
-Print: `[State: GENERATE] complete.`
 
 **Advance:** **CHAIN** → [State: REVIEW] (continue inline); **HALT** when the confirmed discovery path is greenfield (Step 0f prints the signpost and ends the step before any generation).

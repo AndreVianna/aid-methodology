@@ -23,16 +23,6 @@ existing `.aid/knowledge/external-sources.md`; **tools** are connectable integra
 in the net-new `.aid/connectors/` registry (feature-001's frozen contract). Both branches are
 skippable — a project with neither writes only the tracking record below, nothing empty.
 
-**Entry trace** (print once on entry, mirroring the GENERATE Step 0 banner):
-
-```
-[ELICIT] Capturing the project's external sources and tool integrations.
-         Both branches are SKIPPABLE — a project with none moves past cleanly.
-  [E1] External SOURCES  (docs / specs / URLs -> external-sources.md)   -> you confirm  (ASK)
-  [E2] Tool INTEGRATIONS (connectors -> .aid/connectors/)               -> you confirm  (ASK)
-  [E3] Record + chain into GENERATE                                     (mechanical)
-```
-
 ## Step E0: Idempotent re-entry
 
 Before prompting, read the `## Discovery Elicitation` block in `.aid/knowledge/STATE.md`:
@@ -43,7 +33,7 @@ resolved="$(grep -m1 '^\*\*Resolved:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
 ```
 
 - **Block absent** (no `## Discovery Elicitation` heading at all): first pass this cycle —
-  nothing has been captured yet. Print the entry trace (above) and proceed to **Step E1**.
+  nothing has been captured yet. Proceed to **Step E1**.
 - **Block present, `Resolved: no`** (a prior run paused mid-flow — the only mid-pause point is
   E2; E1 always resolves the instant it is answered, in the same pass that then presents E2 and
   pauses there): show what was already captured (`Sources: <value>`) and resume directly at
@@ -303,8 +293,7 @@ GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE unchanged — it i
 REVIEW panel and **not** scanned by `kb-citation-lint` (it lives outside `.aid/knowledge/` —
 KI-003, feature-001).
 
-Print: `[State: ELICIT] complete -- sources: {Sources}; tools: {Tools} ({Tools step}).`
-Print: `[State: ELICIT] complete.`
+Print: `Sources: {Sources}; tools: {Tools} ({Tools step}).`
 
 **Advance:** **CHAIN** → [State: GENERATE] (continue inline).
 

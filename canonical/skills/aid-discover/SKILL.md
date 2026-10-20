@@ -210,57 +210,6 @@ State 6: GRADE file, grade >= min, ZERO Pending Q&A,
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`
 
-Print the state-entry line with description, then the "you are here" state-map. Use one of these depending on the detected state:
-
-**ELICIT:**
-```
-[State: ELICIT] — Capture the project's external sources and tool integrations before GENERATE runs.
-aid-discover  ▸ you are here
-  [● ELICIT ] → [ GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
-```
-
-**GENERATE:**
-```
-[State: GENERATE] — Populate missing KB documents by orchestrating parallel discovery sub-agents.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [● GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
-```
-
-**REVIEW:**
-```
-[State: REVIEW] — Grade all KB documents for accuracy, completeness, and evidence quality.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [✓ GENERATE ] → [● REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
-```
-
-**Q-AND-A:**
-```
-[State: Q-AND-A] — Resolve pending questions with the user before attempting automated fixes.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [● Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
-```
-
-**FIX:**
-```
-[State: FIX] — Apply Q&A answers and reviewer feedback to bring KB documents up to minimum grade.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [● FIX ] → [ APPROVAL ] → [ DONE ]
-```
-
-**APPROVAL:**
-```
-[State: APPROVAL] — KB meets minimum grade; ask the user to confirm it is ready for Interview.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [● APPROVAL ] → [ DONE ]
-```
-
-**DONE:**
-```
-[State: DONE] — Discovery is complete and user-approved; KB is ready for Interview.
-aid-discover  ▸ you are here
-  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [✓ APPROVAL ] → [● DONE ]
-```
-
 ---
 
 ## Dispatch
@@ -312,7 +261,8 @@ aid-discover  ▸ you are here
 > parallel-safe because each file has exactly one writer. Semantic
 > re-verification of the changes is the next cycle's REVIEW state job.
 
-On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+
 When a state completes, follow its `**Advance:**` word as [`skill-steps.md`](../../aid/templates/skill-steps.md) defines it:
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **ASK** → stop for the user through the question protocol, then continue to the state the line names.

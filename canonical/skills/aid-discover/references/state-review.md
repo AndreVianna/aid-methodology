@@ -582,8 +582,6 @@ Grade: {grade} | Essence: {PASS|FAIL} | Assertiveness: {PASS|FAIL} -> {Ready|NOT
 [Review 3/3] Grade: {grade}. Minimum: {min}.
 ```
 
-Print: `[State: REVIEW] complete.`
-
 **Advance:** **CHAIN** → [State: Q-AND-A] if Pending Q&A entries with Impact: Required
 exist; **CHAIN** → [State: FIX] when none exists. Both continue inline.
 

@@ -69,6 +69,4 @@ poll when V1 lands (FF-A3).
 
 Neither gate is replaced by this auto-trigger; the trigger composes them.
 
-Print: `[State: DONE] complete.`
-
 **Advance:** **CHAIN** → [State: REVIEW] when the user confirms the reopen; **HALT** when the user keeps the discovery as it is.
