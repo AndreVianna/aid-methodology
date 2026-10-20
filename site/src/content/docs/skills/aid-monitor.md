@@ -30,6 +30,7 @@ flowchart TB
   n4(["DONE"])
   n1 --> n2
   n2 --> n3
+  n4 -->|"when the user asks for a new observation"| n1
   class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
@@ -70,7 +71,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L193" wrap
-| DONE | _(inline — see Re-run below)_ | `inline` | HALT |
+| DONE | _(inline — see Re-run below)_ | `inline` | CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise |
 ~~~~
 
 [Source: `canonical/skills/aid-monitor/SKILL.md#L193`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L193)

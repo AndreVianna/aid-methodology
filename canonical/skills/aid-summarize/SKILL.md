@@ -134,7 +134,7 @@ The state-detection logic determines which mode this run executes:
 | VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
 | MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |
 | FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
-| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → MANUAL-CHECKLIST (Human Grade still Pending) / CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
 | WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 

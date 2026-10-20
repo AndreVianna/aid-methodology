@@ -82,14 +82,14 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": null
+        "handoff": "otherwise"
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
         "startLine": 193,
         "endLine": 193,
         "sourceKind": "skill",
-        "excerpt": "| DONE | _(inline — see Re-run below)_ | `inline` | HALT |"
+        "excerpt": "| DONE | _(inline — see Re-run below)_ | `inline` | CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise |"
       },
       "detail": null
     }
@@ -121,6 +121,20 @@
         "endLine": 45,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: ROUTE] (continue inline)."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n1",
+      "kind": "branch",
+      "condition": "when the user asks for a new observation",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/SKILL.md",
+        "startLine": 193,
+        "endLine": 193,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise"
       }
     }
   ],

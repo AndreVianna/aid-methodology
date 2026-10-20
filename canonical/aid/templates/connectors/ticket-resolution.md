@@ -158,7 +158,7 @@ Parse rules:
     3. Cancel
   Or answer in your own words, or ask me to explain.
   ```
-  An approval-style confirmation like this one offers no skip beyond cancelling.
+  An approval-style confirmation like this one offers no skip: it stays open until the user files, edits or cancels.
 - **`update`'s confirm gate shows the exact change** for whichever `<part>` is being
   mutated: `description` — before/after; `comment` — the text being appended;
   `status` — the target transition (validated against the tracker's available

@@ -46,6 +46,7 @@ flowchart TB
   n6 -->|"otherwise"| n7
   n6 -->|"when Overall Grade ≥ minimum"| n8
   n7 --> n5
+  n8 -->|"when Human Grade is still Pending"| n6
   n8 -->|"when changes are needed"| n7
   n8 -->|"when the user approves"| n9
   n9 --> n10
@@ -133,7 +134,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n8"></a>**8 · `APPROVAL`** — APPROVAL presents the graded summary to the user for final… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L137" wrap
-| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → MANUAL-CHECKLIST (Human Grade still Pending) / CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
 ~~~~
 
 [Source: `canonical/skills/aid-summarize/SKILL.md#L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L137) · [full step: `canonical/skills/aid-summarize/references/state-approval.md#L1-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-approval.md#L1-L55)

@@ -213,7 +213,7 @@ Or answer in your own words, or ask me to explain.
 ```
 
 This is a pause inside the step, not an `ASK` advance: the write follows the answer, in the same invocation,
-and the step ends with `CHAIN`. Nothing is written before the answer; a skip is treated as Cancel.
+and the step ends with `CHAIN`. Nothing is written before the answer, and the question stays open until the user applies, edits or cancels.
 
 - **File it** → proceed to WRITE.
 - **Edit** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run

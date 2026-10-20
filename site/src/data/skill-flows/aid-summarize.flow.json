@@ -174,14 +174,14 @@
         "startLine": 137,
         "endLine": 137,
         "sourceKind": "skill",
-        "excerpt": "| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |"
+        "excerpt": "| APPROVAL | `references/state-approval.md` | inline | CHAIN → MANUAL-CHECKLIST (Human Grade still Pending) / CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |"
       },
       "detail": {
         "file": "canonical/skills/aid-summarize/references/state-approval.md",
         "startLine": 1,
         "endLine": 55,
         "sourceKind": "worker",
-        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored.` and go on to the manual review first.\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nAsk the user, through the question protocol, this question (its reason and recommendation come first):\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nThis approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the\nuser approves, rejects or asks for changes.\n\n**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).\n"
+        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored.` and go on to MANUAL-CHECKLIST in the same run (the advance below).\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nAsk the user, through the question protocol, this question (its reason and recommendation come first):\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nThis approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the\nuser approves, rejects or asks for changes.\n\n**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).\n"
       }
     },
     {
@@ -389,6 +389,20 @@
     },
     {
       "from": "n8",
+      "to": "n6",
+      "kind": "branch",
+      "condition": "when Human Grade is still Pending",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 54,
+        "endLine": 54,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
+      }
+    },
+    {
+      "from": "n8",
       "to": "n7",
       "kind": "branch",
       "condition": "when changes are needed",
@@ -398,7 +412,7 @@
         "startLine": 54,
         "endLine": 54,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
+        "excerpt": "**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
       }
     },
     {
@@ -412,7 +426,7 @@
         "startLine": 54,
         "endLine": 54,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
+        "excerpt": "**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
       }
     },
     {

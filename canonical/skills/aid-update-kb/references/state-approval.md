@@ -58,7 +58,6 @@ above) to verify the edits.
 
 ## Step 2: Ask for explicit user approval
 
-```
 Follow `.aid/runtime/templates/question-protocol.md`: one approval question, recorded `Pending` in
 `.aid/knowledge/STATE.md ## Q&A (Pending)` before it is shown and updated when it is answered.
 

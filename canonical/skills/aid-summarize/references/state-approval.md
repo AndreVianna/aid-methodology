@@ -2,7 +2,7 @@
 
 APPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.
 
-**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored.` and go on to the manual review first.
+**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored.` and go on to MANUAL-CHECKLIST in the same run (the advance below).
 
 Print summary in the standard format:
 
@@ -51,4 +51,4 @@ On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Kno
 This approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the
 user approves, rejects or asks for changes.
 
-**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).
+**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] when Human Grade is still `Pending`; **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).

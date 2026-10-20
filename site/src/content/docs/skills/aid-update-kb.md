@@ -111,7 +111,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE when the user approves; CHAIN → SCOPE when the user adds a consideration; CHAIN → ANALYZE when the consideration challenges the understanding |
 ~~~~
 
-[Source: `canonical/skills/aid-update-kb/SKILL.md#L400`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L400) · [full step: `canonical/skills/aid-update-kb/references/state-approval.md#L1-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-approval.md#L1-L158)
+[Source: `canonical/skills/aid-update-kb/SKILL.md#L400`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md#L400) · [full step: `canonical/skills/aid-update-kb/references/state-approval.md#L1-L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/references/state-approval.md#L1-L157)
 
 <a id="fragment-n7"></a>**7 · `DONE`** — DONE commits the approved KB changes and closes the run. · _exit_ · HALT
 
