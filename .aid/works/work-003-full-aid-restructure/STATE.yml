@@ -2096,3 +2096,14 @@ qa:
     answer: '1 (maintainer): fix round 3 pulls W7-14 into delivery-003 (a Claude Code question-form hook installed by the CLI), plus the four targeted fixes; smoke runs while fixing, 3 runs at the end'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q182
+    category: 'Knowledge'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'KB conflict from the fix round 3 design (analysis/delivery-003-gate-fix3-design.md): installing the question-form hook into .claude/settings.json makes four KB statements false: authoring-conventions.md G-13 (no AID-own content at a tool directory root outside agents/ or skills/), the Content Isolation red flag (writing outside the AID:BEGIN/END region in a host file), capability-inventory.md (aid chat hook --install is the only command that writes a host tool configuration), module-map.md (the same of chat-node hook-install.py). Options: 1 amend them with one exception: AID may put handlers in a host settings file when they run a script under .aid/runtime/scripts/hooks/aid-*, are recorded in the manifest and are removed with the tool; 2 keep the KB as is and drop the hook.'
+    suggested: '1: amend the four statements with the one exception'
+    answer: --
+    answered_by: --
+    applied_to: --
