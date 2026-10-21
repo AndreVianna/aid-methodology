@@ -56,24 +56,29 @@ If any value matches a `<placeholder>` pattern (e.g., `<project-name>`), append 
 
 ### Step 3: Walk the settings
 
-The walk covers only the settings that need a decision: a setting is in the walk when its value is still
-`⚠ unset`, or when its last entry in the `qa` list of `.aid/STATE.yml` (the entry whose `applied_to` is
-`setting <key>`) is `Skipped`. A setting that is set and was not skipped is not asked again; `/aid-config <key>`
-changes it. When no setting is in the walk, say so in one plain line, print the table and stop.
+The walk covers all six settings, so every one is decided or skipped on purpose, not only the ones that
+are still `⚠ unset`. A setting that is set and sensible is asked with its current value as the
+recommendation: option 1 is `Keep current value: <value> (recommended)`, followed by the other valid
+suggestions. A setting that is `⚠ unset` is never offered `Keep current value` (that would keep a
+placeholder): for `type`, `source_control`, `minimum_grade` and `heartbeat_interval` the recommendation is
+a suggestion from the Suggestions table; for `name` and `description` it is a value read from the project
+when one is available (the project folder's name for `name`; the first line of the README, or an existing
+description, for `description`), with the source named in `My recommendation`. When nothing can be read, say so
+plainly and ask for the user's own words, with no numbered option (question-protocol Rule 5.1). A
+setting skipped in an earlier run is asked again on its own entry (see below).
 
-After the table, walk those settings, grouped by subject, most important first, **3 to 5 questions per
-group**, one question per message and one topic per question. Each question is shown in the form of
-Mode 2 Step 4 (the same Suggestions table; `Keep current value` is the recommendation when the value is
-already set and sensible; for an `⚠ unset` value the recommendation is a suggestion, or a request for
-the user's own words for `name` and `description`).
+After the table, walk the settings straight away, with no break between a go-ahead (if one was asked) and the
+first group, because they are one subject. Group them by subject, most important first, **3 to 5 questions
+per group**, one question per message and one topic per question. Each question is shown in the form of
+Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1, `Keep current value:
+<value> (recommended)`).
 
 | Group | Settings, in order | Importance |
 |---|---|---|
 | 1. Project identity | `name` (high), `description` (high), `type` (high) | high |
 | 2. Pipeline behaviour | `source_control` (medium), `minimum_grade` (medium), `heartbeat_interval` (low) | medium |
 
-`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`, or fewer when some
-settings are left out).
+`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`).
 
 - **Record each question** before it is shown and its reply right after, in the project file
   `.aid/STATE.yml`, exactly as Mode 2 Step 4 sets (`writeback-state.sh --project --ask`, then `--project
@@ -83,7 +88,7 @@ settings are left out).
   the skill at once.
 - **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
   A `Keep current value` answer or a skip writes nothing.
-- **Offer a break when the subject changes**, between group 1 and group 2, in one plain line that
+- **Offer a break when the subject changes**, between group 1 and group 2 only, in one plain line that
   decides nothing (`Identity is done. Take a break, or go on to the pipeline settings?`). The user may
   stop there; the answers already given stay.
 - **Skipped questions are offered again at the end**, once, in the same form, as a last group, on their
@@ -125,14 +130,17 @@ Print: `Current value of <key>: <value>`.
 ### Step 4: Prompt for new value
 
 Ask for the new value for ALL keys, in plain text through the question protocol, with:
-- A `Keep current value` option (shows the current value)
+- A `Keep current value` option (shows the current value), only when the value is set; never for a
+  `⚠ unset` placeholder
 - 2–3 suggestion options from the Suggestions table below, the recommended one first
 
 The options are numbered in the question. The closing line always lets the user type a value of their
 own, ask for an explanation, or skip the question.
 
-For free-text-natural keys (`name`, `description`), the Suggestions table says `(no defaults)` — the
-question offers just `Keep current value`, and the user types the value in their own words.
+For free-text-natural keys (`name`, `description`), the Suggestions table has no fixed defaults. When the
+value is set, the options are `Keep current value` and, if the project shows a better one, that value. When it
+is `⚠ unset`, there is no `Keep current value`: recommend a value read from the project and name where it came
+from, or, when none can be read, ask for the user's own words with no numbered option.
 
 Show each question in the protocol's form (one question per message):
 
@@ -141,9 +149,9 @@ Settings -- question {n} of {m} -- importance: {high|medium|low}
 New value for <key>?
 Why I ask: {what the setting controls, in one short reason}
 My recommendation: {the suggested value, and why}
-  1. {the suggested value} (recommended)
-  2. Keep current value: {current value}
-  3. {another suggestion}
+  1. {the recommended value} (recommended)
+  2. {another suggestion}
+  3. Keep current value: {current value}
 Or answer in your own words (type a value of your own), ask me to explain, or skip this question.
 ```
 
@@ -206,14 +214,14 @@ intended behavior, not a gap.
 
 | Key | Suggestions |
 |---|---|
-| `name` | (no defaults — user types their own) |
-| `description` | (no defaults — user types their own) |
+| `name` | (no fixed defaults — a value read from the project, e.g. its folder name; else the user's own) |
+| `description` | (no fixed defaults — a value read from the project, e.g. its README's first line; else the user's own) |
 | `type` | `brownfield`, `greenfield` |
 | `source_control` | `none`, `git`, `svn`, `mercurial` |
 | `minimum_grade` | `A+`, `A`, `B+` |
 | `heartbeat_interval` | `0` (disabled), `1`, `5` |
 
-Always include a `Keep current value` option; the closing line of the question lets the user type a free-form value.
+Always include a `Keep current value` option, unless the value is an unset placeholder (`⚠ unset`); the closing line of the question lets the user type a free-form value.
 
 ---
 
