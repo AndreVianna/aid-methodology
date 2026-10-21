@@ -39,9 +39,11 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
   RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing),
   and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading,
   plus `--seed` for the design document that holds the questions asked so far (the go-ahead at
-  SHOW-READING and any new-or-continue question): first move it to `.aid/design/<slug>.md`, the slug
-  being the work's, with `writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md
-  --to .aid/design/<slug>.md`. The flow creates no work by hand.
+  SHOW-READING and any new-or-continue question), when one exists: first move it to
+  `.aid/design/<slug>.md`, the slug being the work's, with `writeback-state.sh --rename-design
+  .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`. A skill started at once under
+  `size-and-route.md` section 6 with no question asked has no such document: no rename and no `--seed`.
+  The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
 **Advance:** **CHAIN** → ASK-FIRST when several works plausibly match; otherwise **CHAIN** → RECORD-INTENT.

@@ -239,7 +239,8 @@ Every step ends with exactly one advance ending on its `**Advance:**` line: one 
 `ASK then HALT`, which is one composite ending and not two words. A line that names only its next
 step is a `CHAIN`, written `CHAIN → NAME`. The step a line names is a step of the same skill's table, by its name, never a
 part of a step. A step that has already read the user's answer may branch on one `CHAIN` line: one
-named step per case, and `HALT when ...` for the case on which the run ends. The words are internal
+named step per case, and `HALT when ...` for the case on which the run ends; a case that ends the step
+with a blocking question takes `ASK` on that same line. The words are internal
 and never shown to the user.
 
 | Word | Meaning |
