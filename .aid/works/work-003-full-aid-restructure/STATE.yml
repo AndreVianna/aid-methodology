@@ -538,6 +538,10 @@ review_history:
     event: 'Delivery-003 gate, first attempt (samples)'
     outcome: 'Static gate (test-skill-steps 67/0), dashboard fixtures and parity, SS-07, the scratch generator match, the KB index, the tracking proof and installer CI (run 2240) pass; cost baseline re-recorded. Samples: 002-15 3/3; 002-01..04 and 002-14, 16..19 fail (002-14..19 re-run after a usage-limit abort). Top failing checks: PC-10 record before shown, PC-11 importance label, PC-5 options, PC-2 Why I ask, EO-1, EO-3'
     notes: 'Root-cause analysis under way; then the one sample fix round of Q166'
+  - date: '2026-10-21'
+    event: 'Delivery-003 gate sample fix round (Q166; widened by Q169, Q170; design approved Q171)'
+    outcome: 'Built by 4 Sonnet builders (writer --design/--seed, --by removed; rule text; 23 design-stage skills open no work; question form in monitor, report, review, config walk, set-connector). Opus review 15 rows (6 HIGH), one fix round (all Fixed); verify 1: 1 recurred + 1 new HIGH fixed, 2 MEDIUM filed as backlog W7-35, W7-36; verify 2: 1 new HIGH (stale seed copy), fixed under Q172; verify 3 clean. Full suite: only the 9 machine-limit suites fail; site 2822/2822. Resync committed alone as a3dbfe25; installer CI green (run 2256). KB index unchanged; coverage baseline re-recorded (0def8408, no real loss)'
+    notes: 'Sample re-run blocked twice (usage limit, then the CLI lost its login on a worker restart); Q173: login restored with an environment token, the re-run continues in a new session -- hand-off in analysis/delivery-003-gate-handoff.md'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
