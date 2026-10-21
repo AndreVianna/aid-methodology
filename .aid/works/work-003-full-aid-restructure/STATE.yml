@@ -2063,3 +2063,14 @@ qa:
     answer: 'Recommendation accepted (maintainer): finish round 2 (one verify, one re-run), still-failing samples to KI-008 with no third round; the question-form hook (W7-14) is an early task of delivery-004; the sample script and the 2/3 bar stay proposals'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q179
+    category: 'Building'
+    impact: Medium
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Attempt 3 re-run of 002-14, 16-19 uses a large share of the maintainer usage (64% so far); research, review and report runs dispatch sub-agents. Under Q178 any sample short of 3/3 goes to KI-008 with no third round, so more runs do not change the gate outcome. Options: 1 stop now, keep the runs already finished, and run each sample with no finished run once; 2 let the 3 runs each finish; 3 stop now and close, unfinished samples marked not run in KI-008.'
+    suggested: '1: stop, keep finished runs, one run for samples with none'
+    answer: --
+    answered_by: --
+    applied_to: --
