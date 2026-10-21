@@ -2022,11 +2022,11 @@ qa:
   - id: Q175
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Delivery-003 gate attempt 2: 8 of the 9 samples still fail (002-16 still running). Q166 allowed one fix round, already spent. Fixable now: (a) the form template shows only the closing line with "skip", so approvals offer a skip (002-01, 002-17); (b) aid-config offers "Keep current value" for a placeholder (002-02, 002-03). Not fixable by wording alone: follow-up questions later in a conversation lose the form and the record (002-04, 14, 17, 18, 19). Options: 1 close the gate now with KI-008 and fix (a) and (b) in delivery-004, with a re-check at delivery-014; 2 a second fix round now for (a), (b) and the follow-up rule, then resync, /reload-skills and the 9 samples re-run locally; 3 close the gate now with KI-008, no fixes until delivery-014.'
     suggested: '1: close now, fix (a) and (b) in delivery-004'
-    answer: --
-    answered_by: --
+    answer: '2 (maintainer): a second sample fix round now for (a) the approval closing line, (b) aid-config placeholder options, (c) no go-ahead for an action the user already asked for, and the follow-up rule; then resync, /reload-skills and the 9 samples re-run locally'
+    answered_by: 'Claude'
     applied_to: --
