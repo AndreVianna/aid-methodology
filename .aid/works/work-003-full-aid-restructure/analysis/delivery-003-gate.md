@@ -38,18 +38,18 @@ Q174), so the second sample run was made on the maintainer's machine, in WSL Ubu
 ran in the cloud session after the first resync; attempt 2 ran on the maintainer's machine after the fix
 round's resync. Attempt 1 recorded which samples failed, not their run counts.
 
-| Sample | Attempt 1 | Attempt 2 (fix round) | Main failure in attempt 2 |
-|---|---|---|---|
-| 002-01 connector question | Fail | 2/3 | PC-5: the go-ahead, an approval, offers "skip this question" |
-| 002-02 settings groups and breaks | Fail | 1/3 | PC-4: the name question has no recommendation; PC-5: "Keep current value" keeps a placeholder |
-| 002-03 follow-up, skip answered | Fail | 0/3 | EO-3: `aid-config` asks only the unset settings, so the minimum-grade question is never asked or skipped; PC-5 placeholder option; PC-7 no break between groups once |
-| 002-04 skip, then another user | Fail | 0/3 | PC-10 and PC-4: the follow-up question is shown unrecorded and without a recommendation; twice no `aid-set-connector` call; EO-5 once |
-| 002-14 orchestrate, unsure reading | Fail | 0/3 | PC-10: questions before the work are not written to the design document; once MN-3 (CRITICAL), several questions in one turn; once no `aid-orchestrate` call |
-| 002-15 which tracker | 3/3 | Not re-run | |
-| 002-16 research without a question | Fail | 0/3 | Runs 1 and 3 hit the runner's 600 s limit on one `claude` call (the research skill's review rounds); run 2: PC-5, PC-10, PC-11 on the follow-up "Your call" question; run 3: PC-5(c), the go-ahead is asked although the user had already asked for the research |
-| 002-17 review publish approval | Fail | 0/3 | PC-5, PC-10, PC-11: the go-ahead offers a skip, later questions unrecorded and unlabelled; EO-3 once, publish asked without the exact text; twice no `aid-review` call. Nothing was published, pushed or edited in any run |
-| 002-18 report what to analyze | Fail | 1/3 | PC-10: the first or the closing question is shown unrecorded; EO-1 once |
-| 002-19 monitor finding question | Fail | 0/3 | PC-4, PC-5, PC-10, PC-11: the Turn 2 follow-up has no recommendation, label, closing line or record |
+| Sample | Attempt 1 | Attempt 2 (fix round) | Main failure in attempt 2 | Attempt 3 (fix round 2) | Main failure in attempt 3 |
+|---|---|---|---|---|---|
+| 002-01 connector question | Fail | 2/3 | PC-5: the go-ahead, an approval, offers "skip this question" | 3/3 |  |
+| 002-02 settings groups and breaks | Fail | 1/3 | PC-4: the name question has no recommendation; PC-5: "Keep current value" keeps a placeholder | 3/3 |  |
+| 002-03 follow-up, skip answered | Fail | 0/3 | EO-3: `aid-config` asks only the unset settings, so the minimum-grade question is never asked or skipped; PC-5 placeholder option; PC-7 no break between groups once | 2/3 | PC-5 once: the walk offers `none`, `svn`, `mercurial` for a git project and `greenfield` for one with code |
+| 002-04 skip, then another user | Fail | 0/3 | PC-10 and PC-4: the follow-up question is shown unrecorded and without a recommendation; twice no `aid-set-connector` call; EO-5 once | 0/3 | PC-10 and PC-4/PC-11: the follow-up offer to run `/aid-set-connector` is still shown unrecorded, twice without the form; no `aid-set-connector` call; EO-5 once |
+| 002-14 orchestrate, unsure reading | Fail | 0/3 | PC-10: questions before the work are not written to the design document; once MN-3 (CRITICAL), several questions in one turn; once no `aid-orchestrate` call | Re-run pending (usage limit) |  |
+| 002-15 which tracker | 3/3 | Not re-run | | Not re-run |  |
+| 002-16 research without a question | Fail | 0/3 | Runs 1 and 3 hit the runner's 600 s limit on one `claude` call (the research skill's review rounds); run 2: PC-5, PC-10, PC-11 on the follow-up "Your call" question; run 3: PC-5(c), the go-ahead is asked although the user had already asked for the research | Re-run pending (usage limit) |  |
+| 002-17 review publish approval | Fail | 0/3 | PC-5, PC-10, PC-11: the go-ahead offers a skip, later questions unrecorded and unlabelled; EO-3 once, publish asked without the exact text; twice no `aid-review` call. Nothing was published, pushed or edited in any run | Re-run pending (usage limit) |  |
+| 002-18 report what to analyze | Fail | 1/3 | PC-10: the first or the closing question is shown unrecorded; EO-1 once | Re-run pending (usage limit) |  |
+| 002-19 monitor finding question | Fail | 0/3 | PC-4, PC-5, PC-10, PC-11: the Turn 2 follow-up has no recommendation, label, closing line or record | Re-run pending (usage limit) |  |
 
 The common cause: the first question of a run follows the protocol, and the follow-up questions later in the
 same conversation often do not (no record before shown, no recommendation, no importance label, no closing
