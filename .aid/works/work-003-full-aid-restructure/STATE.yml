@@ -2041,3 +2041,14 @@ qa:
     answer: '1 (maintainer): approve the gate fix round 2 design as written'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q177
+    category: 'Knowledge'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'KB conflict raised by the gate fix round 2 review (row 12): area C starts a matched read-only skill at once, with no go-ahead. The KB says otherwise: capability-inventory.md "one matching skill is proposed ... It shows the reading for approval"; decisions.md D32 "matches it to one skill, and proposes that skill''s workflow". Options: 1 keep C, narrow it to read-only skills (review, research, report, monitor, ask), and update both KB statements in this fix round; 2 drop C, keep the go-ahead for every skill, and only make the go-ahead skip-free.'
+    suggested: '1: keep C, narrowed to read-only skills, and update the two KB statements'
+    answer: --
+    answered_by: --
+    applied_to: --
