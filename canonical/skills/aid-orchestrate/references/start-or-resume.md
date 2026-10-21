@@ -23,9 +23,9 @@ Then stop. A request that is not a project question goes on to the check (sectio
 ## 2. Check, size and show the reading
 
 Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
-reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
-action-skill reading goes to START-ACTION and creates no work here. Every other reading goes on to
-section 3.
+reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer, except when
+`size-and-route.md` section 6 starts the skill at once. An action-skill reading goes to
+START-ACTION and creates no work here. Every other reading goes on to section 3.
 
 ## 3. Find the work
 
@@ -118,7 +118,7 @@ what happened and that no new work was created.
 ## 6. Record the intent
 
 The reading was sized and shown before this step (SKILL.md steps SIZE-READING and SHOW-READING), and
-the user has approved it. The record's keys are set through the writer only, never by hand:
+the user has approved it or section 6 of `size-and-route.md` started it at once. The record's keys are set through the writer only, never by hand:
 
 - The gate's `--create` (section 3) has already written `intent.request`, `intent.reading` and
   `intent.depth`, from the user's words, the reading and the depth. Nothing else writes them.

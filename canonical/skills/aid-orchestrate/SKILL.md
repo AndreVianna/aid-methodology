@@ -44,9 +44,9 @@ passes `--seed` that document, so the questions move into the work's `qa` list.
 3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth. When the project has no Knowledge Base, offer Preparation too
    (`references/size-and-route.md` section 5). **Advance:** **CHAIN** → SHOW-READING.
-4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, in the same
-   message as the first real question or approval; `references/size-and-route.md` section 6 says when the
-   skill starts at once. Then wait; it is never a turn of its own. **Advance:** **ASK** → ACTION-HANDOVER.
+4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, with the first real question or approval, or
+   alone when `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
+   **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). The user's answer to SHOW-READING decides. A reading that matches an
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
    `/aid-test`, `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A
@@ -77,11 +77,11 @@ passes `--seed` that document, so the questions move into the work's `qa` list.
 9. **Close a work** (`CLOSE`). `references/size-and-route.md` section 3: when every task is `Done` (or, for an
    investigation, when nothing was to land), set the phase to `CI` and the lifecycle to
    `Completed`, both through the writer (`--pipeline`). The flow stops there. **Advance:** **HALT**.
-10. **Hand over** (`HAND-OVER`). The user approved the reading at SHOW-READING, so nothing more is asked. Start the
-    first phase skill of a new work (`intent.phases`), or, for a continued work, the skill its record names at
-    its saved step (`references/start-or-resume.md` section 4), in this turn; where the tool cannot, name its
-    slash command. A continued work is handed over unchanged: write no `--handoff` and no `--step`, so
-    its record keeps the saved skill, step and `step_detail`. **Advance:** **PASS**.
+10. **Hand over** (`HAND-OVER`). The reading was approved at SHOW-READING, or started at once under its section 6,
+    so nothing more is asked. Start the first phase skill of a new work (`intent.phases`), or, for a continued
+    work, the skill its record names at its saved step (`references/start-or-resume.md` section 4), in this turn;
+    where the tool cannot, name its slash command. A continued work is handed over unchanged: write no `--handoff`
+    and no `--step`, so its record keeps the saved skill, step and `step_detail`. **Advance:** **PASS**.
 11. **During the work** (`DURING-WORK`). Load `references/external-sources.md` when a source is pulled in, applied
     or written back, and `references/feedback-routing.md` when feedback arrives. A re-route is said
     in one line and added to `intent.changes`. **Advance:** **CHAIN** → CHECK-READING when a new fact arrives;

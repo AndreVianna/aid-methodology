@@ -68,10 +68,14 @@ reading (SKILL.md step SHOW-READING). Build no Knowledge Base file before the us
 ## 6. Start at once, without a go-ahead
 
 Rule 5.3 of the question protocol and the skipped-question rule (AC-28) say not to ask what the user
-already settled. So when the user's own words ask for exactly the matched skill's action, and that action
-changes no project source (review this, research that, check production, report on this), show the reading
-in one line and start the skill in the same turn, with no go-ahead question. Any other match keeps its one
-confirmation question, and a request that builds or changes code always needs its approval.
+already settled. So the start-at-once path applies only to `/aid-ask`, `/aid-research`, `/aid-review`,
+`/aid-report`, `/aid-monitor` and `/aid-read-ticket`, and only when the user's own words already ask for
+exactly that action. Show the reading and its reason in one line and start the skill in the same turn, with no
+go-ahead question and no wait: the flow goes on to FIND-OR-CREATE. Every other skill keeps its one
+confirmation question, and so does a reading that carries a Preparation offer (section 5): it waits for the
+answer. The approvals inside a listed skill's own run
+(aid-review's publish approval, aid-monitor's routing approval, anything that writes outside its own report
+or record) are unchanged.
 
 After the yes, or after the one-line start, the skill is started with its slash command or the Skill tool.
 Its work is never done by hand, because only a started skill loads its own question rules.

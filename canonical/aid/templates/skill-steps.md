@@ -34,7 +34,8 @@ The step an advance line names is a step of the same skill's table, by its name.
 of a step, such as "Step 5" or "GENERATE -- Step 0d". When the next step depends on what the user
 answers, the line names the one step that reads the answer and moves on from there. A step that has
 read the answer may branch on one `CHAIN` line: one named step per case, and `HALT when ...` for the
-case on which the run ends.
+case on which the run ends. A case that ends the step with a blocking question takes `ASK` in place of
+`CHAIN` on that same line (`CHAIN → X when ...; ASK → Y when ...`).
 
 ## The advance words
 

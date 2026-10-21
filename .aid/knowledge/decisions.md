@@ -458,7 +458,7 @@ review-criteria:
   suffices; it reuses the D1 opener's `Suggested:`/`Why:` UX shape as a UX-shape consumer only).
 - **Status:** **Superseded by D32.** The router skill is gone. Its suggest-only job now belongs to
   the host agent, guided by `canonical/aid/rules.md` § Handling a request, which proposes one
-  workflow and waits for the user's approval. The write-free rule this decision set for the router
+  workflow and waits for the user's approval (a closed list of read-only skills the user asked for in so many words starts at once). The write-free rule this decision set for the router
   does not carry over to the host agent.
 
 ## D22 — Recipe-catalog removal
@@ -742,7 +742,7 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   orchestrator actor: there is no orchestrator sub-agent and no front-door router skill.
   `canonical/aid/rules.md` (loaded at every session start) carries an orchestration section under
   its `## Handling a request` heading and a skill guide. The host agent reads the user's request by
-  its meaning, matches it to one skill, and proposes that skill's workflow. The detailed procedures
+  its meaning, matches it to one skill, and proposes that skill's workflow for confirmation (except that a read-only skill from a closed list (`/aid-ask`, `/aid-research`, `/aid-review`, `/aid-report`, `/aid-monitor`, `/aid-read-ticket`) that the user asked for in so many words starts at once, with a one-line statement of the reading). The detailed procedures
   live in `/aid-orchestrate`, an on-demand playbook skill that runs in the main conversation and
   dispatches no sub-agent. Two things are retired: the `aid-orchestrator` agent and the
   `/aid-triage` router.

@@ -239,7 +239,7 @@ and §4 "The Phases"):
   mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
   grades every generated document at GATE, then halts for approval before `/aid-execute`. The
   default for a known, single-target change.
-- **Plain request.** Say what you want in your own words. The skill guide in `.aid/runtime/rules.md` matches it to one skill, or the agent answers a project question from the KB with sources and starts no work. `/aid-orchestrate` then checks the reading, sizes it (lite or full, offering Preparation when there is no KB) and shows it for approval; only then does an action-skill reading go to its skill, and any other reading finds or creates the work, records its `intent:`, and hands over its phases.
+- **Plain request.** Say what you want in your own words. The skill guide in `.aid/runtime/rules.md` matches it to one skill (proposed for confirmation; a closed list of read-only skills the user asked for in so many words starts at once), or the agent answers a project question from the KB with sources and starts no work. `/aid-orchestrate` then checks the reading, sizes it (lite or full, offering Preparation when there is no KB) and shows it for approval (or, for that closed list, in one line and starts at once); only then does an action-skill reading go to its skill, and any other reading finds or creates the work, records its `intent:`, and hands over its phases.
 
 CONFIRMED in `canonical/aid/templates/shortcut-engine.md`, `canonical/aid/rules.md` (`## Handling a request`), `canonical/skills/aid-orchestrate/SKILL.md`,
 and `docs/aid-methodology.md` §4.
