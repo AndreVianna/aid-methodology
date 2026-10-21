@@ -2030,3 +2030,14 @@ qa:
     answer: '2 (maintainer): a second sample fix round now for (a) the approval closing line, (b) aid-config placeholder options, (c) no go-ahead for an action the user already asked for, and the follow-up rule; then resync, /reload-skills and the 9 samples re-run locally'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q176
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Approve the delivery-003 gate fix round 2 design (analysis/delivery-003-gate-fix2-design.md): A approval closing line without skip; B aid-config walks all six settings and never offers a placeholder; C no go-ahead for a read-only action the user already asked for, and the skill is always started; D an end-of-turn check so every question gets the form and its record, plus the named closing questions written out; E runner per-call limit 600 s to 1200 s. Then tests, one capped Opus review, resync, reload, local re-run, and attempt 3 closes the gate with KI-008 for what still fails.'
+    suggested: 'approve as written'
+    answer: --
+    answered_by: --
+    applied_to: --
