@@ -20,7 +20,7 @@ Q174), so the second sample run was made on the maintainer's machine, in WSL Ubu
 
 | Item | Result | Evidence |
 |---|---|---|
-| `run-all.sh` | Every suite passes but the 9 machine-limit suites; `test-chat-node-federation.sh` fails only under parallel load and passes alone | Machine limits as in the delivery-001 gate report |
+| `run-all.sh` | After fix round 2's resync (`aecc8602`): 160 of 176 suites pass. The 16 failures are the 9 machine-limit suites, plus 7 that fail only because this container's `awk` is `mawk` (no `gawk`): `test-conformance-lane-semantics`, `test-domain-doc-matrix`, `test-essence-capture`, `test-harvest-batching`, `test-harvest-coined-terms`, `test-kb-scanner-exclusions`, `test-kb-scanner-scope` | Machine limits as in the delivery-001 gate report. The 7 fail identically on `a3dbfe25`, the commit before this session, where they passed on the earlier container; `harvest-coined-terms.sh` stops with `awk: syntax error` under `mawk`. No script changed in this session |
 | Site `npm test` | Pass | 2822 of 2822 (`npx vitest run`) |
 | Scratch-copy `run_generator.py` matches the live tree | Pass | `test-dogfood-byte-identity` 625 of 625 after the resync |
 | `installer-tests.yml` green on the delivery's commits | Pass | Run 2256 on the resync commit `a3dbfe25`, success |
