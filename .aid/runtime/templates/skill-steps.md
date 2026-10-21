@@ -34,7 +34,8 @@ The step an advance line names is a step of the same skill's table, by its name.
 of a step, such as "Step 5" or "GENERATE -- Step 0d". When the next step depends on what the user
 answers, the line names the one step that reads the answer and moves on from there. A step that has
 read the answer may branch on one `CHAIN` line: one named step per case, and `HALT when ...` for the
-case on which the run ends.
+case on which the run ends. A case that ends the step with a blocking question takes `ASK` in place of
+`CHAIN` on that same line (`CHAIN → X when ...; ASK → Y when ...`).
 
 ## The advance words
 
@@ -284,7 +285,9 @@ Approvals are asked by the main conversation, at the moments below. The depth is
 | The final result | approve | approve |
 
 - **An approval cannot be skipped (Q160).** It stays open, and its step stays paused, until the
-  user approves or declines. Every other question may be skipped.
+  user approves or declines. An approval is a yes that lets the agent change, build, delete, publish
+  or push something, or that approves a document or design. A question that changes nothing when
+  skipped, such as a reopen or close menu, is a plain question and may be skipped.
 - **Coinciding approvals are one approval (M11).** Approvals that fall at the same moment are one
   approval. On a work with one delivery, the delivery, whole-build and final-result approvals are
   one.

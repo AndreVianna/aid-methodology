@@ -63,10 +63,10 @@ My recommendation: yes -- the scope above matches your instruction and leaves th
   1. Confirm -- freeze this scope and apply it (recommended)
   2. Adjust -- you tell me what to correct in the understanding or scope
   3. Cancel -- stop here, no edit made
-Or answer in your own words, or ask me to explain. This approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
-Wait for the user's explicit response. Do not advance until a response is received.
+Wait for the user's explicit response. This approval cannot be skipped: do not advance until a response is received.
 
 ---
 

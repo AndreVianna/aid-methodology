@@ -56,7 +56,7 @@ Why I ask: each feature becomes its own specification, so the boundaries need to
 My recommendation: approve it -- every requirement and criterion is mapped to a feature.
   1. Approve as it is (recommended)
   2. Adjust it (tell me what to change: add, remove, merge, split, rename)
-Or answer in your own words or ask me to explain. An approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 **Feature decomposition rules:**

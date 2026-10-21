@@ -181,7 +181,7 @@ My recommendation: keep the Tier-0 items checked, and check a Tier-1/2 item only
   with rm -rf (not in git history).
 
 Reply with your final confirmed list of items to delete, or 'cancel' to skip all deletions.
-You may also ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Capture the user's confirmed selection as `CONFIRMED_MAIN[]` (the paths the
@@ -212,7 +212,7 @@ Why I ask: the discrepancy may mean in-flight work was merged.
 My recommendation: no -- the work is not confirmed finished, so leave it on disk.
   1. No -- skip this folder, leave it on disk (recommended)
   2. Yes -- add '.aid/works/work-003-example' to the deletion set (git rm)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Populate `CONFIRMED_EXPLICIT[]` with any folders the user says "yes" to.
@@ -344,7 +344,7 @@ My recommendation: keep it -- nothing is lost by leaving the worktree and branch
   1. Keep -- leave the worktree and branch intact (recommended)
   2. Remove -- git worktree remove + prune the work-099 branch.
      [ if dirty/ahead ]  Removing DISCARDS the uncommitted/unmerged work above.
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Semantics:

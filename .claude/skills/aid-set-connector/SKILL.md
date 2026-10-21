@@ -121,6 +121,11 @@ which prints the question's id. Right after the answer:
 `bash .aid/runtime/scripts/execute/writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'connector <stem>'`.
 Never put a secret value in either call. A non-zero exit stops the skill at once.
 
+**Follow-up offers.** A user's yes to an open connection question is the go-ahead for that setup: carry it
+out, and do not ask again. An offer to set up a connector, made before this skill is started, is a go-ahead
+question like any other (`question-protocol.md` § One question); its subject is `Connections`, and it is
+recorded with `--project --ask` and `--project --answer`, as above.
+
 Hold the resolved `auth_method` in `$NEW_AUTH` (forced `none` for `mcp`/`ssh`/`cli`, chosen for
 `api` only) — Step 5b's decision procedure compares `$TYPE`/`$NEW_AUTH` (this run's result) against
 `$OLD_TYPE`/`$OLD_AUTH` (Step 3, on-disk).

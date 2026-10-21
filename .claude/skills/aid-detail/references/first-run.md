@@ -64,7 +64,7 @@ Why I ask: each task becomes one agent session and one review, so the boundaries
 My recommendation: approve it -- every task has one type, a bounded scope and concrete criteria.
   1. Approve as it is (recommended)
   2. Change it (tell me what: retype, split, merge, reorder, scope or criteria)
-Or answer in your own words or ask me to explain. An approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 ### Step 2: Discuss

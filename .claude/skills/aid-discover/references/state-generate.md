@@ -222,7 +222,7 @@ Why I ask: the domain decides which documents the knowledge base is made of.
 My recommendation: software-cli -- TypeScript, package.json and the CLI command structure all point to it.
   1. Yes, software-cli (recommended)
   2. A different domain (give its label, for example methodology/tooling or hybrid:software-cli+methodology/tooling)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 **This is a genuine ASK.** Stop here after presenting. The user's choice
@@ -420,7 +420,7 @@ Why I ask: the set decides which documents discovery writes; it is saved to .aid
 My recommendation: accept the set above -- it covers every spine dimension.
   1. Accept the set as proposed (recommended)
   2. Edit it (give the changes as lines of `filename|owner|presence[:when]`)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 **This is a genuine ASK.** Stop here after presenting the proposal.
@@ -584,7 +584,7 @@ My recommendation: brownfield-large -- the project tripped all three large thres
   1. brownfield-large, the full machinery (recommended)
   2. brownfield-small: a single understand-pass; one reviewer runs the mandates as sequential passes
   3. greenfield: no source yet, so I stop with a signpost to /aid-describe; the KB fills in as you build
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 **This is a genuine ASK** (C4 human-gated; the path is measured but
@@ -986,7 +986,7 @@ My recommendation: exclude all of them -- none is a coined project term.
   1. Exclude all of them (recommended)
   2. Exclude only some (name them)
   3. Exclude none
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 **This is a genuine ASK.** Stop after presenting.

@@ -22,7 +22,7 @@ Why I ask: approval is what lets the work move on to the Definition phase.
 My recommendation: approve it -- it meets the grade and no question is left pending.
   1. Approve (recommended)
   2. Not yet -- I have something more to consider (tell me what)
-Or answer in your own words or ask me to explain. An approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 ### Step 3: Process Response
@@ -40,6 +40,6 @@ Or answer in your own words or ask me to explain. An approval cannot be skipped.
 - **Not yet (a consideration):** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
   Say in one plain line that the consideration is recorded as Q{N}. The pending Q&A is addressed by the Q-AND-A state of the next run.
 
-The approval is a blocking question: this step pauses on it until the user answers.
+The approval is a blocking question and cannot be skipped: this step pauses on it until the user answers.
 
 **Advance:** **CHAIN** → [State: DONE] on approval; **HALT** on a consideration.

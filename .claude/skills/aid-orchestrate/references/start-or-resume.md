@@ -23,9 +23,9 @@ Then stop. A request that is not a project question goes on to the check (sectio
 ## 2. Check, size and show the reading
 
 Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
-reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
-action-skill reading goes to START-ACTION and creates no work here. Every other reading goes on to
-section 3.
+reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer, except when
+`size-and-route.md` section 6 starts the skill at once. An action-skill reading goes to
+START-ACTION and creates no work here. Every other reading goes on to section 3.
 
 ## 3. Find the work
 
@@ -39,9 +39,11 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
   RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing),
   and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading,
   plus `--seed` for the design document that holds the questions asked so far (the go-ahead at
-  SHOW-READING and any new-or-continue question): first move it to `.aid/design/<slug>.md`, the slug
-  being the work's, with `writeback-state.sh --rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md
-  --to .aid/design/<slug>.md`. The flow creates no work by hand.
+  SHOW-READING and any new-or-continue question), when one exists: first move it to
+  `.aid/design/<slug>.md`, the slug being the work's, with `writeback-state.sh --rename-design
+  .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`. A skill started at once under
+  `size-and-route.md` section 6 with no question asked has no such document: no rename and no `--seed`.
+  The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
 **Advance:** **CHAIN** → ASK-FIRST when several works plausibly match; otherwise **CHAIN** → RECORD-INTENT.
@@ -118,7 +120,7 @@ what happened and that no new work was created.
 ## 6. Record the intent
 
 The reading was sized and shown before this step (SKILL.md steps SIZE-READING and SHOW-READING), and
-the user has approved it. The record's keys are set through the writer only, never by hand:
+the user has approved it or section 6 of `size-and-route.md` started it at once. The record's keys are set through the writer only, never by hand:
 
 - The gate's `--create` (section 3) has already written `intent.request`, `intent.reading` and
   `intent.depth`, from the user's words, the reading and the depth. Nothing else writes them.

@@ -334,7 +334,7 @@ Why I ask: the coherence check runs against exactly what is shown above.
 My recommendation: proceed as it stands -- it matches what we settled.
   1. Looks right, proceed (recommended)
   2. Correct something (tell me what)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Record any corrections before moving to step 3.
@@ -366,7 +366,7 @@ Why I ask: [because <domain signal> means <element> will be needed by aid-specif
 My recommendation: [Yes, include it -- it is load-bearing for downstream phases on this project]
   1. Yes, add it to the seed (recommended)
   2. No, defer it to when code exists
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Domain signals and their extensions:

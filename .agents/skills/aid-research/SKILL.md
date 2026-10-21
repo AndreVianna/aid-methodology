@@ -116,7 +116,10 @@ goes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.
 ## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)
 
 Present *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,
-never touching production), and *what it would learn*. Ask the user to authorize or decline it.
+never touching production), and *what it would learn*. Then ask the user to authorize or decline it
+as one approval question in the form of `.aid/runtime/templates/question-protocol.md`
+(`Research -- question 1 of 1 -- importance: medium`, **Why I ask**: a spike writes code, so it needs your
+go-ahead, **My recommendation**, and the closing line `Or answer in your own words, or ask me to explain.`).
 Once the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the
 throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed
 analytically and state the resulting limit in the Gaps section.
@@ -141,12 +144,25 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
-   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,
-   surface it, and the run ends.
+   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set the lifecycle to `Blocked` through the writer,
+   and name the open finding in plain words. Then ask the one question that unblocks the work, in the
+   form of `.aid/runtime/templates/question-protocol.md`, never as a bare "your call":
+
+   ```text
+   Research -- question 1 of 1 -- importance: high
+   Shall I fix {the open finding} and run one more review, or do you take the report as it stands with it noted?
+   Why I ask: the review loop stopped after 3 cycles, so only you can say whether to go on.
+   My recommendation: {the option that fits the finding's severity, and why}
+     1. Fix it and run one more review (recommended)
+     2. Take the report as it stands, with the finding noted under Gaps
+   Or answer in your own words, ask me to explain, or skip this question.
+   ```
+
+   Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Research --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown. The work stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed run shows the open question first, records the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'`, and sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and dispatches nothing. On the first option it goes to INVESTIGATE for one more cycle; on the second it goes to PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
-**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open).
 
 ---
 
@@ -155,7 +171,8 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
 The hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:
 the in-depth answer, conclusions (positive **and** negative), conflicts/contradictions
 **with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and
-gaps are first-class, never buried under positives.
+gaps are first-class, never buried under positives. The turn ends with the HANDOFF question below, in the form,
+never with an open line such as "your call".
 
 **Advance:** ASK → [State: HANDOFF].
 
@@ -167,8 +184,11 @@ Offer the natural next steps as **printed suggestions**, each requiring the user
 record an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the
 KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on
 a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never
-auto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named
-in one plain line.
+auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the form of
+`.aid/runtime/templates/question-protocol.md` (`Research -- question 1 of 1 -- importance: low`, **Why I ask**,
+**My recommendation**, numbered options with the recommended one first, and the closing line). Record it with
+`writeback-state.sh --ask --category Research --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with
+`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked one is named in one plain line.
 
 **Advance:** ASK → [State: DONE].
 

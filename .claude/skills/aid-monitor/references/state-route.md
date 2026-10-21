@@ -36,7 +36,7 @@ Why I ask: routing sends each finding back as a request, so you approve it first
 My recommendation: yes -- each route follows the finding's classification and evidence.
   1. Approve all routes (recommended)
   2. Adjust the routing for specific findings
-Or answer in your own words, ask me to explain, or decline.
+Or answer in your own words, or ask me to explain.
 ```
 
 ### Step 5: Act

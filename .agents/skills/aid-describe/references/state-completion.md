@@ -71,7 +71,7 @@ Why I ask: they are the work's title and summary on the dashboard.
 My recommendation: write them as shown -- they come straight from the objective.
   1. Write them as shown (recommended)
   2. Change the Name or the Description (tell me which)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Process feedback:
@@ -129,7 +129,7 @@ Why I ask: approval lets the work move on to the feature breakdown; nothing move
 My recommendation: approve -- the summary matches what we settled and the quality check passed.
   1. Approve (recommended)
   2. Not yet -- there is something more to consider (tell me what)
-Or answer in your own words or ask me to explain. An approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 An approval cannot be skipped: the step stays paused, with this step saved, until the user approves or adds a

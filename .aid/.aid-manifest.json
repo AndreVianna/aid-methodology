@@ -28,7 +28,7 @@
         },
         {
           "path": "aid-config/SKILL.md",
-          "sha256": "9edbd966d009ff4f1e354aa353ff9f30cdd632495879fdf02248d2c0ef19d82a"
+          "sha256": "7b832ffb795c258529d9d43c5796efb378efeac1e6d16a32a63638d9fc55a00c"
         },
         {
           "path": "aid-create-api/SKILL.md",
@@ -136,7 +136,7 @@
         },
         {
           "path": "aid-define/references/feature-decomposition.md",
-          "sha256": "f1509f0bbe35ad263141c4b4db3d1b8c763a9ed09f5856b5845713578f034dd9"
+          "sha256": "9ae7044d36cd7b43a63c54d2cc02875769b442bbe366e60c9e838b75c26a4073"
         },
         {
           "path": "aid-define/references/reviewer-brief.md",
@@ -232,7 +232,7 @@
         },
         {
           "path": "aid-describe/references/state-completion.md",
-          "sha256": "df6140111bddd6357f3b86f7c44e6bb10d3c33f29a238b8f604fde21f17b855d"
+          "sha256": "f2a0537c2eae75200b41ccc45a2c35fe8fd625bd0f8af2f4740d6c709293f309"
         },
         {
           "path": "aid-describe/references/state-continue.md",
@@ -240,7 +240,7 @@
         },
         {
           "path": "aid-describe/references/state-describe-seed.md",
-          "sha256": "c608ca15440574bdff355d56f2ba56bf00991e5561081b474011b1e34baafd44"
+          "sha256": "57289dc4ddc4f397b8443f7d9f682fdc6bcb9f519f74eeb1df33c37ca52ea111"
         },
         {
           "path": "aid-describe/references/state-first-run.md",
@@ -352,7 +352,7 @@
         },
         {
           "path": "aid-detail/references/first-run.md",
-          "sha256": "012e32a152eb86618257ded148d7d61826e06a8c02c5969615eff1388f001551"
+          "sha256": "8feff26bc8b745b67728fcd95c7c86fcc8acf25f8e6f8054730207a8c5a45024"
         },
         {
           "path": "aid-detail/references/review.md",
@@ -412,7 +412,7 @@
         },
         {
           "path": "aid-discover/references/state-approval.md",
-          "sha256": "f87b4f54eeb6d48dc6b30d313363e119703da965327f6b4bc681022466526c72"
+          "sha256": "9c3424e0b4f87874b011ff88a0aace4c11d210d27d6704522b48754d04a54357"
         },
         {
           "path": "aid-discover/references/state-closure.md",
@@ -432,7 +432,7 @@
         },
         {
           "path": "aid-discover/references/state-generate.md",
-          "sha256": "be4a1caacd19e5eb4d8905d0e11c2c91f41e34518a8f11ee00abf4a3980e4b99"
+          "sha256": "a21daea06d795bfeeb6d7e0574b5fc65e0064a488dff31bcd35935edc638c845"
         },
         {
           "path": "aid-discover/references/state-q-and-a.md",
@@ -528,7 +528,7 @@
         },
         {
           "path": "aid-housekeep/references/state-cleanup.md",
-          "sha256": "29ff92acce07b5e7861d3583d167fe5910bebd5c54b712f03e6c80868baa5716"
+          "sha256": "51ae7fc8596149c04a01823009c2a84eab9c1f5197ce16a71cc097e3d630286f"
         },
         {
           "path": "aid-housekeep/references/state-done.md",
@@ -552,7 +552,7 @@
         },
         {
           "path": "aid-monitor/SKILL.md",
-          "sha256": "9ac1b9f1c8026a402db8340710b1503c258dfbd2011cbc1dd41620ac47dac9a8"
+          "sha256": "c7737a7f5bce5778e0551e3d1cfbba33f6b050f415abcb17d5860ab80e567e25"
         },
         {
           "path": "aid-monitor/references/state-classify.md",
@@ -560,19 +560,19 @@
         },
         {
           "path": "aid-monitor/references/state-observe.md",
-          "sha256": "85d07d4c0ae6481c6108fb632113953721c6c8f2655657b67e89976028116ef0"
+          "sha256": "537c7458895e3491a6b9ddb4fd0ac26fa42e7d6834c9d09d2d714df19726111f"
         },
         {
           "path": "aid-monitor/references/state-route.md",
-          "sha256": "dc329a083756eeac190fd569ceb499f3f36f84cfbc423bcd5ffc8ceb6e3a61c8"
+          "sha256": "a6b4ea3392e95a47ab4ec2b40c513958958f001b0570c292ad415c567383f615"
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "971a37b42f8175c4006c1df290b77ba575a2c0c06073f93c0dfe3098fdf57c42"
+          "sha256": "373abb8f6a125dbabef72c0753b55273fe5d86cfc5268afbd9ab296ba310f059"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
-          "sha256": "87cc75dc98049e7a5c72ba2c0e8939aea1cac3202d11528c9442620e0928103a"
+          "sha256": "9ede05182f096cf13ff89bd092139a7d25c3746316a1533ff1112f1bcaa7fff4"
         },
         {
           "path": "aid-orchestrate/references/external-sources.md",
@@ -584,11 +584,11 @@
         },
         {
           "path": "aid-orchestrate/references/size-and-route.md",
-          "sha256": "8da379a77a429fcc3bdbbcec75afad5be1807237ca421177f27effc5498d4da2"
+          "sha256": "548533ac8994397f9dcd58fc1092bbb01d095b167887b2abb4d8c15dc644ee1c"
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
-          "sha256": "2975a439735189c3696ddee7ca81c69b2dab00fba6ccd6ba5e756e433d70fecd"
+          "sha256": "70e4790f780a67f5fc759b48087921e4c30035854f60ba81fb5305342ff9635f"
         },
         {
           "path": "aid-plan/SKILL.md",
@@ -632,19 +632,19 @@
         },
         {
           "path": "aid-report/SKILL.md",
-          "sha256": "7905dfe03b340dbcd6a2e0dfd1baf1ec085818501a2844f91106ef54e9c8103a"
+          "sha256": "48c74631cf9eed3acdb36e4bb84cc4f1d278b2001137362eeb7b781052339450"
         },
         {
           "path": "aid-research/SKILL.md",
-          "sha256": "6d4d534570b9480851ac69de574362f423de3dc70c5940a50a6d7bd022b96f92"
+          "sha256": "4c8e9083fd61740b8303a089de58276faa480c2257ac7277a34eba5b40e0f734"
         },
         {
           "path": "aid-review/SKILL.md",
-          "sha256": "3a30c5493bdd53d10097476c3164a1e439b3ec9fc97afc1bede6962d2616504f"
+          "sha256": "84934222bda357e283324f487c60b390e08afb61fabf12bed4c77e06055c782f"
         },
         {
           "path": "aid-set-connector/SKILL.md",
-          "sha256": "b5b6363c3ea53941d85512cf6eac967a40effee132ff25285a58726c13c7aa29"
+          "sha256": "66d0742b0e728cb52703e27d4be59aa79eebc66d6fbd0ee62a3d41e03839cfc8"
         },
         {
           "path": "aid-set-connector/references/question-sets.md",
@@ -824,11 +824,11 @@
         },
         {
           "path": "aid-update-kb/references/state-approval.md",
-          "sha256": "8817c639e51314e42d307217fa460bb64abfcc8c17d91b36d72cfd63c5d3fa96"
+          "sha256": "e2bd951751c4d23891edc8a7bc8f499b9c8a5e18ac8620a1c69e7b62fec5e340"
         },
         {
           "path": "aid-update-kb/references/state-confirm.md",
-          "sha256": "1cc432f160520321101deccda075f2daed6384be50ea0c552d2d05e43c86c9a5"
+          "sha256": "4291fc765e9ce4d4ea38b7fa70604e329653348905d325d0b74558cf9ee2dc48"
         },
         {
           "path": "aid-update-kb/references/state-done.md",
@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "c104de0b35e833cb3822359701c45abb7bf28a0d9fd3dd37d3967f03cf460592"
+          "sha256": "3e4f72a8cd3cea8885e040e5f7eab9495819757d8fbe0824cb99bf5e80a6dc59"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1354,7 +1354,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "0d5ebff2528f89dc138d17a5e0f271eb841311818154ca94defc3c23ecf17cf1"
+          "sha256": "755a1fdb62fbe01bd0ea98b517217530fb1871530854b76ada1addeb0d8c841e"
         },
         {
           "path": "templates/requirements.md",
@@ -1422,7 +1422,7 @@
         },
         {
           "path": "templates/skill-steps.md",
-          "sha256": "b16dd2ee7f334ee70f276627a15907f224090e2d49b388c7543af4be48e47da5"
+          "sha256": "212f84c78e337bef365793373bcf8523276ee066976754323fd224b2474a68e2"
         },
         {
           "path": "templates/specs/technical-specification-template.md",

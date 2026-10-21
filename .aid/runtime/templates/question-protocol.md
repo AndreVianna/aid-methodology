@@ -49,8 +49,8 @@ Never offer an option that could lead to an error or a worse result.
 - **Rule 5.3 -- No obvious questions.** Do not ask a question whose answer is obvious and needs no
   confirmation.
 - **Rule 5.4 -- Free text always.** The closing line always lets the user give a different answer,
-  ask for an explanation, or skip the question, in free text. An approval offers no skip: it stays
-  open until the user approves or declines (see Reviews and small decisions).
+  ask for an explanation, or skip the question, in free text. An approval offers no skip: it ends with the
+  approval line (see One question) and stays open until the user approves or declines (see Reviews and small decisions).
 
 ### Rule 6 -- Grouped by subject, most important first
 
@@ -100,6 +100,20 @@ Or answer in your own words, ask me to explain, or skip this question.
 
 - The first line gives the group subject, the question's place in its group and its importance.
 - Options appear only when two or more are valid, the recommended one first (Rule 5).
+- The form shows two closing lines. A plain question ends with the question line above. An approval ends with
+  the approval line, `Or answer in your own words, or ask me to explain.`, which has no skip. An approval is a yes
+  that lets the agent change, build, delete, publish or push something, or that approves a document or design. A
+  question that changes nothing when skipped, such as a reopen or close menu, is a plain question and ends with
+  the skip line.
+- **End-of-turn check.** Before you end a turn that waits on the user, the message has the first line
+  with its importance, `Why I ask`, `My recommendation` and the right closing line, and its `--ask` record
+  ran first. A closing or follow-up question ("Your call", "which would you like?", "fix them now?") is a
+  question like any other: the second and the last as much as the first. The exceptions are the break offer
+  and the confirmations this protocol leaves unrecorded (recovery, cancel); a skill with no writer for its
+  place records where Where each record lives says, or says it cannot.
+- **An offer to start a skill is a go-ahead question.** Show it in the form with the approval line and record it
+  like any other question; a bare "do you want to run /aid-x now?" is not one. A yes to an open question that
+  already covers the action is the go-ahead (Rule 5.3): carry it out and do not ask again.
 - The host tool's own question picker is never used. Every question is shown in this one form in
   every tool, so the reason and the recommendation read the same everywhere.
 
