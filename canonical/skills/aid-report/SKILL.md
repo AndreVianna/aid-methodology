@@ -57,7 +57,9 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 
 1. **Empty argument** -> the bootstrapping question ("What data should I analyze?"). The
-   answer is the subject; the path and complexity are then set from it.
+   answer is the subject; the path and complexity are then set from it. It is the run's first question
+   and is recorded like every later one: `--ask --design` runs before it is shown, even though no work or
+   design document exists yet (the first call opens the untitled one).
 2. **Guided path** -> scope *which metrics, what question about it*, one question at a time.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
@@ -97,7 +99,9 @@ analyze + consolidate:
   live DB / analytics / telemetry service -> **MCP-first connector**
   (`connectors/consumption-protocol.md`): scan `.aid/connectors/INDEX.md`, request the
   connection from the host MCP; no catalogued connector -> the main conversation asks the user for the export, inside this step
-  before the dispatch (the researcher never asks). Optional, never blocks.
+  before the dispatch (the researcher never asks), as one question in the form of
+  `.aid/runtime/templates/question-protocol.md` recorded with `--ask` before it is shown and `--answer`
+  after (`Report -- question 1 of 1 -- importance: high`). Optional, never blocks.
 - **Two-tier grounding (enforced):** the **data** + KB/source (what a metric means) are
   authoritative; external baselines/benchmarks are supplementary, cited URL + date. A
   data-vs-KB-assumption contradiction is surfaced with its reason, never resolved.
@@ -117,9 +121,14 @@ analyze + consolidate:
    conclusions not overstated into resolutions. Writes a review-quality ledger to
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
+   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer. Then
+   name the open finding in plain words and ask one question in the form (`Report -- question 1 of 1 --
+   importance: high`, **Why I ask**: the verify loop stopped after 3 cycles, **My recommendation**, numbered
+   options: one more analysis cycle / present the report as it stands with the open finding noted, and the
+   question closing line), recorded with `--ask` before it is shown and `--answer` after. The answer sets
+   the lifecycle back to `Running`: one more cycle continues at ANALYZE, the other at PRESENT.
 
-**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: ANALYZE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: ANALYZE] when it is not clean and fewer than 3 cycles have run; ASK then HALT when the circuit-breaker has blocked the work (the question above stays open).
 
 ---
 
@@ -127,7 +136,9 @@ analyze + consolidate:
 
 The hard stop follows the ASK step of `skill-steps.md`. Present `REPORT.md` clearly: findings
 (metrics/tables), conclusions (+/-), **caveats & data-quality gaps** (first-class),
-conflicts with reasons, and gaps. Assert no resolution.
+conflicts with reasons, and gaps. Assert no resolution. The turn ends with the HANDOFF question below,
+in the form and recorded with `--ask` before the message is sent, never with an open line such as
+"do you want to follow up on this report?".
 
 **Advance:** ASK → [State: HANDOFF].
 

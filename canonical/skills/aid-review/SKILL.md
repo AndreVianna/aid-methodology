@@ -101,7 +101,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 
 1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path
    is then picked from it.
-2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.
+2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it, as one go-ahead question in the form, with the approval closing line `Or answer in your own words, or ask me to explain.`
 3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.
 
 Record each of these questions in a design document before it is shown, and its reply after it, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.
@@ -171,12 +171,18 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
    If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded
    findings, add missed ones). **Circuit-breaker: 3 cycles** -> write
    `.aid/works/{work}/IMPEDIMENT-review.md`, set the lifecycle to `Blocked` through the writer
-   (`--pipeline --field Lifecycle --value Blocked`), and surface it instead of looping.
+   (`--pipeline --field Lifecycle --value Blocked`), and name the open finding in plain words instead of
+   looping. Then ask one question, in the form of `.aid/runtime/templates/question-protocol.md`
+   (`Review -- question 1 of 1 -- importance: high`, **Why I ask**: the verify loop stopped after 3 cycles,
+   **My recommendation**, numbered options: one more review cycle / present the findings as they stand with
+   the open one noted, and the question closing line), recorded with `--ask` before it is shown and
+   `--answer` after. The answer sets the lifecycle back to `Running`: one more cycle continues at REVIEW,
+   the other at PRESENT-FINDINGS.
 
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for
 the presentation as information only -- it does NOT drive a fix loop here.
 
-**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work.
+**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; ASK then HALT when the circuit-breaker has blocked the work (the question above stays open).
 
 ---
 
@@ -190,10 +196,13 @@ The hard stop follows the ASK step of `skill-steps.md`. Present:
   `/aid-fix` (or `/aid-update`) to address them" (review never starts the fix itself);
 - the **proposed delivery action + the exact comment/notes text** that would be posted.
 
-Then STOP and ask one decision question in the form of `.aid/runtime/templates/question-protocol.md`
-(`Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without your approval,
-**My recommendation**, numbered options: approve and publish / edit the text / choose a different
-delivery / do not publish, and the closing line). Record it with
+Then STOP. The stop is one approval question in the form of `.aid/runtime/templates/question-protocol.md`,
+never a free sentence such as "do you want me to publish?". It comes in the same message as the exact
+text it would post, shown in full above the question, with a plain line that nothing is posted until you
+approve. Form: `Review -- question 1 of 2 -- importance: high`, **Why I ask**: nothing is posted without
+your approval, **My recommendation**, numbered options: approve and publish / edit the text / choose a
+different delivery / do not publish, and the approval closing line `Or answer in your own words, or ask me to explain.`
+Record it with
 `writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with
 `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.
 Nothing is posted to any external target until they approve.
@@ -204,7 +213,7 @@ Nothing is posted to any external target until they approve.
 
 ## State: PUBLISH  (only on approval)
 
-If the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise
+If the user did not approve publishing, nothing is posted; go on to the fix question below. Otherwise
 deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
 enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 [<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
@@ -216,7 +225,17 @@ user must choose where it goes, ask that as one question in the same form, recor
 it is shown and `--answer` after, recommending the paste.
 Publishing is optional and never blocks DONE.
 
-**Advance:** CHAIN → [State: DONE].
+**Fix question** (only when findings remain). Once publishing is settled, ask one question in the form,
+never a free sentence such as "fix them now, or leave the ledger?": `Review -- question 2 of 2 --
+importance: medium`, **Why I ask**: this review never fixes, so a fix starts only when you ask for it,
+**My recommendation** (fix now when a finding is serious or cheap to correct, otherwise leave the ledger
+for later), numbered options: hand the findings to `/aid-fix` now / leave the ledger for later, and the
+question closing line. Record it with `--ask --category Review --impact Medium --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review`
+before it is shown and `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'fix'`
+after. The first option goes back as a fix request in plain words through `rules.md` § Handling a
+request; this skill changes nothing itself.
+
+**Advance:** ASK → [State: DONE].
 
 ---
 
