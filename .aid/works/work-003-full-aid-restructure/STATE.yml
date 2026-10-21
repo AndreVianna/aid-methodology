@@ -2033,11 +2033,11 @@ qa:
   - id: Q176
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Approve the delivery-003 gate fix round 2 design (analysis/delivery-003-gate-fix2-design.md): A approval closing line without skip; B aid-config walks all six settings and never offers a placeholder; C no go-ahead for a read-only action the user already asked for, and the skill is always started; D an end-of-turn check so every question gets the form and its record, plus the named closing questions written out; E runner per-call limit 600 s to 1200 s. Then tests, one capped Opus review, resync, reload, local re-run, and attempt 3 closes the gate with KI-008 for what still fails.'
     suggested: 'approve as written'
-    answer: --
-    answered_by: --
+    answer: '1 (maintainer): approve the gate fix round 2 design as written'
+    answered_by: 'Claude'
     applied_to: --
