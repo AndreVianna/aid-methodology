@@ -119,13 +119,16 @@ My recommendation: {the answer you propose, and why}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-- An approval ends with the other closing line, `Or answer in your own words, or ask me to explain.`, with no skip. Use it for
-  every approval: a go-ahead, a yes before building, a document or design approval. Only a plain question ends with the skip line.
+- An approval ends with the other closing line, `Or answer in your own words, or ask me to explain.`, with no skip. An approval is a yes
+  that lets the agent change, build, delete, publish or push something, or that approves a document or design. A question that changes
+  nothing when skipped, such as a reopen or close menu, is a plain question and ends with the skip line.
 - List options only when two or more are valid, the recommended one first; with one valid option, ask
   for a confirmation instead. An approval cannot be skipped.
 - Before you end a turn that waits on the user, check the message: the first line with its importance, `Why I ask`,
   `My recommendation`, the right closing line, and the `--ask` record already written. A closing or follow-up question ("Your call",
-  "which would you like?", "fix them now?") is a question like any other: the second and the last as much as the first.
+  "which would you like?", "fix them now?") is a question like any other: the second and the last as much as the first. The exceptions are
+  the break offer and the confirmations the protocol leaves unrecorded (recovery, cancel); a skill with no writer for its place records
+  where the protocol says, or says it cannot.
 - Group questions by subject, most important first, and offer a break when the subject changes.
 
 ## Skill guide

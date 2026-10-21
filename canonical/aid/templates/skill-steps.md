@@ -284,7 +284,9 @@ Approvals are asked by the main conversation, at the moments below. The depth is
 | The final result | approve | approve |
 
 - **An approval cannot be skipped (Q160).** It stays open, and its step stays paused, until the
-  user approves or declines. Every other question may be skipped.
+  user approves or declines. An approval is a yes that lets the agent change, build, delete, publish
+  or push something, or that approves a document or design. A question that changes nothing when
+  skipped, such as a reopen or close menu, is a plain question and may be skipped.
 - **Coinciding approvals are one approval (M11).** Approvals that fall at the same moment are one
   approval. On a work with one delivery, the delivery, whole-build and final-result approvals are
   one.

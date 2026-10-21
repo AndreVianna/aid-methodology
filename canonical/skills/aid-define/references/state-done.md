@@ -13,7 +13,7 @@ My recommendation: nothing to add -- close it, and move on to the specification.
   1. Nothing to add, close it (recommended)
   2. Run the cross-reference validation again
   3. Add more information (reopen for additional input)
-Or answer in your own words, or ask me to explain.
+Or answer in your own words, ask me to explain, or skip this question.
 ```
 
 - **Add more information:**

@@ -69,9 +69,12 @@ the knowledge base, are not design-stage questions. Check 10 applies to them in 
    - (c) No obvious question is asked: a question whose answer the user has already given, or that needs no
      confirmation, fails.
    - (d) No option could lead to an error or a worse result.
-   - (e) The closing line of every question that is not an approval is `Or answer in your own words, ask me to
-     explain, or skip this question.` An approval (a go-ahead, a yes before building, a document or design
-     approval) offers no skip: its closing line is `Or answer in your own words, or ask me to explain.`
+   - (e) The closing line is judged by meaning, not by exact text. A plain question's closing line lets the user
+     answer in their own words, ask for an explanation, and skip; the usual form is `Or answer in your own words,
+     ask me to explain, or skip this question.`, and a skill's own variant passes (for example aid-config's
+     `(type a value of your own)`). An approval (a yes that lets the agent change, build, delete, publish or push
+     something, or that approves a document or design) offers own words and an explanation and no skip; the usual
+     form is `Or answer in your own words, or ask me to explain.`
    - Evidence: `transcript.md`, the numbered options and the closing line of each question.
 
 6. **Grouped by subject, most important first, in groups of 3 to 5.** Questions come in groups by subject,

@@ -68,7 +68,7 @@ Why I ask: nothing is committed to the KB without your approval.
 My recommendation: approve -- the review gate passed and the edits stay inside the confirmed scope.
   1. Approved -- commit the changes on <Branch> (created at Pre-flight; no new branch is created here) (recommended)
   2. Additional consideration -- you tell me what to change, and the scope is re-planned
-Or answer in your own words, or ask me to explain. This approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 Wait for the user's explicit response. This approval cannot be skipped: the question

@@ -129,7 +129,7 @@ Why I ask: approval lets the work move on to the feature breakdown; nothing move
 My recommendation: approve -- the summary matches what we settled and the quality check passed.
   1. Approve (recommended)
   2. Not yet -- there is something more to consider (tell me what)
-Or answer in your own words or ask me to explain. An approval cannot be skipped.
+Or answer in your own words, or ask me to explain.
 ```
 
 An approval cannot be skipped: the step stays paused, with this step saved, until the user approves or adds a

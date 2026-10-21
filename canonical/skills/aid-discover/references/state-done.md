@@ -12,7 +12,7 @@ Why I ask: the knowledge base is already approved, so nothing more runs unless y
 My recommendation: leave it as it is -- it is approved and meets the minimum grade.
   1. Leave it as it is (recommended)
   2. Reopen it for review
-Or answer in your own words (for example, a concern for the reviewer), or ask me to explain.
+Or answer in your own words (for example, a concern for the reviewer), ask me to explain, or skip this question.
 ```
 
 The question is blocking: this step pauses on it until the user answers.

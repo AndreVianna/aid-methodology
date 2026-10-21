@@ -181,7 +181,7 @@ My recommendation: keep the Tier-0 items checked, and check a Tier-1/2 item only
   with rm -rf (not in git history).
 
 Reply with your final confirmed list of items to delete, or 'cancel' to skip all deletions.
-You may also ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Capture the user's confirmed selection as `CONFIRMED_MAIN[]` (the paths the
