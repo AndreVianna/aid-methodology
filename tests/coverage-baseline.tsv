@@ -1542,7 +1542,6 @@ test-aid-dashboard-cli.sh	T-3: original child still alive after rejected second 
 test-aid-dashboard-cli.sh	T-3: second start exit 8	1
 test-aid-dashboard-cli.sh	T-3: stop-first hint	1
 test-aid-dashboard-cli.sh	T-4: child dead after stop	1
-test-aid-dashboard-cli.sh	T-4: child dead after stop — expected 'dead' got 'alive'	1
 test-aid-dashboard-cli.sh	T-4: dashboard.pid removed after stop	1
 test-aid-dashboard-cli.sh	T-4: logfile removed after stop	1
 test-aid-dashboard-cli.sh	T-4: port <PORT> freed after stop	1
@@ -3878,7 +3877,7 @@ test-dashboard-manifest.sh	DM02	1
 test-dashboard-manifest.sh	DM03	1
 test-dashboard-manifest.sh	DM04	1
 test-dashboard-manifest.sh	DM05	5
-test-dashboard-node.sh	dashboard node test passes: dashboard<PATH>	3
+test-dashboard-node.sh	dashboard node test passes: dashboard<PATH>	4
 test-dashboard-parity-h.sh	[PT-1-H] node server started on port <PORT>	1
 test-dashboard-parity-h.sh	[PT-1-H] python server started on port <PORT>	1
 test-dashboard-parity-h.sh	[detail-6a] details map content: 3 tasks, CRITICAL<PATH> findings, delivery_id null, deferred-issue filter correct	1
@@ -4634,6 +4633,13 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task029_stop_requeste
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_intent_phases_list_reaches_both_serialized_works	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_work_without_intent_serializes_phases_as_null	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestIntentPhasesThroughBothReaders.test_work_without_intent_serializes_phases_as_null_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_completed_work_with_saved_skill_is_inconsistent	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_completed_work_without_saved_skill_is_ok	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_no_open_call_when_every_call_is_returned	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_open_call_serializes_identically	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_skipped_qa_entry_counts_as_open	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_step_and_step_detail_come_through	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task031_intent_phases.TestWorkRecordThroughBothReaders.test_work_without_intent_reading_is_missing	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_all_verdicts_node	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_all_verdicts_python	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task044_freshness_parity.TestDocFreshnessParity.test_doc_freshness_entry_order_identical	1
@@ -4764,6 +4770,12 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestTornReadTolerance.test_torn_delivery_gate_no_exception	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestTornReadTolerance.test_torn_findings_block_no_exception	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestTornReadTolerance.test_torn_issues_file_no_exception	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_both_readers_serialize_each_fixture_identically	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_each_fixture_carries_its_expected_values_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_fixture_set_matches_expected	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_fixtures_cover_every_phase_and_lifecycle_case	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_old_phase_name_reads_as_its_new_name_in_both_readers	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task079_phase_fixtures.TestTask079PhaseFixtures.test_open_call_names_the_phase_the_work_returns_to	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work001_delivery_layouts.TestBothLayoutsNodeParity.test_full_nested_python_node_agree	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work001_delivery_layouts.TestBothLayoutsNodeParity.test_lite_flat_python_node_agree	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work001_delivery_layouts.TestFullNestedLayout.test_deliveries_folder_present_on_disk	1
@@ -4848,9 +4860,111 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_dis
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_discovery.TestPresentationReferencesWorksContainer.test_models_captions_reference_works	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work016_container_discovery.TestPythonNodeContainerParity.test_python_node_agree_on_container_tree	1
 test-deferred-tests.sh	DT-01 header is test, covers, waiting_for, needs	1
-test-deferred-tests.sh	DT-01 rows read: 18 sample row(s), 0 skill row(s)	1
-test-deferred-tests.sh	DT-01 sample samples<PATH> names an existing file	18
-test-deferred-tests.sh	DT-02 deferred list has 18 row(s) (AID_RELEASE_CHECK=0)	1
+test-deferred-tests.sh	DT-01 rows read: 8 sample row(s), 102 skill row(s)	1
+test-deferred-tests.sh	DT-01 sample samples<PATH> names an existing file	8
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-ask' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-brainstorm' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-api' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-architecture' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-backlog' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-cicd' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-cli' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-config' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-dashboard' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-data-model' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-data-pipeline' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-diagram' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-document' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-infra' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-integration' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-job' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-messaging' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-mvp' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-roadmap' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-stack' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-test' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-testing-strategy' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-theme' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-ticket' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-create-ui' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-define' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-deploy' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-deprecate' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-describe' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-api' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-architecture' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-backlog' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-cicd' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-cli' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-config' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-dashboard' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-data-model' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-data-pipeline' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-document' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-infra' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-integration' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-job' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-messaging' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-mvp' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-roadmap' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-stack' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-test' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-testing-strategy' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-theme' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-design-ui' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-detail' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-discover' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-architecture' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-changelog' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-decision' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-guideline' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-runbook' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-standard' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-document-tutorial' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-execute' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-experiment' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-fix' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-housekeep' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-migrate' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-plan' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-prototype' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-prototype-ui' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-refactor' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-remove' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-specify' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-summarize' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-test' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-test-data-quality' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-test-performance' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-test-security' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-api' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-architecture' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-backlog' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-cicd' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-cli' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-config' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-dashboard' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-data-model' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-data-pipeline' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-document' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-infra' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-integration' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-job' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-kb' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-messaging' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-mvp' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-roadmap' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-stack' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-test' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-testing-strategy' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-theme' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-ticket' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-01 skill row 'skill:aid-update-ui' matches a folder under canonical<PATH>	1
+test-deferred-tests.sh	DT-02 deferred list has 110 row(s) (AID_RELEASE_CHECK=0)	1
 test-delete-pipeline.sh	U1 .aid<PATH> container survives	1
 test-delete-pipeline.sh	U1 main-folder delete exits 0	1
 test-delete-pipeline.sh	U1 success message format	1
@@ -4951,7 +5065,7 @@ test-deploy-monitor-repurpose.sh	DMR11a	1
 test-deploy-monitor-repurpose.sh	DMR11b	1
 test-deploy-monitor-repurpose.sh	DMR11c	1
 test-deploy-monitor-repurpose.sh	DMR11d	1
-test-deploy-monitor-repurpose.sh	DMR12	1
+test-deploy-monitor-repurpose.sh	DMR12	4
 test-deploy-monitor-repurpose.sh	DMR13a	2
 test-deploy-monitor-repurpose.sh	DMR13b	2
 test-deploy-monitor-repurpose.sh	DMR20a	2
@@ -5053,6 +5167,171 @@ test-describe-full-only.sh	DFO20	1
 test-describe-full-only.sh	DFO21	1
 test-describe-full-only.sh	DFO22	1
 test-describe-full-only.sh	DFO23	1
+test-design-no-work.sh	DN-01: aid-brainstorm has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-api has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-architecture has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-backlog has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-cicd has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-cli has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-config has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-dashboard has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-data-model has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-data-pipeline has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-document has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-infra has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-integration has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-job has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-messaging has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-mvp has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-roadmap has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-stack has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-test has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-testing-strategy has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-theme has a SKILL.md	1
+test-design-no-work.sh	DN-01: aid-design-ui has a SKILL.md	1
+test-design-no-work.sh	DN-01: the design-stage roster is brainstorm, bare design and the 21 design-<kind> skills	1
+test-design-no-work.sh	DN-02: aid-brainstorm has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-api has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-architecture has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-backlog has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-cicd has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-cli has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-config has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-dashboard has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-data-model has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-data-pipeline has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-document has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-infra has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-integration has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-job has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-messaging has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-mvp has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-roadmap has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-stack has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-test has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-testing-strategy has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-theme has no gate --create call	1
+test-design-no-work.sh	DN-02: aid-design-ui has no gate --create call	1
+test-design-no-work.sh	DN-03: aid-brainstorm has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-api has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-architecture has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-backlog has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-cicd has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-cli has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-config has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-dashboard has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-data-model has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-data-pipeline has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-document has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-infra has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-integration has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-job has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-messaging has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-mvp has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-roadmap has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-stack has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-test has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-testing-strategy has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-theme has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-03: aid-design-ui has no 'Allocates a work-NNN' text	1
+test-design-no-work.sh	DN-04: aid-brainstorm names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-api names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-architecture names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-backlog names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-cicd names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-cli names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-config names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-dashboard names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-data-model names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-data-pipeline names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-document names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-infra names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-integration names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-job names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-messaging names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-mvp names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-roadmap names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-stack names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-test names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-testing-strategy names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-theme names only --design writes	1
+test-design-no-work.sh	DN-04: aid-design-ui names only --design writes	1
+test-design-no-work.sh	DN-05: aid-brainstorm records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-api records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-architecture records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-backlog records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-cicd records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-cli records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-config records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-dashboard records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-data-model records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-data-pipeline records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-document records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-infra records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-integration records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-job records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-messaging records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-mvp records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-roadmap records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-stack records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-test records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-testing-strategy records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-theme records questions and steps with --design	1
+test-design-no-work.sh	DN-05: aid-design-ui records questions and steps with --design	1
+test-design-no-work.sh	DN-06: SKILL.md passes --seed to --create	1
+test-design-no-work.sh	DN-06: SKILL.md records its pre-work questions with --ask --design and --rename-design	3
+test-design-no-work.sh	DN-06: aid-create-architecture passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-backlog passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-cicd passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-document passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-mvp passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-roadmap passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-stack passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-create-testing-strategy passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-architecture passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-backlog passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-cicd passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-mvp passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-roadmap passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-stack passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: aid-update-testing-strategy passes --seed .aid<PATH> to the gate's --create	1
+test-design-no-work.sh	DN-06: shortcut-engine.md passes --seed to --create	1
+test-design-no-work.sh	DN-06: shortcut-engine.md records its pre-work questions with --ask --design and --rename-design	1
+test-design-no-work.sh	DN-06: start-or-resume.md passes --seed to --create	1
+test-design-no-work.sh	DN-06: work-initiation-gate.md records its pre-work questions with --ask --design and --rename-design	1
+test-design-no-work.sh	DN-07(existing-works): --answer --design exits 0 --	1
+test-design-no-work.sh	DN-07(existing-works): --ask --design exits 0 -- D1	1
+test-design-no-work.sh	DN-07(existing-works): --ask --design opens the seed document	1
+test-design-no-work.sh	DN-07(existing-works): --ask --design prints the new id D1	1
+test-design-no-work.sh	DN-07(existing-works): --step --design exits 0 --	1
+test-design-no-work.sh	DN-07(existing-works): --step --design writes step into the seed frontmatter	1
+test-design-no-work.sh	DN-07(existing-works): .aid<PATH> is unchanged by the design writes	1
+test-design-no-work.sh	DN-07(existing-works): the seed carries a ## Questions table	1
+test-design-no-work.sh	DN-07(no-works): --answer --design exits 0 --	1
+test-design-no-work.sh	DN-07(no-works): --ask --design exits 0 -- D1	1
+test-design-no-work.sh	DN-07(no-works): --ask --design opens the seed document	1
+test-design-no-work.sh	DN-07(no-works): --ask --design prints the new id D1	1
+test-design-no-work.sh	DN-07(no-works): --step --design exits 0 --	1
+test-design-no-work.sh	DN-07(no-works): --step --design writes step into the seed frontmatter	1
+test-design-no-work.sh	DN-07(no-works): .aid<PATH> is unchanged by the design writes	1
+test-design-no-work.sh	DN-07(no-works): no .aid<PATH> was created	1
+test-design-no-work.sh	DN-07(no-works): the seed carries a ## Questions table	1
+test-design-no-work.sh	DN-07: --design outside .aid<PATH> is refused (exit 5)	1
+test-design-no-work.sh	DN-08: aid-create-backlog records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-create-mvp records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-create-roadmap records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-architecture records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-backlog records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-cicd records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-mvp records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-roadmap records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-stack records its pre-allocation questions with --ask --design <PATH> --answer --design	1
+test-design-no-work.sh	DN-08: aid-update-testing-strategy records its pre-allocation questions with --ask --design <PATH> --answer --design	1
 test-diagram-content.sh	DC01	1
 test-diagram-content.sh	DC02	1
 test-diagram-content.sh	DC03	1
@@ -5235,8 +5514,8 @@ test-document-family-scaffold.sh	DFS48	2
 test-dogfood-byte-identity.sh	DBI-ABS .claude<PATH> is absent	1
 test-dogfood-byte-identity.sh	DBI-ABS .cursor<PATH> are absent	1
 test-dogfood-byte-identity.sh	DBI-ABS .cursor<PATH> is absent	1
-test-dogfood-byte-identity.sh	DBI-AG-CLA .claude<PATH>	8
-test-dogfood-byte-identity.sh	DBI-AG-CUR .cursor<PATH>	8
+test-dogfood-byte-identity.sh	DBI-AG-CLA .claude<PATH>	7
+test-dogfood-byte-identity.sh	DBI-AG-CUR .cursor<PATH>	7
 test-dogfood-byte-identity.sh	DBI-AG-ORPHAN-CLA .claude<PATH> has no orphans	1
 test-dogfood-byte-identity.sh	DBI-AG-ORPHAN-CUR .cursor<PATH> has no orphans	1
 test-dogfood-byte-identity.sh	DBI-MAN .aid<PATH> exists	1
@@ -5262,7 +5541,7 @@ test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-BODY AGENTS.md AID region is the r
 test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)	1
 test-dogfood-byte-identity.sh	DBI-ROOT-CLAUDE CLAUDE.md AID region is the AGENTS.md body plus the single @.aid<PATH> import	1
 test-dogfood-byte-identity.sh	DBI-ROOT-PROJECT CLAUDE.md keeps its ## Project section	1
-test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	140
+test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	139
 test-dogfood-byte-identity.sh	DBI-RT-EXTRA .aid<PATH> holds no file beyond canonical<PATH> and host.conf	1
 test-dogfood-byte-identity.sh	DBI-RT-HOST .aid<PATH> holds exactly worktree_root=.claude<PATH>	1
 test-dogfood-byte-identity.sh	DBI-RT-RULES .aid<PATH> == canonical<PATH>	1
@@ -5408,13 +5687,11 @@ test-dual-intent-self-eval.sh	DI45	1
 test-dual-intent-self-eval.sh	DI46	1
 test-essence-capture.sh	ISO-CANARY -- real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-essence-capture.sh	T01 V-A1 -- 'Relative Bus' present with Spread=3 (>= 2)	1
-test-essence-capture.sh	T01 V-A1 -- candidate-concepts.md was not produced by harvest	1
 test-essence-capture.sh	T02 V-A2 -- phrase 'Relative Bus' (class=phrase) survived at Spread=3 >= 2 (phrase-salience escape)	1
 test-essence-capture.sh	T03a V-A3 -- 'Relative Bus' is emitted in the candidate list (not buried)	1
 test-essence-capture.sh	T03b V-A3 -- no single-channel phrase noise appears above 'Relative Bus' in ranked output (phrase floor = spread >= 2 is sufficient)	1
 test-essence-capture.sh	T04 V-A4 -- closed-kb output (a) is empty (zero ungrounded terms: concept closure PASSES)	1
 test-essence-capture.sh	T05 V-A5 -- unclosed-kb output (a) reports 'relative bus' as ungrounded (regression guard ACTIVE)	1
-test-essence-capture.sh	T06 V-A6 -- harvest output differs between runs (non-determinism)	1
 test-essence-capture.sh	T06 V-A6 -- harvest output is byte-identical across two runs (determinism confirmed)	1
 test-executor-graph-flat-plan.sh	F1 fixture has zero ### delivery- headings	1
 test-executor-graph-flat-plan.sh	F2a compute-block-radius.sh exits 0 (no --delivery-id needed)	1
@@ -5448,8 +5725,7 @@ test-f010-governance-guards.sh	G06 state-kb-delta.md contains the 'No doc is ski
 test-f010-governance-guards.sh	G07 state-kb-delta.md references closure-check.sh (housekeep closure re-verify)	1
 test-f010-governance-guards.sh	G08 state-kb-delta.md: closure re-verify precedes commit	1
 test-f010-governance-guards.sh	G09 state-done.md references closure-check.sh (update-kb closure re-verify)	1
-test-f010-governance-guards.sh	G10 state-done.md: closure re-verify (line 14) precedes commit (line 156)	1
-test-f010-governance-guards.sh	G10 state-done.md: closure re-verify (line 14) precedes commit (line 157)	1
+test-f010-governance-guards.sh	G10 state-done.md: closure re-verify (line 12) precedes commit (line 154)	1
 test-f010-governance-guards.sh	setup: aid-housekeep<PATH> exists	1
 test-f010-governance-guards.sh	setup: aid-update-kb<PATH> exists	1
 test-fix-family-scaffold.sh	FFS00a	1
@@ -5613,43 +5889,26 @@ test-guardrails-d012.sh	NM-g state-validate.md references validate-diagrams.mjs 
 test-guardrails-d012.sh	NM-g state-validate.md references validate-visuals.mjs	1
 test-harvest-batching.sh	T01 fallback self-consistent (rg absent -- both runs use grep)	1
 test-harvest-batching.sh	T01 rg path == grep fallback (byte-identical; cross-OS determinism)	1
-test-harvest-batching.sh	T01b equivalence fixture produced NO harvest rows -- comparison would be vacuous	1
 test-harvest-batching.sh	T01b equivalence fixture produced harvest rows (comparison is non-vacuous)	1
 test-harvest-batching.sh	T02 harvest completes on pathological long-line input (no hang)	1
-test-harvest-batching.sh	T02 harvest completes on pathological long-line input (no hang) — expected exit 0, got 2	1
 test-harvest-batching.sh	T02b pathological run still emits the documented table header	1
-test-harvest-batching.sh	T02b pathological run still emits the documented table header — pattern not found: '| # | Source | Term | Class | Freq | Spread | Channels | Salience | Example source |' in <PATH>	1
 test-harvest-batching.sh	T03 long-line content is extracted (distinctive phrase surfaces; deterministic, history-independent)	1
-test-harvest-batching.sh	T03 long-line content is extracted (distinctive phrase surfaces; deterministic, history-independent) — pattern not found: 'Quorum Pulse' in <PATH>	1
 test-harvest-coined-terms.sh	T01 UserService (all-common-word, spread=1) dropped by denylist filter	1
 test-harvest-coined-terms.sh	T02 RelativeBus (all-common split, spread>=2) survives via phrase-escape rule	1
-test-harvest-coined-terms.sh	T02 RelativeBus (all-common split, spread>=2) survives via phrase-escape rule — pattern not found: 'RelativeBus'	1
 test-harvest-coined-terms.sh	T03 Relative Bus (all-common phrase, spread>=2) survives via phrase-survival rule	1
-test-harvest-coined-terms.sh	T03 Relative Bus (all-common phrase, spread>=2) survives via phrase-survival rule — pattern not found: 'Relative Bus'	1
 test-harvest-coined-terms.sh	T04 CrunchFactor (cross-source) outranks FluxMatrix (single-channel) in output	1
-test-harvest-coined-terms.sh	T04 CrunchFactor (cross-source) should outrank FluxMatrix (single-channel) -- crunch at line MISSING, flux at line MISSING	1
 test-harvest-coined-terms.sh	T05 spread>=3 candidate (TripleSpread) not truncated by --top 1	1
-test-harvest-coined-terms.sh	T05 spread>=3 candidate (TripleSpread) not truncated by --top 1 — pattern not found: 'TripleSpread'	1
 test-harvest-coined-terms.sh	T06 harvest output is byte-identical on re-run (NFR-3 determinism)	1
 test-harvest-coined-terms.sh	T07 QuorumPulse (commit-only term) captured via history channel	1
-test-harvest-coined-terms.sh	T07 QuorumPulse (commit-only term) captured via history channel — pattern not found: 'QuorumPulse'	1
 test-harvest-coined-terms.sh	T08a non-git tree: harvest exits 0 (no error)	1
-test-harvest-coined-terms.sh	T08a non-git tree: harvest exits 0 (no error) — expected exit 0, got 2	1
 test-harvest-coined-terms.sh	T08b non-git tree: no history-channel rows in output	1
 test-harvest-coined-terms.sh	T09a 'Relative Bus' phrase surfaces in harvest output	1
-test-harvest-coined-terms.sh	T09a 'Relative Bus' phrase surfaces in harvest output — pattern not found: 'Relative Bus'	1
 test-harvest-coined-terms.sh	T09b 'Relative Bus' appears in top 5 rows (cross-source salience)	1
-test-harvest-coined-terms.sh	T09b 'Relative Bus' not in top 5 rows -- top-5:	1
 test-harvest-coined-terms.sh	T10a output title: '# Candidate Concepts'	1
-test-harvest-coined-terms.sh	T10a output title: '# Candidate Concepts' — pattern not found: '# Candidate Concepts'	1
 test-harvest-coined-terms.sh	T10b output has '## Summary' section	1
-test-harvest-coined-terms.sh	T10b output has '## Summary' section — pattern not found: '## Summary'	1
 test-harvest-coined-terms.sh	T10c output has '## Ranked Candidates' section	1
-test-harvest-coined-terms.sh	T10c output has '## Ranked Candidates' section — pattern not found: '## Ranked Candidates'	1
 test-harvest-coined-terms.sh	T10d output has documented column header row	1
-test-harvest-coined-terms.sh	T10d output has documented column header row — pattern not found: '| # | Source | Term | Class | Freq | Spread | Channels | Salience | Example source |'	1
 test-harvest-coined-terms.sh	T10e output has at least one harvest data row	1
-test-harvest-coined-terms.sh	T10e output has no harvest data rows	1
 test-harvest-coined-terms.sh	T10f all harvest data rows have exactly 9 columns	1
 test-harvest-coined-terms.sh	T10g all data rows have Source='harvest'	1
 test-housekeep-branch-commit.sh	U10: --add-all commit exits 0	1
@@ -6096,14 +6355,10 @@ test-kb-scanner-exclusions.sh	E01 project-index.md excludes all non-source noise
 test-kb-scanner-exclusions.sh	E02 project-index.md still indexes real source (src<PATH> + docs (docs<PATH>	1
 test-kb-scanner-exclusions.sh	E03 candidate-concepts.md carries none of the excluded noise	1
 test-kb-scanner-exclusions.sh	E04 candidate-concepts.md keeps a code term + a docs-channel term (linguist-documentation intentionally NOT pruned)	1
-test-kb-scanner-exclusions.sh	E04 candidate-concepts.md lost the code term or the docs-channel term (over-prune)	1
 test-kb-scanner-exclusions.sh	E05 non-git fallback: build-index runs, indexes source, still drops *.min.js (pattern excludes are git-independent)	1
-test-kb-scanner-exclusions.sh	E05 non-git fallback: expected source kept + minified dropped	1
 test-kb-scanner-scope.sh	S01 project-index.md lists no AID tool-install-tree paths	1
 test-kb-scanner-scope.sh	S02 project-index.md still lists the target source file (no over-prune)	1
-test-kb-scanner-scope.sh	S02 project-index.md still lists the target source file (no over-prune) — pattern not found: 'src<PATH> in <PATH>	1
 test-kb-scanner-scope.sh	S03 candidate-concepts.md has no tool-tree terms<PATH> (incl. nested .cursor<PATH>	1
-test-kb-scanner-scope.sh	S04 candidate-concepts.md dropped the target-project coined terms (over-prune)	1
 test-kb-scanner-scope.sh	S04 candidate-concepts.md still surfaces a target-project coined term (no over-prune)	1
 test-kb-scanner-scope.sh	S05 SKIP_DIRS arrays are byte-identical across both scanners (lockstep)	1
 test-kb-scanner-scope.sh	task-016 build-project-index.sh install-tree skip list contains .agents	1
@@ -6674,13 +6929,13 @@ test-pipeline-status-walkthrough.sh	B1 aid-specify: canonical state file exists	
 test-pipeline-status-walkthrough.sh	B1 aid-specify: typed start records the hand-off to INITIALIZE	1
 test-pipeline-status-walkthrough.sh	B2 aid-specify<PATH> Pause Reason emit present	1
 test-pipeline-status-walkthrough.sh	B2 aid-specify<PATH> Paused-Awaiting-Input emit present	1
-test-pipeline-status-walkthrough.sh	B2 chaining: Pause Reason emit in PAUSE handler	1
-test-pipeline-status-walkthrough.sh	B2 chaining: Paused-Awaiting-Input emit in PAUSE handler	1
 test-pipeline-status-walkthrough.sh	B2 delivery-gate: Pause Reason message contains expected non-CODE text	1
 test-pipeline-status-walkthrough.sh	B2 delivery-gate: non-CODE stop Paused-Awaiting-Input emit present	1
+test-pipeline-status-walkthrough.sh	B2 skill-steps: Pause Reason emit in ASK pause handler	1
+test-pipeline-status-walkthrough.sh	B2 skill-steps: Paused-Awaiting-Input emit in ASK pause handler	1
 test-pipeline-status-walkthrough.sh	B2: aid-specify<PATH> exists	1
+test-pipeline-status-walkthrough.sh	B2: skill-steps.md exists	1
 test-pipeline-status-walkthrough.sh	B2: state-delivery-gate.md exists	1
-test-pipeline-status-walkthrough.sh	B2: state-machine-chaining.md exists	1
 test-pipeline-status-walkthrough.sh	B3 delivery-gate: Block Artifact emit present (circuit-breaker path)	1
 test-pipeline-status-walkthrough.sh	B3 delivery-gate: Block Reason message present (circuit-breaker path)	1
 test-pipeline-status-walkthrough.sh	B3 delivery-gate: Blocked emit present (circuit-breaker path)	1
@@ -6701,7 +6956,6 @@ test-pipeline-status-walkthrough.sh	B4a state-execute.md: silent-write annotatio
 test-pipeline-status-walkthrough.sh	B4a state-feature-decomposition.md: silent-write annotation present	1
 test-pipeline-status-walkthrough.sh	B4a state-idle.md: silent-write annotation present	1
 test-pipeline-status-walkthrough.sh	B4a state-initialize.md: silent-write annotation present	1
-test-pipeline-status-walkthrough.sh	B4a state-machine-chaining.md: silent-write annotation present	1
 test-pipeline-status-walkthrough.sh	B4a state-review.md: silent-write annotation present	1
 test-pipeline-status-walkthrough.sh	B4b first-run-loop.md: no co-occurrence of --pipeline and Print: (safe)	1
 test-pipeline-status-walkthrough.sh	B4b first-run.md: no co-occurrence of --pipeline and Print: (safe)	1
@@ -6713,10 +6967,7 @@ test-pipeline-status-walkthrough.sh	B4b state-execute.md: no co-occurrence of --
 test-pipeline-status-walkthrough.sh	B4b state-feature-decomposition.md: no co-occurrence of --pipeline and Print: (safe)	1
 test-pipeline-status-walkthrough.sh	B4b state-idle.md: no co-occurrence of --pipeline and Print: (safe)	1
 test-pipeline-status-walkthrough.sh	B4b state-initialize.md: no co-occurrence of --pipeline and Print: (safe)	1
-test-pipeline-status-walkthrough.sh	B4b state-machine-chaining.md: no co-occurrence of --pipeline and Print: (safe)	1
 test-pipeline-status-walkthrough.sh	B4b state-review.md: no co-occurrence of --pipeline and Print: (safe)	1
-test-pipeline-status-walkthrough.sh	B4c chaining: pause-reason print instruction still present after emit	1
-test-pipeline-status-walkthrough.sh	B4c chaining: resume-command instruction still present after emit	1
 test-pipeline-status-walkthrough.sh	B4d state-blocked: WAIT advance instruction still present (additive)	1
 test-pipeline-status-walkthrough.sh	B4e state-execute: impediment<PATH> instructions still present alongside emit (additive)	1
 test-pipeline-status-walkthrough.sh	B4f delivery-gate: STOP instruction still present alongside pause emit (additive)	1
@@ -7186,9 +7437,7 @@ test-registry.sh	REG-V08b-08 pretend-global: shared-tier register did not add en
 test-release-install-e2e.sh	<HEX> .aid<PATH> removed after full uninstall	2
 test-release-install-e2e.sh	<HEX> .claude<PATH> mirror removed after uninstall (no remaining user declares it)	1
 test-release-install-e2e.sh	E2E01 release.sh --dry-run exits 0	1
-test-release-install-e2e.sh	E2E01 release.sh --dry-run exits 0 — expected exit 0, got 1	1
 test-release-install-e2e.sh	E2E01b staging dir contains exactly 7 tarballs (1 shared + 5 tool + 1 CLI bundle)	1
-test-release-install-e2e.sh	E2E01b staging dir contains exactly 7 tarballs (1 shared + 5 tool + 1 CLI bundle) — expected '7' got '0'	1
 test-release-install-e2e.sh	E2E01b-shared aid-shared-<VER> staged	1
 test-release-install-e2e.sh	E2E01c aid-antigravity-<VER> staged	1
 test-release-install-e2e.sh	E2E01c aid-claude-code-<VER> staged	1
@@ -7197,65 +7446,40 @@ test-release-install-e2e.sh	E2E01c aid-copilot-cli-<VER> staged	1
 test-release-install-e2e.sh	E2E01c aid-cursor-<VER> staged	1
 test-release-install-e2e.sh	E2E01c-cli aid-cli-<VER> staged	1
 test-release-install-e2e.sh	E2E01d aid-install-core.sh staged	1
-test-release-install-e2e.sh	E2E01d aid-install-core.sh staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01e AidInstallCore.psm1 staged	1
-test-release-install-e2e.sh	E2E01e AidInstallCore.psm1 staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01f SHA256SUMS staged	1
-test-release-install-e2e.sh	E2E01f SHA256SUMS staged — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E01g SHA256SUMS has 9 entries (1 shared + 5 tool tarballs + 1 CLI bundle + 2 libs)	1
-test-release-install-e2e.sh	E2E01g SHA256SUMS has 9 entries (1 shared + 5 tool tarballs + 1 CLI bundle + 2 libs) — expected '9' got ''	1
 test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes	1
-test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes — expected exit 0, got 1	1
 test-release-install-e2e.sh	E2E02b aid-antigravity-<VER>: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-claude-code-<VER>: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-codex-<VER>: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-copilot-cli-<VER>: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E02b aid-cursor-<VER>: independent hex matches SHA256SUMS record	1
 test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0	1
-test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0 — expected exit 0, got 2	1
 test-release-install-e2e.sh	E2E03b install --verbose reports Copied:	1
-test-release-install-e2e.sh	E2E03b install --verbose reports Copied: — pattern not found: 'Copied:'	1
 test-release-install-e2e.sh	E2E03c install reports Done.	1
-test-release-install-e2e.sh	E2E03c install reports Done. — pattern not found: 'Done.'	1
 test-release-install-e2e.sh	E2E03d .claude<PATH> created	1
-test-release-install-e2e.sh	E2E03d .claude<PATH> created — directory does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E03e CLAUDE.md created	1
-test-release-install-e2e.sh	E2E03e CLAUDE.md created — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E03f installed CLAUDE.md is exactly the fixed CLAUDE.md region	1
-test-release-install-e2e.sh	E2E03f installed CLAUDE.md is exactly the fixed CLAUDE.md region — expected 'same' got 'diff'	1
 test-release-install-e2e.sh	E2E03g manifest created	1
-test-release-install-e2e.sh	E2E03g manifest created — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E03h manifest lists claude-code	1
-test-release-install-e2e.sh	E2E03h manifest lists claude-code — pattern not found: '"claude-code"' in <PATH>	1
 test-release-install-e2e.sh	E2E03i manifest has aid_version	1
-test-release-install-e2e.sh	E2E03i manifest has aid_version — pattern not found: '"aid_version"' in <PATH>	1
 test-release-install-e2e.sh	E2E03j manifest has format_version	1
-test-release-install-e2e.sh	E2E03j manifest has format_version — pattern not found: '"format_version"' in <PATH>	1
 test-release-install-e2e.sh	E2E03k manifest records the claude_md entry	1
-test-release-install-e2e.sh	E2E03k manifest records the claude_md entry — pattern not found: '"claude_md"' in <PATH>	1
 test-release-install-e2e.sh	E2E03l manifest records the claude_md region_sha256	1
-test-release-install-e2e.sh	E2E03l manifest records the claude_md region_sha256 — pattern not found: '"region_sha256"' in <PATH>	1
 test-release-install-e2e.sh	E2E03m manifest claude_md region_sha256 matches the installed CLAUDE.md	1
-test-release-install-e2e.sh	E2E03m manifest claude_md region_sha256 matches the installed CLAUDE.md — pattern not found: '"region_sha256": ""' in <PATH>	1
 test-release-install-e2e.sh	E2E03n .aid-version marker NOT written (retired)	1
 test-release-install-e2e.sh	E2E03o manifest aid_version contains correct version	1
 test-release-install-e2e.sh	E2E03p manifest has no absolute paths	1
 test-release-install-e2e.sh	E2E04 tampered tarball → exit 4	1
-test-release-install-e2e.sh	E2E04 tampered tarball → exit 4 — expected exit 4, got 2	1
 test-release-install-e2e.sh	E2E04b error message mentions checksum	1
-test-release-install-e2e.sh	E2E04b error message mentions checksum — pattern not found: 'checksum'	1
 test-release-install-e2e.sh	E2E05 update re-run exits 0	1
 test-release-install-e2e.sh	E2E05b --verbose update same version reports 'Up to date:'	1
-test-release-install-e2e.sh	E2E05b --verbose update same version reports 'Up to date:' — pattern not found: 'Up to date:'	1
 test-release-install-e2e.sh	E2E05c --verbose update does not re-copy identical files	1
 test-release-install-e2e.sh	E2E05d CLAUDE.md still the fixed CLAUDE.md region after update	1
-test-release-install-e2e.sh	E2E05d CLAUDE.md still the fixed CLAUDE.md region after update — expected 'same' got 'diff'	1
 test-release-install-e2e.sh	E2E06 uninstall exits 0	1
-test-release-install-e2e.sh	E2E06 uninstall exits 0 — expected exit 0, got 6	1
 test-release-install-e2e.sh	E2E06b --verbose uninstall reports Removed:	1
-test-release-install-e2e.sh	E2E06b --verbose uninstall reports Removed: — pattern not found: 'Removed:'	1
 test-release-install-e2e.sh	E2E06c uninstall complete banner	1
-test-release-install-e2e.sh	E2E06c uninstall complete banner — pattern not found: 'Uninstall complete.'	1
 test-release-install-e2e.sh	E2E06d .claude<PATH> removed after uninstall	1
 test-release-install-e2e.sh	E2E06e CLAUDE.md removed after uninstall	1
 test-release-install-e2e.sh	E2E06f manifest removed after full uninstall	1
@@ -7300,28 +7524,18 @@ test-release-install-e2e.sh	E2E08r ps1 manifest removed after full uninstall	1
 test-release-install-e2e.sh	E2E08r2 ps1 .aid<PATH> removed after full uninstall	1
 test-release-install-e2e.sh	E2E08s ps1 second uninstall → exit 6 (no manifest)	1
 test-release-install-e2e.sh	E2E09a piped CLI-bundle install exits 0	1
-test-release-install-e2e.sh	E2E09a piped CLI-bundle install exits 0 — expected exit 0, got 3	1
 test-release-install-e2e.sh	E2E09b piped CLI-bundle install verifies checksum	1
-test-release-install-e2e.sh	E2E09b piped CLI-bundle install verifies checksum — pattern not found: 'Checksum OK'	1
 test-release-install-e2e.sh	E2E09c aid dispatcher installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E09c aid dispatcher installed to AID_HOME<PATH> — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E09d install core installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E09d install core installed to AID_HOME<PATH> — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E09e VERSION file written to AID_HOME	1
-test-release-install-e2e.sh	E2E09e VERSION file written to AID_HOME — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E09f aid binary is present after piped install	1
-test-release-install-e2e.sh	E2E09f aid binary is present after piped install — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E09g tampered CLI bundle → exit 4	1
-test-release-install-e2e.sh	E2E09g tampered CLI bundle → exit 4 — expected exit 4, got 3	1
 test-release-install-e2e.sh	E2E09h tampered CLI bundle error mentions checksum mismatch	1
-test-release-install-e2e.sh	E2E09h tampered CLI bundle error mentions checksum mismatch — pattern not found: 'checksum mismatch'	1
 test-release-install-e2e.sh	E2E09i tampered bundle: aid NOT installed to AID_HOME	1
 test-release-install-e2e.sh	E2E09j missing SHA256SUMS → fail-closed (exit 3)	1
 test-release-install-e2e.sh	E2E09k missing SHA256SUMS: aid NOT installed	1
 test-release-install-e2e.sh	E2E09k tampered lib (aid-install-core.sh) -> exit 4 (checksum mismatch)	1
-test-release-install-e2e.sh	E2E09k tampered lib (aid-install-core.sh) -> exit 4 (checksum mismatch) — expected exit 4, got 3	1
 test-release-install-e2e.sh	E2E09l tampered lib error mentions checksum mismatch	1
-test-release-install-e2e.sh	E2E09l tampered lib error mentions checksum mismatch — pattern not found: 'checksum mismatch'	1
 test-release-install-e2e.sh	E2E09m PWNED-prevention: tampered lib verified BEFORE sourcing (injected code never runs)	1
 test-release-install-e2e.sh	E2E09n tampered lib: aid NOT installed to AID_HOME	1
 test-release-install-e2e.sh	E2E10a piped PS1 CLI-bundle install exits 0	1
@@ -7332,17 +7546,12 @@ test-release-install-e2e.sh	E2E10e VERSION file written to AID_HOME	1
 test-release-install-e2e.sh	E2E10f tampered PS1 CLI bundle error mentions checksum mismatch	1
 test-release-install-e2e.sh	E2E10g tampered PS1 bundle: aid.ps1 NOT installed	1
 test-release-install-e2e.sh	E2E11a aid add <tool> (valid SHA256SUMS, flagged override) exits 0	1
-test-release-install-e2e.sh	E2E11a aid add <tool> (valid SHA256SUMS, flagged override) exits 0 — expected exit 0, got 3	1
 test-release-install-e2e.sh	E2E11b aid add verifies checksum via fetch_tarball	1
-test-release-install-e2e.sh	E2E11b aid add verifies checksum via fetch_tarball — pattern not found: 'Checksum OK'	1
 test-release-install-e2e.sh	E2E11c tool tree installed	1
-test-release-install-e2e.sh	E2E11c tool tree installed — directory does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E11d missing SHA256SUMS -> fail-closed non-zero exit (was WARN + proceed)	1
 test-release-install-e2e.sh	E2E11e missing-SHA256SUMS error mentions fail-closed	1
-test-release-install-e2e.sh	E2E11e missing-SHA256SUMS error mentions fail-closed — pattern not found: 'fail-closed'	1
 test-release-install-e2e.sh	E2E11f missing SHA256SUMS: tool NOT installed	1
 test-release-install-e2e.sh	E2E11g tampered tarball -> exit 4 (checksum mismatch still enforced)	1
-test-release-install-e2e.sh	E2E11g tampered tarball -> exit 4 (checksum mismatch still enforced) — expected exit 4, got 3	1
 test-release-install-e2e.sh	E2E11h tampered tarball: tool NOT installed	1
 test-release-migrate-smoke.sh	RMS-CURL-01 install.sh produced a working $AID_HOME<PATH>	1
 test-release-migrate-smoke.sh	RMS-CURL-02-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)	1
@@ -7351,7 +7560,6 @@ test-release-migrate-smoke.sh	RMS-CURL-02-C -- after __migrate-repo: legacy work
 test-release-migrate-smoke.sh	RMS-CURL-02-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)	1
 test-release-migrate-smoke.sh	RMS-CURL-02-E -- clean-slate upgrade via channel: settings stamped format_version: 5, manifest format_version: 3	1
 test-release-migrate-smoke.sh	RMS-CURL-02-F -- after the upgrade: no older-format WARN on encounter	1
-test-release-migrate-smoke.sh	RMS-NPM-01 npm global install failed	1
 test-release-migrate-smoke.sh	RMS-NPM-01 npm pack + global install su<HEX>	1
 test-release-migrate-smoke.sh	RMS-NPM-02-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)	1
 test-release-migrate-smoke.sh	RMS-NPM-02-B -- after __migrate-repo: settings.yml keeps legacy stamp format_version: 4	1
@@ -7818,15 +8026,31 @@ test-skill-steps.sh	EXEMPT aid-update-mvp exists	1
 test-skill-steps.sh	EXEMPT aid-update-roadmap exists	1
 test-skill-steps.sh	EXEMPT aid-update-stack exists	1
 test-skill-steps.sh	EXEMPT aid-update-testing-strategy exists	1
-test-skill-steps.sh	EXEMPT canonical<PATH> exists	1
-test-skill-steps.sh	EXEMPT list read: 38 row(s)	1
+test-skill-steps.sh	EXEMPT list read: 37 row(s)	1
+test-skill-steps.sh	SS-01 no banner line under canonical<PATH> or canonical<PATH>	1
 test-skill-steps.sh	SS-02 58 SKILL.md file(s) with a Dispatch table or ## State: cite skill-steps.md	1
 test-skill-steps.sh	SS-02 canonical<PATH> (while it exists) cites skill-steps.md	2
+test-skill-steps.sh	SS-02 no file in the chaining scope cites state-machine-chaining	1
+test-skill-steps.sh	SS-02 state-machine-chaining.md is absent	1
 test-skill-steps.sh	SS-03 every **Advance:** line in canonical<PATH> names an allowed word; no PAUSE-FOR-USER	1
+test-skill-steps.sh	SS-04 76 hand-authored and 34 generated asking SKILL.md file(s) cite the protocol	1
+test-skill-steps.sh	SS-04 never-asks skill aid-chat exists	1
+test-skill-steps.sh	SS-04 never-asks skill aid-unset-connector exists	1
+test-skill-steps.sh	SS-04 no AskUserQuestion in any allowed-tools	1
+test-skill-steps.sh	SS-05 canonical<PATH> is absent	1
+test-skill-steps.sh	SS-05 the word interviewer appears in none of the scoped paths	1
+test-skill-steps.sh	SS-06 no ## Cross-phase Q&A section under canonical<PATH>	1
+test-skill-steps.sh	SS-06 no line under canonical<PATH> sends a question to a delivery-level qa	1
+test-skill-steps.sh	SS-07 nothing under chat-node<PATH> names .aid<PATH> or STATE.yml	1
 test-skill-steps.sh	SS-08 project-state-template.yml parses with no warning	1
 test-skill-steps.sh	SS-08 work-state-template.yml parses with no warning	1
-test-skill-steps.sh	SS-11 354 tracked file(s) in scope name no old phase	1
+test-skill-steps.sh	SS-09 110 asking skill(s): each has an AC-28 sample or a skill: row	1
+test-skill-steps.sh	SS-10 7 AGENT.md file(s) include {{include:agent-boilerplate}}	1
+test-skill-steps.sh	SS-10 agent-boilerplate.md has the ## Talking with the user section	1
+test-skill-steps.sh	SS-10 no AGENT.md tells its agent to ask the user	1
+test-skill-steps.sh	SS-11 353 tracked file(s) in scope name no old phase	1
 test-skill-steps.sh	SS-12 no hand-written lifecycle: Completed or Canceled outside the exempt list	1
+test-skill-steps.sh	SS-13 8 file(s) have a ### What to report heading	1
 test-skill-steps.sh	SS-14(a) section 3a runs writeback-state.sh --create with --reading, --skill and --step	1
 test-skill-steps.sh	SS-14(b) no record key, template copy or hand-written record block outside the exceptions	1
 test-skill-steps.sh	SS-14(c) skill-steps.md section The work record has the fail-closed and recovery rules	1
@@ -8072,19 +8296,19 @@ test-ticket-retirement-structural.sh	T097 aid-specify state-initialize.md: silen
 test-ticket-retirement-structural.sh	T098 shortcut-engine.md Step 4b: silent-skip on no-connector<PATH> is documented	1
 test-ticket-skills-structural.sh	T01 aid-read-ticket frontmatter name	1
 test-ticket-skills-structural.sh	T02 aid-read-ticket has a one-pass (folded-scalar) description field	1
-test-ticket-skills-structural.sh	T03 aid-read-ticket allowed-tools includes AskUserQuestion	1
+test-ticket-skills-structural.sh	T03 aid-read-ticket allowed-tools is Read Glob Grep (no question tool)	1
 test-ticket-skills-structural.sh	T04 aid-read-ticket allowed-tools excludes Write	1
 test-ticket-skills-structural.sh	T05 aid-read-ticket allowed-tools excludes Edit	1
 test-ticket-skills-structural.sh	T06 aid-read-ticket argument-hint = the bare grammar line	1
 test-ticket-skills-structural.sh	T07 aid-create-ticket frontmatter name	1
 test-ticket-skills-structural.sh	T08 aid-create-ticket has a one-pass (folded-scalar) description field	1
-test-ticket-skills-structural.sh	T09 aid-create-ticket allowed-tools includes AskUserQuestion	1
+test-ticket-skills-structural.sh	T09 aid-create-ticket allowed-tools is Read Glob Grep (no question tool)	1
 test-ticket-skills-structural.sh	T10 aid-create-ticket allowed-tools excludes Write	1
 test-ticket-skills-structural.sh	T11 aid-create-ticket allowed-tools excludes Edit	1
 test-ticket-skills-structural.sh	T12 aid-create-ticket argument-hint = the bare grammar line	1
 test-ticket-skills-structural.sh	T13 aid-update-ticket frontmatter name	1
 test-ticket-skills-structural.sh	T14 aid-update-ticket has a one-pass (folded-scalar) description field	1
-test-ticket-skills-structural.sh	T15 aid-update-ticket allowed-tools includes AskUserQuestion	1
+test-ticket-skills-structural.sh	T15 aid-update-ticket allowed-tools is Read Glob Grep (no question tool)	1
 test-ticket-skills-structural.sh	T16 aid-update-ticket allowed-tools excludes Write	1
 test-ticket-skills-structural.sh	T17 aid-update-ticket allowed-tools excludes Edit	1
 test-ticket-skills-structural.sh	T18 aid-update-ticket argument-hint = the bare grammar line	1
@@ -8114,14 +8338,12 @@ test-ticket-skills-structural.sh	T39<PATH> UPDATE_SKILL does not re-list the lad
 test-ticket-skills-structural.sh	T42<PATH> CREATE_SKILL does not re-list the level-resolution ordered synonym set inline	1
 test-ticket-skills-structural.sh	T42<PATH> READ_SKILL does not re-list the level-resolution ordered synonym set inline	1
 test-ticket-skills-structural.sh	T42<PATH> UPDATE_SKILL does not re-list the level-resolution ordered synonym set inline	1
-test-ticket-skills-structural.sh	T45 aid-create-ticket's CONFIRM state is a single in-run AskUserQuestion exchange	1
-test-ticket-skills-structural.sh	T46 aid-create-ticket shows the [1]<PATH> confirm button row	1
+test-ticket-skills-structural.sh	T45 aid-create-ticket's CONFIRM state is a single in-run question exchange, asked in plain text	1
+test-ticket-skills-structural.sh	T46 aid-create-ticket shows the confirm in the question form, one topic per message	1
 test-ticket-skills-structural.sh	T47 aid-update-ticket's CONFIRM state is a single in-invocation confirm	1
-test-ticket-skills-structural.sh	T48 aid-update-ticket shows the [1]<PATH> confirm button row	1
+test-ticket-skills-structural.sh	T48 aid-update-ticket shows the confirm in the question form, one topic per message	1
 test-ticket-skills-structural.sh	T49 aid-read-ticket never shows the confirm button row (non-destructive, no write)	1
 test-ticket-skills-structural.sh	T50 aid-read-ticket documents it never shows a confirmation prompt	1
-test-ticket-skills-structural.sh	T51 create's confirm button row is byte-identical to update's	1
-test-ticket-skills-structural.sh	T52 create's confirm button row is byte-identical to the shared reference's	1
 test-ticket-skills-structural.sh	T53 aid-read-ticket PARSE-ARGS splits stem:id on the first colon	1
 test-ticket-skills-structural.sh	T54 aid-update-ticket <part> is the closed enum {description,comment,status,attachment}	1
 test-ticket-skills-structural.sh	T55 aid-update-ticket rejects an out-of-enum <part> with the usage line	1
@@ -8135,7 +8357,7 @@ test-ticket-skills-structural.sh	T62 aid-create-ticket flags parse in any order 
 test-ticket-skills-structural.sh	T63 aid-create-ticket prints the usage line when <description> is missing	1
 test-ticket-skills-structural.sh	T64 shared ref: explicit connector always overrides the scan	1
 test-ticket-skills-structural.sh	T65 shared ref: exactly one catalogued match is used silently	1
-test-ticket-skills-structural.sh	T66 shared ref: two-or-more catalogued matches ask via AskUserQuestion	1
+test-ticket-skills-structural.sh	T66 shared ref: two-or-more catalogued matches ask in plain text through the question protocol	1
 test-ticket-skills-structural.sh	T67 shared ref: zero catalogued matches fall through to the host tool's own MCP	1
 test-ticket-skills-structural.sh	T68 shared ref: the verbatim notify string is present	1
 test-ticket-skills-structural.sh	T69 shared ref: an api<PATH> fall-through section exists	1
@@ -8439,9 +8661,7 @@ test-work-initiation-gate.sh	C: partial full-path work's lifecycle surfaced	1
 test-work-initiation-gate.sh	C: partial full-path work's phase surfaced (routes to the phase skill <PATH>	1
 test-work-initiation-gate.sh	D1: a one-line degradation note is emitted to stderr (not stdout)	1
 test-work-initiation-gate.sh	D1: branch_label falls back to the literal 'main' when git is unavailable	1
-test-work-initiation-gate.sh	D1: branch_label falls back to the literal 'main' when git is unavailable — expected 'main' got ''	1
 test-work-initiation-gate.sh	D1: non-git dir degrades to main-tree-only enumeration (work still listed)	1
-test-work-initiation-gate.sh	D1: non-git dir degrades to main-tree-only enumeration (work still listed) — pattern not found: 'work-500-gamma'	1
 test-work-initiation-gate.sh	D1: non-git dir still exits 0 (never fail the starter)	1
 test-work-initiation-gate.sh	D1: stderr diagnostics never mix into stdout records	1
 test-work-initiation-gate.sh	D2: degradation note emitted on git failure	1
@@ -8465,14 +8685,13 @@ test-work-initiation-gate.sh	F: legacy map has a Proposed step column	1
 test-work-initiation-gate.sh	F: legacy map names a phase-skill target (partial full-path work)	1
 test-work-initiation-gate.sh	F: legacy map names the <PATH> target (halted <PATH> mid-Execute work)	1
 test-work-initiation-gate.sh	F: legacy map proposes EXECUTE as the step for an Execute work	1
-test-work-initiation-gate.sh	F: routing table names the <PATH> resume target (halted <PATH> mid-Execute work)	1
 test-work-initiation-gate.sh	F: work-initiation-gate.md exists (the shared front-door reference)	1
 test-work-initiation-gate.sh	F: § 3a's next-number source is the cross-worktree enumeration, not a local .aid<PATH> glob	1
 test-work-initiation-gate.sh	F: § 3b documents locate's exits-0-always contract (never fail-closed)	1
 test-work-initiation-gate.sh	F: § 3b does NOT mislabel locate's guard as fail-closed (regression guard)	1
 test-work-initiation-gate.sh	F: § 3b frames its locate guard as a defensive backstop, NOT fail-closed	1
 test-work-initiation-gate.sh	FF01-gate-doc	1
-test-work-initiation-gate.sh	G: exactly ten affected work-starters under coverage	1
+test-work-initiation-gate.sh	G: exactly nine affected work-starters under coverage	1
 test-work-initiation-gate.sh	GG00	1
 test-work-initiation-gate.sh	GG01-shortcut-engine	1
 test-work-initiation-gate.sh	GG01-shortcut-engine-consults	1
@@ -8486,9 +8705,6 @@ test-work-initiation-gate.sh	GG03-aid-review-create-mention	1
 test-work-initiation-gate.sh	GG04-aid-research	1
 test-work-initiation-gate.sh	GG04-aid-research-consults	1
 test-work-initiation-gate.sh	GG04-aid-research-create-mention	1
-test-work-initiation-gate.sh	GG05-aid-design	1
-test-work-initiation-gate.sh	GG05-aid-design-consults	1
-test-work-initiation-gate.sh	GG05-aid-design-create-mention	1
 test-work-initiation-gate.sh	GG06-aid-report	1
 test-work-initiation-gate.sh	GG06-aid-report-consults	1
 test-work-initiation-gate.sh	GG06-aid-report-create-mention	1
@@ -9382,7 +9598,6 @@ test-writeback-state.sh	30h: --answer Answered exits 0	1
 test-writeback-state.sh	30h: --answer Skipped exits 0	1
 test-writeback-state.sh	30h: --answer for a question that does not exist exits 4	1
 test-writeback-state.sh	30h: --answer with a state outside Answered | Skipped | Assumed exits 4	1
-test-writeback-state.sh	30h: answered_by is set by the writer (git user.name, else --)	1
 test-writeback-state.sh	30h: Answered sets the answer	1
 test-writeback-state.sh	30h: Answered sets the state	1
 test-writeback-state.sh	30h: Assumed takes the value as the answer	1
@@ -9390,6 +9605,7 @@ test-writeback-state.sh	30h: Skipped sets the state	1
 test-writeback-state.sh	30h: Skipped without --value leaves the answer --	1
 test-writeback-state.sh	30h: a later --answer may set Assumed	1
 test-writeback-state.sh	30h: an approval answer with --covers and --commit exits 0	1
+test-writeback-state.sh	30h: answered_by is set by the writer (git user.name, else --)	1
 test-writeback-state.sh	30h: the approval is Answered	1
 test-writeback-state.sh	30h: the approval's --commit is written	1
 test-writeback-state.sh	30h: the approval's --covers is written	1
@@ -9459,6 +9675,136 @@ test-writeback-state.sh	31r: the issue row lands in the found work folder	1
 test-writeback-state.sh	31r: the message says no work record was found	1
 test-writeback-state.sh	31r: the task state is written from inside the folder	1
 test-writeback-state.sh	31r: the task state is written under the found work	1
+test-writeback-state.sh	32a: --ask --design exits 0 when the file does not exist	1
+test-writeback-state.sh	32a: a Pending row is appended	1
+test-writeback-state.sh	32a: a pipe in the question is escaped	1
+test-writeback-state.sh	32a: no lock or temporary file is left in .aid<PATH>	1
+test-writeback-state.sh	32a: no work record is created or needed	1
+test-writeback-state.sh	32a: the Questions section is created	1
+test-writeback-state.sh	32a: the design document is created	1
+test-writeback-state.sh	32a: the first question is D1 and nothing else is printed	1
+test-writeback-state.sh	32a: the new document has status: draft frontmatter	1
+test-writeback-state.sh	32a: the next question is D2	1
+test-writeback-state.sh	32a: the table header is written	1
+test-writeback-state.sh	32a: the table holds exactly the two rows	1
+test-writeback-state.sh	32b: --answer --design Skipped exits 0	1
+test-writeback-state.sh	32b: --answer --design exits 0	1
+test-writeback-state.sh	32b: --answer --design for a missing id exits 4	1
+test-writeback-state.sh	32b: --answer --design on a missing file exits 1	1
+test-writeback-state.sh	32b: --answer --design with a Q id exits 4	1
+test-writeback-state.sh	32b: the other row is unchanged	1
+test-writeback-state.sh	32b: the row takes the answer, the state and the git user name	1
+test-writeback-state.sh	32b: with no git user name, answered_by is --	1
+test-writeback-state.sh	32c: --step --design exits 0	1
+test-writeback-state.sh	32c: --step --design on a missing file exits 0	1
+test-writeback-state.sh	32c: a second --step --design exits 0	1
+test-writeback-state.sh	32c: step is replaced, not repeated	1
+test-writeback-state.sh	32c: step is written to the frontmatter	1
+test-writeback-state.sh	32c: step_detail is written	1
+test-writeback-state.sh	32c: the Questions table is untouched	1
+test-writeback-state.sh	32c: the frontmatter still opens the file	1
+test-writeback-state.sh	32c: the missing file is created with the step	1
+test-writeback-state.sh	32c: the new step replaces the old	1
+test-writeback-state.sh	32c: the other frontmatter keys are kept	1
+test-writeback-state.sh	32c: without --detail, step_detail is --	1
+test-writeback-state.sh	32d: --answer --design outside .aid<PATH> exits 5	1
+test-writeback-state.sh	32d: --ask --design outside .aid<PATH> exits 5	1
+test-writeback-state.sh	32d: --design with a mode that does not take it exits 5	1
+test-writeback-state.sh	32d: --step --design outside .aid<PATH> exits 5	1
+test-writeback-state.sh	32d: a .. path that leaves .aid<PATH> exits 5	1
+test-writeback-state.sh	32d: a refused path writes nothing	1
+test-writeback-state.sh	32e2: --create --seed from inside the worktree exits 0	1
+test-writeback-state.sh	32e2: a file in neither root exits 5	1
+test-writeback-state.sh	32e2: a path outside both roots' .aid<PATH> exits 5	1
+test-writeback-state.sh	32e2: a refused --seed creates no record	1
+test-writeback-state.sh	32e2: sources names the relative design path	1
+test-writeback-state.sh	32e2: the copy equals the main-tree file	1
+test-writeback-state.sh	32e2: the design is copied into the worktree	1
+test-writeback-state.sh	32e2: the main tree's absolute path is accepted	1
+test-writeback-state.sh	32e2: the questions moved into the qa	1
+test-writeback-state.sh	32e2: the worktree does not hold the untracked design	1
+test-writeback-state.sh	32e3: --create --seed exits 0	1
+test-writeback-state.sh	32e3: --create onto an existing STATE.yml exits 8	1
+test-writeback-state.sh	32e3: identical copies leave the worktree file unchanged	1
+test-writeback-state.sh	32e3: identical copies print no seed line	1
+test-writeback-state.sh	32e3: identical copies: --create --seed exits 0	1
+test-writeback-state.sh	32e3: one stderr line says the main copy was taken	1
+test-writeback-state.sh	32e3: the existing STATE.yml is untouched	1
+test-writeback-state.sh	32e3: the line is printed once	1
+test-writeback-state.sh	32e3: the main checkout holds the uncommitted questions	1
+test-writeback-state.sh	32e3: the main checkout's two questions moved into the qa	1
+test-writeback-state.sh	32e3: the refused --create left no copied seed behind	1
+test-writeback-state.sh	32e3: the worktree file equals the main copy	1
+test-writeback-state.sh	32e3: the worktree holds the committed copy, without the questions	1
+test-writeback-state.sh	32e: --create --seed exits 0	1
+test-writeback-state.sh	32e: --create into a missing work folder still exits 1	1
+test-writeback-state.sh	32e: --seed for a file that does not exist exits 5	1
+test-writeback-state.sh	32e: --seed outside .aid<PATH> exits 5	1
+test-writeback-state.sh	32e: --seed with a mode other than --create exits 5	1
+test-writeback-state.sh	32e: Q1 keeps answered_by of D1	1
+test-writeback-state.sh	32e: Q1 keeps the answer of D1	1
+test-writeback-state.sh	32e: Q1 keeps the state of D1	1
+test-writeback-state.sh	32e: Q2 keeps the state of D2	1
+test-writeback-state.sh	32e: a refused --seed creates no record	1
+test-writeback-state.sh	32e: each Questions row becomes a Q entry	1
+test-writeback-state.sh	32e: the context names the source document, its D id and the question	1
+test-writeback-state.sh	32e: the design document is added to sources	1
+test-writeback-state.sh	32e: the design document is left unchanged	1
+test-writeback-state.sh	32e: the source is a document	1
+test-writeback-state.sh	32f: --answer --by exits 5	1
+test-writeback-state.sh	32f: --help exits 0	1
+test-writeback-state.sh	32f: the help text documents --design	1
+test-writeback-state.sh	32f: the help text documents --seed	1
+test-writeback-state.sh	32f: the help text ends with the last exit code	1
+test-writeback-state.sh	32f: the help text no longer mentions --by	1
+test-writeback-state.sh	32f: the refusal names --by as an unknown argument	1
+test-writeback-state.sh	32g: --answer on a five-column table exits 0	1
+test-writeback-state.sh	32g: --answer writes six columns	1
+test-writeback-state.sh	32g: --ask on a five-column table prints the next id	1
+test-writeback-state.sh	32g: --seed copies the category into the Q entry	1
+test-writeback-state.sh	32g: --seed of a five-column table exits 0	1
+test-writeback-state.sh	32g: a five-column row reads correctly	1
+test-writeback-state.sh	32g: a row with no category is seeded as Design	1
+test-writeback-state.sh	32g: a seeded entry stays at impact Medium	1
+test-writeback-state.sh	32g: an old row gains an empty category	1
+test-writeback-state.sh	32g: the category is stored last and kept by --answer	1
+test-writeback-state.sh	32g: the new row carries its category	1
+test-writeback-state.sh	32g: the separator gains a column	1
+test-writeback-state.sh	32g: the table head gains the category column on the next write	1
+test-writeback-state.sh	32g: the table head has the category column	1
+test-writeback-state.sh	32h: --answer D1 exits 0	1
+test-writeback-state.sh	32h: a D id that exists only outside ## Questions exits 4	1
+test-writeback-state.sh	32h: the Questions row is the one answered	1
+test-writeback-state.sh	32h: the body row is untouched	1
+test-writeback-state.sh	32h: the first question of the table is D1 whatever the body holds	1
+test-writeback-state.sh	32i: --ask --design with an absolute path in another tree exits 5	1
+test-writeback-state.sh	32i: --rename-design from another tree exits 5	1
+test-writeback-state.sh	32i: --rename-design to another tree exits 5	1
+test-writeback-state.sh	32i: --seed with a path in another tree exits 5	1
+test-writeback-state.sh	32i: an absolute path inside the project is accepted	1
+test-writeback-state.sh	32i: from a sub-folder of a git project, a relative path to the sub-folder's own .aid<PATH> exits 5	1
+test-writeback-state.sh	32i: nothing is written there	1
+test-writeback-state.sh	32i: the project root's .aid<PATH> is accepted from a sub-folder	1
+test-writeback-state.sh	32j: --rename-design of a missing file exits 1	1
+test-writeback-state.sh	32j: --rename-design onto an existing document exits 0	1
+test-writeback-state.sh	32j: --rename-design onto itself exits 4	1
+test-writeback-state.sh	32j: --rename-design to a new name exits 0	1
+test-writeback-state.sh	32j: --rename-design with --design exits 5	1
+test-writeback-state.sh	32j: --rename-design with another mode exits 5	1
+test-writeback-state.sh	32j: --rename-design without --to exits 5	1
+test-writeback-state.sh	32j: a Pending row is appended after the target's highest id	1
+test-writeback-state.sh	32j: the first moved row is reported with its new id	1
+test-writeback-state.sh	32j: the first question opens the untitled document	1
+test-writeback-state.sh	32j: the frontmatter moved with it	1
+test-writeback-state.sh	32j: the help text documents --rename-design	1
+test-writeback-state.sh	32j: the merged file is deleted	1
+test-writeback-state.sh	32j: the old file is gone	1
+test-writeback-state.sh	32j: the row moved intact	1
+test-writeback-state.sh	32j: the second moved row is reported with its new id	1
+test-writeback-state.sh	32j: the skeleton title follows the new name	1
+test-writeback-state.sh	32j: the state and answered_by of a moved row are kept	1
+test-writeback-state.sh	32j: the target holds all three rows	1
+test-writeback-state.sh	32j: the target's own row keeps its id	1
 test-writeback-state.sh	9a: Lifecycle write with no prior base keys -> exit 0	1
 test-writeback-state.sh	9a: lifecycle key written	1
 test-writeback-state.sh	9b: Phase field written	1
