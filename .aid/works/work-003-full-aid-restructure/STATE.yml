@@ -1996,11 +1996,11 @@ qa:
   - id: Q173
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: --
     step: --
     context: 'Delivery-003 gate sample re-run (Q166): the first re-run stopped on the usage limit, the second on "Not logged in" -- the claude CLI the runner uses lost its login when the session restarted, so no sample ran. Options: user restores the CLI login and I re-run; or record the 9 samples as known issues for delivery-014, marked not run.'
     suggested: '1: restore the login and re-run'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '1 (maintainer): restore the CLI login, then re-run the 9 samples.'
+    answered_by: 'Claude'
+    applied_to: 'the delivery-003 gate samples'
