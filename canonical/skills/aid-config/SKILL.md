@@ -62,9 +62,11 @@ recommendation: option 1 is `Keep current value: <value> (recommended)`, followe
 suggestions. A setting that is `⚠ unset` is never offered `Keep current value` (that would keep a
 placeholder): for `type`, `source_control`, `minimum_grade` and `heartbeat_interval` the recommendation is
 a suggestion from the Suggestions table; for `name` and `description` it is a value read from the project
-when one is available (the project folder's name for `name`; the first line of the README, or an existing
-description, for `description`), with the source named in `My recommendation`. When nothing can be read, say so
-plainly and ask for the user's own words, with no numbered option (question-protocol Rule 5.1). A
+when one is available (for `name`, the title of the project's README, or the subject of an existing
+description, read first; the project folder's name only when it is not a generic name such as `project`,
+`app`, `src` or `repo`. For `description`, the first line of the README, or an existing description), with the source
+named in `My recommendation`. When nothing usable can be read, say so plainly and ask for the user's own
+words, with no numbered option (question-protocol Rule 5.1). A
 setting skipped in an earlier run is asked again on its own entry (see below).
 
 After the table, walk the settings straight away, with no break between a go-ahead (if one was asked) and the
@@ -88,9 +90,11 @@ Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1,
   the skill at once.
 - **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
   A `Keep current value` answer or a skip writes nothing.
-- **Offer a break when the subject changes**, between group 1 and group 2 only, in one plain line that
-  decides nothing (`Identity is done. Take a break, or go on to the pipeline settings?`). The user may
-  stop there; the answers already given stay.
+- **Offer a break when the subject changes**: between group 1 and group 2, and again before the last
+  group of retried skipped settings when there is one, each time in one plain line that decides nothing
+  (`Identity is done. Take a break, or go on to the pipeline settings?`; `Take a break, or go on to the
+  settings you skipped?`). The user may stop there; the answers already given stay. There is no break
+  between the go-ahead and the first group.
 - **Skipped questions are offered again at the end**, once, in the same form, as a last group, on their
   own entries. A question skipped twice stays `Skipped` in `.aid/STATE.yml`, and the next `/aid-config`
   run walks that setting again on the same entry.
@@ -214,7 +218,7 @@ intended behavior, not a gap.
 
 | Key | Suggestions |
 |---|---|
-| `name` | (no fixed defaults — a value read from the project, e.g. its folder name; else the user's own) |
+| `name` | (no fixed defaults — a value read from the project, e.g. its README title; the folder name only when it is not generic, such as `project`, `app`, `src` or `repo`; else the user's own) |
 | `description` | (no fixed defaults — a value read from the project, e.g. its README's first line; else the user's own) |
 | `type` | `brownfield`, `greenfield` |
 | `source_control` | `none`, `git`, `svn`, `mercurial` |

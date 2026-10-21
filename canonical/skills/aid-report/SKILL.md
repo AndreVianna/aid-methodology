@@ -125,10 +125,14 @@ analyze + consolidate:
    name the open finding in plain words and ask one question in the form (`Report -- question 1 of 1 --
    importance: high`, **Why I ask**: the verify loop stopped after 3 cycles, **My recommendation**, numbered
    options: one more analysis cycle / present the report as it stands with the open finding noted, and the
-   question closing line), recorded with `--ask` before it is shown and `--answer` after. The answer sets
-   the lifecycle back to `Running`: one more cycle continues at ANALYZE, the other at PRESENT.
+   question closing line), recorded with `--ask` before it is shown. The work stays `Blocked` and this run
+   ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed
+   run shows the open question first, records the reply with `--answer`, and sets the lifecycle back to
+   `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and
+   dispatches nothing. One more cycle goes to ANALYZE, the other option to PRESENT. A skipped question
+   leaves the work `Blocked`.
 
-**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: ANALYZE] when it is not clean and fewer than 3 cycles have run; ASK then HALT when the circuit-breaker has blocked the work (the question above stays open).
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: ANALYZE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open).
 
 ---
 

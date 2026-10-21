@@ -192,7 +192,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 | ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |
 | DONE | _(inline — see Re-run below)_ | `inline` | CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise |
 
-Talking with the user: follow `.aid/runtime/templates/question-protocol.md`. Every wait on the user, a request for data included, is one question in that form, recorded with `--ask` before it is shown and `--answer` after (`--project` on both when no work is open), never a list of what is needed.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`. Every wait on the user, a request for data included, is one question in that form, recorded with `--ask` before it is shown and `--answer` after (`--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` on both when no work is open, as `question-protocol.md` § Where each record lives sets for a question asked before a work exists), never a list of what is needed.
 
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 

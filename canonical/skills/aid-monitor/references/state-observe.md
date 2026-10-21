@@ -24,7 +24,7 @@ My recommendation: {the candidate and why, or the export if none was found}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-Record it (in a work; with no work open, add `--project` to both calls) with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after. A skipped question ends the observation with the finding `no data source`; nothing is invented.
+Record it (in a work; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both calls, so the question and its answer land in a design document, as `question-protocol.md` § Where each record lives sets) with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after. A skipped question ends the observation with the finding `no data source`; nothing is invented.
 
 ▶ telemetry pull starting (~30 s–2 min per source per `.aid/runtime/templates/rough-time-hints.md`)
 For each data source, capture:

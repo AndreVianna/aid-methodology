@@ -158,11 +158,11 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
    Or answer in your own words, ask me to explain, or skip this question.
    ```
 
-   Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Research --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'` right after. On the first option set the lifecycle back to `Running` and continue at INVESTIGATE for one more cycle; on the second set it back to `Running` and continue at PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.
+   Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Research --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown. The work stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed run shows the open question first, records the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'`, and sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and dispatches nothing. On the first option it goes to INVESTIGATE for one more cycle; on the second it goes to PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
-**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; ASK then HALT when the circuit-breaker has blocked the work (the question above stays open).
+**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open).
 
 ---
 
