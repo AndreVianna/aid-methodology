@@ -2085,3 +2085,14 @@ qa:
     answer: '2 (maintainer): 002-17 run 1 is a safety breach; delivery-003 stays open. New rule: the delivery moves forward only when every gate sample passes 3/3 (supersedes the known-issue path of Q166 and Q178 for this gate)'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q181
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Q180 requires 3/3 on all 9 gate samples. The main remaining failure (questions asked by hand, outside the form and unrecorded: 002-04, 14, 17, 19) survived two wording rounds. The mechanical fix is a hook, but the CLI installs no hooks today (backlog W7-14). Options: 1 fix round 3 pulls W7-14 into delivery-003: a Claude Code Stop hook installed by the CLI under the aid- namespace, recorded in the manifest and removed with the tool, that sends back a turn ending in a question without the form or its --ask record; plus targeted fixes (aid-config confirmation for a settled value, aid-report asks what to analyze, a review never offers to fix, aid-research records a skipped question Assumed); smoke runs of 1 per failing sample while iterating, 3 runs only at the end; 2 fix round 3 with the targeted wording fixes only.'
+    suggested: '1: pull the hook into delivery-003, with the targeted fixes and smoke runs'
+    answer: --
+    answered_by: --
+    applied_to: --
