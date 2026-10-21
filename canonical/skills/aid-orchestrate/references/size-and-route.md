@@ -64,3 +64,14 @@ re-route into the work's `STATE.yml` at once: append an entry to `intent.changes
 When the work needs a Knowledge Base and the project has none, offer Preparation before the first
 phase, with a recommendation, under the question rule. The offer goes in the same message as the
 reading (SKILL.md step SHOW-READING). Build no Knowledge Base file before the user agrees.
+
+## 6. Start at once, without a go-ahead
+
+Rule 5.3 of the question protocol and the skipped-question rule (AC-28) say not to ask what the user
+already settled. So when the user's own words ask for exactly the matched skill's action, and that action
+changes no project source (review this, research that, check production, report on this), show the reading
+in one line and start the skill in the same turn, with no go-ahead question. Any other match keeps its one
+confirmation question, and a request that builds or changes code always needs its approval.
+
+After the yes, or after the one-line start, the skill is started with its slash command or the Skill tool.
+Its work is never done by hand, because only a started skill loads its own question rules.

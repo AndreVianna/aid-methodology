@@ -78,24 +78,24 @@ Read `.aid/connectors/INDEX.md`.
 
 ## Handling a request
 
-- Match a request by its meaning, not its wording, to the skill guide below. A question about this
-  project starts no work: answer it from the Knowledge Base, citing sources.
-- One skill fits: ask one confirmation question in the protocol form (its workflow in one line, your recommendation),
-  then stop; change no project file until the user agrees. Several: choose, asking once if you can't. None: carry on.
-- The richness check sets the depth: any of its five elements missing means `full`. No step of the
-  chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
-- A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
-  resumes ("carry on" too), closes or cancels a work, goes through `/aid-orchestrate` first, before you read the
-  work's files. A finished work is only reported: no reopen, no old questions.
-- Your reading takes the user's words as a hint only: check it against the Knowledge Base and the
-  code, then show it and its reason in one line, inside the first question or approval, and wait.
-- CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to
-  land. Definition runs only when the problem must be shaped; release, deploy, monitoring are works of their own.
-- A Knowledge Base conflict (a request that would make a KB statement false): quote it, raise it, plan nothing on it until answered.
-- A ticket, file or link brought into a work is added to its `sources:` before it is applied.
-- If the work turns out bigger or different, re-route it and say so in one line.
-- Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result.
-  AID never merges, even when the user asks: the merge is the user's own step, and no merge is offered for later.
+- Match a request by its meaning, not its wording, to the skill guide below. A question about this project starts no work: answer it from the
+  Knowledge Base, citing sources.
+- One skill fits: when the user's own words ask for exactly its action and it changes no project source (review this, research that, check production,
+  report on this), start it at once and say so in one line, with no go-ahead question. Any other match: ask one confirmation question in the protocol
+  form (its workflow in one line, your recommendation), then stop; change no project file until the user agrees. After the yes, or the one-line start,
+  run the skill by its slash command or the Skill tool, never by hand. Several fit: choose, asking once if you can't. None: carry on.
+- The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its
+  phases, and nothing runs by hand outside it.
+- A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts, resumes ("carry on" too), closes or cancels a work,
+  goes through `/aid-orchestrate` first, before you read the work's files. A finished work is only reported: no reopen, no old questions.
+- Your reading takes the user's words as a hint only: check it against the Knowledge Base and the code, then show it and its reason in one line,
+  inside the first question, approval or start, and wait.
+- CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to land. Definition runs only when
+  the problem must be shaped; release, deploy, monitoring are works of their own.
+- A Knowledge Base conflict (a request that would make a KB statement false): quote it, raise it, plan nothing on it until answered. A ticket, file or
+  link brought into a work is added to its `sources:` before it is applied. If the work grows or changes, re-route it and say so in one line.
+- Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result. AID never merges, even when the
+  user asks: the merge is the user's own step, and no merge is offered for later.
 
 ## Asking the user
 
@@ -119,8 +119,13 @@ My recommendation: {the answer you propose, and why}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
+- An approval ends with the other closing line, `Or answer in your own words, or ask me to explain.`, with no skip. Use it for
+  every approval: a go-ahead, a yes before building, a document or design approval. Only a plain question ends with the skip line.
 - List options only when two or more are valid, the recommended one first; with one valid option, ask
   for a confirmation instead. An approval cannot be skipped.
+- Before you end a turn that waits on the user, check the message: the first line with its importance, `Why I ask`,
+  `My recommendation`, the right closing line, and the `--ask` record already written. A closing or follow-up question ("Your call",
+  "which would you like?", "fix them now?") is a question like any other: the second and the last as much as the first.
 - Group questions by subject, most important first, and offer a break when the subject changes.
 
 ## Skill guide

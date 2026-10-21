@@ -45,8 +45,8 @@ passes `--seed` that document, so the questions move into the work's `qa` list.
    depth. When the project has no Knowledge Base, offer Preparation too
    (`references/size-and-route.md` section 5). **Advance:** **CHAIN** → SHOW-READING.
 4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, in the same
-   message as the first real question or approval. Then wait for the answer; it is never a
-   turn of its own. **Advance:** **ASK** → ACTION-HANDOVER.
+   message as the first real question or approval; `references/size-and-route.md` section 6 says when the
+   skill starts at once. Then wait; it is never a turn of its own. **Advance:** **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). The user's answer to SHOW-READING decides. A reading that matches an
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
    `/aid-test`, `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A

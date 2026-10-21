@@ -71,7 +71,7 @@ Why I ask: they are the work's title and summary on the dashboard.
 My recommendation: write them as shown -- they come straight from the objective.
   1. Write them as shown (recommended)
   2. Change the Name or the Description (tell me which)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 Process feedback:

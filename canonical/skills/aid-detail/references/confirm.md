@@ -15,7 +15,7 @@ Why I ask: nothing is re-examined unless you ask, and a review may change tasks 
 My recommendation: leave them as they are -- they are complete and graded.
   1. Leave them as they are (recommended)
   2. Reopen them for review (tell me if there is something specific to re-examine)
-Or answer in your own words, ask me to explain, or skip this question.
+Or answer in your own words, or ask me to explain.
 ```
 
 The question is blocking: this step pauses on it until the user answers.

@@ -69,9 +69,9 @@ the knowledge base, are not design-stage questions. Check 10 applies to them in 
    - (c) No obvious question is asked: a question whose answer the user has already given, or that needs no
      confirmation, fails.
    - (d) No option could lead to an error or a worse result.
-   - (e) The closing line of every question that is not an approval lets the user answer in their own words,
-     ask for an explanation, or skip the question. An approval offers no skip, and its closing line still lets
-     the user answer in their own words or ask for an explanation.
+   - (e) The closing line of every question that is not an approval is `Or answer in your own words, ask me to
+     explain, or skip this question.` An approval (a go-ahead, a yes before building, a document or design
+     approval) offers no skip: its closing line is `Or answer in your own words, or ask me to explain.`
    - Evidence: `transcript.md`, the numbered options and the closing line of each question.
 
 6. **Grouped by subject, most important first, in groups of 3 to 5.** Questions come in groups by subject,
