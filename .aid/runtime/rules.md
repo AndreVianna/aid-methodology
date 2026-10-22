@@ -104,7 +104,8 @@ Every question to the user follows `.aid/runtime/templates/question-protocol.md`
 - A question is any message that waits on the user's reply, a go-ahead, a clarification and "what next" included.
 - One question per message, on one topic. Never put two questions in one message.
 - Write for the lower technical level: when the user writes in plain words, keep file paths, code names and technical
-  walkthroughs out of every message; say what happens and what it means for them, unless they ask for more.
+  walkthroughs out of every message; say what happens and what it means for them, unless they ask for more. A technical choice
+  they cannot judge is not asked: take your recommendation, record it `Assumed` with its reason, and confirm it with the next approval.
 - Record it before you show it, `Pending`, where the protocol's "Where each record lives" says (for a
   work, `writeback-state.sh --ask`), and record the reply with `--answer`. Before a work exists we are in
   the design stage: every question asked then, with its answer, is recorded in a design document under

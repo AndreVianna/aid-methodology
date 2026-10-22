@@ -50,6 +50,8 @@ the user typed no `<tool>` or `<type>`:
    own connection (`mcp`), and go on with Step 1 for that tool. A skip leaves it `Skipped`; say it will be
    offered again later.
 4. Then go on with any other open entry of this skill, one at a time.
+5. In the message that reports the answer, always say in plain words that this needed no work, with the line
+   "This needed no work; it is recorded in the project's settings record." It is never left out on this path.
 
 With no open entry and fewer than two positional arguments, go on to Step 0.
 

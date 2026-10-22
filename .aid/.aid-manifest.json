@@ -644,7 +644,7 @@
         },
         {
           "path": "aid-set-connector/SKILL.md",
-          "sha256": "59c2fdd002ae177640c846eaef72aecfd6a962fccb539bad1064b5c99a9abbdd"
+          "sha256": "336010845f357cf284d445c6c604d94c5470bd1a6fbb96c229374c85b6df17c9"
         },
         {
           "path": "aid-set-connector/references/question-sets.md",
@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "409da35b770632eb6176cb16b03b2afeb3f96d953401367c4a5128ef55890288"
+          "sha256": "61290e7c63793ce0e18cbdb2d9794df93591b83b70b6b01e514e49e4bb7d5123"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1366,7 +1366,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "13e372c75e9e39dfcfdfb006d9e86f6196a49593a306674257206ca6beacb619"
+          "sha256": "459c69fd3e29405752d41724a0b3b6ad15f2183bd864779b99493f179a2e9c53"
         },
         {
           "path": "templates/requirements.md",
