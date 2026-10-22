@@ -28,7 +28,7 @@
         },
         {
           "path": "aid-config/SKILL.md",
-          "sha256": "3f22455c41d439452de797e29f52fe9fc9df0574b3d42aca3096c313fd9e58d1"
+          "sha256": "220f324f6c1fe9c1b2c5631cc5a7271e2b8e4088d0894fa980b559a901bcb431"
         },
         {
           "path": "aid-create-api/SKILL.md",
@@ -632,7 +632,7 @@
         },
         {
           "path": "aid-report/SKILL.md",
-          "sha256": "d47a73357abaca2d6e295a75179a3e72ddbdadb6a27ab3ebe53f0ce1c92f02b3"
+          "sha256": "dec2a134c46de580f401756e9cbe0577f5ad961ced27dcf5d618ab074accb3c2"
         },
         {
           "path": "aid-research/SKILL.md",
@@ -640,11 +640,11 @@
         },
         {
           "path": "aid-review/SKILL.md",
-          "sha256": "9f6e3dec9aebcc786f8d6001d258ed8f4cf7bbf90ce831be9457c4affbee92dd"
+          "sha256": "a0dda3c1cc0fb6a3a2bbef9e9cf6a6240c5624aa2a84584391aae3979638fa1d"
         },
         {
           "path": "aid-set-connector/SKILL.md",
-          "sha256": "66d0742b0e728cb52703e27d4be59aa79eebc66d6fbd0ee62a3d41e03839cfc8"
+          "sha256": "59c2fdd002ae177640c846eaef72aecfd6a962fccb539bad1064b5c99a9abbdd"
         },
         {
           "path": "aid-set-connector/references/question-sets.md",
@@ -756,7 +756,7 @@
         },
         {
           "path": "aid-unset-connector/SKILL.md",
-          "sha256": "1e05c7ec20dc048fb607265a323293787c960a7b6191daa23b4f13b25134987f"
+          "sha256": "6e285eb0cb2ece875642eb8b7b2a7b851e02d6871424d968f78e3b20690bcd76"
         },
         {
           "path": "aid-update-api/SKILL.md",
@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "1fdf68f9c43a98878ad66b1d8b8d25be98f12e82d6e6386db3817fe65ba43d82"
+          "sha256": "409da35b770632eb6176cb16b03b2afeb3f96d953401367c4a5128ef55890288"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -966,7 +966,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "c65d128b7d684b0995f522ed34235afcda60044bf3223f7e5635f29f8e85e6b1"
+          "sha256": "7c6582bfe4804fad1304de24f79bec1f5eaa63eddf245e9019747204068457ce"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
@@ -1366,7 +1366,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "4fa20f178f46604c3905be588635442c188beee74fab5484e720a1cd207d0aae"
+          "sha256": "13e372c75e9e39dfcfdfb006d9e86f6196a49593a306674257206ca6beacb619"
         },
         {
           "path": "templates/requirements.md",
@@ -1382,7 +1382,7 @@
         },
         {
           "path": "templates/reviewer-ledger-schema.md",
-          "sha256": "4410f00d2d8e885b38099891175b33ab82c8fdbb80d46d0fedee1305e608c1e6"
+          "sha256": "2988ab994dfeef5f71f48c34e40e28e4fed4b498116f9f73412b3e299b1973c0"
         },
         {
           "path": "templates/rough-time-hints.md",

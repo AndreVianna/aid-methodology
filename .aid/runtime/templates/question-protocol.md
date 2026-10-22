@@ -232,6 +232,15 @@ follow the normal recording above.
 
 On start or resume, the open entries (`Pending` and `Skipped`) are offered first, in the usual groups.
 
+**An open entry is offered through the skill in its `asked_by`, and answered on the same id.** Run that skill
+(the Skill tool); do not answer the entry by hand or ask its question from outside the skill. The skill shows
+the question with the text recorded in the entry's `context` and `suggested`, unchanged, because the question-form
+check matches a shown question to its record by that text. When the user answers, update that same entry
+(`--answer --id <id>`): it changes from `Skipped` or `Pending` to `Answered`, and `answered_by` becomes the new
+user's name. Never write a new `--ask` entry for a question that is already open. The user can skip it again: it
+stays `Skipped`. When an answer to a project question needed no work, say so in one plain line: "This needed no work;
+it is recorded in the project's settings record."
+
 ## Quick reference
 
 - One question, one topic, with **Why I ask**, **My recommendation**, valid options and a free answer.

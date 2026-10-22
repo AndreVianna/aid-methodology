@@ -90,11 +90,6 @@ def strip_inline(text):
     return re.sub(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://\S+", " ", text)
 
 
-def last_paragraph(text):
-    chunks = re.split(r"\n\s*\n", text.strip())
-    return chunks[-1] if chunks else ""
-
-
 def has_question_sentence(paragraph):
     return re.search(r"\?(?=\s|$|[\"')\]*_])", strip_inline(paragraph)) is not None
 
@@ -107,6 +102,12 @@ REQUEST_ANYWHERE_RE = re.compile(
     re.IGNORECASE,
 )
 TAIL_PARAGRAPHS = 3
+NEED_RE = re.compile(r"\bI(?:'d|\u2019d|\s+would)?\s+need\b(?!\s+to\b)", re.IGNORECASE)
+NEED_OBJECT_RE = re.compile(
+    r"\b(?:one of (?:these|the following)|(?:two|three|a few|some) (?:more )?(?:things|details|items)"
+    r"|the following|from you)\b",
+    re.IGNORECASE,
+)
 REQUEST_LEADING_RE = re.compile(
     r"^(?:(?:and|or|then|please|otherwise|you can|you may|just)\s+)*(?:choose|pick|reply|say)\b",
     re.IGNORECASE,
@@ -151,6 +152,13 @@ def asks_user(text):
             plain.endswith(":")
             and LEAD_IN_RE.search(plain)
             and any(LIST_ITEM_RE.match(l) for l in lines[i + 1:])
+        ):
+            return True
+        # "I need one of these:" / "I'd need two things" -- the agent needs something from the user.
+        # Only the present tense counts: "I needed to ..." is a report about the past.
+        if NEED_RE.search(plain) and (
+            NEED_OBJECT_RE.search(plain)
+            or (plain.endswith(":") and any(LIST_ITEM_RE.match(l) for l in lines[i + 1:]))
         ):
             return True
     return False
@@ -427,9 +435,6 @@ def shows_open_entry(root, subject, message, question_text):
 def analyse(message):
     """Return (waits, subject, missing_form_items, question_text) for a message."""
     text = strip_fences(message)
-    para = last_paragraph(text)
-    if BREAK_OFFER in para:
-        return False, "", [], ""
     lines = text.splitlines()
     first_idx = None
     subject = ""
@@ -445,6 +450,10 @@ def analyse(message):
     has_why = any(WHY_RE.match(l) for l in lines)
     has_rec = any(REC_RE.match(l) for l in lines)
     has_close = any(is_closing_line(l) for l in lines)
+    # A break offer anywhere in the tail window (last three paragraphs) is not a question, unless
+    # the message also asks in the form's sense (a form first line, or the form's closing line).
+    if BREAK_OFFER in tail_block(text) and first_idx is None and not has_close:
+        return False, "", [], ""
     waits = first_idx is not None or has_close or asks_user(text)
     if not waits:
         return False, "", [], ""

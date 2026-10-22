@@ -202,13 +202,18 @@ The hard stop follows the ASK step of `skill-steps.md`. Present:
 Then STOP. The stop is one approval question in the form of `.aid/runtime/templates/question-protocol.md`,
 never a free sentence such as "do you want me to publish?". It comes in the same message as the exact
 text it would post, shown in full above the question, with a plain line that nothing is posted until you
-approve. Form: `Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without
+approve. This holds for every approval to write, save, publish or post the review's report, whatever the
+target (a PR or ticket comment, notes in a document, or a findings report saved in the work folder). A
+summary table, a list of findings or a description of the text is not the text: show the report exactly as
+it will be written, in full, in that same message, and say that nothing is written or posted until the
+user approves. Never ask "save this report?" first and show the text only when the user asks.
+Form: `Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without
 your approval, **My recommendation**, numbered options: approve and publish / edit the text / choose a
 different delivery / do not publish, and the approval closing line `Or answer in your own words, or ask me to explain.`
 Record it with
 `writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with
 `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.
-Nothing is posted to any external target until they approve.
+Nothing is written or posted to any target until they approve.
 
 **Advance:** ASK → [State: PUBLISH].
 
@@ -216,7 +221,9 @@ Nothing is posted to any external target until they approve.
 
 ## State: PUBLISH  (only on approval)
 
-If the user did not approve publishing, nothing is posted. Otherwise
+If the user did not approve publishing, nothing is posted or saved. The approval just given covers the exact
+text shown at PRESENT-FINDINGS and no other: any other write, save or post (a different target, edited text)
+is asked again with its exact text in full, as there. Otherwise
 deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
 enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
 [<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
@@ -224,8 +231,8 @@ PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact 
 at its own CONFIRM before posting); a findings report in the work folder (+ optional
 inline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /
 no catalogued connector / unknown target -> present the exact text for the human to paste; when the
-user must choose where it goes, ask that as one question in the same form, recorded with `--ask` before
-it is shown and `--answer` after, recommending the paste.
+user must choose where it goes, ask that as one question in the same form, with the exact text in full in the
+same message, recorded with `--ask` before it is shown and `--answer` after, recommending the paste.
 Publishing is optional and never blocks DONE.
 
 When findings remain, end with one plain line that names `/aid-fix` as the way to fix them, for example
@@ -252,6 +259,8 @@ Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh
   never sees the reviewer's reasoning.
 - **Reviews are always a sub-agent dispatch** (`aid-reviewer`), never inline.
 - **Human final say before any external commit** (PRESENT-FINDINGS).
+- **The exact text comes with every approval to write, save, publish or post the report:** in full, in the same
+  message, with a plain line that nothing is written or posted until the user approves.
 - **Read-only** on the reviewed artifact; never fixes (hand off to `/aid-fix`).
 - **A review never turns into a fix.** This binds a review of the user's code or change: `/aid-review` and an
   ad-hoc review the user asks for. During or after it, offer no fix and ask no question about fixing; the one

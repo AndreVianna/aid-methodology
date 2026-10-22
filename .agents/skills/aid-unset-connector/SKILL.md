@@ -115,6 +115,12 @@ write a secret value):
 [aid-unset-connector] <STEM>: removed (secret purged if present); INDEX regenerated.
 ```
 
+**Close in plain words.** After the trace, end with one plain sentence: what was removed and from where
+("I removed Jira from the project's list of connections."). Name no connection-type, preset id or tag unless
+the user asks. This skill opens no work and never goes through `/aid-orchestrate`
+(`.aid/runtime/rules.md` § Handling a request); when it needed no work, say so in one line: "This needed no
+work; it is recorded in the project's settings record."
+
 Exit 0.
 
 **Advance:** **HALT**.

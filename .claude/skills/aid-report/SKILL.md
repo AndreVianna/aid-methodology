@@ -40,8 +40,8 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 1. **Check the subject.** Note whether the argument is empty. Do not ask here.
 2. **Pick the path:** **Fast** -- the user's own words name both the data and the question
    ("analyze the A/B results in `results.csv`", "error-rate breakdown from these logs") ->
-   analyze now. **Guided** -- anything less ("analyze our usage", "make a report") -> scope
-   *which data, which metrics, what question* first, in INTAKE-ASK, then analyze. Data found
+   analyze now. **Guided** -- anything less ("analyze our usage", "make a report") -> ask what to
+   analyze and what to answer first, in INTAKE-ASK, then analyze. Data found
    on disk never makes the path Fast: only the user's words do.
 3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->
    `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,
@@ -61,14 +61,17 @@ Ask one topic at a time, through the question protocol, in this order and only f
    answer is the subject; the path and complexity are then set from it. It is the run's first question
    and is recorded like every later one: `--ask --design` runs before it is shown, even though no work or
    design document exists yet (the first call opens the untitled one).
-2. **Guided path** -> scope *which data, which metrics, what question about it*, one question at a
-   time, and only for what the user's words left open:
-   - **More than one candidate data source and none named** -> ask which one first, as its own
-     question.
-   - **No question named** -> ask what the report should answer, in the form and recorded with
-     `--ask --design`. The recommendation proposes a question and names the data it would read.
-     When exactly one data source is a candidate, name it in the recommendation and do not ask
-     about it (question-protocol Rule 5.3).
+2. **Guided path** -> unless the user's own words name **both** the data and the question, ask exactly one
+   question first, in the form: what should I analyze, and what should the report answer. Do not
+   open a work, announce that scoping is done or start reading before the user has answered it.
+   - Its **Why I ask** says that the data and the question decide what the report can show.
+   - Its **My recommendation** names the candidate data source(s) found on disk or in a connector and a
+     likely question about them. One candidate file is a recommendation inside this question, never a
+     reason to skip it: finding the file does not tell what the user wants answered.
+   - When the user's words name only one of the two, the question asks for the other, still as one
+     question. Ask nothing else about scope that the answer settles (metrics follow from the question).
+   - Record it with `--ask --design` (a `## Questions` row, `Pending`) before it is shown, and the reply
+     with `--answer --design` after. Only then does the skill go on to ALLOCATE and open a work.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
 Record each of these questions in a design document before it is shown, and its reply after it, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.

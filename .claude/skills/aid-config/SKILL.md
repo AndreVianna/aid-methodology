@@ -98,8 +98,10 @@ Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1,
   `.aid/STATE.yml`, exactly as Mode 2 Step 4 sets (`writeback-state.sh --project --ask`, then `--project
   --answer`). A setting whose last entry is `Skipped` is asked again on that same entry: write no new
   `--ask`, and answer the open entry by its id (`--project --answer --id Q<n>`) when the user replies,
-  so the entry closes as `Answered` (or stays `Skipped` when the user skips again). A non-zero exit stops
-  the skill at once.
+  so the entry closes as `Answered` (or stays `Skipped` when the user skips again). Show the re-asked
+  question with the SAME question text as the entry's recorded `context` (and its `suggested` as the
+  recommendation), word for word: the question-form check matches a shown question to its record by that
+  text, so a reworded re-ask looks unrecorded. A non-zero exit stops the skill at once.
 - **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
   A `Keep current value` answer or a skip writes nothing.
 - **Offer a break when the subject changes**: between group 1 and group 2, and again before the last
@@ -110,7 +112,8 @@ Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1,
 - **Skipped questions are offered again at the end**, once, in the same form, as a last group, on their
   own entries. A question skipped twice stays `Skipped` in `.aid/STATE.yml`, and the next `/aid-config`
   run walks that setting again on the same entry.
-- At the end print the table again, and the line `Run /aid-config <key> to update any single value.`
+- At the end print the table again, and the line `Run /aid-config <key> to update any single value.` Then
+  say in one plain line: "This needed no work; it is recorded in the project's settings record."
 
 Exit.
 
