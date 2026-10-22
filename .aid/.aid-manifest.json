@@ -962,11 +962,11 @@
         },
         {
           "path": "scripts/hooks/__pycache__/aid-question-form.cpython-313.pyc",
-          "sha256": "cd7fa9504b0e4271e878988d0dd6b1100e577c162bbf1665c3914ae9076f1fd6"
+          "sha256": "1033368da4a2200f6be8b542fd0aefcbb8759476049598e3aad930cb48c9f4ea"
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "092f4bb6d4e75fdd5f856b89730a26f3784c04139ad1bdcbd438fef8eb108b26"
+          "sha256": "c65d128b7d684b0995f522ed34235afcda60044bf3223f7e5635f29f8e85e6b1"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
