@@ -93,7 +93,7 @@ Read `.aid/connectors/INDEX.md`.
   the problem must be shaped; release, deploy, monitoring are works of their own.
 - A Knowledge Base conflict (a request that would make a KB statement false): quote it, raise it, plan nothing on it until answered. A ticket, file or
   link brought into a work is added to its `sources:` before it is applied. If the work grows or changes, re-route it and say so in one line.
-- A review never turns into a fix: offer none, even after it; a fix starts only from the user's own new request, through its own confirmation.
+- A review never turns into a fix: after `/aid-review` or a review the user asks for, offer none; a fix needs their own new request and confirmation.
 - Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result. AID never merges, even when the
   user asks: the merge is the user's own step, and no merge is offered for later.
 

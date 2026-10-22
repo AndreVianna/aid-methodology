@@ -328,8 +328,9 @@ When the user types a request like "review X for me" directly at the prompt (not
 4. After sub-agent return: runs `grade.sh` on the ledger; reports findings + grade to the user.
 5. Ends there. It offers no fix and asks no question about fixing: when findings remain, the report ends with one
    plain line that names `/aid-fix` as the way to fix them (for example "N issues found -- run `/aid-fix` to address
-   them."), a statement with no recommendation and no option. A review never turns into a fix; a fix starts only from
-   the user's own new request, through its own confirmation.
+   them."), a statement with no recommendation and no option. A review of the user's code or change never turns into
+   a fix; a fix starts only from the user's own new request, through its own confirmation. (A skill's own
+   review-and-revise loop over its own output is not this rule.)
 6. The ledger stays on disk for a later `/aid-fix`; delete it when the user says the ad-hoc review is done.
 
 The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-hoc compliance.

@@ -165,6 +165,8 @@ aid remove self            # remove the aid CLI itself (asks to confirm)
 
 Re-running `aid add` is safe: identical files are skipped. Root agent files (`CLAUDE.md` / `AGENTS.md`) are updated in-place and losslessly: AID rewrites only the region between its own markers and leaves everything you authored outside those markers untouched.
 
+`aid add claude-code` also writes one entry, the AID Stop hook, into the project's `.claude/settings.json` so that AID questions keep their required form. Your own settings and hooks stay as they are, the entry is recorded in the manifest, and `aid remove` takes it out again. Set `AID_QUESTION_HOOK=off` to turn the hook off for a session.
+
 What `aid add` places in a repo:
 
 | Placed | Location |
