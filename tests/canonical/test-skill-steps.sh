@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-skill-steps.sh - Static checks for the step rules of Feature 002 (section 8, groups
-# SS-01 to SS-14; SS-04 to SS-07, SS-09, SS-10 and SS-13 are the conversation and agent rules).
+# SS-01 to SS-15; SS-04 to SS-07, SS-09, SS-10 and SS-13 are the conversation and agent rules).
 #
 # COVERS: canonical/skills/
 # COVERS: canonical/agents/
@@ -59,6 +59,12 @@
 #          (d) no continuation routed by a skill itself (only work-initiation-gate.md may)
 #   SS-13  each of canonical/agents/aid-reviewer/AGENT.md, canonical/aid/templates/reviewer-dispatch.md
 #          and every canonical/skills/*/references/reviewer-brief.md has a `### What to report` heading
+#   SS-15  the targeted fixes of the question flow: (a) aid-config confirms a value the project settles;
+#          (b) aid-report's Fast path needs the user's words to name data and question, and rules.md says
+#          starting at once skips only the go-ahead; (c) a review never turns into a fix (the ad-hoc review
+#          offers none, rules.md and aid-review carry the rule, no "fix them now?" example is left);
+#          (d) aid-research closes a settled or unanswerable scoping question Assumed; (e) the fixed
+#          subjects `Recovery` and `Cancel work` are named in skill-steps.md and start-or-resume.md
 #
 # The shared exempt list tests/canonical/skill-steps-exempt.tsv (columns: entry, checks, owner)
 # serves SS-03, SS-12 and SS-14. An entry is a skill folder name (exempting every file under
@@ -735,6 +741,56 @@ run_ss13() {
 }
 
 # ---------------------------------------------------------------------------
+# SS-15: the targeted fixes of the question flow, (a) to (e).
+# ---------------------------------------------------------------------------
+run_ss15() {
+    group_begin "SS-15 targeted question-flow fixes: config confirmation, report intake, no review fix, research Assumed, subjects"
+    local cfg="canonical/skills/aid-config/SKILL.md" rep="canonical/skills/aid-report/SKILL.md"
+    local res="canonical/skills/aid-research/SKILL.md" rev="canonical/skills/aid-review/SKILL.md"
+    local rules="canonical/aid/rules.md" led="canonical/aid/templates/reviewer-ledger-schema.md"
+    local qp="canonical/aid/templates/question-protocol.md" orch="canonical/skills/aid-orchestrate/references/start-or-resume.md"
+    local f step5
+    # has FILE LABEL FIXED-STRING -- one check.
+    has() {
+        if grep -q -F -e "$3" "$1" 2>/dev/null; then pass "SS-15 $2"; else fail "SS-15 $1: $2 (missing: $3)"; fi
+    }
+    lacks() {
+        if grep -q -F -e "$3" "$1" 2>/dev/null; then fail "SS-15 $1: $2 (found: $3)"; else pass "SS-15 $2"; fi
+    }
+    # (a) aid-config confirms a settled value.
+    has "$cfg" "(a) aid-config asks a confirmation when the project settles a value" "When the project settles a value, ask a confirmation"
+    has "$cfg" "(a) aid-config settles source_control from git rev-parse" "git rev-parse --is-inside-work-tree"
+    has "$cfg" "(a) aid-config settles type brownfield from source files outside .aid/" "source files exist outside"
+    has "$cfg" "(a) aid-config says nothing settles none or greenfield" 'Nothing settles `none` or `greenfield`'
+    # (b) aid-report intake and the general rule.
+    has "$rep" "(b) aid-report Fast path needs the user's words to name data and question" "the user's own words name both the data and the question"
+    has "$rep" "(b) aid-report: data found on disk never makes the path Fast" "Data found"
+    has "$rep" "(b) aid-report asks what the report should answer, recorded with --ask --design" "ask what the report should answer"
+    has "$rules" "(b) rules.md: starting at once skips only the go-ahead" "skips only the go-ahead"
+    # (c) a review never turns into a fix.
+    step5=$(awk '/^## Ad-hoc user-prompted reviews/{f=1;next} /^## /{f=0} f' "$led")
+    if [[ -n "$step5" ]] && ! grep -q -i -E 'apply the fixes|fix(es)? now|whether to apply' <<< "$step5"; then
+        pass "SS-15 (c) the ad-hoc review section of the ledger schema offers no fix"
+    else
+        fail "SS-15 (c) $led: the ad-hoc review section is missing or still offers to apply fixes"
+    fi
+    has "$led" "(c) ledger schema step 5 ends with the /aid-fix statement" 'names `/aid-fix`'
+    has "$rules" "(c) rules.md: a review never turns into a fix" "A review never turns into a fix"
+    has "$rev" "(c) aid-review Constraints: a review never turns into a fix" "A review never turns into a fix"
+    for f in "$rules" "$qp"; do
+        lacks "$f" "(c) no 'fix them now?' example in $f" "fix them now"
+    done
+    # (d) aid-research closes a settled or unanswerable scoping question Assumed.
+    has "$res" "(d) aid-research records a settled scoping question Assumed" "--answer --design --state Assumed"
+    has "$res" "(d) aid-research closes an unanswerable scoping question Assumed" "The user cannot answer it"
+    has "$res" "(d) aid-research names the assumption under Gaps" "under its Gaps"
+    # (e) the two fixed subjects.
+    has "$STEPS_DOC" "(e) skill-steps.md Recovery uses the fixed subject Recovery" 'fixed subject `Recovery`'
+    has "$orch" "(e) start-or-resume.md cancel uses the fixed subject Cancel work" 'fixed subject `Cancel work`'
+    group_end
+}
+
+# ---------------------------------------------------------------------------
 # Main.
 # ---------------------------------------------------------------------------
 echo "=== Skill step rules (Feature 002 section 8) ==="
@@ -756,6 +812,7 @@ wants SS-11 && run_ss11
 wants SS-12 && run_ss12
 wants SS-13 && run_ss13
 wants SS-14 && run_ss14
+wants SS-15 && run_ss15
 
 test_summary
 exit $?

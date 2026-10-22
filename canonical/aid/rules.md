@@ -78,12 +78,11 @@ Read `.aid/connectors/INDEX.md`.
 
 ## Handling a request
 
-- Match a request by its meaning, not its wording, to the skill guide below. A question about this project starts no work: answer it from the
-  Knowledge Base, citing sources.
+- Match a request by its meaning to the skill guide below. A question about this project starts no work: answer it from the Knowledge Base, citing sources.
 - One skill fits. Only `/aid-ask`, `/aid-research`, `/aid-review`, `/aid-report`, `/aid-monitor` and `/aid-read-ticket` start at once, and only when
-  the user's own words already ask for exactly that action: say so in one line, no go-ahead question. Each skill's own approvals inside its run stay.
-  Every other skill: ask one confirmation question in the protocol form (its workflow in one line, your recommendation), then stop; change no project
-  file until the user agrees. Several fit: choose, asking once if you can't. None: carry on.
+  the user's own words ask for exactly that action: say so in one line, no go-ahead question. That skips only the go-ahead: the skill's own intake
+  questions and approvals still come, in the form and recorded. Every other skill: ask one confirmation question in the protocol form (its workflow in
+  one line, your recommendation), then stop; change no project file until the user agrees. Several fit: choose, asking once if you can't. None: carry on.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its
   phases, and nothing runs by hand outside it. After the yes or the one-line start, run the skill by its slash command or the Skill tool.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts, resumes ("carry on" too), closes or cancels a work,
@@ -94,6 +93,7 @@ Read `.aid/connectors/INDEX.md`.
   the problem must be shaped; release, deploy, monitoring are works of their own.
 - A Knowledge Base conflict (a request that would make a KB statement false): quote it, raise it, plan nothing on it until answered. A ticket, file or
   link brought into a work is added to its `sources:` before it is applied. If the work grows or changes, re-route it and say so in one line.
+- A review never turns into a fix: offer none, even after it; a fix starts only from the user's own new request, through its own confirmation.
 - Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building and the result. AID never merges, even when the
   user asks: the merge is the user's own step, and no merge is offered for later.
 
@@ -126,7 +126,7 @@ Or answer in your own words, ask me to explain, or skip this question.
   for a confirmation instead. An approval cannot be skipped.
 - Before you end a turn that waits on the user, check the message: the first line with its importance, `Why I ask`,
   `My recommendation`, the right closing line, and the `--ask` record already written. A closing or follow-up question ("Your call",
-  "which would you like?", "fix them now?") is a question like any other: the second and the last as much as the first. The exceptions are
+  "which would you like?", "shall I go on?") is a question like any other: the second and the last as much as the first. The exceptions are
   the break offer and the confirmations the protocol leaves unrecorded (recovery, cancel); a skill with no writer for its place records
   where the protocol says, or says it cannot.
 - Group questions by subject, most important first, and offer a break when the subject changes.

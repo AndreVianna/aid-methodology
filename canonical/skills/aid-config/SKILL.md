@@ -69,6 +69,18 @@ named in `My recommendation`. When nothing usable can be read, say so plainly an
 words, with no numbered option (question-protocol Rule 5.1). A
 setting skipped in an earlier run is asked again on its own entry (see below).
 
+**When the project settles a value, ask a confirmation, not a menu** (question-protocol Rule 5.1). Only one
+option is valid then, so the question has no numbered options: "I'll keep `source_control` as `git`, because
+this folder is a git repository -- all right?" It keeps the form and the closing line, and its recommendation
+names the evidence. Settled means:
+
+- `source_control` is `git` when `git rev-parse --is-inside-work-tree` succeeds, `svn` when `.svn` is present,
+  `mercurial` when `.hg` is present;
+- `type` is `brownfield` when source files exist outside `.aid/`.
+
+Nothing settles `none` or `greenfield`: when the project settles nothing, the numbered options stay. A reply
+that gives another value is validated and written as in Mode 2 Steps 5 to 7.
+
 After the table, walk the settings straight away, with no break between a go-ahead (if one was asked) and the
 first group, because they are one subject. Group them by subject, most important first, **3 to 5 questions
 per group**, one question per message and one topic per question. Each question is shown in the form of
@@ -224,6 +236,9 @@ intended behavior, not a gap.
 | `source_control` | `none`, `git`, `svn`, `mercurial` |
 | `minimum_grade` | `A+`, `A`, `B+` |
 | `heartbeat_interval` | `0` (disabled), `1`, `5` |
+
+When the project settles `source_control` or `type` (Mode 1 Step 3), the table is not offered as options: the
+other values are not valid there, so the question is a confirmation of the settled value.
 
 Always include a `Keep current value` option, unless the value is an unset placeholder (`⚠ unset`); the closing line of the question lets the user type a free-form value.
 

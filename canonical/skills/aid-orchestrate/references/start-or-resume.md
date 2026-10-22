@@ -102,9 +102,11 @@ the user's confirmed answer, and in this order:
 2. **Select it.** Set `AID_STATE_FILE` to that work's `STATE.yml` and `AID_WORK_DIR` to its work
    folder, so the write lands on that work and on no other.
 3. **Confirm once.** Ask one question: whether to cancel the work, named with its id and phase.
-   Give the reason (a canceled work stops for good), your recommendation (keep it paused when
-   the user is unsure), the options "cancel" and "keep", and a free-text answer. The question
-   pauses this step where it stands; once it is answered, the step goes on to the write.
+   Its first line uses the fixed subject `Cancel work` (`Cancel work -- question 1 of 1 -- importance:
+   high`), the name that marks it as unrecorded on purpose. Give the reason (a canceled work stops for
+   good), your recommendation (keep it paused when the user is unsure), the options "cancel" and "keep",
+   and a free-text answer. The question pauses this step where it stands; once it is answered, the step
+   goes on to the write.
 4. **Write.** When the user confirms, run:
 
 ```bash

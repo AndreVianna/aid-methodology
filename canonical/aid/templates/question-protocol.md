@@ -107,7 +107,7 @@ Or answer in your own words, ask me to explain, or skip this question.
   the skip line.
 - **End-of-turn check.** Before you end a turn that waits on the user, the message has the first line
   with its importance, `Why I ask`, `My recommendation` and the right closing line, and its `--ask` record
-  ran first. A closing or follow-up question ("Your call", "which would you like?", "fix them now?") is a
+  ran first. A closing or follow-up question ("Your call", "which would you like?", "shall I go on?") is a
   question like any other: the second and the last as much as the first. The exceptions are the break offer
   and the confirmations this protocol leaves unrecorded (recovery, cancel); a skill with no writer for its
   place records where Where each record lives says, or says it cannot.

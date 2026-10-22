@@ -62,7 +62,11 @@ Ask one topic at a time, through the question protocol, in this order and only f
 
 1. **Empty argument** -> the bootstrapping question ("What do you want investigated?"). The
    answer is the question; the path and complexity are then set from it.
-2. **Guided path** -> the 2-3 scoping questions that narrow the question.
+2. **Guided path** -> the 2-3 scoping questions that narrow the question. Two kinds are not put to the user:
+   - **An earlier answer settles it.** Record it with `--ask --design`, then close it at once with
+     `--answer --design --state Assumed` and the reason (which answer settles it). Do not show it.
+   - **The user cannot answer it** ("I don't know"). Close it `Assumed` the same way, with the assumption
+     the research makes and why. The report names that assumption under its Gaps.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
 Record each of these questions in a design document before it is shown, and its reply after it, as the gate's "Recording the questions asked before a work exists" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.
