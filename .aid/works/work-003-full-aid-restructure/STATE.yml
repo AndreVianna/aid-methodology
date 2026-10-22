@@ -2132,11 +2132,11 @@ qa:
   - id: Q185
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Smoke iteration 3: 002-19 passes (the hook caught one unformed question). 002-14 fails only on PC-3: the agent explained in technical terms (class names, paths, a race walkthrough) to a plain-words user. Every form and record failure is gone. Options: 1 one small wording fix (keep paths, code names and technical walkthroughs out of what is shown to a plain-words user) and go straight to the final 3-run check of all 9 samples; 2 go straight to the final 3-run check with no fix; 3 stop and close delivery-003 with 002-14 as a known issue (reverses Q180).'
     suggested: '1: the wording fix, then the final 3-run check'
-    answer: --
-    answered_by: --
+    answer: '1 (maintainer): the plain-words wording fix, then the final 3-run check of all 9 samples'
+    answered_by: 'Claude'
     applied_to: --
