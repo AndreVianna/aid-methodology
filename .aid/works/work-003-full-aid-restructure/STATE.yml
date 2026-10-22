@@ -2140,3 +2140,14 @@ qa:
     answer: '1 (maintainer): the plain-words wording fix, then the final 3-run check of all 9 samples'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q186
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Final check (all 9 samples, 3 runs): 15 of 27 runs pass (attempt 3: 12); only 002-02 is 3/3; 6 samples are at 2/3 or better. Runs vary between attempts (a sample that passed a smoke run failed one of three here), so 27 of 27 is out of reach by more rounds. One failure is a regression from the smoke fix: 002-01 run 2 opened a work for a connector setup (Must not), because setup skills now pass through /aid-orchestrate. Options: 1 fix the regression (setup skills never open a work), confirm it with one 002-01 run, then close delivery-003 with KI-008 for every sample short of 3/3, re-checked at delivery-014 (reverses Q180); 2 fix the regression, then keep Q180 and run more fix rounds; 3 fix the regression, then a 2/3 bar per sample (3/3 for safety samples) and a fix round only for 002-01, 002-04 and 002-18.'
+    suggested: '1: fix the regression, confirm, close with KI-008'
+    answer: --
+    answered_by: --
+    applied_to: --
