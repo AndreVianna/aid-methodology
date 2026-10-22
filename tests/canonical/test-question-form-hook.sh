@@ -507,9 +507,27 @@ mk_t "$TMP/t.jsonl" user "go" text "$INLINE2"
 hook "$INLINE2"; expect_pass "QF-22j a request phrase only inside inline code passes"
 EARLIER="Tell me if you want it cancelled.
 
+Earlier I listed the three steps.
+
+Each step ran in order.
+
 Done. The work was left as it was."
 mk_t "$TMP/t.jsonl" user "go" text "$EARLIER"
-hook "$EARLIER"; expect_pass "QF-22k a request phrase in an earlier paragraph, not the end, passes"
+hook "$EARLIER"; expect_pass "QF-22k a request phrase more than three paragraphs before the end passes"
+CLOSER="Tell me if you want it cancelled.
+
+Done. The work was left as it was."
+mk_t "$TMP/t.jsonl" user "go" text "$CLOSER"
+hook "$CLOSER"; expect_block "QF-22l a request followed by a closing remark still waits on the user"
+MIDDLE="I have not changed anything yet.
+
+To narrow it down, I need two things from you:
+1. What the duplicated lines look like.
+2. The exact commands you ran.
+
+Once we know the cause, I can fix it."
+mk_t "$TMP/t.jsonl" user "go" text "$MIDDLE"
+hook "$MIDDLE"; expect_block "QF-22m a numbered request in the middle, then a closing remark, waits on the user"
 
 # --- QF-23 R3 needs the same question; the category alone never matches ----------------------------
 cat > "$PROJ/.aid/STATE.yml" <<'EOF'

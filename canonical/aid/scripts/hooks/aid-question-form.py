@@ -102,9 +102,11 @@ def has_question_sentence(paragraph):
 LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
 REQUEST_ANYWHERE_RE = re.compile(
     r"\b(?:tell me|let me know|say (?:if|which|whether)|would you (?:like|prefer|rather)|do you want"
-    r"|your call|reply with|which\b[^.!?:;]{0,60}\bwould)\b",
+    r"|your call|reply with|which\b[^.!?:;]{0,60}\bwould|from you|need you to|point me"
+    r"|(?:paste|send|share|give) me|if you can (?:paste|send|share|give|tell|point|provide|confirm))\b",
     re.IGNORECASE,
 )
+TAIL_PARAGRAPHS = 3
 REQUEST_LEADING_RE = re.compile(
     r"^(?:(?:and|or|then|please|otherwise|you can|you may|just)\s+)*(?:choose|pick|reply|say)\b",
     re.IGNORECASE,
@@ -117,19 +119,22 @@ LEAD_IN_RE = re.compile(
 
 
 def tail_block(text):
-    """The final paragraph; when it is only a list, the paragraph that introduces it too."""
+    """The last TAIL_PARAGRAPHS paragraphs, so a request followed by a closing remark still counts.
+
+    A paragraph that is only a list brings the paragraph that introduces it too.
+    """
     chunks = [c for c in re.split(r"\n\s*\n", text.strip()) if c.strip()]
     if not chunks:
         return ""
-    tail = chunks[-1]
-    lines = [l for l in tail.splitlines() if l.strip()]
-    if len(chunks) > 1 and lines and all(LIST_ITEM_RE.match(l) for l in lines):
-        tail = chunks[-2] + "\n" + tail
-    return tail
+    start = max(0, len(chunks) - TAIL_PARAGRAPHS)
+    lines = [l for l in chunks[start].splitlines() if l.strip()]
+    if start > 0 and lines and all(LIST_ITEM_RE.match(l) for l in lines):
+        start -= 1
+    return "\n\n".join(chunks[start:])
 
 
 def asks_user(text):
-    """True when the end of the message asks the user to choose, reply or tell (no '?' needed)."""
+    """True when the end of the message asks the user to choose, reply, tell or provide (no '?' needed)."""
     tail = strip_inline(tail_block(text))
     if not tail.strip():
         return False
