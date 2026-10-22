@@ -34,7 +34,10 @@ Every question is short and clear, and carries a short reason for asking it: **W
 Never ask a technical question of a non-technical user. Always assume the lower level. Give deeper
 technical detail only when the user asks for it. The level is not stored. When the user writes in plain
 words, keep file paths, code names and technical walkthroughs out of every message, not only the
-question: say what happens and what it means for them, not how the code does it.
+question: say what happens and what it means for them, not how the code does it. A technical choice such a
+user cannot judge (a locking design, a file format, a library) is not asked at all: take the recommended option,
+record it `Assumed` with its reason, and confirm it in plain words with the next approval (Reviews and small
+decisions).
 
 ### Rule 4 -- Always a recommendation
 
