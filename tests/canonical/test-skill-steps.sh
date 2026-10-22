@@ -765,7 +765,10 @@ run_ss15() {
     # (b) aid-report intake and the general rule.
     has "$rep" "(b) aid-report Fast path needs the user's words to name data and question" "the user's own words name both the data and the question"
     has "$rep" "(b) aid-report: data found on disk never makes the path Fast" "Data found"
-    has "$rep" "(b) aid-report asks what the report should answer, recorded with --ask --design" "ask what the report should answer"
+    has "$rep" "(b) aid-report asks what to analyze and what the report should answer, recorded with --ask --design" "what should the report answer"
+    has "$rep" "(b) aid-report: one candidate file is a recommendation, never a reason to skip the question" "finding the file does not tell what the user wants answered"
+    has "$rep" "(b) aid-report: the question is recorded --ask --design before a work is opened" "Only then does the skill go on to ALLOCATE"
+    has "$rev" "(c) aid-review: every approval to write, save, publish or post shows the exact text in full first" "Never ask \"save this report?\" first and show the text only when the user asks"
     has "$rules" "(b) rules.md: starting at once skips only the go-ahead" "skips only the go-ahead"
     # (c) a review never turns into a fix.
     step5=$(awk '/^## Ad-hoc user-prompted reviews/{f=1;next} /^## /{f=0} f' "$led")
@@ -787,6 +790,13 @@ run_ss15() {
     # (e) the two fixed subjects.
     has "$STEPS_DOC" "(e) skill-steps.md Recovery uses the fixed subject Recovery" 'fixed subject `Recovery`'
     has "$orch" "(e) start-or-resume.md cancel uses the fixed subject Cancel work" 'fixed subject `Cancel work`'
+    # (f) setup skills open no work; an open entry is offered through its skill and answered on its id.
+    has "$rules" "(f) rules.md: setup skills skip /aid-orchestrate and open no work" "skip \`/aid-orchestrate\` and open no work or worktree"
+    has "$qp" "(f) question-protocol: an open entry is offered through the skill in its asked_by" "An open entry is offered through the skill in its \`asked_by\`"
+    has "$qp" "(f) question-protocol: a re-offered question keeps its recorded text" "with the text recorded in the entry's \`context\` and \`suggested\`, unchanged"
+    has "canonical/skills/aid-set-connector/SKILL.md" "(f) aid-set-connector offers an open entry first" "Step 0a: Offer an open connection question first"
+    has "canonical/skills/aid-set-connector/SKILL.md" "(f) aid-set-connector closes in plain words" "Close in plain words."
+    has "$cfg" "(f) aid-config re-asks a skipped setting with its recorded text" "SAME question text as the entry's recorded"
     group_end
 }
 

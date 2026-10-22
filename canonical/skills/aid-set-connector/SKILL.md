@@ -33,6 +33,26 @@ never a remove-then-add pair.
   `--rotate-secret` (forces a fresh secret capture on an otherwise field-only, same-type,
   same-`auth_method` update — Step 5).
 
+### Step 0a: Offer an open connection question first
+
+Before anything else, read the project file `.aid/STATE.yml` (if it exists) and look in its `qa` list
+for entries whose `state` is `Pending` or `Skipped` and whose `asked_by` is `aid-set-connector`
+(`question-protocol.md` § Questions before a work exists). If there is one, it comes first, even when
+the user typed no `<tool>` or `<type>`:
+
+1. Show it as the question in the form, with the text recorded in the entry's `context` and `suggested`,
+   word for word, because the question-form check matches a shown question to its record by that text.
+   Do not reword it, and do not write a new `--ask` for it.
+2. The reply updates that same entry: `writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped>
+   --value '<the answer>' --applied-to '<what the entry says>'`. Never answer it by hand, and never leave it
+   `Skipped` while recording a new entry for the same question.
+3. A yes carries out the setup the entry names (`applied_to`, for example `connector jira`): use the tool's
+   own connection (`mcp`), and go on with Step 1 for that tool. A skip leaves it `Skipped`; say it will be
+   offered again later.
+4. Then go on with any other open entry of this skill, one at a time.
+
+With no open entry and fewer than two positional arguments, go on to Step 0.
+
 ### Step 0: Validate arguments
 
 1. Fewer than 2 positional arguments → print and exit non-zero:
@@ -97,6 +117,9 @@ the row's `name` column, a custom tool uses `<tool>` as given. It is not a quest
 the final one-line trace. Only when the name is genuinely ambiguous (for example the tool argument is a
 path or a bare id) ask one confirmation in the form, recommending the name you propose.
 
+**Plain words.** To a user who writes in plain words, call the type "your tool's own connection" and never
+show `mcp`, `preset: ...`, tags or a field name; give them only when the user asks (`question-protocol.md` Rule 3).
+
 **Connection type.** The type is the `<type>` argument. When you must suggest or list types (the user
 asks what is possible, or the preset's own type differs from the argument), offer only the types usable
 for consumption now: `mcp`, which is live (the host tool's own MCP/plugin supplies the connection).
@@ -119,7 +142,8 @@ file `.aid/STATE.yml` (`question-protocol.md` § Where each record lives). Befor
 `bash .aid/runtime/scripts/execute/writeback-state.sh --project --ask --category Connections --impact <High|Medium|Low> --context '<the question>' --suggested '<the recommendation>' --asked-by aid-set-connector`,
 which prints the question's id. Right after the answer:
 `bash .aid/runtime/scripts/execute/writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'connector <stem>'`.
-Never put a secret value in either call. A non-zero exit stops the skill at once.
+Never put a secret value in either call. A non-zero exit stops the skill at once. An entry that is already
+open is never asked again with `--ask`: Step 0a answers it by its id.
 
 **Follow-up offers.** A user's yes to an open connection question is the go-ahead for that setup: carry it
 out, and do not ask again. An offer to set up a connector, made before this skill is started, is a go-ahead
@@ -240,6 +264,12 @@ write a secret value):
 ```
 [aid-set-connector] <STEM>: <ADD|UPDATE> (<type>); secret <written|purged|unchanged>; INDEX regenerated.
 ```
+
+**Close in plain words.** After the trace, end with one or two plain sentences for the user: what was
+recorded and where, and that AID stores no password. For example: "I added Jira to the project's list of
+connections (`.aid/connectors/jira.md`). AID stores no password; your tool's own sign-in is used." Name no
+preset id, connection-type name or tag unless the user asks. When the setup answered a project question and
+needed no work, add one line: "This needed no work; it is recorded in the project's settings record."
 
 Exit 0.
 

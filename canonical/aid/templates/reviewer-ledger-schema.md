@@ -326,6 +326,8 @@ When the user types a request like "review X for me" directly at the prompt (not
 2. Creates `.aid/.temp/review-pending/adhoc-<slug>.md` if it doesn't exist.
 3. Dispatches a reviewer sub-agent (`aid-reviewer`) with this schema as the output contract.
 4. After sub-agent return: runs `grade.sh` on the ledger; reports findings + grade to the user.
+   When it asks to write, save, publish or post the report anywhere (a file, a PR or ticket comment), the same message
+   shows the exact text in full, not a summary, and says nothing is written or posted until the user approves.
 5. Ends there. It offers no fix and asks no question about fixing: when findings remain, the report ends with one
    plain line that names `/aid-fix` as the way to fix them (for example "N issues found -- run `/aid-fix` to address
    them."), a statement with no recommendation and no option. A review of the user's code or change never turns into

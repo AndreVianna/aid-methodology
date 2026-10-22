@@ -78,17 +78,17 @@ Read `.aid/connectors/INDEX.md`.
 
 ## Handling a request
 
-- Match a request by its meaning to the skill guide below. A question about this project starts no work: answer it from the Knowledge Base, citing sources.
-- One skill fits. Only `/aid-ask`, `/aid-research`, `/aid-review`, `/aid-report`, `/aid-monitor` and `/aid-read-ticket` start at once, and only when
-  the user's words ask for exactly that action: say so in one line, run it before investigating or asking. That skips only the go-ahead: its own
-  intake questions and approvals still come, in the form and recorded. Every other skill: run `/aid-orchestrate` first, before any question; it
-  asks the one confirmation question; no project file changes until the user agrees. Several fit: choose, asking once if you can't. None: carry on.
+- Match a request by its meaning to the skill guide below. A question about this project starts no work: answer it from the KB, citing sources.
+- One skill fits. Only `/aid-ask`, `/aid-research`, `/aid-review`, `/aid-report`, `/aid-monitor` and `/aid-read-ticket` start at once, only when the
+  user's words ask for exactly that action: say so in one line, run it before investigating or asking. That skips only the go-ahead: its own intake
+  questions and approvals stay, in the form and recorded. Setup skills (`/aid-config`, `/aid-set-connector`, `/aid-unset-connector`)
+  skip `/aid-orchestrate` and open no work or worktree; confirm once, then run them. Several fit: choose, asking once if you can't. None: carry on.
+- A typed `/aid-<skill>` always wins. Every other request (any other skill; starting, resuming ("carry on" too), closing or cancelling a work) runs
+  `/aid-orchestrate` first, before any question and before you read the work's files; it asks the one confirmation question, and no project file
+  changes until the user agrees. A finished work is only reported: no reopen, no old questions.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its
-  phases, and nothing runs by hand outside it. After the yes or the one-line start, run the skill by its slash command or the Skill tool.
-- A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts, resumes ("carry on" too), closes or cancels a work,
-  goes through `/aid-orchestrate` first, before you read the work's files. A finished work is only reported: no reopen, no old questions.
-- Your reading takes the user's words as a hint only: check it against the Knowledge Base and the code, then show it and its reason in one line,
-  inside the first question or approval and wait, or in the one-line start and go on.
+  phases; nothing runs by hand: run skills by slash command or the Skill tool. Your reading treats the user's words as a hint: check it against the
+  KB and the code, then show it with its reason in one line, in the first question or approval (then wait) or in the one-line start (then go on).
 - CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to land. Definition runs only when
   the problem must be shaped; release, deploy, monitoring are works of their own.
 - A Knowledge Base conflict (a request that would make a KB statement false): quote it, raise it, plan nothing on it until answered. A ticket, file or
