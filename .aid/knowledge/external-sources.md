@@ -5,6 +5,8 @@ objective: Registry of external documentation, vendor specs, and reference URLs 
 summary: Read this before fetching documentation that may already be cataloged here. Discovery provided none; the host agent-tool vendor docs catalogued since answer how each harness behaves — which hook events fire, and whether anything outside a session can start a turn in it.
 sources:
   # EXTERNAL URLs/docs cataloged in this registry.
+  - https://code.claude.com/docs/en/hooks
+  - https://code.claude.com/docs/en/cli-reference
   - https://docs.github.com/en/copilot/reference/hooks-reference
   - https://docs.github.com/en/copilot/concepts/agents/hooks
   - https://cursor.com/docs/hooks
@@ -26,7 +28,7 @@ review-criteria: []
 
 > **Source:** aid-discover (Phase 1 -- Pre-scan); host agent-tool docs added during requirements work
 > **Status:** Populated -- host agent-tool vendor documentation
-> **Last Updated:** 2026-08-09
+> **Last Updated:** 2026-10-22
 
 ## Contents
 
@@ -47,15 +49,16 @@ one fires, and whether anything outside a session can start a turn in it — is 
 knowledge with no representation in this repository. Consult these before designing or
 reviewing anything that depends on host lifecycle behaviour.
 
-**Coverage is partial, and the gaps are load-bearing.** Three of the five hosts are
-catalogued below: Cursor, GitHub Copilot CLI, and Antigravity. **Claude Code and Codex are
-not.** For Claude Code this is not an oversight to be filled from a search: its harness
-capabilities are exposed to an agent at runtime rather than published as a document, so a
-claim about them is first-hand rather than citable. Treat any Claude Code harness claim as
-unsourced until a published reference exists. Codex has simply not been researched.
+**Coverage is partial, and the gaps are load-bearing.** Four of the five hosts are
+catalogued below: Claude Code (its hooks reference and CLI reference), Cursor, GitHub Copilot
+CLI, and Antigravity. **Codex is not**: it has simply not been researched. For Claude Code,
+only the hook contract and the settings sources the table lists are catalogued; treat any
+other Claude Code harness claim as unsourced until a published reference is added.
 
 | Source | URL | What it answers | Accessed |
 |---|---|---|---|
+| Claude Code hooks reference | https://code.claude.com/docs/en/hooks | The `Stop` event (runs when the main agent finishes; a sub-agent fires `SubagentStop`); its stdin JSON (`session_id`, `transcript_path`, `cwd`, `stop_hook_active`, `last_assistant_message`); the block shape (exit 0 with `{"decision": "block", "reason": "..."}`, after which Claude continues, capped at 8 consecutive continuations); the transcript file is written asynchronously and may lag the final message; `.claude/settings.json` is the committable project scope and `.claude/settings.local.json` the per-machine one; `${CLAUDE_PROJECT_DIR}` is substituted in a command; a `-p` run treats the folder as trusted, so project hooks run; shell-form commands run in Git Bash on Windows, or in PowerShell without it | 2026-10-21 |
+| Claude Code CLI reference | https://code.claude.com/docs/en/cli-reference | `--setting-sources` takes `user`, `project` and `local` as separate sources, so `--setting-sources project` loads `.claude/settings.json` and not `.claude/settings.local.json` | 2026-10-21 |
 | GitHub Copilot hooks reference | https://docs.github.com/en/copilot/reference/hooks-reference | The 14 hook events and when each fires; `agentStop` can force a further turn; **no idle hook exists and no external process can inject into a session** | 2026-08-09 |
 | GitHub Copilot hooks concept | https://docs.github.com/en/copilot/concepts/agents/hooks | Hook configuration locations (`.github/hooks/*.json`, `~/.copilot/hooks/*.json`) | 2026-08-09 |
 | Cursor hooks | https://cursor.com/docs/hooks | The full hook event list; the `stop` hook fires when the agent loop ends and **can submit the next user message**; **no mechanism exists for a background process to initiate a turn** | 2026-08-09 |

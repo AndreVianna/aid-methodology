@@ -70,6 +70,7 @@ review-criteria:
 - [D31 — The agent-facing chat surface omits every operation that reaches another session](#d31--the-agent-facing-chat-surface-omits-every-operation-that-reaches-another-session)
 - [D32 — The host agent orchestrates](#d32--the-host-agent-orchestrates)
 - [D33 — One question protocol run by the main conversation; saved steps; pass and call](#d33--one-question-protocol-run-by-the-main-conversation-saved-steps-pass-and-call)
+- [D34 — One project-scoped hook handler in Claude Code's settings](#d34--one-project-scoped-hook-handler-in-claude-codes-settings)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---
@@ -88,7 +89,7 @@ review-criteria:
 | D8 | Install manifest records each shared entry once, with its users | Accepted | `lib/aid-install-core.sh` |
 | D9 | Deletion bounded by the install manifest | Accepted | `lib/aid-install-core.sh` |
 | D10 | Polyglot, dual-channel, zero-dep distribution | Accepted | `packages/*` manifests |
-| D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
+| D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new; amended by D34) | `README.md` |
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
 | D13 | Per-repo `format_version` stamp | Settled | `bin/aid` (`AID_SUPPORTED_FORMAT`) |
 | D14 | Lite path + description-first TRIAGE | Superseded by D20/D24/D32 | `docs/aid-methodology.md` §4 |
@@ -109,6 +110,7 @@ review-criteria:
 | D31 | The agent-facing chat surface omits every operation that reaches another session | Accepted | `canonical/skills/aid-chat/SKILL.md`; `tests/canonical/test-chat-node-wake.sh`; `tests/canonical/test-chat-node-hub.sh` |
 | D32 | The host agent orchestrates; no orchestrator actor and no router skill | Accepted (supersedes D21 and D25; amends D14 and D15) | `canonical/aid/rules.md` § Handling a request; `canonical/skills/aid-orchestrate/SKILL.md` |
 | D33 | One question protocol run by the main conversation; saved steps; pass and call | Accepted (supersedes the chaining rule; amends D17) | `canonical/aid/templates/question-protocol.md`; `canonical/aid/templates/skill-steps.md`; `canonical/aid/scripts/execute/writeback-state.sh` (writer modes) |
+| D34 | One project-scoped hook handler in Claude Code's settings | Accepted (amends D11) | `canonical/aid/scripts/hooks/aid-question-form.sh`; `lib/aid-install-core.sh` (`_ensure_host_hooks`); `profiles/claude-code.toml` § `[hooks]`; `tests/canonical/test-host-hooks.sh` |
 
 ---
 
@@ -257,7 +259,7 @@ review-criteria:
 - **Rejected:** The old `.aid-new` sidecar file for root-file conflicts — **superseded** and
   removed in v1.1.0 in favor of in-place marker rewriting. CONFIRMED `README.md` (search:
   "The old .aid-new sidecar file is gone").
-- **Status:** Accepted (supersedes the `.aid-new` approach).
+- **Status:** Accepted (supersedes the `.aid-new` approach). Amended by D34: one AID handler may sit in a host settings file.
 
 ## D12 — CLI install scope: cwd-driven, no scan, CODE/STATE split
 
@@ -793,3 +795,30 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   holds no agent that asks questions, no skill names `AskUserQuestion`, and the skills that ask questions
   cite `question-protocol.md`.
 
+## D34 — One project-scoped hook handler in Claude Code's settings
+
+- **What:** `aid add claude-code` and `aid update` merge one AID handler into the project's
+  `.claude/settings.json`, under `hooks.Stop`, in its own matcher group. It runs
+  `bash "${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh"`, a check that a message which
+  waits on the user is in the form of `question-protocol.md` and that its question was recorded first; a message
+  that falls short is sent back once. The profile declares it in a `[hooks]` table, the tool descriptor carries
+  it as `hook_settings` and `hook` lines, and the manifest records it under `tools.<tool>.hooks`. AID may add a
+  handler to a host settings file only on those terms: it runs a script under
+  `.aid/runtime/scripts/hooks/aid-*`, it is recorded in the manifest, and `aid remove` strips it with the tool.
+  Every other key, group and handler in the file stays the user's. The hook fails open and
+  `AID_QUESTION_HOOK=off` turns it off for one session.
+- **Why:** The rule text alone did not hold: in the conversation samples the agent still asked questions outside
+  the form and left them unrecorded, however the rule was worded, and a hook is the one mechanism that checks the message itself. The
+  conversation runner loads project settings only (`--setting-sources project`), so a handler elsewhere would
+  never be exercised by the samples. The command names only `${CLAUDE_PROJECT_DIR}`, so the committed file
+  holds no machine path, which is the hazard `chat-node/scripts/hook-install.py` guards against for the chat
+  hook.
+- **Rejected:** `.claude/settings.local.json`, which is per machine and is not loaded by the samples. User-scope
+  settings, which are not per project. Rule wording alone, which the conversation samples showed is not enough. A broader
+  rule that lets AID write any host configuration: the exception is limited to an `aid-` script handler that is
+  recorded and removed with the tool.
+- **Amends:** D11, whose isolation rule (no AID content at a tool root outside `agents/` or `skills/`, and no
+  edit of a host file outside the `AID:BEGIN/END` region) now has this one exception.
+- **Status:** Accepted. CONFIRMED `lib/aid-install-core.sh` (`_ensure_host_hooks`, `_remove_host_hooks`) and its
+  PowerShell twins in `lib/AidInstallCore.psm1`, `profiles/claude-code.toml`, and `tests/canonical/test-host-hooks.sh`.
+  The hook for Cursor, Copilot CLI and Antigravity is backlog item W7-37.

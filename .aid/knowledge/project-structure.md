@@ -101,7 +101,7 @@ AID/
 │   ├── skills/               # 112 skill definitions (18 curated + 94 catalog skills)
 │   ├── agents/               # agent role definitions (one AGENT.md each)
 │   └── aid/                  # runtime payload, installed at .aid/runtime/
-│       ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
+│       ├── scripts/          # helper scripts grouped by phase (kb, execute, ...); hooks/ holds the AID Stop hook
 │       ├── templates/        # KB seeds, doc/state templates, schemas, shortcut catalog + engine + scaffolding
 │       └── rules.md          # the AID rules every tool reads through AGENTS.md
 ├── profiles/                 # RENDERED per-tool agent trees (generated; do not hand-edit)
@@ -138,10 +138,10 @@ AID/
 ├── .claude/                  # DOGFOOD: Claude Code agents, the aid-* skill mirror, maintainer skills, settings
 │   ├── agents/               # installed aid-*.md agents
 │   ├── skills/               # aid-* mirror of .agents/skills/ + maintainer skills (generate-profile, release-aid)
-│   └── settings.json
+│   └── settings.json         # aid add / aid update merge the AID Stop hook handler into it
 ├── .cursor/                  # DOGFOOD: installed Cursor agents (agents/) + rules/
 └── .aid/                     # DOGFOOD pipeline state + Knowledge Base
-    ├── runtime/              # CLI-installed runtime: scripts/, templates/, rules.md, host.conf
+    ├── runtime/              # CLI-installed runtime: scripts/ (incl. scripts/hooks/), templates/, rules.md, host.conf
     ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE + kb.html)
     ├── design/               # design seeds under construction (.aid/design/README.md defines the convention)
     ├── works/                # tracked work folders
@@ -170,7 +170,7 @@ CONFIRMED by direct `find` traversal of each subtree.
 | `tests/` | `canonical/` cross-platform shell suites (+ fixtures) and `windows/` PowerShell installer tests. | Yes |
 | `.github/` | Issue templates, dependabot config, and five CI workflows. | Yes |
 | `.agents/` | A **dogfood** install of the shared `aid-*` skills. | No (regenerate via install) |
-| `.claude/` | A **dogfood** AID install for this repo: the Claude Code agents and the `aid-*` skill mirror. | No (regenerate via install) |
+| `.claude/` | A **dogfood** AID install for this repo: the Claude Code agents and the `aid-*` skill mirror; `aid add` and `aid update` also merge the AID Stop hook handler into `settings.json` (the other entries in that file are the user's). | No (regenerate via install) |
 | `.cursor/` | A **dogfood** AID install for this repo: the Cursor agents. | No (regenerate via install) |
 | `.aid/` | The **dogfood** AID pipeline state: the installed runtime (`runtime/`), the Knowledge Base, tracked works (under `works/`), settings, and discovery scratch. | Yes (state-managed) |
 

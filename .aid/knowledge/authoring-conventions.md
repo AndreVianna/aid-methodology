@@ -208,7 +208,7 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-10 | `*` | validate | Every AID-owned directory sits under `.aid/runtime/`, or is an `aid-*` skill directory under `.agents/skills/` or a declared skill mirror; no AID-owned directory is placed bare at the root of a tool-native directory | HIGH | an unnested AID directory is indistinguishable from user content by path and cannot be pruned by manifest membership on uninstall |
 | G-11 | `*` | validate | Every AID file placed inside a tool-native directory (`agents/`, `skills/`, `rules/`), including `.agents/skills/` and each declared skill mirror, carries the `aid-` prefix; the runtime is placed only under `.aid/runtime/` | HIGH | an un-prefixed AID file inside a tool-native directory cannot be pruned safely on uninstall without risk of deleting user content |
 | G-12 | `*` | validate | No AID-delivered content is placed at the `.github` root level | HIGH | content at the `.github/` root must be user-owned; AID content there cannot be namespaced without overwriting user configurations |
-| G-13 | `*` | validate | No AID-own content is placed at the root level of a tool directory (for example `.codex/`) outside that tool's `agents/` or `skills/` subtree | HIGH | content at a tool root outside its `agents/` or `skills/` subtree is not namespaced and cannot be pruned by manifest membership on uninstall |
+| G-13 | `*` | validate | No AID-own content is placed at the root level of a tool directory (for example `.codex/`) outside that tool's `agents/` or `skills/` subtree. One exception: a handler AID adds to a host settings file (for example `.claude/settings.json`) is allowed only when it runs a script under `.aid/runtime/scripts/hooks/aid-*`, is recorded in the install manifest (`tools.<tool>.hooks`), and is removed with the tool; AID adds no other key, group or handler there | HIGH | content at a tool root outside its `agents/` or `skills/` subtree is not namespaced and cannot be pruned by manifest membership on uninstall; the excepted handler is namespaced by its `aid-` script path, recorded in the manifest, and stripped on uninstall, so it can be pruned |
 | G-14 | `work-artifact` | validate | Every citation in a work artifact's prose is a durable anchor (a path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE`. Membership: a `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` or `deliveries/*/BLUEPRINT.md` under `.aid/works/`. A reviewer ledger's `Line` cell is a column, not prose, and is never a citation | LOW | the same drift `G-02` names, in the artifacts a later phase reads most closely; `G-02` cannot reach them because it is scoped to the registry's corpus and a work folder is not in it |
 | G-15 | `work-artifact` | validate | A span presented as a quotation from a named source appears verbatim in that source. Membership: as `G-14` | MEDIUM | a misquoted requirement propagates into every artifact derived from it, and unlike a stale line number it reads as correct; the reader has no signal to re-check |
 | G-16 | `*` | validate | When a section is rewritten, every cross-reference pointing at it still states a purpose the new content supports. Membership: any reference naming another section of the same document, by heading or by number | MEDIUM | a pointer that resolves but now names the opposite of what it points at is worse than a dead one, because a dead pointer is visibly dead and this one reads as checked; and it is invisible to the sweep that catches the rest, since grepping a claim's own words finds every place that states it and no place that points at it |
@@ -499,9 +499,17 @@ content.**
   matching `$script:` constants in `lib/AidInstallCore.psm1`) plus the summary bullets, which have one source, the
   `AID:SUMMARY` block at the top of `canonical/aid/rules.md`. So to change HOW the region is written, edit
   the install-core libs; to change the summary, edit that block; to change the instruction, edit the constants -- never the user's host file. The block names the first action (a Read of `.aid/runtime/rules.md`) explicitly, forbids any answer before that Read returns and pre-empts "do not read files" prompts, because a written "read first" instruction is advisory; repair by content treats the block's one blank line as no one's, so only its non-blank lines are managed lines.
+- **Host settings file: one exception.** The installer may add a handler to a host tool's settings file
+  (today `.claude/settings.json`, `hooks.Stop`) only when the handler runs a script under
+  `.aid/runtime/scripts/hooks/aid-*`, the manifest records it under `tools.<tool>.hooks`, and `aid remove`
+  strips it with the tool. A handler is AID's when its command holds `/.aid/runtime/scripts/hooks/aid-`; every
+  other key, group and handler in the file is the user's and is never changed. A file the installer cannot
+  parse safely is left untouched with a warning. The mechanism is `_ensure_host_hooks` and `_remove_host_hooks`
+  in `lib/aid-install-core.sh` and their PowerShell twins in `lib/AidInstallCore.psm1`.
 - **Red flag:** an AID file without the `aid-` prefix; AID content at a tool root outside that tool's
-  `agents/` or `skills/` subtree; writing outside the AID:BEGIN/END region in a host file; an uninstall that
-  deletes by directory rather than by manifest; a skill mirror that differs byte-wise from `.agents/skills/`.
+  `agents/` or `skills/` subtree (the settings-file handler above is the one exception); writing outside the
+  AID:BEGIN/END region in a host file (again except that handler); an uninstall that deletes by directory
+  rather than by manifest; a skill mirror that differs byte-wise from `.agents/skills/`.
 
 ---
 

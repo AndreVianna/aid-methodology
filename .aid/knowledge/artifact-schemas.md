@@ -31,7 +31,7 @@ review-criteria:
     why: "A closed enum is what a writer validates against; a value documented here but rejected by the writer, or accepted but undocumented, breaks a run at the write rather than here"
   - id: F-02
     kind: validate
-    criterion: "The install manifest is format_version 3: the shared entries (skills, runtime, agents_md, claude_md, mirrors) carry users and sha256 data, and each tool carries files and paths, exactly as lib/aid-install-core.sh writes them"
+    criterion: "The install manifest is format_version 3: the shared entries (skills, runtime, agents_md, claude_md, mirrors) carry users and sha256 data, and each tool carries files and paths, plus an optional hooks list when the tool places a host hook, exactly as lib/aid-install-core.sh writes them"
     severity: HIGH
     why: "The installer, uninstall and drift readers all read these keys by name; a key documented here but not written, or written but not documented, orphans files at uninstall"
 ---
@@ -500,7 +500,8 @@ Shape:
     "<tool-id>": {
       "version": "<x.y.z>", "installed_at": "<UTC stamp>", "mirrors": ["<mirror dir>", ...],
       "files": [ { "path": "<installed path>", "sha256": "<hex>" } ],
-      "paths": ["<installed path>", ...]
+      "paths": ["<installed path>", ...],
+      "hooks": [ { "event": "Stop", "name": "aid-<name>", "settings": "<settings path>", "created": true } ]
     }
   }
 }
@@ -508,6 +509,13 @@ Shape:
 
 - `users` lists the installed tools that use a shared entry. The entry is removed only when that list is
   empty, which is the reference-counted uninstall.
+- `tools.<tool>.hooks` is optional and is the last member of the tool entry. It is present only when the tool's
+  descriptor declares hooks (today `claude-code`, `Stop:aid-question-form` in `.claude/settings.json`). Each
+  record names the `event`, the hook `name` (a script `.aid/runtime/scripts/hooks/<name>.sh`), the `settings`
+  file the handler was merged into and `created`, true when AID created that settings file. `aid remove`
+  strips the handler and deletes the settings file only when `created` is true and the file is left empty.
+  The list is additive, so `format_version` stays `3`: an older CLI ignores it. The Bash model line is
+  `tools.<tool>.hook` with the same four fields.
 - `agents_md.region_sha256` and `claude_md.region_sha256` let the installer detect a changed AID region.
   The region bodies are built by the install core (`_aid_root_region` in `lib/aid-install-core.sh`, `Get-AidRootRegion` in
   `lib/AidInstallCore.psm1`) from the fixed SESSION START block and the `AID:SUMMARY` block of the installed `.aid/runtime/rules.md`.

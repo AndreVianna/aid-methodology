@@ -201,7 +201,7 @@ splits coverage by OS:
 
 | OS lane | Mode | What runs |
 |---|---|---|
-| `ubuntu-latest` | `bash-harness` | A curated subset of installer/CLI/release suites: `test-install`, `test-install-ps1`, `test-install-parity`, `test-aid-cli`, `test-aid-cli-ps1`, `test-aid-cli-parity`, `test-release`, `test-release-install-e2e`, `test-npm-installer`, `test-pypi-installer`, `test-skill-guide`, `test-skill-steps`, `test-never-merges`, `test-deferred-tests`. |
+| `ubuntu-latest` | `bash-harness` | A curated subset of installer/CLI/release suites: `test-install`, `test-install-ps1`, `test-install-parity`, `test-aid-cli`, `test-aid-cli-ps1`, `test-aid-cli-parity`, `test-release`, `test-release-install-e2e`, `test-npm-installer`, `test-pypi-installer`, `test-host-hooks`, `test-skill-guide`, `test-skill-steps`, `test-never-merges`, `test-deferred-tests`. |
 | `windows-latest` | `native-ps1` | `tests/windows/Test-AidInstaller.ps1` under both `pwsh` (7) and `powershell` (5.1); plus a dashboard-CLI smoke and npm + PyPI channel Windows smoke tests (pack/build → install → `aid status` / `aid add`). |
 
 CONFIRMED in `.github/workflows/installer-tests.yml` (the `installer` matrix job). The bash
@@ -248,7 +248,7 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
 `bash-harness` lane of `.github/workflows/installer-tests.yml` (ubuntu, feature branches). The master
 `canonical-tests` job and the release `gate` reach them through `run-all.sh`.
 
-- **`tests/canonical/test-skill-steps.sh`** -- groups `SS-01` to `SS-14`; a group runs alone when named, as in `bash tests/canonical/test-skill-steps.sh SS-03`.
+- **`tests/canonical/test-skill-steps.sh`** -- groups `SS-01` to `SS-15`; a group runs alone when named, as in `bash tests/canonical/test-skill-steps.sh SS-03`.
   The trees they read are the ones the suite's header names: `canonical/skills/`, `canonical/agents/`,
   `canonical/aid/templates/`, `canonical/aid/scripts/`, `chat-node/`, `dashboard/`, `docs/`, `examples/`,
   `site/scripts/` and `site/src/content/`, the conversation samples and deferred list, and the shared exempt
@@ -281,6 +281,12 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
     `writeback-state.sh --create` with `--reading`, `--skill` and `--step`); no skill or template writes
     `initiator:` or a copied record block; the writer is the only writer of it; the fail-closed and recovery
     rules sit in `skill-steps.md`; no skill routes a continuation by itself.
+  - `SS-15`: the targeted fixes of the question flow. `aid-config` confirms a value the project settles;
+    `aid-report`'s Fast path needs the user's own words to name the data and the question, and `rules.md` says
+    starting at once skips only the go-ahead; a review never turns into a fix (the ad-hoc review offers none,
+    `rules.md` and `aid-review` carry the rule, no "fix them now?" example is left); `aid-research` closes a
+    settled or unanswerable scoping question `Assumed`; the fixed subjects `Recovery` and `Cancel work` are
+    named in `skill-steps.md` and `start-or-resume.md`, which the hook reads.
 
   The shared exempt list serves `SS-03`, `SS-12` and `SS-14`. Each row names a skill or path that a later
   change rebuilds or retires. The test fails when a row no longer exists on disk, and under
@@ -302,6 +308,32 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
   `test-skill-guide`) with that variable set on a live publish, and stops before anything is staged when one
   fails. A dry run or a stage-only run skips them. A release is therefore not gated while the deferred list
   or the exempt list holds a row.
+
+**Question-form hook and host-hook suites** (bash harness; each is picked up by `tests/run-all.sh` through the
+glob and declares its `# COVERS:` paths for `select-suites.sh`).
+
+- **`tests/canonical/test-question-form-hook.sh`** -- covers `canonical/aid/scripts/hooks/`. It builds its own
+  Stop-event stdin, transcripts and project folders in a temp dir and pins `CLAUDE_PROJECT_DIR` to them. Cases
+  `QF-01` to `QF-21`: a formed and recorded question passes; each of the four form parts (first line, `Why I
+  ask:`, `My recommendation:`, closing line) missing blocks and is named; no `--ask` record blocks; `--ask
+  --design` and `--project --ask` pass; a record from an earlier turn does not count; a report with no
+  question, the break offer, a `?` only inside a code fence and `stop_hook_active` pass; the subjects
+  `Recovery` and `Cancel work` and a ticket skill need no record; a re-offered open entry passes; a
+  Knowledge Base question passes on an edit of `.aid/knowledge/STATE.md`; bad stdin, a missing transcript and no
+  Python all print `{}` and exit 0; `AID_QUESTION_HOOK=off` passes; the log line is written on a block only; a
+  block is one JSON object with exit 0.
+- **`tests/canonical/test-host-hooks.sh`** -- covers `lib/aid-install-core.sh`, `profiles/`, `bin/aid` and the
+  profile generator's `aid_profile.py` and `render.py`. It drives `bin/aid add`, `update` and `remove` with
+  `--from-bundle` in temp targets. Cases `HH-01` to `HH-09`: a fresh target gets a settings file holding only the
+  AID group and a manifest record with `created: true`; a file with user keys and a user `Stop` hook keeps them
+  byte for byte, and a second `add` or an `update` changes nothing; a file AID will not edit is left alone
+  with a warning and exit 0; `remove` takes the AID handler out by the record and by the path marker, keeps
+  the user hook and deletes a file AID created that is left empty; `add cursor` and `add codex` write no
+  settings file; `update` adds the hook to an install that lacks it; no `python3` warns and writes nothing;
+  malformed `hook=` and `hook_settings=` descriptor lines are refused. It is in the `SUITES` list of the
+  `bash-harness` lane. The same hook cases run through `bin/aid.ps1` in `test-aid-cli-ps1.sh`, a
+  byte-for-byte comparison of what both twins write is in `test-aid-cli-parity.sh`, and the Windows lane
+  covers `add` and `remove` in `tests/windows/Test-AidInstaller.ps1`.
 
 **Conversation suite: `tests/conversation/`** (NFR-T; agent behaviour, judged by an agent).
 
@@ -329,7 +361,13 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
   and no workflow under `.github/workflows/` invokes `tests/conversation/`. The suite runs on the
   maintainer's machine.
 - **Where it captures.** Each run writes `.aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/`,
-  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt`, `ledger.md` and `model.txt`.
+  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt`, `ledger.md` and `model.txt`, plus
+  `hook.jsonl` when the question-form hook sent a message back. The runner sets `AID_QUESTION_HOOK_LOG` to
+  that file (outside the fixture, so `files.diff` stays clean) and drops `AID_QUESTION_HOOK` from the agent's
+  environment so a parent session cannot switch the hook off. A message the hook withdrew is marked in
+  `transcript.md`; the judge grades the replacement for the protocol checks and reads the withdrawn text for the
+  Must-not items only (`protocol-checks.md`, "Messages the hook withdrew"); the simulated user sees the
+  replacement only.
   The judge's ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
 - **What `files.diff` holds.** Every change the agent made in the fixture and in the throwaway `HOME`,
   git-ignored files included. A worktree the agent creates under the fixture's `.claude/worktrees/` is
@@ -343,7 +381,8 @@ step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through 
 - **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
   `run.py` without calling a model: a stub `claude` is put first on `PATH`, and the suite builds its
   own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,
-  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES` and `CAP`. The behaviours that
+  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES`, `VSAMPLES`, `CAP`, `CODEX`, `PROTO` and
+  `HOOK` (the hook log, the withdrawn marking and the dropped kill switch). The behaviours that
   `DIFF`, `JUDGE`, `ENV` and `END` guard each have a mutation (a throwaway copy of `run.py`, with that one
   behaviour broken) on which the same check must fail; `BRIEFS` runs the same test on throwaway copies of
   the two briefs. It skips with a notice when `python3` is absent.

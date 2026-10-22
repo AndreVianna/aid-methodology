@@ -191,6 +191,20 @@ v1.1.0 (superseded by in-place region replacement — see `decisions.md` D11). C
 `lib/aid-install-core.sh` (`_copy_root_agent_file`); `decisions.md` D11. The tier→model mapping
 per host is declared in `profiles/{tool}.toml`.
 
+**Claude Code runs the AID Stop hook from project settings.** `aid add claude-code` and `aid update` merge one
+handler into the project's `.claude/settings.json` under `hooks.Stop`; Claude Code runs it when the main agent
+finishes a response, passing the Stop event as JSON on stdin (`last_assistant_message`, `stop_hook_active`,
+`transcript_path`). The handler runs `.aid/runtime/scripts/hooks/aid-question-form.sh` through
+`${CLAUDE_PROJECT_DIR}`, so the committed file holds no machine path. A `claude -p` run treats the folder as
+trusted, so the project hook runs there too, which is how the conversation runner exercises it
+(`--setting-sources project` loads `.claude/settings.json` and not `.claude/settings.local.json`). The hook
+answers `{}` to let the turn end, or `{"decision": "block", "reason": "..."}` to send a message back once.
+A `SubagentStop` event does not trigger it, and where the shell form runs in PowerShell (Windows without Git
+Bash) the launcher cannot run and the hook fails open. The contract is catalogued in `external-sources.md`.
+Cursor, Copilot CLI and Antigravity declare the hook capability and get no AID hook yet (backlog W7-37).
+CONFIRMED: `profiles/claude-code.toml` (`[hooks]`); `lib/aid-install-core.sh` (`_ensure_host_hooks`);
+`canonical/aid/scripts/hooks/aid-question-form.sh`.
+
 ### Host behaviour that shaped the shared layout
 
 Manual probes on Windows (2026-10-10 for skill discovery, duplicates and `allowed-tools`; 2026-10-12 for the root-file
@@ -398,7 +412,7 @@ CONFIRMED by the cited sources above and the project release/install memory note
 - **Host tools are integrated by render, not adapter.** AID targets each of the five host AI
   harnesses by rendering byte-identical agent bodies into that tool's agent directory, and by installing
   the same shared skills and runtime for every tool. The only per-tool extras are the Claude Code skill
-  mirror and the `CLAUDE.md` region.
+  mirror, the `CLAUDE.md` region and the AID Stop hook handler in `.claude/settings.json`.
 
 ---
 

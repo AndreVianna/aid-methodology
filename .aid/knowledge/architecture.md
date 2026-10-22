@@ -154,6 +154,7 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 | `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
 | `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body is a SESSION START block (the first action is a Read of `.aid/runtime/rules.md`) plus the rules summary bullets lifted from the `AID:SUMMARY` block of the installed rules (no `@` line) | CLI | every tool |
 | `CLAUDE.md`: `AID:BEGIN`/`AID:END` region with the same body as the `AGENTS.md` region plus one `@.aid/runtime/rules.md` import line (the same inline rules text as `AGENTS.md`, no `@` line, under `rules_inline`); no `@AGENTS.md`, so each root file carries the rules alone | CLI | Claude Code only |
+| `.claude/settings.json`: one `hooks.Stop` handler, in its own matcher group, running `bash "${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh"` (timeout 30); the user's other keys, groups and handlers are kept. The script is part of the runtime row above | CLI (`_ensure_host_hooks`, from the profile's `[hooks]` table through the descriptor's `hook_settings` and `hook` lines) | Claude Code only |
 
 **Lifecycle rules** (implemented in `lib/aid-install-core.sh`: `install_shared`, `manifest_remove_tool`,
 `prune_shared`, `drift_report`):
@@ -434,7 +435,9 @@ curl|bash install.sh  (or irm|iex install.ps1, npm i -g, or pipx install)
   -> fetches aid-shared-v<V> and aid-<tool>-v<V>, verified against SHA256SUMS
   -> lib/aid-install-core.sh places .agents/skills/aid-*, the Claude Code .claude/skills mirror,
      .aid/runtime/, the tool's agents, the AGENTS.md region and (Claude Code only) the CLAUDE.md region
-  -> records the install in .aid/.aid-manifest.json (format 3, shared entries with users and sha256)
+  -> for Claude Code, merges the AID Stop hook handler into the project's .claude/settings.json
+  -> records the install in .aid/.aid-manifest.json (format 3, shared entries with users and sha256,
+     and under the tool the placed hooks as tools.<tool>.hooks)
 ```
 CONFIRMED in `README.md` "Install", `docs/aid-methodology.md` §10 and `lib/aid-install-core.sh`.
 
@@ -500,6 +503,13 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.aid/runtime/`, which the CLI owns: an unrecorded file there is pruned, except the runtime-local paths
   (`node_modules/` under `.aid/runtime/`). Enforced in `run_generator.py` and `lib/aid-install-core.sh`
   (`prune_shared`).
+- **Host settings file: only AID's own handlers.** AID edits a host tool's settings file (today the project
+  `.claude/settings.json`) only to add a handler that runs a script under `.aid/runtime/scripts/hooks/aid-*`.
+  The manifest records it under `tools.<tool>.hooks`, `aid remove` strips it (by the record and by the
+  `/.aid/runtime/scripts/hooks/aid-` command marker), and every other key, group and handler is the user's and
+  is never changed. A settings file the installer cannot parse safely is left untouched with a warning, and the
+  install goes on. Enforced by `lib/aid-install-core.sh` (`_ensure_host_hooks`, `_remove_host_hooks`) and its
+  PowerShell twins, and by `tests/canonical/test-host-hooks.sh`.
 - **Reviewer tier >= executor tier; writer never grades own work.** Enforced by skill
   dispatch and stated in `docs/aid-methodology.md` (search: "never grades its own work").
 - **Human-gated advancement:** the pipeline MUST NOT auto-advance; the human approves every
@@ -519,7 +529,7 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.aid/runtime/`; agent files carry the `aid-` prefix inside each tool's agents directory. Root files are
   updated in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers: the `AGENTS.md`
   region for every tool (a SESSION START block plus the rules summary; the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
-  the `CLAUDE.md` region (the same body plus the `@.aid/runtime/rules.md` import; the inline rules text under `rules_inline`). Enforced by the installer and manifests, by the
+  the `CLAUDE.md` region (the same body plus the `@.aid/runtime/rules.md` import; the inline rules text under `rules_inline`). The one other edit to a host file is the AID hook handler in the host settings file (the invariant above). Enforced by the installer and manifests, by the
   content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`, and by `tests/canonical/test-multitool-isolation.sh`.
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
   `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and the `aid_version` key in

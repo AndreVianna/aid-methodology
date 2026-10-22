@@ -96,6 +96,12 @@ skills and the runtime from `canonical/` into one shared payload.
 - **Wipe boundary:** the generator wipes each `profiles/{tool}/` tree and regenerates it in full, so a profile
   tree holds only generated agents and its `aid-tool.conf`. The generator never touches an installed user repo;
   install and uninstall prune only the files the install manifest records.
+- **Hook declaration:** a profile may carry a `[hooks]` table (a `settings` path under its root directory and a
+  `stop` list of `aid-` hook names); only `claude-code` may declare one for now. The generator validates it
+  (`aid_profile.py`: the profile must declare `capabilities.hooks`, the settings path must be
+  `<root>/settings.json` and every name must start with `aid-`) and renders it into the tool's `aid-tool.conf`
+  as `hook_settings=` and one `hook=Stop:aid-<name>` line per hook. `release.sh` packs that descriptor into the
+  tool artifact, so the descriptor must be regenerated before staging.
 - **Drift gate:** CI (`test.yml` `render-drift`) and the release `gate` re-run the generator
   and `git diff --exit-code -- profiles/`; any uncommitted drift fails the build. So
   `profiles/` is treated as committed build output that must always equal a fresh render.
@@ -201,6 +207,18 @@ End users install via one of:
 The bootstrap fetches the CLI bundle + libs from the **pinned release tag** and verifies them
 against `SHA256SUMS` before sourcing — the GitHub Release is the trust root (see `tech-debt.md`
 Security Observations).
+
+**Host hooks and the manifest.** For a tool whose descriptor declares `hook_settings` and `hook` lines (Claude
+Code), `aid add` and `aid update` merge the AID Stop handler into the project's `.claude/settings.json`
+(`_ensure_host_hooks` in `lib/aid-install-core.sh`, `Invoke-EnsureHostHooks` in `lib/AidInstallCore.psm1`) and
+print `Hook: aid-question-form (Stop) in .claude/settings.json`. The manifest records each placed hook under
+`tools.<tool>.hooks` (`event`, `name`, `settings`, `created`); `format_version` stays 3 because the list is
+additive. `aid remove` strips the handler by that record and by the `/.aid/runtime/scripts/hooks/aid-` command
+marker, and deletes a settings file AID created that is left empty. A settings file the installer cannot parse
+safely, or a machine without `python3` on the Bash side, leaves the file untouched with a warning and the
+install still exits 0; the PowerShell twin needs no Python. The hook script ships in the shared payload with the
+rest of `canonical/aid/scripts/` and is installed to `.aid/runtime/scripts/hooks/`, so `release.sh` needs no
+change for it.
 
 **The five install manifests (lockstep invariant):** the dashboard server+reader file set is
 vendored independently by `install.sh`, `install.ps1`, `packages/npm/scripts/vendor.js`,
