@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // chat-node/adapters/claude-code.mjs -- the waker adapter for Claude Code.
 //
-// Installed by the OPERATOR as a Stop hook. The product never writes host configuration, so this
-// file is only ever invoked; it configures nothing and writes nothing outside the chat runtime dir.
+// Installed by the OPERATOR as a Stop hook (`aid chat hook --install`, user scope). This file is only
+// ever invoked; it configures nothing and writes nothing outside the chat runtime dir. (The AID
+// question-form Stop hook that `aid add` places in the project settings is a separate hook.)
 //
 // What is specific to THIS host, and nothing else is:
 //

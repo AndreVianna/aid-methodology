@@ -740,7 +740,7 @@ validate_release_descriptor() {
         [[ -z "$line" ]] && continue
         key="${line%%=*}"; value="${line#*=}"
         counts["$key"]=$(( ${counts["$key"]:-0} + 1 ))
-        if [[ "$key" != skill_mirror && "${counts[$key]}" -gt 1 ]]; then
+        if [[ "$key" != skill_mirror && "$key" != hook && "${counts[$key]}" -gt 1 ]]; then
             echo "ERROR: aid: $(basename "$file"): ${key} may appear only once" >&2; return 1
         fi
         case "$key" in
@@ -756,8 +756,15 @@ validate_release_descriptor() {
                 [[ "$kind" == tool && "$value" == "CLAUDE.md" ]] || { echo "ERROR: aid: $(basename "$file"): invalid context_import '${value}'" >&2; return 1; } ;;
             rules_inline)
                 [[ "$kind" == tool && "$value" == "true" ]] || { echo "ERROR: aid: $(basename "$file"): rules_inline must be true" >&2; return 1; } ;;
+            hook_settings)
+                [[ "$kind" == tool && "$value" == "$root/settings.json" ]] || { echo "ERROR: aid: $(basename "$file"): invalid hook_settings '${value}'" >&2; return 1; } ;;
+            hook)
+                [[ "$kind" == tool && "$value" =~ ^Stop:aid-[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo "ERROR: aid: $(basename "$file"): invalid hook '${value}'" >&2; return 1; } ;;
         esac
     done <<< "$descriptor_lines"
+    if [[ -n "${counts[hook]:-}" && -z "${counts[hook_settings]:-}" ]]; then
+        echo "ERROR: aid: $(basename "$file"): hook needs hook_settings" >&2; return 1
+    fi
     if [[ "$kind" == shared && -z "${counts[aid_version]:-}" ]]; then
         echo "ERROR: aid: $(basename "$file"): missing aid_version" >&2; return 1
     fi
@@ -1214,6 +1221,277 @@ _remove_claude_md_region() {
     _aid_root_file_guard "$file" || return 1
     _aid_cut_marker_region "$file" 1 "$root" "$recorded"
 }
+
+# ---------------------------------------------------------------------------
+# Host hooks (a tool's settings file, e.g. .claude/settings.json)
+# ---------------------------------------------------------------------------
+#
+# A tool descriptor may declare `hook_settings=<root>/settings.json` and one or more
+# `hook=<Event>:aid-<name>` lines. The installer then merges one handler per hook into the
+# settings file, under hooks.<Event>, in its own matcher group:
+#   {"hooks": [{"type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/<name>.sh\"", "timeout": 30}]}
+# A handler is AID's when its command holds /.aid/runtime/scripts/hooks/aid-. AID never
+# touches another handler, group or key. A file it will not edit (not parseable, wrong
+# shape, a non-integer number, two keys that differ only in case) is left alone with one
+# warning and the install goes on. The manifest records each placed hook under
+# tools.<tool>.hooks (model line tools.<tool>.hook: event, name, settings, created).
+_AID_HOOK_MARKER="/.aid/runtime/scripts/hooks/aid-"
+
+# _host_hooks_python <ensure|remove> <target> <settings-rel> <created-prior:0|1> [<Event>:<name>...]
+# Prints one line: "ok<TAB><created|updated|unchanged|removed|deleted|absent><TAB><created:0|1>" or
+# "refused<TAB><reason>". Exit 0 for both; any other exit is a crash.
+_host_hooks_python() {
+    python3 - "$@" <<'PY'
+import copy, json, os, shutil, sys, tempfile
+
+MARK = "/.aid/runtime/scripts/hooks/aid-"
+mode, target, rel, prior = sys.argv[1:5]
+specs = sys.argv[5:]
+path = os.path.join(target, rel)
+
+
+def out(*fields):
+    sys.stdout.write("\t".join(fields) + "\n")
+    sys.exit(0)
+
+
+class Refuse(Exception):
+    pass
+
+
+def no_float(_):
+    raise Refuse("contains a number that is not an integer")
+
+
+def no_constant(_):
+    raise Refuse("is not valid JSON")
+
+
+def pairs(items):
+    seen = set()
+    for key, _ in items:
+        low = key.lower()
+        if low in seen:
+            raise Refuse("has two keys that differ only in case")
+        seen.add(low)
+    return dict(items)
+
+
+def is_aid(handler):
+    return isinstance(handler, dict) and isinstance(handler.get("command"), str) and MARK in handler["command"]
+
+
+def dump(data):
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+exists = os.path.isfile(path)
+text = ""
+if exists:
+    try:
+        with open(path, "rb") as fh:
+            text = fh.read().decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        out("refused", "is not valid JSON")
+    if mode == "remove" and MARK not in text:
+        out("ok", "unchanged", prior)
+elif mode == "remove":
+    out("ok", "absent", prior)
+
+try:
+    if exists:
+        try:
+            data = json.loads(text, object_pairs_hook=pairs, parse_float=no_float, parse_constant=no_constant)
+        except Refuse:
+            raise
+        except (ValueError, RecursionError):
+            raise Refuse("is not valid JSON")
+        if not isinstance(data, dict):
+            raise Refuse("is not a JSON object")
+    else:
+        data = {}
+    hooks = data.get("hooks")
+    if "hooks" in data and not isinstance(hooks, dict):
+        raise Refuse("has a hooks entry that is not an object")
+    if isinstance(hooks, dict):
+        for event in ["Stop"] + [spec.partition(":")[0] for spec in specs]:
+            if event in hooks and not isinstance(hooks[event], list):
+                raise Refuse("has a hooks.%s entry that is not a list" % event)
+except Refuse as why:
+    out("refused", str(why))
+
+before = dump(data)
+removed_events = set()
+if isinstance(hooks, dict):
+    for event, groups in hooks.items():
+        if not isinstance(groups, list):
+            continue
+        kept = []
+        for group in groups:
+            if isinstance(group, dict) and isinstance(group.get("hooks"), list):
+                left = [h for h in group["hooks"] if not is_aid(h)]
+                if len(left) != len(group["hooks"]):
+                    removed_events.add(event)
+                    group["hooks"] = left
+                    if not left:
+                        continue
+            kept.append(group)
+        hooks[event] = kept
+
+if mode == "ensure":
+    events = {}
+    for spec in specs:
+        event, _, name = spec.partition(":")
+        events.setdefault(event, []).append(name)
+    if "hooks" not in data:
+        data["hooks"] = {}
+        hooks = data["hooks"]
+    for event, names in events.items():
+        groups = hooks.get(event, [])
+        groups.append({"hooks": [
+            {"type": "command",
+             "command": 'bash "${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/%s.sh"' % name,
+             "timeout": 30}
+            for name in names]})
+        hooks[event] = groups
+else:
+    for event in removed_events:
+        if hooks.get(event) == []:
+            del hooks[event]
+    if removed_events and hooks == {}:
+        del data["hooks"]
+
+created = "1" if (not exists or prior == "1") else "0"
+after = dump(data)
+if exists and after == before:
+    out("ok", "unchanged", created)
+if mode == "remove" and prior == "1" and data == {}:
+    os.remove(path)
+    out("ok", "deleted", created)
+
+body = after + ("\n" if (not exists or text.endswith("\n")) else "")
+try:
+    payload = body.encode("utf-8")
+except UnicodeEncodeError:
+    out("refused", "holds text that cannot be written as UTF-8")
+try:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", suffix=".tmp")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(payload)
+    if exists:
+        shutil.copymode(path, tmp)
+    else:
+        mask = os.umask(0)
+        os.umask(mask)
+        os.chmod(tmp, 0o666 & ~mask)
+    os.replace(tmp, path)
+except OSError:
+    out("refused", "cannot be written")
+out("ok", ("removed" if mode == "remove" else ("updated" if exists else "created")), created)
+PY
+}
+
+# _host_hooks_manifest_records <manifest> <tool> - the tool's recorded hooks, one
+# "event<TAB>name<TAB>settings<TAB>created" line each.
+_host_hooks_manifest_records() {
+    [[ -f "$1" ]] || return 0
+    manifest_read_tool_files "$1" "$2" | awk -F '\t' -v k="tools.${2}.hook" '$1 == k { print $2 "\t" $3 "\t" $4 "\t" $5 }'
+}
+
+# _host_hooks_settings_ok <rel> - 0 for a relative path without a dot-dot segment.
+_host_hooks_settings_ok() {
+    [[ -n "$1" && "$1" != /* && "$1" != *'..'* && "$1" != *\\* ]]
+}
+
+# _ensure_host_hooks <target> <tool> <descriptor-or-empty> <manifest>
+# Merges the tool's declared hooks into its settings file (or strips them when the descriptor
+# declares none but the manifest records some) and sets _AID_HOOK_RECS[<tool>] to the records
+# for the new manifest. Never fails the install: a file AID will not edit, or a missing
+# python3, gives one warning and keeps the records the manifest already holds.
+_ensure_host_hooks() {
+    local target="$1" tool="$2" conf="$3" manifest="$4" line key value settings="" prior_settings="" prior_created=0
+    local ev name pset pcr result status action created spec
+    local -a specs=()
+    _AID_HOOK_RECS[$tool]=""
+    if [[ -n "$conf" && -r "$conf" ]]; then
+        while IFS= read -r line; do
+            key="${line%%=*}"; value="${line#*=}"
+            case "$key" in
+                hook_settings) [[ -n "$settings" ]] || settings="$value" ;;
+                hook) specs+=("$value") ;;
+            esac
+        done < <(read_kv_conf "$conf")
+    fi
+    local prior_recs=""
+    while IFS=$'\t' read -r ev name pset pcr; do
+        [[ -n "$ev" ]] || continue
+        prior_recs+="${ev}"$'\t'"${name}"$'\t'"${pset}"$'\t'"${pcr}"$'\n'
+        [[ -n "$prior_settings" ]] || prior_settings="$pset"
+        [[ "$pcr" == true ]] && prior_created=1
+    done < <(_host_hooks_manifest_records "$manifest" "$tool")
+    [[ -n "$settings" ]] || settings="$prior_settings"
+    if [[ -z "$settings" ]]; then return 0; fi
+    _AID_HOOK_RECS[$tool]="$prior_recs"
+    if ! _host_hooks_settings_ok "$settings"; then return 0; fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "WARN: aid: python3 not found; ${settings} was not changed. Install python3 and run 'aid update' to add the AID hook." >&2
+        return 0
+    fi
+    if [[ "${#specs[@]}" -eq 0 ]]; then
+        result="$(_host_hooks_python remove "$target" "$settings" "$prior_created")" || result="refused"$'\t'"cannot be edited"
+    else
+        result="$(_host_hooks_python ensure "$target" "$settings" "$prior_created" "${specs[@]}")" || result="refused"$'\t'"cannot be edited"
+    fi
+    IFS=$'\t' read -r status action created <<< "$result"
+    if [[ "$status" != ok ]]; then
+        echo "WARN: aid: ${settings} was left untouched (${action:-cannot be edited}). Fix the file, or remove it, then run 'aid update' to add the AID hook." >&2
+        return 0
+    fi
+    created=$([[ "$created" == 1 ]] && echo true || echo false)
+    _AID_HOOK_RECS[$tool]=""
+    for spec in "${specs[@]}"; do
+        ev="${spec%%:*}"; name="${spec#*:}"
+        _AID_HOOK_RECS[$tool]+="${ev}"$'\t'"${name}"$'\t'"${settings}"$'\t'"${created}"$'\n'
+        echo "Hook: ${name} (${ev}) in ${settings}"
+    done
+    return 0
+}
+
+# _remove_host_hooks <manifest> <tool> <target>
+# Strips every AID handler from the tool's settings files before the tool leaves the manifest:
+# the files the manifest records, and <root>/settings.json when it holds the ownership marker
+# (so a manifest written by an older CLI is still removed cleanly). A file AID created that is
+# left as {} is deleted. User entries stay. Never fails the removal.
+_remove_host_hooks() {
+    local manifest="$1" tool="$2" target="$3" ev name pset pcr rel result status action created fallback
+    local -A seen=() made=()
+    local -a files=()
+    while IFS=$'\t' read -r ev name pset pcr; do
+        [[ -n "$pset" ]] || continue
+        [[ -n "${seen[$pset]+x}" ]] || { seen[$pset]=1; files+=("$pset"); }
+        [[ "$pcr" == true ]] && made[$pset]=1
+    done < <(_host_hooks_manifest_records "$manifest" "$tool")
+    fallback="$(_root_dir "$tool")/settings.json"
+    [[ -n "${seen[$fallback]+x}" ]] || files+=("$fallback")
+    for rel in "${files[@]}"; do
+        _host_hooks_settings_ok "$rel" || continue
+        [[ -f "${target}/${rel}" ]] || continue
+        LC_ALL=C grep -qF "$_AID_HOOK_MARKER" "${target}/${rel}" 2>/dev/null || continue
+        if ! command -v python3 >/dev/null 2>&1; then
+            echo "WARN: aid: python3 not found; ${rel} was not changed. Remove its entries whose command holds ${_AID_HOOK_MARKER} by hand." >&2
+            continue
+        fi
+        result="$(_host_hooks_python remove "$target" "$rel" "${made[$rel]:-0}")" || result="refused"$'\t'"cannot be edited"
+        IFS=$'\t' read -r status action created <<< "$result"
+        if [[ "$status" != ok ]]; then
+            echo "WARN: aid: ${rel} was left untouched (${action:-cannot be edited}). Remove its entries whose command holds ${_AID_HOOK_MARKER} by hand." >&2
+            continue
+        fi
+        case "$action" in removed|deleted) echo "Hook: removed the AID handlers from ${rel}" ;; esac
+    done
+    return 0
+}
 # Writes the shared AGENTS.md pointer region and records its hashes for the caller.
 # A 4th argument (the recorded region sha256, possibly empty) makes a rewrite of a
 # well-formed marked span that differs from that record trash a full copy of the file first
@@ -1558,6 +1836,7 @@ PY
 #   tools.<tool>.<version|installed_at|worktree_root|rules_inline><TAB>VALUE
 #   tools.<tool>.mirror<TAB>DIR                            (repeatable)
 #   tools.<tool>.file<TAB>PATH<TAB>SHA256                  (repeatable)
+#   tools.<tool>.hook<TAB>EVENT<TAB>NAME<TAB>SETTINGS<TAB>CREATED   (repeatable, in order; CREATED is true|false)
 # An entry whose users list is empty is absent. rules_inline is only "true".
 #
 # The python3 and pure-bash writers emit byte-identical JSON: 2-space indent, LF,
@@ -1724,6 +2003,34 @@ _v3_filesarr() {
     printf -v "$1" '[\n%s\n%s]' "$__body" "$__pad2"
 }
 
+# _v3_hooksarr <outvar> <indent> <newline-separated "event<TAB>name<TAB>settings<TAB>created" records>
+# Array of {"event", "name", "settings", "created"} objects, in the given order; empty -> [].
+_v3_hooksarr() {
+    local __pad __pad2 __line __f __m __om __obj __q __body="" __rest
+    _v3_pad __pad $(($2 + 2))
+    while IFS= read -r __line; do
+        [[ -z "$__line" ]] && continue
+        __om=""
+        __rest="$__line"
+        for __f in event name settings; do
+            _v3_quote __q "${__rest%%$'\t'*}"
+            __rest="${__rest#*$'\t'}"
+            _v3_member __m $(($2 + 4)) "$__f" "$__q"
+            _v3_join __om "$__m"
+        done
+        if [[ "$__rest" == true ]]; then _v3_member __m $(($2 + 4)) created true; else _v3_member __m $(($2 + 4)) created false; fi
+        _v3_join __om "$__m"
+        _v3_obj __obj $(($2 + 2)) "$__om"
+        _v3_join __body "${__pad}${__obj}"
+    done <<< "$3"
+    if [[ -z "$__body" ]]; then
+        printf -v "$1" '%s' '[]'
+        return 0
+    fi
+    _v3_pad __pad2 "$2"
+    printf -v "$1" '[\n%s\n%s]' "$__body" "$__pad2"
+}
+
 # _v3_sorted <outvar> <newline-separated records> - LC_ALL=C sorted copy, empty lines dropped.
 _v3_sorted() {
     local __s
@@ -1761,6 +2068,8 @@ _manifest_write_v3_bash() {
                 lst[$key]+="${f[1]:-}"$'\t'"${f[2]:-}"$'\t'"${f[3]:-}"$'\n' ;;
             tools.*.mirror)
                 lst[$key]+="${f[1]:-}"$'\n' ;;
+            tools.*.hook)
+                lst[$key]+="${f[1]:-}"$'\t'"${f[2]:-}"$'\t'"${f[3]:-}"$'\t'"${f[4]:-}"$'\n' ;;
             *)
                 sc[$key]="${f[1]:-}" ;;
         esac
@@ -1888,6 +2197,11 @@ _manifest_write_v3_bash() {
         _v3_strarr arr 6 "$paths"
         _v3_member m 6 paths "$arr"
         _v3_join mm "$m"
+        if [[ -n "${lst[${pre}hook]:-}" ]]; then
+            _v3_hooksarr arr 6 "${lst[${pre}hook]}"
+            _v3_member m 6 hooks "$arr"
+            _v3_join mm "$m"
+        fi
         _v3_obj tv 4 "$mm"
         _v3_member m 4 "$t" "$tv"
         _v3_join tools_members "$m"
@@ -1964,6 +2278,8 @@ for raw in text.split("\n"):
         L.setdefault(key, []).append((fld(1), fld(2), fld(3)))
     elif key.startswith("tools.") and key.endswith(".mirror"):
         L.setdefault(key, []).append(fld(1))
+    elif key.startswith("tools.") and key.endswith(".hook"):
+        L.setdefault(key, []).append((fld(1), fld(2), fld(3), fld(4)))
     elif key.endswith(".file") and (key.startswith("tools.") or key in ("shared.skills.file", "shared.runtime.file")):
         L.setdefault(key, []).append((fld(1), fld(2)))
     else:
@@ -2024,6 +2340,9 @@ for t in tools_order:
     files = sorted(L.get(pre + "file", []))
     ent["files"] = [{"path": p, "sha256": s} for (p, s) in files]
     ent["paths"] = [p for (p, s) in files]
+    hooks = L.get(pre + "hook", [])
+    if hooks:
+        ent["hooks"] = [{"event": e, "name": n, "settings": st, "created": c == "true"} for (e, n, st, c) in hooks]
     tools[t] = ent
 
 out = {
@@ -2143,8 +2462,8 @@ _aid_build_install_model() {
     local region_sha="$8" agents_sha="$9" claude_sha="${10}"
     local exact="${AID_UPGRADE_EXACT:-0}" line key rest t stage root k v rel sha dir e ci_set wr_set
     local conf_lines old_iat="" old_iat_set=0 old_claude="" csv host_wr="" claude_csv=""
-    local -A has_old=() o_ver=() o_iat=() o_wr=() o_inline=() o_mirrors=() o_files=() n_stage=() ctx=()
-    local -A t_ver=() t_iat=() t_wr=() t_inline=() t_mirrors=() t_files=() in_set=() mir_users=()
+    local -A has_old=() o_ver=() o_iat=() o_wr=() o_inline=() o_mirrors=() o_files=() o_hooks=() n_stage=() ctx=()
+    local -A t_ver=() t_iat=() t_wr=() t_inline=() t_mirrors=() t_files=() t_hooks=() in_set=() mir_users=()
     local -a mir=() ri=() ordered=()
 
     if [[ -f "$manifest" ]]; then
@@ -2162,6 +2481,7 @@ _aid_build_install_model() {
                         rules_inline) o_inline[$t]=1 ;;
                         mirror) o_mirrors[$t]+="$rest"$'\n' ;;
                         file) o_files[$t]+="$rest"$'\n' ;;
+                        hook) o_hooks[$t]+="$rest"$'\n' ;;
                     esac ;;
             esac
         done < <(_manifest_model "$manifest")
@@ -2208,6 +2528,7 @@ _aid_build_install_model() {
             if [[ -d "${stage}/${root}/agents" ]]; then
                 while IFS=$'\t' read -r rel sha; do t_files[$t]+="${root}/agents/${rel}"$'\t'"${sha}"$'\n'; done < <(_aid_tree_records "${stage}/${root}/agents")
             fi
+            t_hooks[$t]="${_AID_HOOK_RECS[$t]-${o_hooks[$t]-}}"
         else
             t_ver[$t]="${o_ver[$t]-}"
             if [[ -n "${o_iat[$t]+x}" ]]; then t_iat[$t]="${o_iat[$t]}"; else t_iat[$t]="$now"; fi
@@ -2215,6 +2536,7 @@ _aid_build_install_model() {
             [[ -n "${o_inline[$t]:-}" ]] && t_inline[$t]=1
             t_mirrors[$t]="${o_mirrors[$t]-}"
             t_files[$t]="${o_files[$t]-}"
+            t_hooks[$t]="${o_hooks[$t]-}"
         fi
     done
     for t in "${ordered[@]}"; do
@@ -2255,6 +2577,7 @@ _aid_build_install_model() {
             if [[ -n "${t_wr[$t]+x}" ]]; then printf 'tools.%s.worktree_root\t%s\n' "$t" "${t_wr[$t]}"; fi
             if [[ -n "${t_inline[$t]:-}" ]]; then printf 'tools.%s.rules_inline\ttrue\n' "$t"; fi
             while IFS= read -r line; do [[ -n "$line" ]] && printf 'tools.%s.file\t%s\n' "$t" "$line"; done <<< "${t_files[$t]}"
+            while IFS= read -r line; do [[ -n "$line" ]] && printf 'tools.%s.hook\t%s\n' "$t" "$line"; done <<< "${t_hooks[$t]}"
         done
         true
     } > "$model"
@@ -2375,6 +2698,12 @@ _aid_v3_view_awk() {
             if ($5 == "path") tpend = $6
             else if ($5 == "sha256") print "tools." t ".file\t" tpend "\t" $6
         }
+        else if (NF == 6 && $3 == "hooks") {
+            if ($5 == "event") hev = $6
+            else if ($5 == "name") hnm = $6
+            else if ($5 == "settings") hst = $6
+            else if ($5 == "created") print "tools." t ".hook\t" hev "\t" hnm "\t" hst "\t" $6
+        }
     }
     END {
         if (mode == "shared" || mode == "model") {
@@ -2442,6 +2771,8 @@ def render(data, mode, tool):
                 out.append("tools.%s.rules_inline\ttrue" % tool)
             for f in t.get("files", []):
                 out.append("tools.%s.file\t%s\t%s" % (tool, f["path"], f["sha256"]))
+            for h in t.get("hooks", []):
+                out.append("tools.%s.hook\t%s\t%s\t%s\t%s" % (tool, h["event"], h["name"], h["settings"], "true" if h.get("created") is True else "false"))
     return "".join(line + "\n" for line in out)
 
 
@@ -3780,6 +4111,11 @@ install_shared() {
         claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline" "$old_claude_region_sha")" || return 1
     else claude_sha=""; fi
     [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
+    # Host hooks: merge each staged tool's declared hooks into its settings file (never fails the install).
+    declare -gA _AID_HOOK_RECS=()
+    for tool in "${all_tools[@]}"; do
+        [[ -n "${tool_stage[$tool]:-}" ]] && _ensure_host_hooks "$target" "$tool" "${tool_stage[$tool]}/aid-tool.conf" "$manifest"
+    done
 
     now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     local model; model="$(mktemp "${target}/.aid/.manifest-model.XXXXXX")" || return 1
@@ -3904,6 +4240,7 @@ _uninstall_tool_v3() {
     if [[ -n "$agents_users" && -z "$agents_left" ]]; then _remove_agents_md_region "$target" "$agents_sha" || { rm -f "$previous"; return 1; }; fi
     if [[ -n "$claude_users" && -z "$claude_left" ]]; then _remove_claude_md_region "${target}/CLAUDE.md" "$claude_sha" "$target" || { rm -f "$previous"; return 1; }; fi
 
+    _remove_host_hooks "$manifest" "$tool" "$target"
     manifest_remove_tool "$manifest" "$tool" || { rm -f "$previous"; return 1; }
     prune_shared "$target" "$previous" || { rm -f "$previous"; return 1; }
     rm -f "$previous"

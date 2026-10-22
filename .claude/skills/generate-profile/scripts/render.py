@@ -182,6 +182,9 @@ def _descriptor(profile: Profile) -> str:
         lines.append(f"context_import={profile.context_import}")
     if profile.rules_inline:
         lines.append("rules_inline=true")
+    if profile.hooks.stop:
+        lines.append(f"hook_settings={profile.hooks.settings}")
+        lines.extend(f"hook=Stop:{hook}" for hook in profile.hooks.stop)
     payload = "\n".join(lines) + "\n"
     payload.encode("ascii")
     return payload
@@ -224,6 +227,15 @@ def _self_test(canonical_root: Path) -> int:
                 conf = Path(temp) / profile.common_parent() / "aid-tool.conf"
                 if conf.read_bytes() != _descriptor(profile).encode("ascii"):
                     failures.append(f"{profile.name}: descriptor mismatch")
+                conf_lines = conf.read_text(encoding="ascii").splitlines()
+                want_hooks = [f"hook=Stop:{hook}" for hook in profile.hooks.stop]
+                if [line for line in conf_lines if line.startswith("hook=")] != want_hooks:
+                    failures.append(f"{profile.name}: descriptor hook lines mismatch")
+                has_settings = any(line.startswith("hook_settings=") for line in conf_lines)
+                if has_settings != bool(profile.hooks.stop):
+                    failures.append(f"{profile.name}: descriptor hook_settings mismatch")
+                if profile.hooks.stop and f"hook_settings={profile.hooks.settings}" not in conf_lines:
+                    failures.append(f"{profile.name}: descriptor hook_settings value mismatch")
     except Exception as exc:
         failures.append(str(exc))
     if failures:

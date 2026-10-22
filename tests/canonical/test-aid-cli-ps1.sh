@@ -1260,6 +1260,231 @@ OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; \$d = D
 assert_exit_eq "$RC" 0 "PS019-D03 .codex target is detected"
 assert_output_contains "$OUT" codex "PS019-D04 .codex detection names codex"
 
+# ===========================================================================
+# PSHH: the AID Stop hook that `aid add claude-code` merges into .claude/settings.json through
+# the native PowerShell JSON code (no Python), keeps through `aid update`, and `aid remove`
+# takes out again. The Bash twin's cases are HH-01..HH-09 in test-host-hooks.sh; the
+# byte-for-byte comparison of the two writers is HH-PAR in test-aid-cli-parity.sh.
+# ===========================================================================
+PSHH_COMMAND='bash "${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh"'
+PSHH_SETTINGS=".claude/settings.json"
+pshh_py() { python3 -I -c "$@"; }
+pshh_target() { local t; t=$(newtarget); git -C "$t" init -q 2>/dev/null; printf '%s' "$t"; }
+pshh_handlers() {  # <settings> -> count of AID handlers under hooks.Stop
+    pshh_py 'import json,sys
+d=json.load(open(sys.argv[1]))
+print(sum(1 for g in d.get("hooks",{}).get("Stop",[]) for h in g.get("hooks",[]) if "/.aid/runtime/scripts/hooks/aid-" in h.get("command","")))' "$1"
+}
+pshh_manifest_hooks() {  # <target> <tool> -> the manifest hooks list as sorted JSON, or null
+    pshh_py 'import json,sys
+t=json.load(open(sys.argv[1]))["tools"].get(sys.argv[2],{})
+print(json.dumps(t.get("hooks"),sort_keys=True))' "$1/.aid/.aid-manifest.json" "$2"
+}
+pshh_sha() { sha256sum "$1" | awk '{print $1}'; }
+PSHH_HOME=$(newhome); setup_aid_home_ps1 "$PSHH_HOME"
+
+# --- HH-01 fresh target ------------------------------------------------------------------
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-01 add claude-code -> exit 0"
+assert_output_contains "$OUT" "Hook: aid-question-form (Stop) in .claude/settings.json" "PSHH-01 add prints the one hook line"
+assert_file_exists "$PSHH_T/$PSHH_SETTINGS" "PSHH-01 settings file created"
+assert_eq "$(pshh_handlers "$PSHH_T/$PSHH_SETTINGS")" 1 "PSHH-01 exactly one AID handler"
+assert_eq "$(pshh_py 'import json,sys
+d=json.load(open(sys.argv[1]))
+print(list(d.keys()), len(d["hooks"]["Stop"]), d["hooks"]["Stop"][0]["hooks"][0])' "$PSHH_T/$PSHH_SETTINGS")" \
+    "['hooks'] 1 {'type': 'command', 'command': '${PSHH_COMMAND}', 'timeout': 30}" "PSHH-01 the handler is the fixed command string with timeout 30, in its own group"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code)" \
+    '[{"created": true, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "PSHH-01 the manifest records the hook with created true"
+assert_eq "$(pshh_py 'import json,sys
+m=json.load(open(sys.argv[1]))
+print(m["format_version"], list(m["tools"]["claude-code"].keys()))' "$PSHH_T/.aid/.aid-manifest.json")" \
+    "3 ['version', 'installed_at', 'mirrors', 'worktree_root', 'files', 'paths', 'hooks']" "PSHH-01 format_version stays 3 and hooks is the last member of the tool entry"
+assert_eq "$(tail -c1 "$PSHH_T/$PSHH_SETTINGS" | od -An -c | tr -d ' ')" '\n' "PSHH-01 the created file ends with a newline"
+assert_eq "$(head -c3 "$PSHH_T/$PSHH_SETTINGS" | od -An -tx1 | tr -d ' ')" '7b0a20' "PSHH-01 LF, 2-space indent, no BOM"
+assert_file_exists "$PSHH_T/.aid/runtime/scripts/hooks/aid-question-form.sh" "PSHH-01 the hook script ships to the runtime"
+run_aid_ps1 "$PSHH_HOME" add cursor,codex -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-01 adding tools that declare no hook prints no hook line"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code | grep -c '"name": "aid-question-form"')" 1 "PSHH-01 adding other tools keeps claude-code's record"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" cursor)" "null" "PSHH-01 a tool with no hook has no hooks member"
+
+# --- HH-02 user keys and a user Stop hook are kept; re-runs change nothing -----------------
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"
+cat > "$PSHH_T/$PSHH_SETTINGS" <<'JSON'
+{
+  "permissions": {
+    "allow": ["Bash(ls:*)"]
+  },
+  "note": "caf\u00e9 \u2603 \ud83d\ude00 \"q\" \\ \/ \u0001",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "echo pre" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "echo user-stop" }]
+      }
+    ]
+  },
+  "env": { "KEEP": "1", "NUM": 7, "NIL": null, "FLAG": true }
+}
+JSON
+printf '\n' >> "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-02 add into an existing settings file -> exit 0"
+assert_eq "$(pshh_py 'import json,sys
+d=json.load(open(sys.argv[1]))
+print(list(d.keys()), d["permissions"], d["env"], d["hooks"]["PreToolUse"][0]["matcher"], d["hooks"]["Stop"][0]["hooks"][0]["command"], len(d["hooks"]["Stop"]))' "$PSHH_T/$PSHH_SETTINGS")" \
+    "['permissions', 'note', 'hooks', 'env'] {'allow': ['Bash(ls:*)']} {'KEEP': '1', 'NUM': 7, 'NIL': None, 'FLAG': True} Bash echo user-stop 2" \
+    "PSHH-02 user keys, order, values and the user Stop hook are kept"
+assert_eq "$(pshh_py 'import json,sys
+print(json.load(open(sys.argv[1]))["hooks"]["Stop"][1]["hooks"][0]["command"])' "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_COMMAND" "PSHH-02 the AID group is appended after the user group"
+assert_file_contains "$PSHH_T/$PSHH_SETTINGS" '"note": "café ☃ 😀 \"q\" \\ / \u0001"' "PSHH-02 non-ASCII stays as UTF-8 and control characters as \\u00xx"
+assert_eq "$(tail -c1 "$PSHH_T/$PSHH_SETTINGS" | od -An -c | tr -d ' ')" '\n' "PSHH-02 the file's final newline is kept"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code | grep -c '"created": false')" 1 "PSHH-02 an existing file is recorded created false"
+PSHH_BEFORE=$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-02 a second add changes no byte of the settings file"
+run_aid_ps1 "$PSHH_HOME" update -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-02 update -> exit 0"
+assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-02 update changes no byte of the settings file"
+assert_eq "$(pshh_handlers "$PSHH_T/$PSHH_SETTINGS")" 1 "PSHH-02 still one AID handler after add and update"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code | grep -c '"created": false')" 1 "PSHH-02 update keeps the manifest record"
+PSHH_T2=$(pshh_target); mkdir -p "$PSHH_T2/.claude"
+printf '{"hooks":{"Stop":[]},"x":1}' > "$PSHH_T2/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T2"
+assert_eq "$(tail -c1 "$PSHH_T2/$PSHH_SETTINGS" | od -An -c | tr -d ' ')" '}' "PSHH-02 a file with no final newline stays without one"
+assert_eq "$(pshh_handlers "$PSHH_T2/$PSHH_SETTINGS")" 1 "PSHH-02 an empty Stop list takes the AID group"
+PSHH_T3=$(pshh_target); mkdir -p "$PSHH_T3/.claude"
+printf '{\n    "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \\"${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh\\"", "timeout": 30}]}]}\n}\n' > "$PSHH_T3/$PSHH_SETTINGS"
+PSHH_HAND=$(pshh_sha "$PSHH_T3/$PSHH_SETTINGS")
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T3"
+assert_eq "$(pshh_sha "$PSHH_T3/$PSHH_SETTINGS")" "$PSHH_HAND" "PSHH-02 an already-merged hand-formatted file is left byte for byte"
+PSHH_T4=$(pshh_target); mkdir -p "$PSHH_T4/.claude"
+cat > "$PSHH_T4/$PSHH_SETTINGS" <<'JSON'
+{"hooks": {"Stop": [
+  {"hooks": [{"type": "command", "command": "bash \"/old/place/.aid/runtime/scripts/hooks/aid-old-thing.sh\""}, {"type": "command", "command": "echo mine"}]},
+  {"hooks": [{"type": "command", "command": "bash \"/x/.aid/runtime/scripts/hooks/aid-question-form.sh\""}]}
+]}}
+JSON
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T4"
+assert_eq "$(pshh_py 'import json,sys
+d=json.load(open(sys.argv[1]))
+print([[h["command"] for h in g["hooks"]] for g in d["hooks"]["Stop"]])' "$PSHH_T4/$PSHH_SETTINGS")" \
+    "[['echo mine'], ['${PSHH_COMMAND}']]" "PSHH-02 stale AID handlers are stripped, the user handler stays, an emptied group is dropped"
+
+# --- HH-03 a file AID will not edit: untouched, one warning, install goes on, nothing recorded ---
+pshh_refusal() {  # <id> <file contents> <label>
+    local id="$1" contents="$2" label="$3" t before
+    t=$(pshh_target); mkdir -p "$t/.claude"
+    printf '%s' "$contents" > "$t/$PSHH_SETTINGS"
+    before=$(pshh_sha "$t/$PSHH_SETTINGS")
+    run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$t"
+    assert_exit_eq "$RC" 0 "${id} ${label}: the install still succeeds"
+    assert_eq "$(pshh_sha "$t/$PSHH_SETTINGS")" "$before" "${id} ${label}: the file is untouched"
+    assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched" "${id} ${label}: one warning names the file"
+    assert_eq "$(pshh_manifest_hooks "$t" claude-code)" "null" "${id} ${label}: nothing is recorded"
+}
+pshh_refusal PSHH-03a '{ not json' "unparseable"
+pshh_refusal PSHH-03b '[1, 2]' "not an object"
+pshh_refusal PSHH-03c '{"hooks": []}' "hooks of the wrong type"
+pshh_refusal PSHH-03d '{"hooks": {"Stop": {}}}' "hooks.Stop of the wrong type"
+pshh_refusal PSHH-03e '{"timeout": 1.5}' "a non-integer number"
+pshh_refusal PSHH-03f '{"Env": 1, "env": 2}' "two keys that differ only in case"
+pshh_refusal PSHH-03g '' "an empty file"
+pshh_refusal PSHH-03h $'\xef\xbb\xbf{}' "a BOM"
+
+# --- HH-04 remove --------------------------------------------------------------------------
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"
+printf '{\n  "permissions": {"allow": ["Bash(ls:*)"]},\n  "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo mine"}]}]}\n}\n' > "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code,cursor -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-04 remove claude-code -> exit 0"
+assert_file_exists "$PSHH_T/$PSHH_SETTINGS" "PSHH-04 a file with user entries stays"
+assert_eq "$(pshh_handlers "$PSHH_T/$PSHH_SETTINGS")" 0 "PSHH-04 the AID handler is gone"
+assert_eq "$(pshh_py 'import json,sys
+d=json.load(open(sys.argv[1]))
+print(d["permissions"], [h["command"] for g in d["hooks"]["Stop"] for h in g["hooks"]])' "$PSHH_T/$PSHH_SETTINGS")" \
+    "{'allow': ['Bash(ls:*)']} ['echo mine']" "PSHH-04 the user hook and keys stay"
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+run_aid_ps1 "$PSHH_HOME" update -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-04 remove of a hook-only install -> exit 0"
+[[ ! -e "$PSHH_T/$PSHH_SETTINGS" ]] && pass "PSHH-04 a file AID created, left as {}, is deleted" || fail "PSHH-04 a file AID created, left as {}, is deleted"
+[[ ! -e "$PSHH_T/.claude" ]] && pass "PSHH-04 the emptied .claude directory goes too" || fail "PSHH-04 the emptied .claude directory goes too"
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+pshh_py 'import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d["model"]="opus"; open(p,"w").write(json.dumps(d,indent=2)+"\n")' "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_eq "$(pshh_py 'import json,sys
+print(json.load(open(sys.argv[1])))' "$PSHH_T/$PSHH_SETTINGS")" "{'model': 'opus'}" "PSHH-04 a created file that grew keeps the user's key; empty hooks keys are dropped"
+
+# --- HH-05 record missing, marker present; no marker; uneditable ---------------------------
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code,codex -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+pshh_py 'import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d["tools"]["claude-code"].pop("hooks"); open(p,"w").write(json.dumps(d,indent=2)+"\n")' "$PSHH_T/.aid/.aid-manifest.json"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-05 remove without a record -> exit 0"
+assert_eq "$(pshh_py 'import json,sys
+print(json.load(open(sys.argv[1])))' "$PSHH_T/$PSHH_SETTINGS")" "{}" "PSHH-05 the AID handler is stripped by its path marker; with no record the emptied file is kept as {}"
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+printf '{ not json but no marker' > "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-05 remove leaves a settings file without the marker alone"
+assert_output_not_contains "$OUT" "WARN" "PSHH-05 and does not warn about it"
+assert_eq "$(cat "$PSHH_T/$PSHH_SETTINGS")" "{ not json but no marker" "PSHH-05 the unrelated file is byte for byte"
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+printf '{ broken /.aid/runtime/scripts/hooks/aid-x' > "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-05 remove with an uneditable settings file -> exit 0"
+assert_output_contains "$OUT" "was left untouched" "PSHH-05 and warns"
+assert_eq "$(cat "$PSHH_T/$PSHH_SETTINGS")" "{ broken /.aid/runtime/scripts/hooks/aid-x" "PSHH-05 and leaves the file"
+
+# --- HH-07 update on an install that lacks the hook ------------------------------------------
+PSHH_T=$(pshh_target)
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+rm -f "${PSHH_T:?}/${PSHH_SETTINGS:?}"
+pshh_py 'import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d["tools"]["claude-code"].pop("hooks"); open(p,"w").write(json.dumps(d,indent=2)+"\n")' "$PSHH_T/.aid/.aid-manifest.json"
+run_aid_ps1 "$PSHH_HOME" update -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-07 update -> exit 0"
+assert_output_contains "$OUT" "Hook: aid-question-form (Stop) in .claude/settings.json" "PSHH-07 update reports the hook"
+assert_eq "$(pshh_handlers "$PSHH_T/$PSHH_SETTINGS")" 1 "PSHH-07 update adds the hook to an install without it"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code | grep -c '"created": true')" 1 "PSHH-07 and records it (the file was absent, so created true)"
+
+# --- HH-09 malformed descriptors are refused ----------------------------------------------------
+pshh_refuse_descriptor() {  # <id> <aid-tool.conf contents> <needle>
+    local id="$1" contents="$2" needle="$3" extract artifact digest t
+    extract="$TMP/ex-${id}"; mkdir -p "${extract:?}" "$TMP/b-${id}"
+    cp -a "$FIXTURE_DIR/." "$TMP/b-${id}/"
+    artifact=$(ls "$TMP/b-${id}"/aid-claude-code-v*.tar.gz)
+    tar -xzf "$artifact" -C "$extract"
+    printf '%s' "$contents" > "$extract/aid-tool.conf"
+    tar -tzf "$artifact" > "$TMP/list-${id}"
+    tar --hard-dereference -czf "${artifact}.new" -C "$extract" -T "$TMP/list-${id}" && mv "${artifact}.new" "$artifact"
+    digest=$(pshh_sha "$artifact")
+    awk -v name="$(basename "$artifact")" -v hash="$digest" '$2 == name {$1 = hash} {print}' "$TMP/b-${id}/SHA256SUMS" > "$TMP/b-${id}/SHA256SUMS.new"
+    mv "$TMP/b-${id}/SHA256SUMS.new" "$TMP/b-${id}/SHA256SUMS"
+    t=$(pshh_target)
+    run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$TMP/b-${id}" -Target "$t"
+    assert_exit_ne "$RC" 0 "${id} refused"
+    assert_output_contains "$OUT" "$needle" "${id} diagnostic"
+    [[ ! -e "$t/.aid" ]] && pass "${id} nothing installed" || fail "${id} nothing installed"
+}
+pshh_refuse_descriptor PSHH-09a $'tool=claude-code\nhook_settings=.claude/other.json\nhook=Stop:aid-question-form\n' "invalid hook_settings"
+pshh_refuse_descriptor PSHH-09b $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:question-form\n' "invalid hook"
+pshh_refuse_descriptor PSHH-09c $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Pre:aid-question-form\n' "invalid hook"
+pshh_refuse_descriptor PSHH-09d $'tool=claude-code\nhook=Stop:aid-question-form\n' "hook needs hook_settings"
+pshh_refuse_descriptor PSHH-09e $'tool=claude-code\nhook_settings=.claude/settings.json\nhook_settings=.claude/settings.json\nhook=Stop:aid-question-form\n' "hook_settings may appear only once"
+
 # ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
 # (superset check via sandbox.sh, still asserted under the suite's original label).
 sandbox_assert_aid_untouched "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"

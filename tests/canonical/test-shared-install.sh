@@ -269,7 +269,10 @@ if PATH="$NOPY" command -v python3 >/dev/null 2>&1; then fail 'NP no-python PATH
 np_snapshot() {  # <dir> -> "path sha" per file, installed_at masked in the manifest
     local dir="$1" f
     while IFS= read -r f; do
-        if [[ "$f" == .aid/.aid-manifest.json ]]; then printf '%s manifest:%s\n' "$f" "$(sed -E 's/("installed_at": ")[^"]*"/\1<TS>"/' "$dir/$f" | sha256sum | cut -c1-64)"
+        # The host hook needs python3, so the no-python run writes no settings.json and no manifest
+        # hooks member (NP-H checks that below); both are masked here so the rest still compares byte for byte.
+        if [[ "$f" == .claude/settings.json ]]; then continue
+        elif [[ "$f" == .aid/.aid-manifest.json ]]; then printf '%s manifest:%s\n' "$f" "$(python3 -c 'import re,sys; t=open(sys.argv[1],encoding="utf-8").read(); t=re.sub(r",\n(\s*)\"hooks\": \[.*?\n\1\]", "", t, flags=re.S); sys.stdout.write(t)' "$dir/$f" | sed -E 's/("installed_at": ")[^"]*"/\1<TS>"/' | sha256sum | cut -c1-64)"
         else printf '%s %s\n' "$f" "$(sha256sum < "$dir/$f" | cut -c1-64)"; fi
     done < <(cd "$dir" && find . -type f -not -path './.aid/.trash/*' -not -path './.git/*' | sed 's|^\./||' | LC_ALL=C sort)
 }
@@ -327,7 +330,11 @@ out="$(PATH="$SHAONLY" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid"
 assert_output_not_contains "$out" 'modified:' 'SHA status reports nothing modified right after add'
 out="$(PATH="$SHAONLY" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" remove claude-code --target "$t" 2>&1)"
 [[ ! -e "$t/CLAUDE.md" && ! -e "$t/AGENTS.md" ]] && pass 'SHA remove claude-code removes both import regions' || fail 'SHA remove claude-code removes both import regions'
-assert_eq "$(cat "$TMP/np-nopy.out")" "$(cat "$TMP/np-py.out")" 'NP add/update/status/remove/v3-upgrade output identical without python3'
+np_unhook() { grep -v -e '^Hook: ' -e "^WARN: aid: python3 not found; .claude/settings.json was not changed" "$1"; }
+assert_eq "$(np_unhook "$TMP/np-nopy.out")" "$(np_unhook "$TMP/np-py.out")" 'NP add/update/status/remove/v3-upgrade output identical without python3 (host-hook lines aside)'
+assert_output_contains "$(cat "$TMP/np-nopy.out")" 'WARN: aid: python3 not found; .claude/settings.json was not changed' 'NP-H without python3 the hook step warns'
+assert_output_not_contains "$(cat "$TMP/np-nopy.out")" 'Hook: aid-question-form' 'NP-H without python3 no hook is reported installed'
+assert_output_contains "$(cat "$TMP/np-py.out")" 'Hook: aid-question-form (Stop) in .claude/settings.json' 'NP-H with python3 the hook is installed'
 assert_eq "$(cat "$TMP/np-nopy.snap")" "$(cat "$TMP/np-py.snap")" 'NP trees and manifest bytes (installed_at masked) identical without python3 after every step'
 assert_eq "$(grep -c '^rc=0$' "$TMP/np-nopy.out")" "$(grep -c '^== ' "$TMP/np-nopy.out")" 'NP every no-python step exits 0'
 assert_output_contains "$(cat "$TMP/np-nopy.out")" 'old AID file(s) moved to .aid/.trash/' 'NP the v3 upgrade ran without python3'

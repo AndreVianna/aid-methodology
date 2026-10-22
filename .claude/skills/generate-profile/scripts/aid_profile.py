@@ -16,6 +16,9 @@
 #     [tool_names]               # surviving translation: Bash->Terminal (cursor), Bash->shell (copilot)
 #     [model_tiers]              # feeds agent execution-metadata translation
 #     [capabilities]             # 4 flags consumed by skills graceful-degradation
+#     [hooks]                    # optional host hooks the installer places (claude-code only)
+#       settings = ".claude/settings.json"  # host settings file, <root_dir>/settings.json
+#       stop     = ["aid-question-form"]    # Stop-event handlers, names start with aid-
 #
 #   Generator emits only agents plus aid-tool.conf.
 #
@@ -63,6 +66,13 @@ class CapabilitiesConfig:
 
 
 @dataclass
+class HooksConfig:
+    """[hooks] table: the host hooks the installer places in the host settings file."""
+    settings: str | None = None
+    stop: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Profile:
     """
     Top-level profile dataclass (shrunk to the minimal copy-generator schema).
@@ -79,6 +89,7 @@ class Profile:
       worktree_root -- optional worktree directory
       context_import -- optional host context import
       rules_inline  -- whether to inline rules in root context
+      hooks         -- optional [hooks] table (host settings path and Stop handlers)
     """
     name: str
     root_dir: str = ".claude"
@@ -91,6 +102,7 @@ class Profile:
     worktree_root: str | None = None
     context_import: str | None = None
     rules_inline: bool = False
+    hooks: HooksConfig = field(default_factory=HooksConfig)
     # Raw TOML dict preserved for lossless round-trip checks
     _raw: dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
 
@@ -132,6 +144,12 @@ def _parse_capabilities(raw: dict[str, Any]) -> CapabilitiesConfig:
     )
 
 
+def _parse_hooks(raw: Any) -> HooksConfig:
+    if not isinstance(raw, dict):
+        return HooksConfig(settings=None, stop=[])
+    return HooksConfig(settings=raw.get("settings"), stop=raw.get("stop", []))
+
+
 def load_profile(path: str) -> "Profile":
     """
     Load a profile TOML file and return a typed Profile dataclass.
@@ -171,6 +189,7 @@ def load_profile(path: str) -> "Profile":
         worktree_root=raw.get("worktree_root"),
         context_import=raw.get("context_import"),
         rules_inline=raw.get("rules_inline", False),
+        hooks=_parse_hooks(raw.get("hooks")),
         _raw=raw,
     )
 
@@ -184,6 +203,44 @@ _KNOWN_TIERS = {"large", "medium", "small"}
 # "toml" retained DORMANT for Codex (E-CODEX-1 not yet high-confidence).
 # All other format branches (copilot-agent, antigravity-rule) deleted per task-005.
 _KNOWN_AGENT_FORMATS = {"markdown", "toml"}
+
+
+_HOOK_NAME_RE = re.compile(r"aid-[a-z0-9]+(-[a-z0-9]+)*")
+# Only these profiles may declare [hooks] for now; the other hook-capable hosts follow later.
+_HOOK_PROFILES = frozenset({"claude-code"})
+
+
+def _validate_hooks(profile: "Profile") -> list[str]:
+    """Validate the optional [hooks] table (empty list means valid)."""
+    name = profile.name
+    hooks = profile.hooks
+    errors: list[str] = []
+    if not isinstance(hooks, HooksConfig):
+        return [f"[{name}] hooks must be a table"]
+    if not isinstance(hooks.stop, list):
+        return [f"[{name}] [hooks].stop must be a list"]
+    if hooks.settings is None and not hooks.stop:
+        return errors
+    if name not in _HOOK_PROFILES:
+        errors.append(f"[{name}] [hooks] is declared for claude-code only")
+    if not profile.capabilities.hooks:
+        errors.append(f"[{name}] [hooks] needs capabilities.hooks = true")
+    root = profile.root_dir.rstrip("/")
+    if not isinstance(hooks.settings, str) or not hooks.settings:
+        errors.append(f"[{name}] [hooks].settings is required when hooks are declared")
+    elif hooks.settings != f"{root}/settings.json":
+        errors.append(f"[{name}] [hooks].settings must be {root}/settings.json: {hooks.settings!r}")
+    if not hooks.stop:
+        errors.append(f"[{name}] [hooks].stop must name at least one hook when settings is declared")
+    seen: set[str] = set()
+    for hook in hooks.stop:
+        if not isinstance(hook, str) or not _HOOK_NAME_RE.fullmatch(hook):
+            errors.append(f"[{name}] [hooks].stop entry must match aid-<name> (lower-case, digits, hyphens): {hook!r}")
+        elif hook in seen:
+            errors.append(f"[{name}] [hooks].stop names {hook!r} twice")
+        else:
+            seen.add(hook)
+    return errors
 
 
 def validate(profile: "Profile") -> list[str]:
@@ -226,6 +283,8 @@ def validate(profile: "Profile") -> list[str]:
 
     if not isinstance(profile.rules_inline, bool):
         errors.append(f"[{name}] rules_inline must be a boolean")
+
+    errors.extend(_validate_hooks(profile))
 
     # agent_format check
     if profile.agent_format not in _KNOWN_AGENT_FORMATS:
@@ -296,7 +355,35 @@ def main() -> int:
         if not any("rules_inline must be a boolean" in error for error in validate(invalid_inline)):
             print("FAIL: rules_inline accepted a string", file=sys.stderr)
             return 1
-        print("OK: aid_profile validation self-tests passed (2 checks)")
+        valid_hooks = copy.deepcopy(profile)
+        valid_hooks.name = "claude-code"
+        valid_hooks.capabilities = CapabilitiesConfig(hooks=True)
+        valid_hooks.hooks = HooksConfig(settings=".claude/settings.json", stop=["aid-question-form"])
+        if validate(valid_hooks):
+            print("FAIL: a valid [hooks] table was refused", file=sys.stderr)
+            return 1
+        bad_hooks = (
+            (HooksConfig(settings=".claude/other.json", stop=["aid-question-form"]), "must be .claude/settings.json"),
+            (HooksConfig(settings=".claude/settings.json", stop=["question-form"]), "must match aid-<name>"),
+            (HooksConfig(settings=".claude/settings.json", stop=[]), "must name at least one hook"),
+        )
+        for hooks, expect in bad_hooks:
+            bad = copy.deepcopy(valid_hooks)
+            bad.hooks = hooks
+            if not any(expect in error for error in validate(bad)):
+                print(f"FAIL: [hooks] check missing: {expect}", file=sys.stderr)
+                return 1
+        no_cap = copy.deepcopy(valid_hooks)
+        no_cap.capabilities = CapabilitiesConfig(hooks=False)
+        if not any("needs capabilities.hooks" in error for error in validate(no_cap)):
+            print("FAIL: [hooks] accepted capabilities.hooks = false", file=sys.stderr)
+            return 1
+        other = copy.deepcopy(valid_hooks)
+        other.name = "cursor"
+        if not any("claude-code only" in error for error in validate(other)):
+            print("FAIL: [hooks] accepted a profile other than claude-code", file=sys.stderr)
+            return 1
+        print("OK: aid_profile validation self-tests passed (7 checks)")
         return 0
 
     if not args.profile:
@@ -332,6 +419,7 @@ def main() -> int:
                 "background_execution": profile.capabilities.background_execution,
                 "stop_hook_autocontinue": profile.capabilities.stop_hook_autocontinue,
             },
+            "hooks": {"settings": profile.hooks.settings, "stop": profile.hooks.stop},
         }
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0

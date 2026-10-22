@@ -84,6 +84,8 @@ PAR14_PAIRS=(
     "update_gitattributes Update-AidGitattributes"
     "_remove_gitattributes_block Remove-AidGitattributesBlock"
     "seed_settings_yml Initialize-AidSettingsFile"
+    "_ensure_host_hooks Invoke-EnsureHostHooks"
+    "_remove_host_hooks Invoke-RemoveHostHooks"
 )
 par14_bash_defined() { grep -Eq "^[[:space:]]*${1}[[:space:]]*\(\)" "$CORE_SH"; }
 par14_ps_defined()   { grep -Eq "^[[:space:]]*function[[:space:]]+((script|global):)?${1}[[:space:]]*\{" "$CORE_PS1"; }

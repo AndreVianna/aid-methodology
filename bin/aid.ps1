@@ -211,6 +211,7 @@ function script:Show-AidUsage {
             Write-Host '                           [-Force] [-Verbose] [-Target <dir>]'
             Write-Host '  Add tool(s) to the current project.'
             Write-Host '  Tools: claude-code, codex, cursor, copilot-cli, antigravity'
+            Write-Host '  Claude Code also gets the AID Stop hook in .claude/settings.json (your own entries are kept).'
         }
         'remove' {
             Write-Host 'aid remove [<tool>[,<tool>...]] [-Force] [-Verbose] [-Target <dir>]'
@@ -6028,7 +6029,7 @@ function script:Test-AidReleaseDescriptor {
     foreach ($entry in $entries) {
         $splitAt = $entry.IndexOf('='); $key = $entry.Substring(0, $splitAt); $value = $entry.Substring($splitAt + 1)
         if (-not $counts.ContainsKey($key)) { $counts[$key] = 0 }; $counts[$key]++
-        if ($key -cne 'skill_mirror' -and $counts[$key] -gt 1) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): $key may appear only once"); return $false }
+        if ($key -cne 'skill_mirror' -and $key -cne 'hook' -and $counts[$key] -gt 1) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): $key may appear only once"); return $false }
         $valid = $true
         switch -CaseSensitive ($key) {
             'aid_version' { $valid = ($value -ceq $Version) }
@@ -6036,10 +6037,13 @@ function script:Test-AidReleaseDescriptor {
             'worktree_root' { $valid = ($Kind -eq 'tool' -and ($value -ceq '.aid/.worktrees' -or $value -ceq "$root/worktrees")) }
             'context_import' { $valid = ($Kind -eq 'tool' -and $value -ceq 'CLAUDE.md') }
             'rules_inline' { $valid = ($Kind -eq 'tool' -and $value -ceq 'true') }
+            'hook_settings' { $valid = ($Kind -eq 'tool' -and $root -ne '' -and $value -ceq "$root/settings.json") }
+            'hook' { $valid = ($Kind -eq 'tool' -and $value -cmatch '^Stop:aid-[a-z0-9-]+$') }
             'tool' { $valid = ($Kind -eq 'tool' -and $value -ceq $Tool) }
         }
         if (-not $valid) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): invalid $key"); return $false }
     }
+    if ($counts.ContainsKey('hook') -and -not $counts.ContainsKey('hook_settings')) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): hook needs hook_settings"); return $false }
     if ($Kind -eq 'shared' -and @($entries | Where-Object { $_ -match '^aid_version=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing aid_version"); return $false }
     if ($Kind -eq 'tool' -and @($entries | Where-Object { $_ -match '^tool=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing tool"); return $false }
     return $true

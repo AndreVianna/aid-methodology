@@ -2819,6 +2819,143 @@ function Test-AC13Tool {
 
 foreach ($tool13 in @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigravity')) { Test-AC13Tool -Tool $tool13 }
 
+# ===========================================================================
+# Q126 (Windows installer parity): the AID Stop hook. `aid add claude-code` merges one handler
+# into the project's .claude/settings.json through the native PowerShell JSON code (this runs
+# under PowerShell 7 and Windows PowerShell 5.1; there is no Python on the host). `aid update`
+# keeps it, `aid remove` takes it out. The Bash twin's cases are in test-host-hooks.sh; the
+# byte-for-byte comparison of the two writers is HH-PAR in test-aid-cli-parity.sh.
+# ===========================================================================
+Write-Host "=== Q126: the AID Stop hook in .claude/settings.json ==="
+
+$HhCommand  = 'bash "${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh"'
+$HhRel      = '.claude/settings.json'
+$HhMarker   = '/.aid/runtime/scripts/hooks/aid-'
+
+# Read-HhJson: the parsed settings file, or $null when it is absent.
+function Read-HhJson {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+    return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
+}
+
+# Get-HhStopCommands: every command string under hooks.Stop, group by group.
+function Get-HhStopCommands {
+    param($Json)
+    $out = New-Object System.Collections.Generic.List[string]
+    if ($null -eq $Json -or -not $Json.PSObject.Properties['hooks']) { return $out.ToArray() }
+    if (-not $Json.hooks.PSObject.Properties['Stop']) { return $out.ToArray() }
+    foreach ($g in @($Json.hooks.Stop)) { foreach ($h in @($g.hooks)) { $out.Add([string]$h.command) } }
+    return $out.ToArray()
+}
+
+function Get-HhAidCount {
+    param([string]$Path)
+    $n = 0
+    foreach ($c in @(Get-HhStopCommands (Read-HhJson $Path))) { if ($c.Contains($HhMarker)) { $n++ } }
+    return $n
+}
+
+function Get-HhManifestHooks {
+    param([string]$Target)
+    $m = Get-Content -LiteralPath (Join-Path $Target '.aid/.aid-manifest.json') -Raw | ConvertFrom-Json
+    $t = $m.tools.PSObject.Properties['claude-code']
+    if ($null -eq $t -or -not $t.Value.PSObject.Properties['hooks']) { return @() }
+    return @($t.Value.hooks)
+}
+
+function New-HhTarget {
+    param([string]$Name)
+    $t = Join-Path $TmpRoot $Name
+    New-Item -ItemType Directory -Path $t -Force | Out-Null
+    return $t
+}
+
+# --- add into a fresh target ---------------------------------------------------------------
+$HhT = New-HhTarget 'hh-fresh'
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhT)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 add claude-code -> exit 0'
+Assert-Contains $script:_LastOut 'Hook: aid-question-form (Stop) in .claude/settings.json' 'Q126 add prints the hook line'
+$HhFile = Join-Path $HhT $HhRel
+Assert-FileExists $HhFile 'Q126 add creates .claude/settings.json'
+Assert-FileLF $HhFile 'Q126 settings.json'
+$HhJson = Read-HhJson $HhFile
+$HhCmds = @(Get-HhStopCommands $HhJson)
+Assert ($HhCmds.Count -eq 1 -and $HhCmds[0] -ceq $HhCommand) 'Q126 one handler with the fixed command string' "commands: $($HhCmds -join ' | ')"
+Assert (@($HhJson.hooks.Stop).Count -eq 1 -and @($HhJson.hooks.Stop[0].hooks).Count -eq 1 -and [int]$HhJson.hooks.Stop[0].hooks[0].timeout -eq 30 -and [string]$HhJson.hooks.Stop[0].hooks[0].type -ceq 'command') `
+    'Q126 the handler sits in its own group, type command, timeout 30' 'unexpected group shape'
+$HhRecs = @(Get-HhManifestHooks $HhT)
+Assert ($HhRecs.Count -eq 1 -and $HhRecs[0].event -ceq 'Stop' -and $HhRecs[0].name -ceq 'aid-question-form' -and $HhRecs[0].settings -ceq $HhRel -and $HhRecs[0].created -eq $true) `
+    'Q126 the manifest records the hook with created true' "records: $($HhRecs.Count)"
+$HhManifestText = Get-Content -LiteralPath (Join-Path $HhT '.aid/.aid-manifest.json') -Raw
+Assert ($HhManifestText -match '"format_version":\s*3') 'Q126 the manifest format_version stays 3' 'format changed'
+Assert-FileExists (Join-Path $HhT '.aid/runtime/scripts/hooks/aid-question-form.sh') 'Q126 the hook script ships to the runtime'
+
+# --- user keys and a user Stop hook are kept; update changes no byte -----------------------
+$HhUser = New-HhTarget 'hh-user'
+$HhUserFile = Join-Path $HhUser $HhRel
+Write-V3File -Path $HhUserFile -Text ('{' + "`n" + '  "permissions": { "allow": ["Bash(ls:*)"] },' + "`n" +
+    '  "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "echo user-stop" } ] } ] },' + "`n" +
+    '  "env": { "KEEP": "1", "NUM": 7 }' + "`n" + '}' + "`n")
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhUser)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 add into an existing settings file -> exit 0'
+$HhUserJson = Read-HhJson $HhUserFile
+$HhUserCmds = @(Get-HhStopCommands $HhUserJson)
+Assert ($HhUserCmds.Count -eq 2 -and $HhUserCmds[0] -ceq 'echo user-stop' -and $HhUserCmds[1] -ceq $HhCommand) `
+    'Q126 the user Stop hook stays first and the AID group is appended' "commands: $($HhUserCmds -join ' | ')"
+Assert (([string]$HhUserJson.permissions.allow[0] -ceq 'Bash(ls:*)') -and ([int]$HhUserJson.env.NUM -eq 7) -and ([string]$HhUserJson.env.KEEP -ceq '1')) `
+    'Q126 the user keys keep their values' 'a user key changed'
+$HhKeys = @($HhUserJson.PSObject.Properties | ForEach-Object { $_.Name }) -join ','
+Assert-Eq $HhKeys 'permissions,hooks,env' 'Q126 the user keys keep their order'
+$HhUserRecs = @(Get-HhManifestHooks $HhUser)
+Assert ($HhUserRecs.Count -eq 1 -and $HhUserRecs[0].created -eq $false) 'Q126 an existing file is recorded created false' "records: $($HhUserRecs.Count)"
+$HhBefore = Get-FileSha -Path $HhUserFile
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhUser)
+Assert ((Get-FileSha -Path $HhUserFile) -eq $HhBefore) 'Q126 a second add changes no byte of the settings file' 'settings file changed'
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $HhUser)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 update -> exit 0'
+Assert ((Get-FileSha -Path $HhUserFile) -eq $HhBefore) 'Q126 update changes no byte of the settings file' 'settings file changed'
+Assert ((Get-HhAidCount $HhUserFile) -eq 1) 'Q126 still one AID handler after add and update' 'handler count changed'
+
+# --- Unicode and escapes round-trip as UTF-8 -------------------------------------------------
+$HhUni = New-HhTarget 'hh-unicode'
+$HhUniFile = Join-Path $HhUni $HhRel
+$HhUniText = '{"note": "caf\u00e9 \u2603 \ud83d\ude00 \"q\" \\ \/ \u0001"}' + "`n"
+New-Item -ItemType Directory -Path (Split-Path -Parent $HhUniFile) -Force | Out-Null
+[System.IO.File]::WriteAllBytes($HhUniFile, (New-Object System.Text.UTF8Encoding($false)).GetBytes($HhUniText))
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhUni)
+$HhUniOut = [System.IO.File]::ReadAllText($HhUniFile, (New-Object System.Text.UTF8Encoding($false)))
+$HhExpectNote = '"note": "caf' + [string][char]0x00E9 + ' ' + [string][char]0x2603 + ' ' + [char]::ConvertFromUtf32(0x1F600) + ' \"q\" \\ / \u0001"'
+Assert-Contains $HhUniOut $HhExpectNote 'Q126 non-ASCII stays as UTF-8, escapes are re-written the way Python json.dump writes them'
+
+# --- a file AID will not edit: untouched, one warning, install goes on -----------------------
+$HhBad = New-HhTarget 'hh-bad'
+$HhBadFile = Join-Path $HhBad $HhRel
+Write-V3File -Path $HhBadFile -Text '{ not json'
+$HhBadSha = Get-FileSha -Path $HhBadFile
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhBad)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 add over an unparseable settings file still exits 0'
+Assert ((Get-FileSha -Path $HhBadFile) -eq $HhBadSha) 'Q126 the unparseable file is untouched' 'file changed'
+Assert-Contains $script:_LastOut 'WARN: aid: .claude/settings.json was left untouched' 'Q126 one warning names the file'
+Assert (@(Get-HhManifestHooks $HhBad).Count -eq 0) 'Q126 nothing is recorded for it' 'a hook record was written'
+$HhFloat = New-HhTarget 'hh-float'
+$HhFloatFile = Join-Path $HhFloat $HhRel
+Write-V3File -Path $HhFloatFile -Text '{"timeout": 1.5}'
+$HhFloatSha = Get-FileSha -Path $HhFloatFile
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhFloat)
+Assert ((Get-FileSha -Path $HhFloatFile) -eq $HhFloatSha) 'Q126 a file with a non-integer number is untouched' 'file changed'
+
+# --- remove ------------------------------------------------------------------------------------
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $HhUser)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 remove claude-code (user settings) -> exit 0'
+Assert-FileExists $HhUserFile 'Q126 a settings file with user entries stays'
+$HhAfter = @(Get-HhStopCommands (Read-HhJson $HhUserFile))
+Assert ($HhAfter.Count -eq 1 -and $HhAfter[0] -ceq 'echo user-stop') 'Q126 remove takes the AID handler out and keeps the user hook' "commands: $($HhAfter -join ' | ')"
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $HhT)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 remove claude-code (hook-only install) -> exit 0'
+Assert-FileGone $HhFile 'Q126 a settings file AID created, left as {}, is deleted'
+Assert-DirGone (Join-Path $HhT '.claude') 'Q126 the emptied .claude directory goes too'
+
 $env:AID_NO_UPDATE_CHECK = $savedNoUpdAC
 Write-Host ""
 

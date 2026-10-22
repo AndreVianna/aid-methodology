@@ -102,6 +102,8 @@ _TWIN_PAIRS=(
     "_aid_layout_gate Test-AidLayoutGate"
     "_check_staged_version Test-StagedVersion"
     "_aid_scaffold_bare_project Invoke-AidScaffoldBareProject"
+    "_ensure_host_hooks Invoke-EnsureHostHooks"
+    "_remove_host_hooks Invoke-RemoveHostHooks"
 )
 
 # Always-printing outcome helpers (pass() is silent without --verbose; the
@@ -6342,6 +6344,75 @@ tfx_row_claude_inline() {
     assert_eq "${seen_m[ps]}" "${seen_m[sh]}" "${id} manifest region hashes identical across shells after the toggle"
 }
 tfx_row_claude_inline
+
+# ===========================================================================
+# HH-PAR: the AID Stop hook in .claude/settings.json. Both twins merge it with their own JSON
+# code (python3 on the Bash side, native on the PowerShell side) and must write the same bytes
+# into the settings file, the same `Hook:` lines, and the same manifest hook entry, for the
+# same input: nesting, booleans, null, integers, Unicode, escapes, a missing final newline,
+# an absent file, and a file neither twin will edit. Then update changes nothing and remove
+# takes the handler out the same way.
+# ===========================================================================
+hh_input() {  # <n> -> the settings file content for case n ('-' = no file)
+    case "$1" in
+        1) printf '%s\n' '{' '  "permissions": {"allow": ["Bash(ls:*)"], "deny": []},' \
+               '  "note": "caf\u00e9 \u2603 \ud83d\ude00 \"q\" \\ \/ \u0001 tab\t",' \
+               '  "env": {"KEEP": "1", "NUM": 7, "BIG": 12345678901234567890, "NEG": -3, "NIL": null, "FLAG": true, "OFF": false},' \
+               '  "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "echo pre"}]}],' \
+               '            "Stop": [{"hooks": [{"type": "command", "command": "echo user-stop"}]}]},' \
+               '  "list": [1, [2, {"a": []}], {}]' '}' ;;
+        2) printf '%s' '{"hooks":{"Stop":[]},"x":1}' ;;
+        3) printf '%s' '-' ;;
+        4) printf '%s' '{"timeout": 1.5}' ;;
+        5) printf '%s\n' '{"hooks": {"Stop": [' \
+               '  {"hooks": [{"type": "command", "command": "bash \"/old/place/.aid/runtime/scripts/hooks/aid-old-thing.sh\""}, {"type": "command", "command": "echo mine"}]},' \
+               '  {"hooks": [{"type": "command", "command": "bash \"/x/.aid/runtime/scripts/hooks/aid-question-form.sh\""}]}' \
+               ']}}' ;;
+        6) printf '%s' '{ not json' ;;
+        7) printf '%s\n' '{"Env": 1, "env": 2}' ;;
+    esac
+}
+hh_manifest_hooks() {
+    python3 -I -c 'import json,sys
+t=json.load(open(sys.argv[1]))["tools"].get("claude-code",{})
+print(json.dumps(t.get("hooks"),sort_keys=True))' "$1/.aid/.aid-manifest.json" 2>/dev/null
+}
+hh_sha() { [[ -f "$1" ]] && sha256sum "$1" | awk '{print $1}' || echo absent; }
+hh_row() {
+    local id="HH-PAR" n shell home tgt content
+    local -A a_sha=() u_sha=() r_sha=() hooks=() lines=() rc=()
+    for n in 1 2 3 4 5 6 7; do
+        for shell in sh ps; do
+            home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+            content="$(hh_input "$n"; printf x)"; content="${content%x}"
+            if [[ "$content" != "-" ]]; then mkdir -p "$tgt/.claude"; printf '%s' "$content" > "$tgt/.claude/settings.json"; fi
+            tfx_aid "$shell" "$home" "$tgt" add claude-code
+            rc["$n$shell"]="$RC"
+            lines["$n$shell"]="$(printf '%s\n' "$OUT" | grep -E '^Hook:' || true)"
+            a_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
+            hooks["$n$shell"]="$(hh_manifest_hooks "$tgt")"
+            tfx_aid "$shell" "$home" "$tgt" update
+            [[ "$RC" == 0 ]] || fail "${id}-${n} ${shell} update -> exit ${RC}"
+            u_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
+            tfx_remove "$shell" "$home" "$tgt" claude-code
+            [[ "$RC" == 0 ]] || fail "${id}-${n} ${shell} remove -> exit ${RC}"
+            r_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
+        done
+        assert_eq "${rc[${n}ps]}" "${rc[${n}sh]}" "${id}-${n} add exits the same in both twins"
+        assert_eq "${a_sha[${n}ps]}" "${a_sha[${n}sh]}" "${id}-${n} the settings file after add is byte-equal across twins"
+        assert_eq "${lines[${n}ps]}" "${lines[${n}sh]}" "${id}-${n} the Hook line is the same across twins"
+        assert_eq "${hooks[${n}ps]}" "${hooks[${n}sh]}" "${id}-${n} the manifest hook entry is the same across twins"
+        assert_eq "${u_sha[${n}ps]}" "${a_sha[${n}ps]}" "${id}-${n} ps update changes no byte of the settings file"
+        assert_eq "${u_sha[${n}sh]}" "${a_sha[${n}sh]}" "${id}-${n} sh update changes no byte of the settings file"
+        assert_eq "${r_sha[${n}ps]}" "${r_sha[${n}sh]}" "${id}-${n} the settings file after remove is byte-equal across twins"
+    done
+    assert_eq "${hooks[1ps]}" '[{"created": false, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "${id}-1 the record of an existing file says created false"
+    assert_eq "${hooks[3ps]}" '[{"created": true, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "${id}-3 the record of a new file says created true"
+    assert_eq "${r_sha[3ps]}" "absent" "${id}-3 a file AID created is deleted when the tool goes"
+    assert_eq "${hooks[4ps]}" "null" "${id}-4 a file neither twin will edit gets no record"
+    assert_eq "${a_sha[4ps]}" "$(printf '%s' '{"timeout": 1.5}' | sha256sum | awk '{print $1}')" "${id}-4 and is left untouched"
+}
+hh_row
 
 # ===========================================================================
 # End-of-suite: real-HOME blast-surface canary

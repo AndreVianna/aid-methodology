@@ -159,6 +159,7 @@ _aid_usage() {
             printf '                           [--force] [--verbose] [--target <dir>]\n'
             printf '  Add tool(s) to the current project.\n'
             printf '  Tools: claude-code, codex, cursor, copilot-cli, antigravity\n'
+            printf '  Claude Code also gets the AID Stop hook in .claude/settings.json (your own entries are kept).\n'
             ;;
         remove)
             printf 'aid remove [<tool>[,<tool>...]] [--force] [--verbose] [--target <dir>]\n'
@@ -5701,10 +5702,12 @@ _aid_chat_resolve_name() {
 
 # `aid chat hook` -- generate the stop-hook snippet, and check an installed one.
 #
-# IT WRITES NOTHING, and that is a requirement rather than caution: FR-0.4 says the product writes no
-# host tool's configuration, and the reasoning is concrete -- a project-scoped host config file is
-# tracked in git, so writing one would put a hook into every contributor's checkout, and a user-scoped
-# one belongs to a human who also edits it by hand.
+# IT WRITES NOTHING, and that is a requirement rather than caution: the chat hook is machine-specific,
+# and the reasoning is concrete -- a project-scoped host config file is tracked in git, so writing one
+# would put a hook into every contributor's checkout, and a user-scoped one belongs to a human who
+# also edits it by hand. (The one hook `aid add` and `aid update` do write for Claude Code, the AID
+# Stop hook in the project's .claude/settings.json, names only ${CLAUDE_PROJECT_DIR}, so it carries no
+# machine path; `--install` below is the other writer of host configuration.)
 #
 # What it removes is the part that actually goes wrong. Installing this by hand means finding an
 # absolute path to `node`, getting the install path right, and putting the SAME number in two places --
@@ -5765,9 +5768,9 @@ _cmd_chat_hook() {
     fi
 
     if [[ "$action" == "install" || "$action" == "uninstall" ]]; then
-        # WRITING HOST CONFIGURATION, which the product refused to do until it was explicitly
-        # authorised. FR-0.4's reasoning was concrete rather than doctrinal, and the guards below are
-        # exactly those reasons turned into checks rather than a blanket refusal:
+        # WRITING HOST CONFIGURATION, which the chat hook does only on this explicit request. The
+        # reasoning against doing it silently was concrete rather than doctrinal, and the guards below
+        # are exactly those reasons turned into checks rather than a blanket refusal:
         #
         #   - A PROJECT-scoped host config file is tracked in git, so writing one would commit one
         #     machine's absolute paths into every contributor's checkout. Hence: user scope only, and
@@ -5849,8 +5852,8 @@ _cmd_chat_hook() {
 # Paste the block below into:
 #   ${cfg}
 #
-# Nothing writes it for you: AID writes no host tool's configuration, because a project-scoped
-# config file is tracked in git and would put this hook into every contributor's checkout.
+# Nothing writes it for you unless you ask (aid chat hook --install): a project-scoped config file is
+# tracked in git and would put this machine-specific hook into every contributor's checkout.
 #
 # The two numbers are already matched. With timeout ${timeout}: the node blocks ${block}s, the adapter
 # guards just under ${timeout}s, and your host gives up at ${timeout}s -- in that order, which is the

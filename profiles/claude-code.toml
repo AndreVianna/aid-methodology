@@ -22,3 +22,9 @@ hooks                  = true
 skill_chaining         = true
 background_execution   = true
 stop_hook_autocontinue = true
+
+[hooks]
+# The installer merges these AID handlers into the project's host settings file (aid add / aid update)
+# and removes them with the tool (aid remove). Each name is a script under .aid/runtime/scripts/hooks/.
+settings = ".claude/settings.json"
+stop     = ["aid-question-form"]

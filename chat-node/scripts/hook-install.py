@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Install or remove the chat stop hook in a host tool's USER-scope settings file.
 
-This is the one place in the product that writes a host tool's configuration, and it exists only
-because that was explicitly authorised. The blanket refusal it replaces (FR-0.4) rested on two
-concrete hazards rather than on principle, and both are handled here rather than waved away:
+This is the writer of the machine-specific chat hook in a host tool's user-scope configuration, and
+it exists only because that was explicitly authorised. (`aid add` and `aid update` write one other
+hook, the AID question-form Stop hook, into the project's .claude/settings.json; it holds no machine
+path.) The blanket refusal this replaces rested on two concrete hazards rather than on principle, and
+both are handled here rather than waved away:
 
   - A PROJECT-scoped host config file is tracked in git. Writing one commits a single machine's
     absolute paths into every contributor's checkout. `bin/aid` refuses a tracked target before this

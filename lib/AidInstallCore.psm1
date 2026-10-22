@@ -1035,6 +1035,391 @@ function script:Invoke-RemoveClaudeMdRegion {
     script:Remove-AidMarkedSpan -File $File -Lines $lines -Span $span
 }
 
+# ---------------------------------------------------------------------------
+# Host settings hooks (twin of bash _ensure_host_hooks / _remove_host_hooks).
+#
+# `aid add` / `aid update` merge the AID Stop handler into the project's host settings
+# file (.claude/settings.json) and `aid remove` takes it out again. AID owns a handler
+# when its command holds the marker below; it never touches any other handler, group or
+# key. The settings file is parsed and written natively (no Python): the parser keeps key
+# order and exact integers, and the writer reproduces Python json.dump(indent=2,
+# ensure_ascii=False) byte for byte, so both twins write the same file for the same input.
+# ---------------------------------------------------------------------------
+
+$script:_AidHookDir = '/.aid/runtime/scripts/hooks/'
+$script:_AidHookMarker = $script:_AidHookDir + 'aid-'
+
+# script:Skip-AidJsonSpace <state> - advance past JSON whitespace (space, TAB, LF, CR).
+function script:Skip-AidJsonSpace {
+    param($St)
+    $s = $St.S; $i = $St.I; $n = $s.Length
+    while ($i -lt $n) {
+        $c = [int]$s[$i]
+        if ($c -eq 32 -or $c -eq 9 -or $c -eq 10 -or $c -eq 13) { $i++ } else { break }
+    }
+    $St.I = $i
+}
+
+# script:Read-AidJsonString <state> - the string at the cursor (which sits on the opening quote).
+function script:Read-AidJsonString {
+    param($St)
+    $s = $St.S; $n = $s.Length; $i = $St.I + 1
+    $sb = New-Object System.Text.StringBuilder
+    while ($true) {
+        if ($i -ge $n) { throw 'unterminated string' }
+        $c = $s[$i]; $code = [int]$c
+        if ($code -eq 34) { $i++; break }
+        if ($code -lt 32) { throw 'control character in string' }
+        if ($code -ne 92) { [void]$sb.Append($c); $i++; continue }
+        $i++
+        if ($i -ge $n) { throw 'unterminated escape' }
+        $e = [int]$s[$i]
+        if ($e -eq 34) { [void]$sb.Append('"') }
+        elseif ($e -eq 92) { [void]$sb.Append('\') }
+        elseif ($e -eq 47) { [void]$sb.Append('/') }
+        elseif ($e -eq 98) { [void]$sb.Append([char]8) }
+        elseif ($e -eq 102) { [void]$sb.Append([char]12) }
+        elseif ($e -eq 110) { [void]$sb.Append([char]10) }
+        elseif ($e -eq 114) { [void]$sb.Append([char]13) }
+        elseif ($e -eq 116) { [void]$sb.Append([char]9) }
+        elseif ($e -eq 117) {
+            if ($i + 4 -ge $n) { throw 'bad unicode escape' }
+            $hex = $s.Substring($i + 1, 4)
+            if ($hex -cnotmatch '^[0-9A-Fa-f]{4}$') { throw 'bad unicode escape' }
+            [void]$sb.Append([char][System.Convert]::ToInt32($hex, 16))
+            $i += 4
+        }
+        else { throw 'bad escape' }
+        $i++
+    }
+    $out = $sb.ToString()
+    for ($k = 0; $k -lt $out.Length; $k++) {
+        if ([char]::IsHighSurrogate($out[$k])) {
+            if ($k + 1 -ge $out.Length -or -not [char]::IsLowSurrogate($out[$k + 1])) { throw 'lone surrogate' }
+            $k++
+        } elseif ([char]::IsLowSurrogate($out[$k])) { throw 'lone surrogate' }
+    }
+    $St.I = $i
+    return $out
+}
+
+# script:Read-AidJsonValue <state> - one JSON value. Objects become ordered dictionaries
+# (case-sensitive keys), arrays become List[object], integers become @{AidInt=<text>}. A number
+# with a fraction or an exponent, a repeated key (or one differing only in case), or any syntax
+# error throws: the bash twin refuses the same files.
+function script:Read-AidJsonValue {
+    param($St)
+    script:Skip-AidJsonSpace $St
+    $s = $St.S
+    if ($St.I -ge $s.Length) { throw 'unexpected end of text' }
+    $c = [int]$s[$St.I]
+    if ($c -eq 123) {
+        $St.D++
+        if ($St.D -gt 100) { throw 'nesting too deep' }
+        $St.I++
+        $d = [System.Collections.Specialized.OrderedDictionary]::new()
+        script:Skip-AidJsonSpace $St
+        if ($St.I -lt $s.Length -and [int]$s[$St.I] -eq 125) { $St.I++; $St.D--; return ,$d }
+        while ($true) {
+            script:Skip-AidJsonSpace $St
+            if ($St.I -ge $s.Length -or [int]$s[$St.I] -ne 34) { throw 'object key expected' }
+            $key = script:Read-AidJsonString $St
+            script:Skip-AidJsonSpace $St
+            if ($St.I -ge $s.Length -or [int]$s[$St.I] -ne 58) { throw 'colon expected' }
+            $St.I++
+            $val = script:Read-AidJsonValue $St
+            foreach ($ek in @($d.Keys)) {
+                if (([string]$ek) -ieq $key) { throw 'a repeated key, or keys that differ only in case' }
+            }
+            $d[$key] = $val
+            script:Skip-AidJsonSpace $St
+            if ($St.I -ge $s.Length) { throw 'unterminated object' }
+            $x = [int]$s[$St.I]; $St.I++
+            if ($x -eq 125) { break }
+            if ($x -ne 44) { throw 'comma or brace expected' }
+        }
+        $St.D--
+        return ,$d
+    }
+    if ($c -eq 91) {
+        $St.D++
+        if ($St.D -gt 100) { throw 'nesting too deep' }
+        $St.I++
+        $list = New-Object 'System.Collections.Generic.List[object]'
+        script:Skip-AidJsonSpace $St
+        if ($St.I -lt $s.Length -and [int]$s[$St.I] -eq 93) { $St.I++; $St.D--; return ,$list }
+        while ($true) {
+            $val = script:Read-AidJsonValue $St
+            $list.Add($val)
+            script:Skip-AidJsonSpace $St
+            if ($St.I -ge $s.Length) { throw 'unterminated array' }
+            $x = [int]$s[$St.I]; $St.I++
+            if ($x -eq 93) { break }
+            if ($x -ne 44) { throw 'comma or bracket expected' }
+        }
+        $St.D--
+        return ,$list
+    }
+    if ($c -eq 34) { return (script:Read-AidJsonString $St) }
+    if ([string]::CompareOrdinal($s, $St.I, 'true', 0, 4) -eq 0) { $St.I += 4; return $true }
+    if ([string]::CompareOrdinal($s, $St.I, 'false', 0, 5) -eq 0) { $St.I += 5; return $false }
+    if ([string]::CompareOrdinal($s, $St.I, 'null', 0, 4) -eq 0) { $St.I += 4; return $null }
+    $m = ([regex]'\G-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?').Match($s, $St.I)
+    if (-not $m.Success) { throw 'unexpected character' }
+    if ($m.Groups[2].Success -or $m.Groups[3].Success) { throw 'non-integer number' }
+    $St.I += $m.Length
+    $tok = $m.Value
+    if ($tok -ceq '-0') { $tok = '0' }
+    return [pscustomobject]@{ AidInt = $tok }
+}
+
+# script:ConvertFrom-AidSettingsJson <text> - the parsed settings document; throws when the
+# text is not exactly one JSON value. A leading BOM is a syntax error, as in Python's json.
+function script:ConvertFrom-AidSettingsJson {
+    param([string]$Text)
+    $st = @{ S = $Text; I = 0; D = 0 }
+    $v = script:Read-AidJsonValue $st
+    script:Skip-AidJsonSpace $st
+    if ($st.I -ne $Text.Length) { throw 'extra data after the JSON value' }
+    return ,$v
+}
+
+# script:ConvertTo-AidJsonText <string> - quoted JSON string as Python json.dumps(ensure_ascii=False).
+function script:ConvertTo-AidJsonText {
+    param([string]$Text)
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.Append('"')
+    foreach ($ch in $Text.ToCharArray()) {
+        $code = [int]$ch
+        if ($code -eq 34) { [void]$sb.Append('\"') }
+        elseif ($code -eq 92) { [void]$sb.Append('\\') }
+        elseif ($code -eq 10) { [void]$sb.Append('\n') }
+        elseif ($code -eq 13) { [void]$sb.Append('\r') }
+        elseif ($code -eq 9) { [void]$sb.Append('\t') }
+        elseif ($code -eq 8) { [void]$sb.Append('\b') }
+        elseif ($code -eq 12) { [void]$sb.Append('\f') }
+        elseif ($code -lt 32) { [void]$sb.Append(('\u{0:x4}' -f $code)) }
+        else { [void]$sb.Append($ch) }
+    }
+    [void]$sb.Append('"')
+    return $sb.ToString()
+}
+
+# script:ConvertTo-AidSettingsJson <value> <depth> - Python json.dump(indent=2) layout, no final newline.
+function script:ConvertTo-AidSettingsJson {
+    param($Value, [int]$Depth = 0)
+    if ($null -eq $Value) { return 'null' }
+    if ($Value -is [bool]) { if ($Value) { return 'true' } else { return 'false' } }
+    if ($Value -is [string]) { return (script:ConvertTo-AidJsonText $Value) }
+    if ($Value -is [System.Collections.Specialized.OrderedDictionary]) {
+        if ($Value.Count -eq 0) { return '{}' }
+        $pad = ' ' * (2 * ($Depth + 1))
+        $items = New-Object System.Collections.Generic.List[string]
+        foreach ($k in @($Value.Keys)) {
+            $items.Add($pad + (script:ConvertTo-AidJsonText ([string]$k)) + ': ' + (script:ConvertTo-AidSettingsJson $Value[$k] ($Depth + 1)))
+        }
+        return ("{`n" + [string]::Join(",`n", $items.ToArray()) + "`n" + (' ' * (2 * $Depth)) + '}')
+    }
+    if ($Value -is [System.Collections.IList]) {
+        if ($Value.Count -eq 0) { return '[]' }
+        $pad = ' ' * (2 * ($Depth + 1))
+        $items = New-Object System.Collections.Generic.List[string]
+        foreach ($item in $Value) { $items.Add($pad + (script:ConvertTo-AidSettingsJson $item ($Depth + 1))) }
+        return ("[`n" + [string]::Join(",`n", $items.ToArray()) + "`n" + (' ' * (2 * $Depth)) + ']')
+    }
+    return [string]$Value.AidInt
+}
+
+# script:New-AidHookGroup <names> - the one matcher group AID writes under hooks.Stop: a handler per name.
+function script:New-AidHookGroup {
+    param([string[]]$Names)
+    $handlers = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($n in $Names) {
+        $handler = [System.Collections.Specialized.OrderedDictionary]::new()
+        $handler['type'] = 'command'
+        $handler['command'] = 'bash "${CLAUDE_PROJECT_DIR}' + $script:_AidHookDir + $n + '.sh"'
+        $handler['timeout'] = [pscustomobject]@{ AidInt = '30' }
+        $handlers.Add($handler)
+    }
+    $group = [System.Collections.Specialized.OrderedDictionary]::new()
+    $group['hooks'] = $handlers
+    return ,$group
+}
+
+# script:Remove-AidSettingsHandlers <root> [-Prune] - strips every AID handler (a command holding the
+# marker) from every hooks.<event> group, dropping a group the strip left empty. Returns how many were
+# removed. -Prune also drops an event list, and then the hooks object, that the strip emptied. Throws
+# before changing anything when the document has a shape AID will not edit.
+function script:Remove-AidSettingsHandlers {
+    param($Root, [switch]$Prune)
+    if ($Root -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'it is not a JSON object' }
+    if (-not $Root.Contains('hooks')) { return 0 }
+    $hk = $Root['hooks']
+    if ($hk -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'its "hooks" entry is not an object' }
+    if ($hk.Contains('Stop') -and $hk['Stop'] -isnot [System.Collections.IList]) { throw 'its "hooks.Stop" entry is not a list' }
+    $removed = 0
+    $touched = New-Object System.Collections.Generic.List[string]
+    foreach ($ev in @($hk.Keys)) {
+        $groups = $hk[$ev]
+        if ($groups -isnot [System.Collections.IList]) { continue }
+        for ($gi = $groups.Count - 1; $gi -ge 0; $gi--) {
+            $g = $groups[$gi]
+            if ($g -isnot [System.Collections.Specialized.OrderedDictionary] -or -not $g.Contains('hooks')) { continue }
+            $gh = $g['hooks']
+            if ($gh -isnot [System.Collections.IList]) { continue }
+            $here = 0
+            for ($hi = $gh.Count - 1; $hi -ge 0; $hi--) {
+                $h = $gh[$hi]
+                if ($h -is [System.Collections.Specialized.OrderedDictionary] -and $h.Contains('command')) {
+                    $cmd = $h['command']
+                    if ($cmd -is [string] -and $cmd.Contains($script:_AidHookMarker)) { $gh.RemoveAt($hi); $here++ }
+                }
+            }
+            if ($here -gt 0) {
+                $removed += $here
+                if (-not $touched.Contains([string]$ev)) { $touched.Add([string]$ev) }
+                if ($gh.Count -eq 0) { $groups.RemoveAt($gi) }
+            }
+        }
+    }
+    if ($Prune -and $removed -gt 0) {
+        foreach ($ev in $touched) { if ($hk[$ev].Count -eq 0) { $hk.Remove($ev) } }
+        if ($hk.Count -eq 0) { $Root.Remove('hooks') }
+    }
+    return $removed
+}
+
+# script:Test-AidSettingsRelPath <rel> - true for a relative path with no '..' segment.
+function script:Test-AidSettingsRelPath {
+    param([string]$Rel)
+    if (-not $Rel) { return $false }
+    if ([System.IO.Path]::IsPathRooted($Rel) -or $Rel.StartsWith('/') -or $Rel.StartsWith('\')) { return $false }
+    foreach ($seg in $Rel.Split([char[]]@('/', '\'))) { if ($seg -ceq '..') { return $false } }
+    return $true
+}
+
+# script:Write-AidSettingsFile <path> <text> - UTF-8 without BOM, atomically.
+function script:Write-AidSettingsFile {
+    param([string]$Path, [string]$Text)
+    $dir = [System.IO.Path]::GetDirectoryName($Path)
+    if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $tmp = Join-Path $dir ('.settings.tmp.' + [System.IO.Path]::GetRandomFileName())
+    try {
+        [System.IO.File]::WriteAllBytes($tmp, (New-Object System.Text.UTF8Encoding($false)).GetBytes($Text))
+        if (Test-Path -LiteralPath $Path -PathType Leaf) { Remove-Item -LiteralPath $Path -Force }
+        Move-Item -LiteralPath $tmp -Destination $Path -Force
+    } catch {
+        if (Test-Path -LiteralPath $tmp -PathType Leaf) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
+        throw
+    }
+}
+
+# script:Invoke-EnsureHostHooks - puts the tool's declared AID Stop handlers into <Target>/<SettingsRel>
+# (one group, a handler per name) and returns the manifest records for the tool: "tools.<tool>.hook"
+# TAB event TAB name TAB settings TAB created, one per hook. A tool that declares none gets its recorded
+# handlers stripped instead and no records. A file AID will not edit (unparseable, wrong shape, a
+# non-integer number, a repeated key, keys differing only in case) is left untouched with one warning,
+# the records the manifest already held are kept, and the install goes on. Prints
+# "Hook: <name> (Stop) in <settings>" for each hook placed.
+function script:Invoke-EnsureHostHooks {
+    param([string]$Target, [string]$Tool, [string]$SettingsRel = '', [string[]]$Names = @(), [string[]]$OldRows = @())
+    $Names = @($Names | Where-Object { $_ })
+    $oldCreated = $false
+    $priorSettings = ''
+    foreach ($row in $OldRows) {
+        $p = $row.Split("`t")
+        if ($p.Count -ge 5 -and $p[0] -ceq "tools.$Tool.hook") {
+            if (-not $priorSettings) { $priorSettings = $p[3] }
+            if ($p[4] -ceq 'true') { $oldCreated = $true }
+        }
+    }
+    if (-not $SettingsRel) { $SettingsRel = $priorSettings }
+    if (-not $SettingsRel) { return ,[string[]]@() }
+    if (-not (script:Test-AidSettingsRelPath $SettingsRel)) { return ,[string[]]@($OldRows) }
+    $path = Join-Path $Target ($SettingsRel -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    $existed = Test-Path -LiteralPath $path -PathType Leaf
+    if ($Names.Count -eq 0 -and -not $existed) { return ,[string[]]@() }
+    try {
+        $oldText = ''
+        if ($existed) {
+            $bytes = [System.IO.File]::ReadAllBytes($path)
+            if ($Names.Count -eq 0 -and -not [System.Text.Encoding]::UTF8.GetString($bytes).Contains($script:_AidHookMarker)) { return ,[string[]]@() }
+            $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytes)
+            $root = script:ConvertFrom-AidSettingsJson -Text $oldText
+        } else {
+            $root = [System.Collections.Specialized.OrderedDictionary]::new()
+        }
+        $before = script:ConvertTo-AidSettingsJson $root 0
+        $removed = script:Remove-AidSettingsHandlers -Root $root -Prune:($Names.Count -eq 0)
+        if ($Names.Count -gt 0) {
+            if (-not $root.Contains('hooks')) { $root['hooks'] = [System.Collections.Specialized.OrderedDictionary]::new() }
+            $hk = $root['hooks']
+            if (-not $hk.Contains('Stop')) { $hk['Stop'] = New-Object 'System.Collections.Generic.List[object]' }
+            $hk['Stop'].Add((script:New-AidHookGroup -Names $Names))
+        }
+        if ($Names.Count -eq 0 -and $root.Count -eq 0 -and $oldCreated -and $removed -gt 0) {
+            Remove-Item -LiteralPath $path -Force
+        } else {
+            $after = script:ConvertTo-AidSettingsJson $root 0
+            if (-not $existed -or $after -cne $before) {
+                $text = $after
+                if (-not $existed -or $oldText.EndsWith("`n")) { $text += "`n" }
+                script:Write-AidSettingsFile -Path $path -Text $text
+            }
+        }
+    } catch {
+        [Console]::Error.WriteLine("WARN: aid: $SettingsRel was left untouched ($($_.Exception.Message)). Fix the file, or remove it, then run 'aid update' to add the AID hook.")
+        return ,[string[]]@($OldRows)
+    }
+    $recs = New-Object System.Collections.Generic.List[string]
+    $created = if (-not $existed -or $oldCreated) { 'true' } else { 'false' }
+    foreach ($n in $Names) {
+        $recs.Add("tools.$Tool.hook`tStop`t$n`t$SettingsRel`t$created")
+        Write-Host "Hook: $n (Stop) in $SettingsRel"
+    }
+    return ,$recs.ToArray()
+}
+
+# script:Invoke-RemoveHostHooks - strips every AID handler from the settings file(s) the manifest rows
+# record for the tool and, with -Sweep, from <root>/settings.json too when it holds the ownership marker
+# (a manifest written by an older CLI records none). A file AID created that is left as {} is deleted.
+# User entries stay. A file AID will not edit gets one warning. Never fails the removal.
+function script:Invoke-RemoveHostHooks {
+    param([string]$Target, [string]$Tool, [string[]]$OldRows = @())
+    $created = [ordered]@{}
+    foreach ($row in $OldRows) {
+        $p = $row.Split("`t")
+        if ($p.Count -ge 5 -and $p[0] -ceq "tools.$Tool.hook" -and $p[3]) {
+            $was = $false; if ($created.Contains($p[3])) { $was = $created[$p[3]] }
+            $created[$p[3]] = ($was -or $p[4] -ceq 'true')
+        }
+    }
+    $fallback = (script:Get-RootDir -Tool $Tool) + '/settings.json'
+    if ($fallback -ne '/settings.json' -and -not $created.Contains($fallback)) { $created[$fallback] = $false }
+    foreach ($rel in @($created.Keys)) {
+        if (-not (script:Test-AidSettingsRelPath $rel)) { continue }
+        $path = Join-Path $Target ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+        try {
+            $bytes = [System.IO.File]::ReadAllBytes($path)
+            if (-not [System.Text.Encoding]::UTF8.GetString($bytes).Contains($script:_AidHookMarker)) { continue }
+            $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytes)
+            $root = script:ConvertFrom-AidSettingsJson -Text $oldText
+            $n = script:Remove-AidSettingsHandlers -Root $root -Prune
+            if ($n -eq 0) { continue }
+            if ($root.Count -eq 0 -and $created[$rel]) { Remove-Item -LiteralPath $path -Force }
+            else {
+                $text = script:ConvertTo-AidSettingsJson $root 0
+                if ($oldText.EndsWith("`n")) { $text += "`n" }
+                script:Write-AidSettingsFile -Path $path -Text $text
+            }
+            Write-Host "Hook: removed the AID handlers from $rel"
+        } catch {
+            [Console]::Error.WriteLine("WARN: aid: $rel was left untouched ($($_.Exception.Message)). Remove its entries whose command holds $($script:_AidHookMarker) by hand.")
+        }
+    }
+}
+
 # $RecordedRegionSha (the remove path; may be empty): a rewrite of a well-formed marked span
 # that differs from that recorded region sha256 trashes a full copy of the file first, so
 # user text inside the region is never silently discarded. $null = no check (add/update).
@@ -1451,6 +1836,8 @@ function Write-AidManifestV3 {
             $rec = (script:Get-AidV3Field $f 1) + "`t" + (script:Get-AidV3Field $f 2) + "`t" + (script:Get-AidV3Field $f 3)
         } elseif ($key.StartsWith('tools.') -and $key.EndsWith('.mirror')) {
             $rec = script:Get-AidV3Field $f 1
+        } elseif ($key.StartsWith('tools.') -and $key.EndsWith('.hook')) {
+            $rec = (script:Get-AidV3Field $f 1) + "`t" + (script:Get-AidV3Field $f 2) + "`t" + (script:Get-AidV3Field $f 3) + "`t" + (script:Get-AidV3Field $f 4)
         } elseif ($key.EndsWith('.file') -and ($key.StartsWith('tools.') -or $key -eq 'shared.skills.file' -or $key -eq 'shared.runtime.file')) {
             $rec = (script:Get-AidV3Field $f 1) + "`t" + (script:Get-AidV3Field $f 2)
         }
@@ -1543,6 +1930,19 @@ function Write-AidManifestV3 {
         $paths = New-Object System.Collections.Generic.List[string]
         foreach ($fo in $files) { $paths.Add([string]$fo['path']) }
         $ent['paths'] = $paths.ToArray()
+        if ($lists.ContainsKey($pre + 'hook')) {
+            $hookList = New-Object 'System.Collections.Generic.List[object]'
+            foreach ($hr in $lists[$pre + 'hook']) {
+                $hp = $hr.Split("`t")
+                $ho = [System.Collections.Specialized.OrderedDictionary]::new()
+                $ho['event'] = $hp[0]
+                $ho['name'] = $hp[1]
+                $ho['settings'] = $hp[2]
+                $ho['created'] = ($hp[3] -ceq 'true')
+                $hookList.Add($ho)
+            }
+            $ent['hooks'] = $hookList
+        }
         $tools[$t] = $ent
     }
 
@@ -1630,7 +2030,7 @@ function Read-AidManifestShared {
 }
 
 # Read-AidManifestToolFiles <manifestPath> <tool>
-# tools.<tool>.* records: mirror, worktree_root and rules_inline (only when declared), file.
+# tools.<tool>.* records: mirror, worktree_root and rules_inline (only when declared), hook, file.
 function Read-AidManifestToolFiles {
     param([string]$ManifestPath, [string]$Tool)
     $out = New-Object System.Collections.Generic.List[string]
@@ -1646,6 +2046,13 @@ function Read-AidManifestToolFiles {
         if ($null -ne $wr) { $out.Add("tools.$Tool.worktree_root`t" + [string]$wr) }
         $ri = script:Get-AidJsonProp $t 'rules_inline'
         if ($ri -eq $true) { $out.Add("tools.$Tool.rules_inline`ttrue") }
+        $hooks = script:Get-AidJsonProp $t 'hooks'
+        if ($null -ne $hooks) {
+            foreach ($h in @($hooks)) {
+                $created = if ((script:Get-AidJsonProp $h 'created') -eq $true) { 'true' } else { 'false' }
+                $out.Add("tools.$Tool.hook`t" + [string](script:Get-AidJsonProp $h 'event') + "`t" + [string](script:Get-AidJsonProp $h 'name') + "`t" + [string](script:Get-AidJsonProp $h 'settings') + "`t" + $created)
+            }
+        }
         $files = script:Get-AidJsonProp $t 'files'
         if ($null -ne $files) {
             foreach ($f in @($files)) {
@@ -2508,12 +2915,12 @@ function Install-AidShared {
     } }
     $toolMeta=@{}; $mirrorUsers=@{}; $inline=$false; $claudeUsers=@()
     foreach ($tool in $allTools) {
-        $mirrors=@(); $worktree=''; $rules=$false; $context=''
+        $mirrors=@(); $worktree=''; $rules=$false; $context=''; $hookSettings=''; $hookNames=@()
         if ($NewTools -contains $tool) {
             $conf=Join-Path $StageMap[$tool] 'aid-tool.conf'
             foreach ($line in (Read-AidKvConf -Path $conf)) {
                 $k=$line.Substring(0,$line.IndexOf('=')); $v=$line.Substring($line.IndexOf('=')+1)
-                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } }
+                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } 'hook_settings' { $hookSettings=$v } 'hook' { if ($v -cmatch '^Stop:(aid-[a-z0-9-]+)$') { $hookNames += $Matches[1] } } }
             }
         } else {
             $obj=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'tools') $tool
@@ -2522,7 +2929,7 @@ function Install-AidShared {
             $worktree=[string](script:Get-AidJsonProp $obj 'worktree_root')
             $rules=(script:Get-AidJsonProp $obj 'rules_inline') -eq $true
         }
-        $toolMeta[$tool]=@{ mirrors=@($mirrors | Sort-Object -Unique); worktree=$worktree; rules=$rules; context=$context }
+        $toolMeta[$tool]=@{ mirrors=@($mirrors | Sort-Object -Unique); worktree=$worktree; rules=$rules; context=$context; hookSettings=$hookSettings; hookNames=@($hookNames) }
         if ($rules) { $inline=$true }
         if ($context -eq 'CLAUDE.md') { $claudeUsers += $tool }
         foreach ($mirror in $mirrors) {
@@ -2574,6 +2981,17 @@ function Install-AidShared {
         if ($oldClaudeEntry -and $oldClaudeEntry.PSObject.Properties['region_sha256']) { $oldClaudeRegionSha=[string]$oldClaudeEntry.region_sha256 }
         $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target -Inline $inline -RecordedSha $oldClaudeRegionSha
     }
+    # AID's own Stop handler in the host settings file: placed for each tool being installed, carried
+    # forward from the manifest for the others (twin of the bash _ensure_host_hooks call).
+    $hookRows=@{}
+    foreach ($tool in $allTools) {
+        $toolRows=Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool
+        $oldHookRows=@($toolRows | Where-Object { $_.StartsWith("tools.$tool.hook`t", [System.StringComparison]::Ordinal) })
+        if ($NewTools -contains $tool) {
+            $meta=$toolMeta[$tool]
+            $hookRows[$tool]=@(script:Invoke-EnsureHostHooks -Target $Target -Tool $tool -SettingsRel $meta.hookSettings -Names @($meta.hookNames) -OldRows $oldHookRows)
+        } else { $hookRows[$tool]=$oldHookRows }
+    }
     $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
     $records=New-Object System.Collections.Generic.List[string]
     $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and (script:Get-AidJsonProp $old 'installed_at')) { script:Get-AidJsonProp $old 'installed_at' } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
@@ -2607,6 +3025,7 @@ function Install-AidShared {
         $records.Add("tools.$tool.version`t$toolVersion"); $records.Add("tools.$tool.installed_at`t$installedAt")
         foreach ($m in $entry.mirrors) { $records.Add("tools.$tool.mirror`t$m") }
         if ($entry.worktree) { $records.Add("tools.$tool.worktree_root`t$($entry.worktree)") }; if ($entry.rules) { $records.Add("tools.$tool.rules_inline`ttrue") }
+        foreach ($hookRow in $hookRows[$tool]) { $records.Add($hookRow) }
         if ($NewTools -contains $tool) {
             $root=script:Get-RootDir -Tool $tool; $agents=Join-Path $StageMap[$tool] (Join-Path $root 'agents')
             foreach ($f in @(Get-ChildItem -LiteralPath $agents -Recurse -File | Sort-Object FullName)) {
@@ -2821,6 +3240,11 @@ function script:Uninstall-AidToolV3 {
             script:Prune-AidEmptyDirs -Path (Join-Path $Target $mirror) -AidEntriesOnly -RemoveRootIfEmpty
         }
     }
+    # AID's Stop handler goes before the tool leaves the manifest: by the recorded settings file and
+    # by the ownership marker, so a manifest written by an older CLI is still cleaned.
+    $toolRows=Read-AidManifestToolFiles -ManifestPath $ManifestPath -Tool $Tool
+    $hookRows=@($toolRows | Where-Object { $_.StartsWith("tools.$Tool.hook`t", [System.StringComparison]::Ordinal) })
+    script:Invoke-RemoveHostHooks -Target $Target -Tool $Tool -OldRows $hookRows
     Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
     if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
         $left=script:Read-AidManifestObject -Path $ManifestPath
