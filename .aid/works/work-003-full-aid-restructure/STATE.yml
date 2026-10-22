@@ -2110,11 +2110,11 @@ qa:
   - id: Q183
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Approve the fix round 3 design (analysis/delivery-003-gate-fix3-design.md): the Claude Code question-form Stop hook (aid-question-form.sh/.py) installed by aid add into the project .claude/settings.json, recorded in the manifest, removed by aid remove; fixes (a) aid-config confirmations, (b) aid-report intake, (c) no fix offer after a review, (d) aid-research Assumed; runner marks withdrawn messages; tests; KB amended per Q182; W7-14 to Next Release, W7-37 for the other hosts. Defaults for the open points: project settings scope; protocol checks judge the replacement message, safety items judge both; this repo gets the hook (AID_QUESTION_HOOK=off disables it per session); decision block; no settings key; additive manifest hooks list, no format bump; aid-config confirms settled values; smoke runs cover all 9 samples. Then 6 Sonnet builders, one capped Opus review, resync, smoke runs, a 3-run final check.'
     suggested: 'approve as written, with the defaults'
-    answer: --
-    answered_by: --
+    answer: '1 (maintainer): approve the fix round 3 design as written, with the defaults'
+    answered_by: 'Claude'
     applied_to: --
