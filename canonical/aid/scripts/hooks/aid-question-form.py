@@ -6,7 +6,7 @@ Purpose:
     If it does, check that it is in the form of .aid/runtime/templates/question-protocol.md
     (first line with a lower-case importance, "Why I ask:", "My recommendation:", a closing
     line) and that the question was recorded first (a writeback-state.sh --ask call in this
-    turn, an edit of .aid/knowledge/STATE.md, or an open entry the message shows again).
+    turn, an edit of .aid/knowledge/STATE.md, or an open entry whose question the message shows again).
     A failing message is sent back once, with a short reason naming what is missing.
 
 Usage:
@@ -55,6 +55,7 @@ EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 SHELL_TOOLS = ("Bash", "PowerShell")
 KB_STATE_SUFFIX = ".aid/knowledge/STATE.md"
 OPEN_STATES = ("pending", "skipped")
+OVERLAP_MIN = 0.6
 WAIT_SECONDS = 2.0
 POLL_SECONDS = 0.1
 
@@ -96,6 +97,58 @@ def last_paragraph(text):
 
 def has_question_sentence(paragraph):
     return re.search(r"\?(?=\s|$|[\"')\]*_])", strip_inline(paragraph)) is not None
+
+
+LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+REQUEST_ANYWHERE_RE = re.compile(
+    r"\b(?:tell me|let me know|say (?:if|which|whether)|would you (?:like|prefer|rather)|do you want"
+    r"|your call|reply with|which\b[^.!?:;]{0,60}\bwould)\b",
+    re.IGNORECASE,
+)
+REQUEST_LEADING_RE = re.compile(
+    r"^(?:(?:and|or|then|please|otherwise|you can|you may|just)\s+)*(?:choose|pick|reply|say)\b",
+    re.IGNORECASE,
+)
+LEAD_IN_RE = re.compile(
+    r"\b(?:ways? (?:forward|to (?:go|proceed|continue|move))|paths? forward|options|choices|alternatives"
+    r"|how to proceed|where to go from here)\b",
+    re.IGNORECASE,
+)
+
+
+def tail_block(text):
+    """The final paragraph; when it is only a list, the paragraph that introduces it too."""
+    chunks = [c for c in re.split(r"\n\s*\n", text.strip()) if c.strip()]
+    if not chunks:
+        return ""
+    tail = chunks[-1]
+    lines = [l for l in tail.splitlines() if l.strip()]
+    if len(chunks) > 1 and lines and all(LIST_ITEM_RE.match(l) for l in lines):
+        tail = chunks[-2] + "\n" + tail
+    return tail
+
+
+def asks_user(text):
+    """True when the end of the message asks the user to choose, reply or tell (no '?' needed)."""
+    tail = strip_inline(tail_block(text))
+    if not tail.strip():
+        return False
+    if has_question_sentence(tail):
+        return True
+    lines = [l for l in tail.splitlines() if l.strip()]
+    for i, line in enumerate(lines):
+        plain = LIST_ITEM_RE.sub("", line).strip(" \t>*_#")
+        for seg in re.split(r"(?<=[.!?:;])\s+", plain):
+            seg = seg.strip(" \t>*_#-")
+            if REQUEST_ANYWHERE_RE.search(seg) or REQUEST_LEADING_RE.match(seg):
+                return True
+        if (
+            plain.endswith(":")
+            and LEAD_IN_RE.search(plain)
+            and any(LIST_ITEM_RE.match(l) for l in lines[i + 1:])
+        ):
+            return True
+    return False
 
 
 def is_closing_line(line):
@@ -319,25 +372,47 @@ def find_root(cwd):
     return ""
 
 
+def question_candidates(question_text):
+    """The shown question as normalised text: the whole of it, then each sentence on its own."""
+    whole = norm(question_text)
+    found = [(whole, 12)]
+    for sentence in re.split(r"(?<=[.?!])\s+", question_text.strip()):
+        n = norm(sentence)
+        if n and n != whole:
+            found.append((n, 20))
+    return found
+
+
+def same_question(question_text, context):
+    """True when an entry's context is the question shown: containment either way, or tokens."""
+    ctx = norm(context)
+    if len(ctx) < 12:
+        return False
+    for cand, floor in question_candidates(question_text):
+        if len(cand) >= floor and (cand in ctx or (len(ctx) >= floor and ctx in cand)):
+            return True
+    shown = set(norm(question_text).split())
+    have = set(ctx.split())
+    return bool(shown) and len(shown & have) / float(len(shown | have)) >= OVERLAP_MIN
+
+
 def shows_open_entry(root, subject, message, question_text):
-    """R3: the message offers an open (Pending or Skipped) entry again."""
-    if not root:
+    """R3: the message offers an open (Pending or Skipped) entry's question again.
+
+    The entry's category never matches by itself: a different, older question under the same
+    category is not this question's record. The subject is kept in the signature for callers.
+    """
+    if not root or not norm(question_text):
         return False
     candidates = list(yaml_entries(os.path.join(root, ".aid", "STATE.yml")))
     for path in sorted(glob.glob(os.path.join(root, ".aid", "works", "*", "STATE.yml"))):
         candidates.extend(yaml_entries(path))
     for path in sorted(glob.glob(os.path.join(root, ".aid", "design", "*.md"))):
         candidates.extend(design_entries(path))
-    subj = norm(subject)
-    msg_n = norm(message)
-    q_n = norm(question_text)
     for entry in candidates:
         if str(entry.get("state", "")).strip().lower() not in OPEN_STATES:
             continue
-        if subj and norm(entry.get("category", "")) == subj:
-            return True
-        ctx = norm(entry.get("context", ""))
-        if len(ctx) >= 12 and (ctx in msg_n or (len(q_n) >= 12 and q_n in ctx)):
+        if same_question(question_text, entry.get("context", "")):
             return True
     return False
 
@@ -365,7 +440,7 @@ def analyse(message):
     has_why = any(WHY_RE.match(l) for l in lines)
     has_rec = any(REC_RE.match(l) for l in lines)
     has_close = any(is_closing_line(l) for l in lines)
-    waits = first_idx is not None or has_close or has_question_sentence(para)
+    waits = first_idx is not None or has_close or asks_user(text)
     if not waits:
         return False, "", [], ""
     missing = []

@@ -13,11 +13,13 @@
 #   QF-06 no --ask blocks, names the record QF-07 --ask --design and --project --ask pass
 #   QF-08 --ask in an earlier turn blocks   QF-09 a report with no question passes
 #   QF-10 stop_hook_active passes           QF-11 break offer passes
-#   QF-12 Recovery / Cancel work waived     QF-13 re-offer of an open entry (category, context)
+#   QF-12 Recovery / Cancel work waived     QF-13 re-offer of an open entry (same text)
 #   QF-14 KB state edit passes              QF-15 ticket skill most recent passes
 #   QF-16 '?' only inside a fence passes    QF-17 bad stdin / no transcript / no Python
 #   QF-18 kill switch                       QF-19 transcript fallback for the message
 #   QF-20 log line on a block only          QF-21 block output is one JSON object, exit 0
+#   QF-22 waits without a '?' (offers, "tell me", lead-in + list) blocks; a done-list report passes
+#   QF-23 R3 needs the same question: the category alone never satisfies the record
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -299,13 +301,14 @@ Would you like to link Jira now?
 Why I ask: nothing is linked yet.
 My recommendation: yes.
 $CLOSE_Q"
-mk_t "$TMP/t.jsonl" user "carry on" text "$REWORD"
-hook "$REWORD"; expect_pass "QF-13a re-worded re-offer under a Skipped category passes"
-OTHERCAT="${REWORD/Connections/Tickets}"
-OTHERCAT="${OTHERCAT/Would you like to link Jira now?/Should AID reach your Jira through the connection your tool already has?}"
+SAMETEXT="${REWORD/Would you like to link Jira now?/Should AID reach your Jira through the connection your tool already has?}"
+mk_t "$TMP/t.jsonl" user "carry on" text "$SAMETEXT"
+hook "$SAMETEXT"; expect_pass "QF-13a a skipped question offered again with the same text passes"
+OTHERCAT="${SAMETEXT/Connections/Tickets}"
 mk_t "$TMP/t.jsonl" user "carry on" text "$OTHERCAT"
 hook "$OTHERCAT"; expect_pass "QF-13b same question text under a new subject matches the entry's context"
-ANSWERED="${REWORD/Connections/Settings}"
+ANSWERED="${SAMETEXT/Connections/Settings}"
+ANSWERED="${ANSWERED/Should AID reach your Jira through the connection your tool already has?/Which output style do you want for the project reports?}"
 mk_t "$TMP/t.jsonl" user "carry on" text "$ANSWERED"
 hook "$ANSWERED"; expect_block "QF-13c an Answered entry is not open; blocks" "$M_RECORD" "do not record it twice"
 rm -f "$PROJ/.aid/STATE.yml"
@@ -325,8 +328,9 @@ status: draft
 | D1 | What should the report answer? | | Pending | -- | Report scope |
 EOF
 DESIGN_MSG="${REWORD/Connections/Report scope}"
+DESIGN_MSG="${DESIGN_MSG/Would you like to link Jira now?/What should the report answer?}"
 mk_t "$TMP/t.jsonl" user "carry on" text "$DESIGN_MSG"
-hook "$DESIGN_MSG"; expect_pass "QF-13e a Pending design-table entry under the category passes"
+hook "$DESIGN_MSG"; expect_pass "QF-13e a Pending design-table entry offered again with its text passes"
 rm -rf "$PROJ/.aid/design"
 mkdir -p "$PROJ/.aid/works/work-900-x"
 cat > "$PROJ/.aid/works/work-900-x/STATE.yml" <<'EOF'
@@ -337,8 +341,9 @@ qa:
     context: 'Which environment should the check run against?'
 EOF
 WORK_MSG="${REWORD/Connections/Scope}"
+WORK_MSG="${WORK_MSG/Would you like to link Jira now?/Which environment should the check run against?}"
 mk_t "$TMP/t.jsonl" user "carry on" text "$WORK_MSG"
-hook "$WORK_MSG"; expect_pass "QF-13f a Pending work qa entry under the category passes"
+hook "$WORK_MSG"; expect_pass "QF-13f a Pending work qa entry offered again with its text passes"
 rm -rf "$PROJ/.aid/works"
 
 # --- QF-14 KB question with an Edit on .aid/knowledge/STATE.md ----------------------------------
@@ -450,6 +455,111 @@ PYEOF
 assert_eq "$shape" "ok" "QF-21a block output is one single-line JSON object {decision, reason}"
 assert_eq "$CODE" "0" "QF-21b a block exits 0"
 assert_eq "$(wc -l <<< "$OUT" | tr -d ' ')" "1" "QF-21c exactly one output line"
+
+# --- QF-22 waits on the user without a '?' -------------------------------------------------------
+WAYS='I could not find the data in this checkout.
+
+Here are the ways forward:
+
+- tell me where the production data lives
+- point me at the other checkout
+- say if you would rather have `/aid-monitor` start a new work'
+mk_t "$TMP/t.jsonl" user "go" text "$WAYS"
+hook "$WAYS"; expect_block "QF-22a a lead-in ending with ':' and a list of ways forward blocks" "$M_FIRST" "$M_RECORD"
+WAYS_BARE="Here are the ways forward:
+- one path
+- another path"
+mk_t "$TMP/t.jsonl" user "go" text "$WAYS_BARE"
+hook "$WAYS_BARE"; expect_block "QF-22b a 'ways forward' lead-in with a list blocks even with no request verb" "$M_FIRST"
+RUNNING="The work is still marked as running. Tell me if you want it cancelled."
+mk_t "$TMP/t.jsonl" user "go" text "$RUNNING"
+hook "$RUNNING"; expect_block "QF-22c 'Tell me if you want it cancelled.' blocks" "$M_FIRST" "$M_RECORD"
+LETKNOW="The index is rebuilt. Let me know if you want X."
+mk_t "$TMP/t.jsonl" user "go" text "$LETKNOW"
+hook "$LETKNOW"; expect_block "QF-22d 'Let me know if you want X.' blocks" "$M_FIRST"
+WOULD="Two layouts fit. Would you like the flat one or the nested one."
+mk_t "$TMP/t.jsonl" user "go" text "$WOULD"
+hook "$WOULD"; expect_block "QF-22e 'would you like' without a '?' blocks" "$M_FIRST"
+PICK="Both fit. Pick one and I will go on."
+mk_t "$TMP/t.jsonl" user "go" text "$PICK"
+hook "$PICK"; expect_block "QF-22f an imperative 'pick' blocks" "$M_FIRST"
+DONELIST="Done. What changed:
+
+- the connector file was written
+- the index was rebuilt
+- the tests passed"
+mk_t "$TMP/t.jsonl" user "go" text "$DONELIST"
+hook "$DONELIST"; expect_pass "QF-22g a final report ending with a done-list passes"
+DONELIST2="All set. The options considered were the flat layout and the nested one; I picked the flat one and chose the name."
+mk_t "$TMP/t.jsonl" user "go" text "$DONELIST2"
+hook "$DONELIST2"; expect_pass "QF-22h a report that only tells what was chosen passes"
+FENCED2='The command to run is:
+
+```
+Tell me if you want it cancelled.
+```
+
+That is all.'
+mk_t "$TMP/t.jsonl" user "go" text "$FENCED2"
+hook "$FENCED2"; expect_pass "QF-22i a request phrase only inside a code fence passes"
+INLINE2='The flag `let me know if` is not used here.'
+mk_t "$TMP/t.jsonl" user "go" text "$INLINE2"
+hook "$INLINE2"; expect_pass "QF-22j a request phrase only inside inline code passes"
+EARLIER="Tell me if you want it cancelled.
+
+Done. The work was left as it was."
+mk_t "$TMP/t.jsonl" user "go" text "$EARLIER"
+hook "$EARLIER"; expect_pass "QF-22k a request phrase in an earlier paragraph, not the end, passes"
+
+# --- QF-23 R3 needs the same question; the category alone never matches ----------------------------
+cat > "$PROJ/.aid/STATE.yml" <<'EOF'
+qa:
+  - id: Q1
+    category: Approval
+    impact: High
+    state: Pending
+    asked_by: aid-orchestrate
+    step: --
+    context: 'May I publish the review to the pull request now?'
+    suggested: 'Yes'
+  - id: Q2
+    category: Connections
+    impact: High
+    state: Skipped
+    asked_by: aid-set-connector
+    step: --
+    context: 'Should AID reach your Jira through the connection your tool already has? AID stores no passwords'
+    suggested: 'Yes'
+EOF
+DIFFQ="Approval -- question 2 of 2 -- importance: medium
+May I start the build now?
+Why I ask: the build changes files.
+My recommendation: yes.
+$CLOSE_A"
+mk_t "$TMP/t.jsonl" user "go" text "$DIFFQ"
+hook "$DIFFQ"; expect_block "QF-23a an open entry with the same category but another question does not satisfy the record" "$M_RECORD"
+not_in_reason "QF-23a only the record named" "$M_WHY"
+SAMEQ="${DIFFQ/May I start the build now?/May I publish the review to the pull request now?}"
+mk_t "$TMP/t.jsonl" user "go" text "$SAMEQ"
+hook "$SAMEQ"; expect_pass "QF-23b the same question text under the same category passes"
+SAMEQ2="${DIFFQ/May I start the build now?/Shall I publish the review to the pull request now?}"
+mk_t "$TMP/t.jsonl" user "go" text "$SAMEQ2"
+hook "$SAMEQ2"; expect_pass "QF-23c a near-identical wording (token overlap of 0.6 or more) passes"
+SKIPPED="Connections -- question 1 of 1 -- importance: high
+Should AID reach your Jira through the connection your tool already has?
+Why I ask: AID stores no passwords, so it needs your tool's own connection.
+My recommendation: yes.
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "carry on" text "$SKIPPED"
+hook "$SKIPPED"; expect_pass "QF-23d a re-offered skipped question with the same text still passes"
+CATONLY="Connections -- question 1 of 1 -- importance: high
+Do you also want a Slack connector?
+Why I ask: none is set up.
+My recommendation: no.
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "carry on" text "$CATONLY"
+hook "$CATONLY"; expect_block "QF-23e a new question under a category that holds a Skipped entry blocks" "$M_RECORD"
+rm -f "$PROJ/.aid/STATE.yml"
 
 # --- launcher/checker hygiene ---------------------------------------------------------------------
 if LC_ALL=C grep -qP '[^\x00-\x7F]' "$LAUNCHER" "$CHECKER"; then fail "HY-01 hook scripts must be ASCII-only"; else pass "HY-01 hook scripts are ASCII-only"; fi
