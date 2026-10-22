@@ -20,6 +20,8 @@
 #   QF-20 log line on a block only          QF-21 block output is one JSON object, exit 0
 #   QF-22 waits without a '?' (offers, "tell me", lead-in + list) blocks; a done-list report passes
 #   QF-23 R3 needs the same question: the category alone never satisfies the record
+#   QF-22n..r "I need one of these:" + a list waits; "I needed to ..." / "I need to <step>:" does not
+#   QF-24 a break offer anywhere in the last three paragraphs passes; with a form question it is checked
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -528,6 +530,72 @@ To narrow it down, I need two things from you:
 Once we know the cause, I can fix it."
 mk_t "$TMP/t.jsonl" user "go" text "$MIDDLE"
 hook "$MIDDLE"; expect_block "QF-22m a numbered request in the middle, then a closing remark, waits on the user"
+NEEDLIST="To get a real answer, I need one of these:
+
+- the path of the other checkout
+- the name of the branch
+- a copy of the log
+
+I haven't started that, so no project files were changed."
+mk_t "$TMP/t.jsonl" user "go" text "$NEEDLIST"
+hook "$NEEDLIST"; expect_block "QF-22n 'I need one of these:' + a list + a closing remark waits on the user" "$M_FIRST" "$M_RECORD"
+NEEDLIST2="I'd need the following:
+- the path of the other checkout
+- the name of the branch"
+mk_t "$TMP/t.jsonl" user "go" text "$NEEDLIST2"
+hook "$NEEDLIST2"; expect_block "QF-22o \"I'd need the following:\" + a list waits on the user" "$M_FIRST"
+NEEDLIST3="I would need two things before I can go on:
+1. the path of the other checkout
+2. the name of the branch"
+mk_t "$TMP/t.jsonl" user "go" text "$NEEDLIST3"
+hook "$NEEDLIST3"; expect_block "QF-22p 'I would need two things' + a list waits on the user" "$M_FIRST"
+NEEDPAST="Done. I needed to check the following:
+
+- the connector file
+- the index
+- the tests
+
+All three were fine, so nothing was changed."
+mk_t "$TMP/t.jsonl" user "go" text "$NEEDPAST"
+hook "$NEEDPAST"; expect_pass "QF-22q a report that says 'I needed to ...' about the past passes"
+NEEDTO="Here is what happens next. I need to restart the index, and I need to rerun the tests:
+
+- restart the index
+- rerun the tests"
+mk_t "$TMP/t.jsonl" user "go" text "$NEEDTO"
+hook "$NEEDTO"; expect_pass "QF-22r 'I need to <do something>:' + a list (the agent's own steps) passes"
+
+# --- QF-24 the break offer anywhere in the tail window ---------------------------------------------
+BRK1="That is all on Connections. Take a break, or go on to the pipeline settings?
+
+Nothing else is pending."
+mk_t "$TMP/t.jsonl" user "go" text "$BRK1"
+hook "$BRK1"; expect_pass "QF-24a a break offer followed by a short closing line passes"
+BRK2="Everything about Connections is set.
+
+Take a break, or go on to the pipeline settings?
+
+Your connectors are listed in the index.
+
+The index is up to date."
+mk_t "$TMP/t.jsonl" user "go" text "$BRK2"
+hook "$BRK2"; expect_pass "QF-24b a break offer two paragraphs before the end passes"
+BRK3="Take a break, or go on to the pipeline settings?
+
+Settings -- question 1 of 2 -- importance: medium
+Should AID use the default pipeline settings?
+Why I ask: they decide how the pipeline runs.
+My recommendation: yes.
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "go" text "$BRK3"
+hook "$BRK3"; expect_block "QF-24c a break offer plus a separate form question is still checked as a question" "$M_RECORD"
+BRK4="Take a break, or go on to the pipeline settings?
+
+Settings -- question 1 of 2 -- importance: medium
+Should AID use the default pipeline settings?
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "go" bash "$ASK" text "$BRK4"
+hook "$BRK4"; expect_block "QF-24d a break offer plus a form question missing its lines still blocks" "$M_WHY" "$M_REC"
 
 # --- QF-23 R3 needs the same question; the category alone never matches ----------------------------
 cat > "$PROJ/.aid/STATE.yml" <<'EOF'

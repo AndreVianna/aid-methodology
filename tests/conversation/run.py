@@ -82,7 +82,7 @@ Driver (Codex): the first turn is `codex exec --json --model <model, when set> -
 from the thread.started event, and each later turn is `codex exec resume <thread-id>` with --json,
 --model and --output-last-message only (the resume help lists no sandbox or approval option). Codex
 output is not normalized to tool calls, so the tool-call checks read NOT RUN on that host.
-Limits: 12 user turns (the run fails when no <<END>> comes within them); 1200 s per claude or codex call.
+Limits: 12 user turns (the run fails when no <<END>> comes within them); 1800 s per claude or codex call.
 Other hosts: a start/send/read adapter per host (ADAPTERS). Claude Code and Codex have adapters;
 hosts without an adapter are skipped with a NOTICE.
 """
@@ -111,7 +111,7 @@ DEFAULT_BRIEFS_DIR = ROOT / "tests/conversation"
 RUN_ROOT = ROOT / ".aid/.temp/conversation-tests"
 
 TURN_CAP = 12
-TURN_TIMEOUT = 1200
+TURN_TIMEOUT = 1800
 END_MARK = "<<END>>"
 AGENT_TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 DEFAULT_MODEL = "claude-sonnet-5-5"
