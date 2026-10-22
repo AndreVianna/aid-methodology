@@ -6351,7 +6351,10 @@ tfx_row_claude_inline
 # into the settings file, the same `Hook:` lines, and the same manifest hook entry, for the
 # same input: nesting, booleans, null, integers, Unicode, escapes, a missing final newline,
 # an absent file, and a file neither twin will edit. Then update changes nothing and remove
-# takes the handler out the same way.
+# takes the handler out the same way. For every file a twin refuses (unparseable, wrong shape,
+# a non-integer number, nesting past 100 levels, a lone surrogate, a symbolic link, a directory)
+# the `WARN:` lines of add, update and remove must be byte-identical, reason included, and
+# neither twin may leave a stray file behind.
 # ===========================================================================
 hh_input() {  # <n> -> the settings file content for case n ('-' = no file)
     case "$1" in
@@ -6370,6 +6373,40 @@ hh_input() {  # <n> -> the settings file content for case n ('-' = no file)
                ']}}' ;;
         6) printf '%s' '{ not json' ;;
         7) printf '%s\n' '{"Env": 1, "env": 2}' ;;
+        8) printf '%s' '{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \"x/.aid/runtime/scripts/hooks/aid-old.sh\""}]}]}}' ;;
+        9) printf '%s' '-' ;;
+        10) python3 -I -c 'print("{\"a\":" * 101 + "1" + "}" * 101, end="")' ;;
+        11) python3 -I -c 'print("{\"a\":" * 100 + "1" + "}" * 100, end="")' ;;
+        12) printf '%s' '{"a": "\ud800"}' ;;
+        13) printf '%s' '{"hooks": []}' ;;
+        14) printf '%s' '{"hooks": {"Stop": {}}}' ;;
+        15) printf '%s' '[1, 2]' ;;
+        16) printf '%s' '{"a": NaN}' ;;
+        17) printf '' ;;
+        18) printf '\xef\xbb\xbf{}' ;;
+        19) python3 -I -c 'print("[" * 150 + "]" * 150, end="")' ;;
+    esac
+}
+hh_reason() {  # <n> -> the reason both twins must print for case n ('' = the file is edited)
+    case "$1" in
+        4) echo "contains a number that is not an integer" ;;
+        6|16|17|18) echo "is not valid JSON" ;;
+        7) echo "has two keys that differ only in case" ;;
+        8) echo "is a symbolic link" ;;
+        9) echo "is not a regular file" ;;
+        10|19) echo "is nested too deeply" ;;
+        12) echo "holds text that cannot be written as UTF-8" ;;
+        13) echo "has a hooks entry that is not an object" ;;
+        14) echo "has a hooks.Stop entry that is not a list" ;;
+        15) echo "is not a JSON object" ;;
+    esac
+}
+hh_setup() {  # <n> <target> <content> - the settings path for case n (8 = a link, 9 = a directory)
+    local n="$1" tgt="$2" content="$3"
+    case "$n" in
+        8) mkdir -p "$tgt/.claude" "$tgt/shared"; printf '%s' "$content" > "$tgt/shared/s.json"; ln -s ../shared/s.json "$tgt/.claude/settings.json" ;;
+        9) mkdir -p "$tgt/.claude/settings.json" ;;
+        *) if [[ "$content" != "-" ]]; then mkdir -p "$tgt/.claude"; printf '%s' "$content" > "$tgt/.claude/settings.json"; fi ;;
     esac
 }
 hh_manifest_hooks() {
@@ -6380,23 +6417,30 @@ print(json.dumps(t.get("hooks"),sort_keys=True))' "$1/.aid/.aid-manifest.json" 2
 hh_sha() { [[ -f "$1" ]] && sha256sum "$1" | awk '{print $1}' || echo absent; }
 hh_row() {
     local id="HH-PAR" n shell home tgt content
-    local -A a_sha=() u_sha=() r_sha=() hooks=() lines=() rc=()
-    for n in 1 2 3 4 5 6 7; do
+    local -A a_sha=() u_sha=() r_sha=() hooks=() lines=() rc=() warns=() left=() kept=()
+    local reason w
+    for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19; do
         for shell in sh ps; do
             home="$(tfx_home "$shell")"; tgt="$(newtarget)"
             content="$(hh_input "$n"; printf x)"; content="${content%x}"
-            if [[ "$content" != "-" ]]; then mkdir -p "$tgt/.claude"; printf '%s' "$content" > "$tgt/.claude/settings.json"; fi
+            hh_setup "$n" "$tgt" "$content"
             tfx_aid "$shell" "$home" "$tgt" add claude-code
             rc["$n$shell"]="$RC"
             lines["$n$shell"]="$(printf '%s\n' "$OUT" | grep -E '^Hook:' || true)"
+            warns["$n$shell"]="$(printf '%s\n' "$OUT" | grep -E '^WARN:' || true)"
             a_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
             hooks["$n$shell"]="$(hh_manifest_hooks "$tgt")"
             tfx_aid "$shell" "$home" "$tgt" update
             [[ "$RC" == 0 ]] || fail "${id}-${n} ${shell} update -> exit ${RC}"
+            lines["$n$shell"]+="$(printf '%s\n' "$OUT" | grep -E '^Hook:' || true)"
+            warns["$n$shell"]+="$(printf '%s\n' "$OUT" | grep -E '^WARN:' || true)"
             u_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
+            left["$n$shell"]="$(find "$tgt/.claude" -mindepth 1 2>/dev/null | sed "s|^${tgt}||" | LC_ALL=C sort)"
             tfx_remove "$shell" "$home" "$tgt" claude-code
             [[ "$RC" == 0 ]] || fail "${id}-${n} ${shell} remove -> exit ${RC}"
+            warns["$n$shell"]+="$(printf '%s\n' "$OUT" | grep -E '^WARN:' || true)"
             r_sha["$n$shell"]="$(hh_sha "$tgt/.claude/settings.json")"
+            kept["$n$shell"]="$([[ -L "$tgt/.claude/settings.json" ]] && readlink "$tgt/.claude/settings.json"; [[ -d "$tgt/.claude/settings.json" ]] && echo dir; [[ -n "$(find "$tgt/shared" -type f 2>/dev/null)" ]] && sha256sum "$tgt"/shared/* | awk '{print $1}')"
         done
         assert_eq "${rc[${n}ps]}" "${rc[${n}sh]}" "${id}-${n} add exits the same in both twins"
         assert_eq "${a_sha[${n}ps]}" "${a_sha[${n}sh]}" "${id}-${n} the settings file after add is byte-equal across twins"
@@ -6405,12 +6449,31 @@ hh_row() {
         assert_eq "${u_sha[${n}ps]}" "${a_sha[${n}ps]}" "${id}-${n} ps update changes no byte of the settings file"
         assert_eq "${u_sha[${n}sh]}" "${a_sha[${n}sh]}" "${id}-${n} sh update changes no byte of the settings file"
         assert_eq "${r_sha[${n}ps]}" "${r_sha[${n}sh]}" "${id}-${n} the settings file after remove is byte-equal across twins"
+        assert_eq "${warns[${n}ps]}" "${warns[${n}sh]}" "${id}-${n} every WARN line of add, update and remove is byte-identical across twins"
+        assert_eq "${left[${n}ps]}" "${left[${n}sh]}" "${id}-${n} both twins leave the same files in .claude"
+        for shell in sh ps; do
+            assert_eq "$(printf '%s\n' "${left[$n$shell]}" | grep -c -E '\.tmp($|\.)' || true)" 0 "${id}-${n} ${shell} leaves no temp file in .claude"
+        done
+        assert_eq "${kept[${n}ps]}" "${kept[${n}sh]}" "${id}-${n} a link or directory at the settings path is still there after remove, in both twins"
+        reason="$(hh_reason "$n")"
+        if [[ -n "$reason" ]]; then
+            for shell in sh ps; do
+                w="${warns[$n$shell]}"
+                [[ "$w" == *"WARN: aid: .claude/settings.json was left untouched (${reason})."* ]] && pass "${id}-${n} ${shell} warns with the reason: ${reason}" || fail "${id}-${n} ${shell} warns with the reason: ${reason} (got: ${w})"
+                assert_eq "${hooks[$n$shell]}" "null" "${id}-${n} ${shell} records nothing for a refused file"
+                assert_eq "${lines[$n$shell]}" "" "${id}-${n} ${shell} prints no Hook line for a refused file"
+            done
+        fi
     done
     assert_eq "${hooks[1ps]}" '[{"created": false, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "${id}-1 the record of an existing file says created false"
     assert_eq "${hooks[3ps]}" '[{"created": true, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "${id}-3 the record of a new file says created true"
     assert_eq "${r_sha[3ps]}" "absent" "${id}-3 a file AID created is deleted when the tool goes"
     assert_eq "${hooks[4ps]}" "null" "${id}-4 a file neither twin will edit gets no record"
     assert_eq "${a_sha[4ps]}" "$(printf '%s' '{"timeout": 1.5}' | sha256sum | awk '{print $1}')" "${id}-4 and is left untouched"
+    assert_eq "${left[9ps]}" "${left[9sh]}" "${id}-9 a directory at the settings path gets nothing inside it, in either twin"
+    assert_eq "$(printf '%s\n' "${left[9ps]}" | grep -c -F '/.claude/settings.json/' || true)" 0 "${id}-9 nothing is moved into the directory"
+    assert_eq "${kept[8ps]}" "../shared/s.json$(printf '\n%s' "$(printf '%s' "$(hh_input 8)" | sha256sum | awk '{print $1}')")" "${id}-8 the symbolic link and the file it points to are untouched in both twins"
+    assert_eq "${hooks[11ps]}" '[{"created": false, "event": "Stop", "name": "aid-question-form", "settings": ".claude/settings.json"}]' "${id}-11 nesting of exactly 100 levels is edited, in both twins"
 }
 hh_row
 

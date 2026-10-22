@@ -1092,21 +1092,17 @@ function script:Read-AidJsonString {
         else { throw 'bad escape' }
         $i++
     }
-    $out = $sb.ToString()
-    for ($k = 0; $k -lt $out.Length; $k++) {
-        if ([char]::IsHighSurrogate($out[$k])) {
-            if ($k + 1 -ge $out.Length -or -not [char]::IsLowSurrogate($out[$k + 1])) { throw 'lone surrogate' }
-            $k++
-        } elseif ([char]::IsLowSurrogate($out[$k])) { throw 'lone surrogate' }
-    }
     $St.I = $i
-    return $out
+    return $sb.ToString()
 }
 
 # script:Read-AidJsonValue <state> - one JSON value. Objects become ordered dictionaries
 # (case-sensitive keys), arrays become List[object], integers become @{AidInt=<text>}. A number
 # with a fraction or an exponent, a repeated key (or one differing only in case), or any syntax
-# error throws: the bash twin refuses the same files.
+# error throws: the bash twin refuses the same files. A throw whose text starts with AIDREFUSE:
+# carries the reason the twins both print; any other throw is a syntax error. A repeated key is
+# reported when its object closes, as Python's object_pairs_hook does, so the two parsers agree
+# on which defect they name first.
 function script:Read-AidJsonValue {
     param($St)
     script:Skip-AidJsonSpace $St
@@ -1115,9 +1111,10 @@ function script:Read-AidJsonValue {
     $c = [int]$s[$St.I]
     if ($c -eq 123) {
         $St.D++
-        if ($St.D -gt 100) { throw 'nesting too deep' }
+        if ($St.D -gt 100) { throw 'AIDREFUSE:is nested too deeply' }
         $St.I++
         $d = [System.Collections.Specialized.OrderedDictionary]::new()
+        $seenKeys = New-Object 'System.Collections.Generic.List[string]'
         script:Skip-AidJsonSpace $St
         if ($St.I -lt $s.Length -and [int]$s[$St.I] -eq 125) { $St.I++; $St.D--; return ,$d }
         while ($true) {
@@ -1128,22 +1125,22 @@ function script:Read-AidJsonValue {
             if ($St.I -ge $s.Length -or [int]$s[$St.I] -ne 58) { throw 'colon expected' }
             $St.I++
             $val = script:Read-AidJsonValue $St
-            foreach ($ek in @($d.Keys)) {
-                if (([string]$ek) -ieq $key) { throw 'a repeated key, or keys that differ only in case' }
-            }
             $d[$key] = $val
+            $seenKeys.Add($key)
             script:Skip-AidJsonSpace $St
             if ($St.I -ge $s.Length) { throw 'unterminated object' }
             $x = [int]$s[$St.I]; $St.I++
             if ($x -eq 125) { break }
             if ($x -ne 44) { throw 'comma or brace expected' }
         }
+        $lowered = New-Object 'System.Collections.Generic.HashSet[string]'
+        foreach ($sk in $seenKeys) { if (-not $lowered.Add($sk.ToLowerInvariant())) { throw 'AIDREFUSE:has two keys that differ only in case' } }
         $St.D--
         return ,$d
     }
     if ($c -eq 91) {
         $St.D++
-        if ($St.D -gt 100) { throw 'nesting too deep' }
+        if ($St.D -gt 100) { throw 'AIDREFUSE:is nested too deeply' }
         $St.I++
         $list = New-Object 'System.Collections.Generic.List[object]'
         script:Skip-AidJsonSpace $St
@@ -1166,22 +1163,73 @@ function script:Read-AidJsonValue {
     if ([string]::CompareOrdinal($s, $St.I, 'null', 0, 4) -eq 0) { $St.I += 4; return $null }
     $m = ([regex]'\G-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?').Match($s, $St.I)
     if (-not $m.Success) { throw 'unexpected character' }
-    if ($m.Groups[2].Success -or $m.Groups[3].Success) { throw 'non-integer number' }
+    if ($m.Groups[2].Success -or $m.Groups[3].Success) { throw 'AIDREFUSE:contains a number that is not an integer' }
     $St.I += $m.Length
     $tok = $m.Value
     if ($tok -ceq '-0') { $tok = '0' }
     return [pscustomobject]@{ AidInt = $tok }
 }
 
+# script:Get-AidJsonNesting <text> - the deepest run of open braces and brackets outside strings
+# (the same scan as the bash twin's nesting(), so both refuse the same files).
+function script:Get-AidJsonNesting {
+    param([string]$Text)
+    $depth = 0; $best = 0; $inStr = $false; $esc = $false
+    for ($k = 0; $k -lt $Text.Length; $k++) {
+        $c = [int]$Text[$k]
+        if ($inStr) {
+            if ($esc) { $esc = $false }
+            elseif ($c -eq 92) { $esc = $true }
+            elseif ($c -eq 34) { $inStr = $false }
+        }
+        elseif ($c -eq 34) { $inStr = $true }
+        elseif ($c -eq 123 -or $c -eq 91) { $depth++; if ($depth -gt $best) { $best = $depth } }
+        elseif ($c -eq 125 -or $c -eq 93) { $depth-- }
+    }
+    return $best
+}
+
 # script:ConvertFrom-AidSettingsJson <text> - the parsed settings document; throws when the
 # text is not exactly one JSON value. A leading BOM is a syntax error, as in Python's json.
+# Every throw carries a reason the bash twin prints too (AIDREFUSE:<reason>).
 function script:ConvertFrom-AidSettingsJson {
     param([string]$Text)
-    $st = @{ S = $Text; I = 0; D = 0 }
-    $v = script:Read-AidJsonValue $st
-    script:Skip-AidJsonSpace $st
-    if ($st.I -ne $Text.Length) { throw 'extra data after the JSON value' }
+    if ((script:Get-AidJsonNesting $Text) -gt 100) { throw 'AIDREFUSE:is nested too deeply' }
+    try {
+        $st = @{ S = $Text; I = 0; D = 0 }
+        $v = script:Read-AidJsonValue $st
+        script:Skip-AidJsonSpace $st
+        if ($st.I -ne $Text.Length) { throw 'extra data after the JSON value' }
+    } catch {
+        if ($_.Exception.Message.StartsWith('AIDREFUSE:', [System.StringComparison]::Ordinal)) { throw }
+        throw 'AIDREFUSE:is not valid JSON'
+    }
     return ,$v
+}
+
+# script:Get-AidRefuseReason <error record> - the reason a settings refusal prints: the text after
+# AIDREFUSE:, or 'cannot be edited' (the bash twin's reason for a crash) for anything else.
+function script:Get-AidRefuseReason {
+    param($ErrorRecord)
+    $m = [string]$ErrorRecord.Exception.Message
+    if ($m.StartsWith('AIDREFUSE:', [System.StringComparison]::Ordinal)) { return $m.Substring(10) }
+    return 'cannot be edited'
+}
+
+# script:Test-AidSymlink <path> - true when the path is itself a symbolic link (even a dangling one).
+function script:Test-AidSymlink {
+    param([string]$Path)
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    return ($null -ne $item -and [string]$item.LinkType -ceq 'SymbolicLink')
+}
+
+# script:Assert-AidSettingsPath <path> - throws the twins' reason when the settings path is a symbolic
+# link or exists but is not a regular file; returns whether a regular file is there.
+function script:Assert-AidSettingsPath {
+    param([string]$Path)
+    if (script:Test-AidSymlink $Path) { throw 'AIDREFUSE:is a symbolic link' }
+    if ((Test-Path -LiteralPath $Path) -and -not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw 'AIDREFUSE:is not a regular file' }
+    return (Test-Path -LiteralPath $Path -PathType Leaf)
 }
 
 # script:ConvertTo-AidJsonText <string> - quoted JSON string as Python json.dumps(ensure_ascii=False).
@@ -1252,11 +1300,11 @@ function script:New-AidHookGroup {
 # before changing anything when the document has a shape AID will not edit.
 function script:Remove-AidSettingsHandlers {
     param($Root, [switch]$Prune)
-    if ($Root -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'it is not a JSON object' }
+    if ($Root -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'AIDREFUSE:is not a JSON object' }
     if (-not $Root.Contains('hooks')) { return 0 }
     $hk = $Root['hooks']
-    if ($hk -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'its "hooks" entry is not an object' }
-    if ($hk.Contains('Stop') -and $hk['Stop'] -isnot [System.Collections.IList]) { throw 'its "hooks.Stop" entry is not a list' }
+    if ($hk -isnot [System.Collections.Specialized.OrderedDictionary]) { throw 'AIDREFUSE:has a hooks entry that is not an object' }
+    if ($hk.Contains('Stop') -and $hk['Stop'] -isnot [System.Collections.IList]) { throw 'AIDREFUSE:has a hooks.Stop entry that is not a list' }
     $removed = 0
     $touched = New-Object System.Collections.Generic.List[string]
     foreach ($ev in @($hk.Keys)) {
@@ -1298,19 +1346,33 @@ function script:Test-AidSettingsRelPath {
     return $true
 }
 
-# script:Write-AidSettingsFile <path> <text> - UTF-8 without BOM, atomically.
+# script:Publish-AidSettingsTemp <tmp> <path> - puts the finished temp file in place: an existing file is
+# swapped atomically with File.Replace (no backup), a new one is moved. Either throws on failure and then
+# the original is exactly as it was.
+function script:Publish-AidSettingsTemp {
+    param([string]$Tmp, [string]$Path)
+    if (Test-Path -LiteralPath $Path -PathType Leaf) { [System.IO.File]::Replace($Tmp, $Path, [NullString]::Value) }
+    else { Move-Item -LiteralPath $Tmp -Destination $Path -ErrorAction Stop }
+}
+
+# script:Write-AidSettingsFile <path> <text> - UTF-8 without BOM, atomically: the temp file is written next
+# to the target and swapped in, so a failure leaves the user's file exactly as it was (the temp file is
+# removed). Throws 'AIDREFUSE:<reason>' with the bash twin's reason: text that cannot be encoded, or a
+# write that failed.
 function script:Write-AidSettingsFile {
     param([string]$Path, [string]$Text)
-    $dir = [System.IO.Path]::GetDirectoryName($Path)
-    if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    $tmp = Join-Path $dir ('.settings.tmp.' + [System.IO.Path]::GetRandomFileName())
+    try { $bytes = (New-Object System.Text.UTF8Encoding($false, $true)).GetBytes($Text) }
+    catch { throw 'AIDREFUSE:holds text that cannot be written as UTF-8' }
+    $tmp = $null
     try {
-        [System.IO.File]::WriteAllBytes($tmp, (New-Object System.Text.UTF8Encoding($false)).GetBytes($Text))
-        if (Test-Path -LiteralPath $Path -PathType Leaf) { Remove-Item -LiteralPath $Path -Force }
-        Move-Item -LiteralPath $tmp -Destination $Path -Force
+        $dir = [System.IO.Path]::GetDirectoryName($Path)
+        if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null }
+        $tmp = Join-Path $dir ('.settings.tmp.' + [System.IO.Path]::GetRandomFileName())
+        [System.IO.File]::WriteAllBytes($tmp, $bytes)
+        script:Publish-AidSettingsTemp -Tmp $tmp -Path $Path
     } catch {
-        if (Test-Path -LiteralPath $tmp -PathType Leaf) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
-        throw
+        if ($tmp -and (Test-Path -LiteralPath $tmp -PathType Leaf)) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
+        throw 'AIDREFUSE:cannot be written'
     }
 }
 
@@ -1318,8 +1380,10 @@ function script:Write-AidSettingsFile {
 # (one group, a handler per name) and returns the manifest records for the tool: "tools.<tool>.hook"
 # TAB event TAB name TAB settings TAB created, one per hook. A tool that declares none gets its recorded
 # handlers stripped instead and no records. A file AID will not edit (unparseable, wrong shape, a
-# non-integer number, a repeated key, keys differing only in case) is left untouched with one warning,
-# the records the manifest already held are kept, and the install goes on. Prints
+# non-integer number, a repeated key, keys differing only in case, nesting past 100 levels, text that
+# cannot be written as UTF-8, a symbolic link, anything but a regular file, or a write that fails) is
+# left untouched with one warning (the bash twin's text and reason, byte for byte), the records the
+# manifest already held are kept, and the install goes on. Prints
 # "Hook: <name> (Stop) in <settings>" for each hook placed.
 function script:Invoke-EnsureHostHooks {
     param([string]$Target, [string]$Tool, [string]$SettingsRel = '', [string[]]$Names = @(), [string[]]$OldRows = @())
@@ -1337,14 +1401,15 @@ function script:Invoke-EnsureHostHooks {
     if (-not $SettingsRel) { return ,[string[]]@() }
     if (-not (script:Test-AidSettingsRelPath $SettingsRel)) { return ,[string[]]@($OldRows) }
     $path = Join-Path $Target ($SettingsRel -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-    $existed = Test-Path -LiteralPath $path -PathType Leaf
-    if ($Names.Count -eq 0 -and -not $existed) { return ,[string[]]@() }
+    $existed = $false
     try {
+        $existed = script:Assert-AidSettingsPath $path
+        if ($Names.Count -eq 0 -and -not $existed) { return ,[string[]]@() }
         $oldText = ''
         if ($existed) {
-            $bytes = [System.IO.File]::ReadAllBytes($path)
-            if ($Names.Count -eq 0 -and -not [System.Text.Encoding]::UTF8.GetString($bytes).Contains($script:_AidHookMarker)) { return ,[string[]]@() }
-            $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytes)
+            try { $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString([System.IO.File]::ReadAllBytes($path)) }
+            catch { throw 'AIDREFUSE:is not valid JSON' }
+            if ($Names.Count -eq 0 -and -not $oldText.Contains($script:_AidHookMarker)) { return ,[string[]]@() }
             $root = script:ConvertFrom-AidSettingsJson -Text $oldText
         } else {
             $root = [System.Collections.Specialized.OrderedDictionary]::new()
@@ -1358,7 +1423,7 @@ function script:Invoke-EnsureHostHooks {
             $hk['Stop'].Add((script:New-AidHookGroup -Names $Names))
         }
         if ($Names.Count -eq 0 -and $root.Count -eq 0 -and $oldCreated -and $removed -gt 0) {
-            Remove-Item -LiteralPath $path -Force
+            try { Remove-Item -LiteralPath $path -Force -ErrorAction Stop } catch { throw 'AIDREFUSE:cannot be written' }
         } else {
             $after = script:ConvertTo-AidSettingsJson $root 0
             if (-not $existed -or $after -cne $before) {
@@ -1368,7 +1433,7 @@ function script:Invoke-EnsureHostHooks {
             }
         }
     } catch {
-        [Console]::Error.WriteLine("WARN: aid: $SettingsRel was left untouched ($($_.Exception.Message)). Fix the file, or remove it, then run 'aid update' to add the AID hook.")
+        [Console]::Error.WriteLine("WARN: aid: $SettingsRel was left untouched ($(script:Get-AidRefuseReason $_)). Fix the file, or remove it, then run 'aid update' to add the AID hook.")
         return ,[string[]]@($OldRows)
     }
     $recs = New-Object System.Collections.Generic.List[string]
@@ -1403,11 +1468,15 @@ function script:Invoke-RemoveHostHooks {
         try {
             $bytes = [System.IO.File]::ReadAllBytes($path)
             if (-not [System.Text.Encoding]::UTF8.GetString($bytes).Contains($script:_AidHookMarker)) { continue }
-            $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytes)
+            if (script:Test-AidSymlink $path) { throw 'AIDREFUSE:is a symbolic link' }
+            try { $oldText = (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytes) }
+            catch { throw 'AIDREFUSE:is not valid JSON' }
             $root = script:ConvertFrom-AidSettingsJson -Text $oldText
             $n = script:Remove-AidSettingsHandlers -Root $root -Prune
             if ($n -eq 0) { continue }
-            if ($root.Count -eq 0 -and $created[$rel]) { Remove-Item -LiteralPath $path -Force }
+            if ($root.Count -eq 0 -and $created[$rel]) {
+                try { Remove-Item -LiteralPath $path -Force -ErrorAction Stop } catch { throw 'AIDREFUSE:cannot be written' }
+            }
             else {
                 $text = script:ConvertTo-AidSettingsJson $root 0
                 if ($oldText.EndsWith("`n")) { $text += "`n" }
@@ -1415,7 +1484,7 @@ function script:Invoke-RemoveHostHooks {
             }
             Write-Host "Hook: removed the AID handlers from $rel"
         } catch {
-            [Console]::Error.WriteLine("WARN: aid: $rel was left untouched ($($_.Exception.Message)). Remove its entries whose command holds $($script:_AidHookMarker) by hand.")
+            [Console]::Error.WriteLine("WARN: aid: $rel was left untouched ($(script:Get-AidRefuseReason $_)). Remove its entries whose command holds $($script:_AidHookMarker) by hand.")
         }
     }
 }
@@ -2920,7 +2989,7 @@ function Install-AidShared {
             $conf=Join-Path $StageMap[$tool] 'aid-tool.conf'
             foreach ($line in (Read-AidKvConf -Path $conf)) {
                 $k=$line.Substring(0,$line.IndexOf('=')); $v=$line.Substring($line.IndexOf('=')+1)
-                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } 'hook_settings' { $hookSettings=$v } 'hook' { if ($v -cmatch '^Stop:(aid-[a-z0-9-]+)$') { $hookNames += $Matches[1] } } }
+                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } 'hook_settings' { $hookSettings=$v } 'hook' { if ($v -cmatch '^Stop:(aid-[a-z0-9]+(?:-[a-z0-9]+)*)$') { $hookNames += $Matches[1] } } }
             }
         } else {
             $obj=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'tools') $tool

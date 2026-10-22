@@ -6038,7 +6038,7 @@ function script:Test-AidReleaseDescriptor {
             'context_import' { $valid = ($Kind -eq 'tool' -and $value -ceq 'CLAUDE.md') }
             'rules_inline' { $valid = ($Kind -eq 'tool' -and $value -ceq 'true') }
             'hook_settings' { $valid = ($Kind -eq 'tool' -and $root -ne '' -and $value -ceq "$root/settings.json") }
-            'hook' { $valid = ($Kind -eq 'tool' -and $value -cmatch '^Stop:aid-[a-z0-9-]+$') }
+            'hook' { $valid = ($Kind -eq 'tool' -and $value -cmatch '^Stop:aid-[a-z0-9]+(-[a-z0-9]+)*$') }
             'tool' { $valid = ($Kind -eq 'tool' -and $value -ceq $Tool) }
         }
         if (-not $valid) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): invalid $key"); return $false }

@@ -1377,8 +1377,8 @@ print([[h["command"] for h in g["hooks"]] for g in d["hooks"]["Stop"]])' "$PSHH_
     "[['echo mine'], ['${PSHH_COMMAND}']]" "PSHH-02 stale AID handlers are stripped, the user handler stays, an emptied group is dropped"
 
 # --- HH-03 a file AID will not edit: untouched, one warning, install goes on, nothing recorded ---
-pshh_refusal() {  # <id> <file contents> <label>
-    local id="$1" contents="$2" label="$3" t before
+pshh_refusal() {  # <id> <file contents> <label> [<reason>]
+    local id="$1" contents="$2" label="$3" reason="${4:-}" t before
     t=$(pshh_target); mkdir -p "$t/.claude"
     printf '%s' "$contents" > "$t/$PSHH_SETTINGS"
     before=$(pshh_sha "$t/$PSHH_SETTINGS")
@@ -1387,15 +1387,28 @@ pshh_refusal() {  # <id> <file contents> <label>
     assert_eq "$(pshh_sha "$t/$PSHH_SETTINGS")" "$before" "${id} ${label}: the file is untouched"
     assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched" "${id} ${label}: one warning names the file"
     assert_eq "$(pshh_manifest_hooks "$t" claude-code)" "null" "${id} ${label}: nothing is recorded"
+    assert_output_not_contains "$OUT" "Hook:" "${id} ${label}: no Hook line is printed"
+    if [[ -n "$reason" ]]; then
+        assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (${reason}). Fix the file, or remove it, then run 'aid update' to add the AID hook." "${id} ${label}: the warning gives the reason '${reason}' (the Bash twin's text)"
+    fi
+    assert_eq "$(find "$t/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "${id} ${label}: no stray file is left in .claude"
 }
-pshh_refusal PSHH-03a '{ not json' "unparseable"
-pshh_refusal PSHH-03b '[1, 2]' "not an object"
-pshh_refusal PSHH-03c '{"hooks": []}' "hooks of the wrong type"
-pshh_refusal PSHH-03d '{"hooks": {"Stop": {}}}' "hooks.Stop of the wrong type"
-pshh_refusal PSHH-03e '{"timeout": 1.5}' "a non-integer number"
-pshh_refusal PSHH-03f '{"Env": 1, "env": 2}' "two keys that differ only in case"
-pshh_refusal PSHH-03g '' "an empty file"
-pshh_refusal PSHH-03h $'\xef\xbb\xbf{}' "a BOM"
+pshh_refusal PSHH-03a '{ not json' "unparseable" "is not valid JSON"
+pshh_refusal PSHH-03b '[1, 2]' "not an object" "is not a JSON object"
+pshh_refusal PSHH-03c '{"hooks": []}' "hooks of the wrong type" "has a hooks entry that is not an object"
+pshh_refusal PSHH-03d '{"hooks": {"Stop": {}}}' "hooks.Stop of the wrong type" "has a hooks.Stop entry that is not a list"
+pshh_refusal PSHH-03e '{"timeout": 1.5}' "a non-integer number" "contains a number that is not an integer"
+pshh_refusal PSHH-03f '{"Env": 1, "env": 2}' "two keys that differ only in case" "has two keys that differ only in case"
+pshh_refusal PSHH-03g '' "an empty file" "is not valid JSON"
+pshh_refusal PSHH-03h $'\xef\xbb\xbf{}' "a BOM" "is not valid JSON"
+pshh_refusal PSHH-03i '{"a": NaN}' "a NaN constant" "is not valid JSON"
+pshh_refusal PSHH-03j '{"a": "\ud800"}' "a lone surrogate" "holds text that cannot be written as UTF-8"
+pshh_deep_json() { python3 -I -c 'import sys; n = int(sys.argv[1]); print("{\"a\":" * n + "1" + "}" * n, end="")' "$1"; }
+pshh_refusal PSHH-03k "$(pshh_deep_json 101)" "101 levels of nesting" "is nested too deeply"
+pshh_refusal PSHH-03l "$(python3 -I -c 'print("[" * 990 + "]" * 990, end="")')" "990 levels of nesting" "is nested too deeply"
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"; printf '%s' "$(pshh_deep_json 100)" > "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_eq "$(pshh_handlers "$PSHH_T/$PSHH_SETTINGS")" 1 "PSHH-03m 100 levels of nesting are edited"
 
 # --- HH-04 remove --------------------------------------------------------------------------
 PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"
@@ -1448,6 +1461,103 @@ assert_exit_eq "$RC" 0 "PSHH-05 remove with an uneditable settings file -> exit 
 assert_output_contains "$OUT" "was left untouched" "PSHH-05 and warns"
 assert_eq "$(cat "$PSHH_T/$PSHH_SETTINGS")" "{ broken /.aid/runtime/scripts/hooks/aid-x" "PSHH-05 and leaves the file"
 
+# --- HH-11 a symbolic link at the settings path is never replaced or deleted -------------------
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude" "$PSHH_T/shared"
+printf '%s' '{"permissions": {"allow": ["Bash(ls:*)"]}, "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \"x/.aid/runtime/scripts/hooks/aid-old.sh\""}]}]}}' > "$PSHH_T/shared/s.json"
+ln -s ../shared/s.json "$PSHH_T/$PSHH_SETTINGS"
+PSHH_LINK_SHA=$(pshh_sha "$PSHH_T/shared/s.json")
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-11 add over a symbolic link -> exit 0"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is a symbolic link)." "PSHH-11 add warns with the reason"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-11 add prints no Hook line"
+[[ -L "$PSHH_T/$PSHH_SETTINGS" && "$(readlink "$PSHH_T/$PSHH_SETTINGS")" == "../shared/s.json" ]] && pass "PSHH-11 the link is still a link to the same file" || fail "PSHH-11 the link is still a link to the same file"
+assert_eq "$(pshh_sha "$PSHH_T/shared/s.json")" "$PSHH_LINK_SHA" "PSHH-11 the file it points to is unchanged"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code)" "null" "PSHH-11 nothing is recorded"
+assert_eq "$(find "$PSHH_T/.claude" "$PSHH_T/shared" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-11 no temp file is left next to the link or its target"
+run_aid_ps1 "$PSHH_HOME" update -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-11 update over a symbolic link -> exit 0"
+assert_output_contains "$OUT" "(is a symbolic link)" "PSHH-11 update warns too"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-11 remove over a symbolic link -> exit 0"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is a symbolic link). Remove its entries whose command holds /.aid/runtime/scripts/hooks/aid- by hand." "PSHH-11 remove warns with the reason"
+[[ -L "$PSHH_T/$PSHH_SETTINGS" && "$(readlink "$PSHH_T/$PSHH_SETTINGS")" == "../shared/s.json" ]] && pass "PSHH-11 remove neither replaces nor deletes the link" || fail "PSHH-11 remove neither replaces nor deletes the link"
+assert_eq "$(pshh_sha "$PSHH_T/shared/s.json")" "$PSHH_LINK_SHA" "PSHH-11 and the file it points to is unchanged"
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"; ln -s ../nowhere.json "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_output_contains "$OUT" "(is a symbolic link)" "PSHH-11 a dangling link is refused as a link"
+[[ -L "$PSHH_T/$PSHH_SETTINGS" && ! -e "$PSHH_T/nowhere.json" ]] && pass "PSHH-11 a dangling link is not followed or replaced" || fail "PSHH-11 a dangling link is not followed or replaced"
+
+# --- HH-12 a directory at the settings path: refused, nothing moved into it, nothing recorded ----
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/$PSHH_SETTINGS"
+run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-12 add over a directory -> exit 0"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is not a regular file)." "PSHH-12 add warns with the reason"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-12 add prints no Hook line"
+assert_eq "$(pshh_manifest_hooks "$PSHH_T" claude-code)" "null" "PSHH-12 nothing is recorded"
+assert_eq "$(find "$PSHH_T/$PSHH_SETTINGS" -mindepth 1 | wc -l | tr -d ' ')" 0 "PSHH-12 nothing is moved into the directory"
+assert_eq "$(find "$PSHH_T/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-12 no temp file is left next to it"
+run_aid_ps1 "$PSHH_HOME" remove claude-code -Target "$PSHH_T"
+assert_exit_eq "$RC" 0 "PSHH-12 remove over a directory -> exit 0"
+[[ -d "$PSHH_T/$PSHH_SETTINGS" ]] && pass "PSHH-12 remove leaves the directory" || fail "PSHH-12 remove leaves the directory"
+
+# --- HH-13 a write that fails leaves the original exactly as it was ------------------------------
+# The publish step (File.Replace for an existing file) is stubbed inside the module so it throws; the
+# ensure step is then called in-process. The install must warn like the Bash twin, print no Hook line,
+# keep the records the manifest already held, and leave the original bytes and no temp file behind.
+cat > "$TMP/pshh-failwrite.ps1" <<'PS'
+param([string]$Lib, [string]$Target, [string]$Mode)
+$ErrorActionPreference = 'Continue'
+Import-Module $Lib -Force
+$m = Get-Module AidInstallCore
+& $m { function script:Publish-AidSettingsTemp { param($Tmp, $Path) throw 'stubbed publish failure' } }
+$old = @("tools.claude-code.hook`tStop`taid-question-form`t.claude/settings.json`tfalse")
+if ($Mode -eq 'ensure') {
+    $rows = & $m { param($t, $o) script:Invoke-EnsureHostHooks -Target $t -Tool 'claude-code' -SettingsRel '.claude/settings.json' -Names @('aid-question-form') -OldRows $o } $Target $old
+    'ROWS=' + @($rows).Count
+    foreach ($r in @($rows)) { 'ROW=' + $r }
+} else {
+    & $m { param($t, $o) script:Invoke-RemoveHostHooks -Target $t -Tool 'claude-code' -OldRows $o } $Target $old
+}
+PS
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"; printf '{"x": 1}\n' > "$PSHH_T/$PSHH_SETTINGS"
+PSHH_BEFORE=$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")
+OUT=$("$PWSH" -NoProfile -File "$TMP/pshh-failwrite.ps1" -Lib "$LIB_CORE_PS1" -Target "$PSHH_T" -Mode ensure 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "PSHH-13 a failing publish does not fail the step"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (cannot be written). Fix the file, or remove it, then run 'aid update' to add the AID hook." "PSHH-13 a failing publish warns with the Bash twin's text"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-13 and prints no Hook line"
+assert_output_contains "$OUT" "ROWS=1" "PSHH-13 and returns the one record it was given"
+assert_output_contains "$OUT" "ROW=tools.claude-code.hook"$'\t'"Stop"$'\t'"aid-question-form"$'\t'".claude/settings.json"$'\t'"false" "PSHH-13 and returns that record unchanged"
+assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-13 the original file is byte for byte"
+assert_eq "$(find "$PSHH_T/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-13 and the temp file is removed"
+# Same for a new file (the move step) and for remove.
+PSHH_T=$(pshh_target)
+OUT=$("$PWSH" -NoProfile -File "$TMP/pshh-failwrite.ps1" -Lib "$LIB_CORE_PS1" -Target "$PSHH_T" -Mode ensure 2>&1)
+assert_output_contains "$OUT" "(cannot be written)." "PSHH-13 a failing publish of a new file warns too"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-13 and prints no Hook line for it"
+[[ ! -e "$PSHH_T/$PSHH_SETTINGS" ]] && pass "PSHH-13 and no settings file appears" || fail "PSHH-13 and no settings file appears"
+assert_eq "$(find "$PSHH_T/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-13 and no temp file is left"
+PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"
+printf '{"keep": 1, "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \\"x/.aid/runtime/scripts/hooks/aid-question-form.sh\\""}]}]}}\n' > "$PSHH_T/$PSHH_SETTINGS"
+PSHH_BEFORE=$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")
+OUT=$("$PWSH" -NoProfile -File "$TMP/pshh-failwrite.ps1" -Lib "$LIB_CORE_PS1" -Target "$PSHH_T" -Mode remove 2>&1)
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (cannot be written). Remove its entries whose command holds /.aid/runtime/scripts/hooks/aid- by hand." "PSHH-13 a failing publish on remove warns with the Bash twin's text"
+assert_output_not_contains "$OUT" "Hook:" "PSHH-13 and remove prints no Hook line"
+assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-13 and the original is byte for byte after a failed remove"
+assert_eq "$(find "$PSHH_T/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-13 and its temp file is removed"
+# A real failure, where the platform can force one: a read-only directory (root ignores the mode).
+if [[ "$(id -u)" != 0 ]]; then
+    PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"; printf '{"x": 1}\n' > "$PSHH_T/$PSHH_SETTINGS"
+    PSHH_BEFORE=$(pshh_sha "$PSHH_T/$PSHH_SETTINGS"); chmod a-w "$PSHH_T/.claude"
+    run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
+    chmod u+w "$PSHH_T/.claude"
+    assert_exit_eq "$RC" 0 "PSHH-13 add into a read-only .claude -> exit 0"
+    assert_output_contains "$OUT" "(cannot be written)." "PSHH-13 and warns with the reason"
+    assert_output_not_contains "$OUT" "Hook:" "PSHH-13 and prints no Hook line"
+    assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-13 and the original is byte for byte"
+else
+    pass "PSHH-13 (real read-only directory case skipped as root: the mode does not stop root)"
+fi
+
 # --- HH-07 update on an install that lacks the hook ------------------------------------------
 PSHH_T=$(pshh_target)
 run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
@@ -1483,6 +1593,8 @@ pshh_refuse_descriptor PSHH-09a $'tool=claude-code\nhook_settings=.claude/other.
 pshh_refuse_descriptor PSHH-09b $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:question-form\n' "invalid hook"
 pshh_refuse_descriptor PSHH-09c $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Pre:aid-question-form\n' "invalid hook"
 pshh_refuse_descriptor PSHH-09d $'tool=claude-code\nhook=Stop:aid-question-form\n' "hook needs hook_settings"
+pshh_refuse_descriptor PSHH-09f $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:aid-x-\n' "invalid hook"
+pshh_refuse_descriptor PSHH-09g $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:aid--x\n' "invalid hook"
 pshh_refuse_descriptor PSHH-09e $'tool=claude-code\nhook_settings=.claude/settings.json\nhook_settings=.claude/settings.json\nhook=Stop:aid-question-form\n' "hook_settings may appear only once"
 
 # ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite

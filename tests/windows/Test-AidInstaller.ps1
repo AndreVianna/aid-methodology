@@ -2937,6 +2937,8 @@ Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 
 Assert-Eq "$($script:_LastRC)" '0' 'Q126 add over an unparseable settings file still exits 0'
 Assert ((Get-FileSha -Path $HhBadFile) -eq $HhBadSha) 'Q126 the unparseable file is untouched' 'file changed'
 Assert-Contains $script:_LastOut 'WARN: aid: .claude/settings.json was left untouched' 'Q126 one warning names the file'
+Assert-Contains $script:_LastOut "WARN: aid: .claude/settings.json was left untouched (is not valid JSON). Fix the file, or remove it, then run 'aid update' to add the AID hook." 'Q126 the warning gives the same reason as the Bash twin'
+Assert-NotContains $script:_LastOut 'Hook:' 'Q126 no Hook line is printed for a refused file'
 Assert (@(Get-HhManifestHooks $HhBad).Count -eq 0) 'Q126 nothing is recorded for it' 'a hook record was written'
 $HhFloat = New-HhTarget 'hh-float'
 $HhFloatFile = Join-Path $HhFloat $HhRel
@@ -2944,6 +2946,82 @@ Write-V3File -Path $HhFloatFile -Text '{"timeout": 1.5}'
 $HhFloatSha = Get-FileSha -Path $HhFloatFile
 Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhFloat)
 Assert ((Get-FileSha -Path $HhFloatFile) -eq $HhFloatSha) 'Q126 a file with a non-integer number is untouched' 'file changed'
+Assert-Contains $script:_LastOut '(contains a number that is not an integer).' 'Q126 and the reason is the Bash twin''s'
+
+# --- nesting past 100 levels is refused with the Bash twin's reason; 100 levels are edited ----
+$HhDeep = New-HhTarget 'hh-deep'
+$HhDeepFile = Join-Path $HhDeep $HhRel
+Write-V3File -Path $HhDeepFile -Text (('{"a":' * 101) + '1' + ('}' * 101))
+$HhDeepSha = Get-FileSha -Path $HhDeepFile
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhDeep)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 add over a 101-level file still exits 0'
+Assert-Contains $script:_LastOut '(is nested too deeply).' 'Q126 101 levels of nesting are refused with the Bash twin''s reason'
+Assert ((Get-FileSha -Path $HhDeepFile) -eq $HhDeepSha) 'Q126 and the 101-level file is untouched' 'file changed'
+$HhDeep100 = New-HhTarget 'hh-deep100'
+$HhDeep100File = Join-Path $HhDeep100 $HhRel
+Write-V3File -Path $HhDeep100File -Text (('{"a":' * 100) + '1' + ('}' * 100))
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhDeep100)
+Assert ((Get-HhAidCount $HhDeep100File) -eq 1) 'Q126 100 levels of nesting are edited' 'handler not placed'
+
+# --- a directory at the settings path: refused, nothing moved into it, nothing recorded -----------
+$HhDir = New-HhTarget 'hh-dir'
+New-Item -ItemType Directory -Path (Join-Path $HhDir $HhRel) -Force | Out-Null
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhDir)
+Assert-Eq "$($script:_LastRC)" '0' 'Q126 add over a directory still exits 0'
+Assert-Contains $script:_LastOut 'WARN: aid: .claude/settings.json was left untouched (is not a regular file).' 'Q126 a directory at the settings path is refused with the Bash twin''s reason'
+Assert-NotContains $script:_LastOut 'Hook:' 'Q126 and no Hook line is printed for it'
+Assert (@(Get-HhManifestHooks $HhDir).Count -eq 0) 'Q126 and nothing is recorded for it' 'a hook record was written'
+Assert (@(Get-ChildItem -LiteralPath (Join-Path $HhDir $HhRel) -Force).Count -eq 0) 'Q126 and nothing is moved into the directory' 'the directory is not empty'
+Assert (@(Get-ChildItem -LiteralPath (Join-Path $HhDir '.claude') -Force | Where-Object { $_.Name -like '*.tmp' -or $_.Name -like '.settings.tmp.*' }).Count -eq 0) 'Q126 and no temp file is left in .claude' 'a stray file is left'
+
+# --- a symbolic link at the settings path is never replaced or deleted (where the host can make one) ---
+$HhLink = New-HhTarget 'hh-link'
+New-Item -ItemType Directory -Path (Join-Path $HhLink '.claude') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $HhLink 'shared') -Force | Out-Null
+$HhLinkTargetFile = Join-Path (Join-Path $HhLink 'shared') 's.json'
+Write-V3File -Path $HhLinkTargetFile -Text '{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \"x/.aid/runtime/scripts/hooks/aid-old.sh\""}]}]}}'
+$HhLinkPath = Join-Path $HhLink $HhRel
+$HhLinkMade = $true
+try { New-Item -ItemType SymbolicLink -Path $HhLinkPath -Value ([System.IO.Path]::Combine('..', 'shared', 's.json')) -ErrorAction Stop | Out-Null } catch { $HhLinkMade = $false }
+if ($HhLinkMade) {
+    $HhLinkSha = Get-FileSha -Path $HhLinkTargetFile
+    Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $HhLink)
+    Assert-Eq "$($script:_LastRC)" '0' 'Q126 add over a symbolic link still exits 0'
+    Assert-Contains $script:_LastOut 'WARN: aid: .claude/settings.json was left untouched (is a symbolic link).' 'Q126 a symbolic link is refused with the Bash twin''s reason'
+    Assert-NotContains $script:_LastOut 'Hook:' 'Q126 and no Hook line is printed for it'
+    Assert ([string](Get-Item -LiteralPath $HhLinkPath -Force).LinkType -ceq 'SymbolicLink') 'Q126 the link is still a link' 'the link was replaced'
+    Assert ((Get-FileSha -Path $HhLinkTargetFile) -eq $HhLinkSha) 'Q126 and the file it points to is unchanged' 'the target changed'
+    Assert (@(Get-HhManifestHooks $HhLink).Count -eq 0) 'Q126 and nothing is recorded for it' 'a hook record was written'
+    Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $HhLink)
+    Assert-Eq "$($script:_LastRC)" '0' 'Q126 remove over a symbolic link exits 0'
+    Assert-Contains $script:_LastOut '(is a symbolic link). Remove its entries whose command holds /.aid/runtime/scripts/hooks/aid- by hand.' 'Q126 remove warns with the Bash twin''s reason'
+    Assert ([string](Get-Item -LiteralPath $HhLinkPath -Force).LinkType -ceq 'SymbolicLink' -and (Get-FileSha -Path $HhLinkTargetFile) -eq $HhLinkSha) 'Q126 remove neither replaces nor deletes the link' 'link or target changed'
+} else {
+    Write-Host '  SKIP: Q126 symbolic-link cases (this host cannot create a symbolic link)'
+}
+
+# --- a write that fails leaves the original exactly as it was ----------------------------------------
+# The publish step is stubbed inside the module so it throws; the ensure step is then run in-process.
+$HhFailScript = Join-Path $TmpRoot 'hh-failwrite.ps1'
+Set-Content -LiteralPath $HhFailScript -Encoding ASCII -Value @'
+param([string]$Lib, [string]$Target)
+Import-Module $Lib -Force
+$m = Get-Module AidInstallCore
+& $m { function script:Publish-AidSettingsTemp { param($Tmp, $Path) throw 'stubbed publish failure' } }
+$old = @("tools.claude-code.hook`tStop`taid-question-form`t.claude/settings.json`tfalse")
+$rows = & $m { param($t, $o) script:Invoke-EnsureHostHooks -Target $t -Tool 'claude-code' -SettingsRel '.claude/settings.json' -Names @('aid-question-form') -OldRows $o } $Target $old
+'ROWS=' + @($rows).Count
+'@
+$HhFail = New-HhTarget 'hh-failwrite'
+$HhFailFile = Join-Path $HhFail $HhRel
+Write-V3File -Path $HhFailFile -Text ('{"x": 1}' + "`n")
+$HhFailBefore = Get-FileSha -Path $HhFailFile
+$HhFailOut = (& $PwshExe -NoProfile -File $HhFailScript -Lib $LocalLibPath -Target $HhFail 2>&1 | ForEach-Object { [string]$_ }) -join "`n"
+Assert-Contains $HhFailOut "WARN: aid: .claude/settings.json was left untouched (cannot be written). Fix the file, or remove it, then run 'aid update' to add the AID hook." 'Q126 a failing publish warns with the Bash twin''s text'
+Assert-NotContains $HhFailOut 'Hook:' 'Q126 and prints no Hook line'
+Assert-Contains $HhFailOut 'ROWS=1' 'Q126 and keeps the one record the manifest already held'
+Assert ((Get-FileSha -Path $HhFailFile) -eq $HhFailBefore) 'Q126 and the original file is byte for byte' 'the original changed'
+Assert (@(Get-ChildItem -LiteralPath (Join-Path $HhFail '.claude') -Force | Where-Object { $_.Name -like '.settings.tmp.*' }).Count -eq 0) 'Q126 and the temp file is removed' 'a stray file is left'
 
 # --- remove ------------------------------------------------------------------------------------
 Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $HhUser)

@@ -167,7 +167,7 @@ print([[h["command"] for h in g["hooks"]] for g in d["hooks"]["Stop"]])' "${T4}/
 
 # --- HH-03 a file AID will not edit ------------------------------------------------------------
 refusal_case() {
-    local id="$1" contents="$2" label="$3" t out rc before
+    local id="$1" contents="$2" label="$3" reason="${4:-}" t out rc before
     t="$(new_target "$id")"; mkdir -p "${t}/.claude"
     printf '%s' "$contents" > "${t}/${SETTINGS}"
     before="$(sha_of "${t}/${SETTINGS}")"
@@ -177,15 +177,28 @@ refusal_case() {
     assert_output_contains "$out" "WARN: aid: .claude/settings.json was left untouched" "${id} ${label}: one warning names the file"
     assert_eq "$(manifest_hooks "$t" claude-code)" "null" "${id} ${label}: nothing is recorded"
     assert_file_exists "${t}/.aid/runtime/scripts/hooks/aid-question-form.sh" "${id} ${label}: the rest of the install is in place"
+    if [[ -n "$reason" ]]; then
+        assert_output_contains "$out" "WARN: aid: .claude/settings.json was left untouched (${reason}). Fix the file, or remove it, then run 'aid update' to add the AID hook." "${id} ${label}: the warning gives the reason '${reason}'"
+    fi
+    assert_eq "$(find "${t}/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "${id} ${label}: no stray file is left in .claude"
 }
-refusal_case HH-03a '{ not json' "unparseable"
-refusal_case HH-03b '[1, 2]' "not an object"
-refusal_case HH-03c '{"hooks": []}' "hooks of the wrong type"
-refusal_case HH-03d '{"hooks": {"Stop": {}}}' "hooks.Stop of the wrong type"
-refusal_case HH-03e '{"timeout": 1.5}' "a non-integer number"
-refusal_case HH-03f '{"Env": 1, "env": 2}' "two keys that differ only in case"
-refusal_case HH-03g '' "an empty file"
-refusal_case HH-03h $'\xef\xbb\xbf{}' "a BOM"
+refusal_case HH-03a '{ not json' "unparseable" "is not valid JSON"
+refusal_case HH-03b '[1, 2]' "not an object" "is not a JSON object"
+refusal_case HH-03c '{"hooks": []}' "hooks of the wrong type" "has a hooks entry that is not an object"
+refusal_case HH-03d '{"hooks": {"Stop": {}}}' "hooks.Stop of the wrong type" "has a hooks.Stop entry that is not a list"
+refusal_case HH-03e '{"timeout": 1.5}' "a non-integer number" "contains a number that is not an integer"
+refusal_case HH-03f '{"Env": 1, "env": 2}' "two keys that differ only in case" "has two keys that differ only in case"
+refusal_case HH-03g '' "an empty file" "is not valid JSON"
+refusal_case HH-03h $'\xef\xbb\xbf{}' "a BOM" "is not valid JSON"
+refusal_case HH-03i '{"a": NaN}' "a NaN constant" "is not valid JSON"
+refusal_case HH-03j '{"a": "\ud800"}' "a lone surrogate" "holds text that cannot be written as UTF-8"
+# Nesting: 100 levels are edited, 101 are refused, whatever else the text holds.
+deep_json() { python3 -I -c 'import sys; n = int(sys.argv[1]); print("{\"a\":" * n + "1" + "}" * n, end="")' "$1"; }
+refusal_case HH-03k "$(deep_json 101)" "101 levels of nesting" "is nested too deeply"
+refusal_case HH-03l "$(python3 -I -c 'print("[" * 990 + "]" * 990, end="")')" "990 levels of nesting" "is nested too deeply"
+T="$(new_target hh03m)"; mkdir -p "${T}/.claude"; printf '%s' "$(deep_json 100)" > "${T}/${SETTINGS}"
+run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" >/dev/null 2>&1
+assert_eq "$(count_aid_handlers "${T}/${SETTINGS}")" 1 "HH-03m 100 levels of nesting are edited"
 T="$(new_target hh03-update)"; mkdir -p "${T}/.claude"; printf '{}\n' > "${T}/${SETTINGS}"
 run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" >/dev/null 2>&1
 printf '{ broken' > "${T}/${SETTINGS}"
@@ -322,7 +335,94 @@ refuse_descriptor HH-09a $'tool=claude-code\nhook_settings=.claude/other.json\nh
 refuse_descriptor HH-09b $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:question-form\n' "invalid hook 'Stop:question-form'"
 refuse_descriptor HH-09c $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Pre:aid-question-form\n' "invalid hook 'Pre:aid-question-form'"
 refuse_descriptor HH-09d $'tool=claude-code\nhook=Stop:aid-question-form\n' "hook needs hook_settings"
+refuse_descriptor HH-09f $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:aid-x-\n' "invalid hook 'Stop:aid-x-'"
+refuse_descriptor HH-09g $'tool=claude-code\nhook_settings=.claude/settings.json\nhook=Stop:aid--x\n' "invalid hook 'Stop:aid--x'"
 refuse_descriptor HH-09e $'tool=claude-code\nhook_settings=.claude/settings.json\nhook_settings=.claude/settings.json\nhook=Stop:aid-question-form\n' "hook_settings may appear only once"
+
+# --- HH-11 a symbolic link at the settings path is never replaced or deleted -----------------------
+T="$(new_target hh11)"; mkdir -p "${T}/.claude" "${T}/shared"
+LINK_BODY='{"permissions": {"allow": ["Bash(ls:*)"]}, "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "bash \"x/.aid/runtime/scripts/hooks/aid-old.sh\""}]}]}}'
+printf '%s' "$LINK_BODY" > "${T}/shared/s.json"
+ln -s ../shared/s.json "${T}/${SETTINGS}"
+LINK_SHA="$(sha_of "${T}/shared/s.json")"
+OUT="$(run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-11 add over a symbolic link succeeds"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is a symbolic link)." "HH-11 add warns with the reason"
+assert_output_not_contains "$OUT" "Hook:" "HH-11 add prints no Hook line"
+[[ -L "${T}/${SETTINGS}" && "$(readlink "${T}/${SETTINGS}")" == "../shared/s.json" ]] && pass "HH-11 the link is still a link to the same file" || fail "HH-11 the link is still a link to the same file"
+assert_eq "$(sha_of "${T}/shared/s.json")" "$LINK_SHA" "HH-11 the file it points to is unchanged"
+assert_eq "$(manifest_hooks "$T" claude-code)" "null" "HH-11 nothing is recorded"
+assert_eq "$(find "${T}/.claude" "${T}/shared" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "HH-11 no temp file is left next to the link or its target"
+OUT="$(run_aid update --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-11 update over a symbolic link succeeds"
+assert_output_contains "$OUT" "(is a symbolic link)" "HH-11 update warns too"
+[[ -L "${T}/${SETTINGS}" ]] && pass "HH-11 update leaves the link" || fail "HH-11 update leaves the link"
+OUT="$(run_aid remove claude-code --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-11 remove over a symbolic link succeeds"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is a symbolic link). Remove its entries whose command holds /.aid/runtime/scripts/hooks/aid- by hand." "HH-11 remove warns with the reason"
+[[ -L "${T}/${SETTINGS}" && "$(readlink "${T}/${SETTINGS}")" == "../shared/s.json" ]] && pass "HH-11 remove neither replaces nor deletes the link" || fail "HH-11 remove neither replaces nor deletes the link"
+assert_eq "$(sha_of "${T}/shared/s.json")" "$LINK_SHA" "HH-11 and the file it points to is unchanged"
+# A dangling link is a link too.
+T="$(new_target hh11b)"; mkdir -p "${T}/.claude"; ln -s ../nowhere.json "${T}/${SETTINGS}"
+OUT="$(run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-11 add over a dangling link succeeds"
+assert_output_contains "$OUT" "(is a symbolic link)" "HH-11 a dangling link is refused as a link"
+[[ -L "${T}/${SETTINGS}" && ! -e "${T}/nowhere.json" ]] && pass "HH-11 a dangling link is not followed or replaced" || fail "HH-11 a dangling link is not followed or replaced"
+
+# --- HH-12 a directory (or any non-regular file) at the settings path -------------------------------
+T="$(new_target hh12)"; mkdir -p "${T}/${SETTINGS}"
+OUT="$(run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-12 add over a directory succeeds"
+assert_output_contains "$OUT" "WARN: aid: .claude/settings.json was left untouched (is not a regular file)." "HH-12 add warns with the reason"
+assert_output_not_contains "$OUT" "Hook:" "HH-12 add prints no Hook line"
+assert_eq "$(manifest_hooks "$T" claude-code)" "null" "HH-12 nothing is recorded"
+assert_eq "$(find "${T}/${SETTINGS}" -mindepth 1 | wc -l | tr -d ' ')" 0 "HH-12 nothing goes into the directory"
+assert_eq "$(find "${T}/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "HH-12 no temp file is left next to it"
+OUT="$(run_aid update --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-12 update over a directory succeeds"
+OUT="$(run_aid remove claude-code --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-12 remove over a directory succeeds"
+[[ -d "${T}/${SETTINGS}" ]] && pass "HH-12 remove leaves the directory" || fail "HH-12 remove leaves the directory"
+
+# --- HH-13 a write that fails leaves the original file exactly as it was ----------------------------
+# Read-only directory: the temp file cannot be created. (root ignores the mode, so the case is skipped as root.)
+if [[ "$(id -u)" != 0 ]]; then
+    T="$(new_target hh13)"; mkdir -p "${T}/.claude"; printf '{"x": 1}\n' > "${T}/${SETTINGS}"
+    BEFORE="$(sha_of "${T}/${SETTINGS}")"; chmod a-w "${T}/.claude"
+    OUT="$(run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+    chmod u+w "${T}/.claude"
+    assert_exit_zero "$RC" "HH-13 add into a read-only .claude succeeds"
+    assert_output_contains "$OUT" "(cannot be written)." "HH-13 add warns with the reason"
+    assert_output_not_contains "$OUT" "Hook:" "HH-13 and prints no Hook line"
+    assert_eq "$(sha_of "${T}/${SETTINGS}")" "$BEFORE" "HH-13 the original file is byte for byte"
+    assert_eq "$(manifest_hooks "$T" claude-code)" "null" "HH-13 nothing is recorded"
+else
+    pass "HH-13 (skipped as root: a read-only directory does not stop root)"
+fi
+# A failing replace: the merge's python3 is wrapped so os.replace raises, the case the temp file must not survive.
+T="$(new_target hh13b)"; mkdir -p "${T}/.claude"; printf '{"x": 1}\n' > "${T}/${SETTINGS}"
+BEFORE="$(sha_of "${T}/${SETTINGS}")"
+FAILPY="${TMP}/failpy-bin"; mkdir -p "$FAILPY"
+cat > "${FAILPY}/failreplace.py" <<'PYWRAP'
+import os, sys
+sys.argv = sys.argv[1:]
+src = sys.stdin.read()
+if "scripts/hooks/aid-" in src:  # only the settings-hook merge fails; every other python3 call is untouched
+    def _fail(*args, **kwargs):
+        raise OSError("replace refused")
+    os.replace = _fail
+exec(compile(src, "<stdin>", "exec"))
+PYWRAP
+REALPY="$(command -v python3)"
+printf '#!/usr/bin/env bash\nif [[ "$1" == - ]]; then exec "%s" "%s" "$@"; fi\nexec "%s" "$@"\n' "$REALPY" "${FAILPY}/failreplace.py" "$REALPY" > "${FAILPY}/python3"
+chmod +x "${FAILPY}/python3"
+OUT="$(PATH="${FAILPY}:$PATH" run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
+assert_exit_zero "$RC" "HH-13 add with a failing replace succeeds"
+assert_output_contains "$OUT" "(cannot be written)." "HH-13 a failing replace warns with the reason"
+assert_output_not_contains "$OUT" "Hook:" "HH-13 and prints no Hook line"
+assert_eq "$(sha_of "${T}/${SETTINGS}")" "$BEFORE" "HH-13 a failing replace leaves the original byte for byte"
+assert_eq "$(find "${T}/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "HH-13 and removes its temp file"
+assert_eq "$(manifest_hooks "$T" claude-code)" "null" "HH-13 and records nothing"
 
 # --- HH-10 the generator and the shipped descriptor agree ---------------------------------------
 assert_file_contains "${REPO_ROOT}/profiles/claude-code/aid-tool.conf" "hook_settings=.claude/settings.json" "HH-10 the shipped descriptor names the settings file"

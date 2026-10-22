@@ -1232,8 +1232,10 @@ _remove_claude_md_region() {
 #   {"hooks": [{"type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/<name>.sh\"", "timeout": 30}]}
 # A handler is AID's when its command holds /.aid/runtime/scripts/hooks/aid-. AID never
 # touches another handler, group or key. A file it will not edit (not parseable, wrong
-# shape, a non-integer number, two keys that differ only in case) is left alone with one
-# warning and the install goes on. The manifest records each placed hook under
+# shape, a non-integer number, two keys that differ only in case, nesting deeper than 100
+# levels, text that cannot be written as UTF-8, a symbolic link, anything but a regular
+# file) is left alone with one warning naming the reason, and the install goes on. The
+# PowerShell twin prints the same reasons, byte for byte. The manifest records each placed hook under
 # tools.<tool>.hooks (model line tools.<tool>.hook: event, name, settings, created).
 _AID_HOOK_MARKER="/.aid/runtime/scripts/hooks/aid-"
 
@@ -1285,6 +1287,38 @@ def dump(data):
     return json.dumps(data, indent=2, ensure_ascii=False)
 
 
+MAX_DEPTH = 100
+
+
+def nesting(raw):
+    # The deepest run of open braces and brackets outside strings. The PowerShell twin counts the
+    # same way, so both refuse the same files.
+    depth = best = 0
+    in_str = esc = False
+    for ch in raw:
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch in "{[":
+            depth += 1
+            if depth > best:
+                best = depth
+        elif ch in "}]":
+            depth -= 1
+    return best
+
+
+# A link is never followed or replaced; anything else that is not a regular file is not edited.
+if os.path.islink(path):
+    out("refused", "is a symbolic link")
+if os.path.lexists(path) and not os.path.isfile(path):
+    out("refused", "is not a regular file")
 exists = os.path.isfile(path)
 text = ""
 if exists:
@@ -1300,6 +1334,8 @@ elif mode == "remove":
 
 try:
     if exists:
+        if nesting(text) > MAX_DEPTH:
+            raise Refuse("is nested too deeply")
         try:
             data = json.loads(text, object_pairs_hook=pairs, parse_float=no_float, parse_constant=no_constant)
         except Refuse:
@@ -1366,7 +1402,10 @@ after = dump(data)
 if exists and after == before:
     out("ok", "unchanged", created)
 if mode == "remove" and prior == "1" and data == {}:
-    os.remove(path)
+    try:
+        os.remove(path)
+    except OSError:
+        out("refused", "cannot be written")
     out("ok", "deleted", created)
 
 body = after + ("\n" if (not exists or text.endswith("\n")) else "")
@@ -1374,6 +1413,7 @@ try:
     payload = body.encode("utf-8")
 except UnicodeEncodeError:
     out("refused", "holds text that cannot be written as UTF-8")
+tmp = None
 try:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", suffix=".tmp")
@@ -1387,6 +1427,11 @@ try:
         os.chmod(tmp, 0o666 & ~mask)
     os.replace(tmp, path)
 except OSError:
+    if tmp is not None:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
     out("refused", "cannot be written")
 out("ok", ("removed" if mode == "remove" else ("updated" if exists else "created")), created)
 PY
