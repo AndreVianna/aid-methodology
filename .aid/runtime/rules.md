@@ -80,9 +80,9 @@ Read `.aid/connectors/INDEX.md`.
 
 - Match a request by its meaning to the skill guide below. A question about this project starts no work: answer it from the Knowledge Base, citing sources.
 - One skill fits. Only `/aid-ask`, `/aid-research`, `/aid-review`, `/aid-report`, `/aid-monitor` and `/aid-read-ticket` start at once, and only when
-  the user's own words ask for exactly that action: say so in one line, no go-ahead question. That skips only the go-ahead: the skill's own intake
-  questions and approvals still come, in the form and recorded. Every other skill: ask one confirmation question in the protocol form (its workflow in
-  one line, your recommendation), then stop; change no project file until the user agrees. Several fit: choose, asking once if you can't. None: carry on.
+  the user's words ask for exactly that action: say so in one line, run it before investigating or asking. That skips only the go-ahead: its own
+  intake questions and approvals still come, in the form and recorded. Every other skill: run `/aid-orchestrate` first, before any question; it
+  asks the one confirmation question; no project file changes until the user agrees. Several fit: choose, asking once if you can't. None: carry on.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its
   phases, and nothing runs by hand outside it. After the yes or the one-line start, run the skill by its slash command or the Skill tool.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts, resumes ("carry on" too), closes or cancels a work,
