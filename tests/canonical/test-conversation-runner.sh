@@ -15,7 +15,7 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO HOOK
 #
 # Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
 # a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO HOOK"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -115,7 +115,8 @@ unset AID_CODEX_MODEL CODEX_HOME  # likewise the Codex model and folder: run.py 
 cat > "$BIN/claude" <<'PYSTUB'
 #!/usr/bin/env python3
 # Stub claude for test-conversation-runner.sh. Logs each call to $CONV_STUB_LOG, then answers:
-# an agent turn (stream-json) with a session, tool calls and writes on turn 1; the simulated user
+# an agent turn (stream-json) with a session, tool calls and writes on turn 1 (with STUB_HOOK=1, also a
+# message the question-form hook withdrew, and its line in $AID_QUESTION_HOOK_LOG); the simulated user
 # (plain text) per $STUB_USER; the judge (plain text) per $STUB_JUDGE.
 import json
 import os
@@ -152,7 +153,7 @@ if role == "judge":
 record = {"role": role, "argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME", ""),
           "prompt": prompt, "reviewer": reviewer,
           "env": {k: v for k, v in os.environ.items()
-                  if k.startswith(("CLAUDE", "CCR_", "SESSION_INGRESS", "HTTPS_PROXY", "NODE_EXTRA_CA_CERTS"))}}
+                  if k.startswith(("CLAUDE", "CCR_", "SESSION_INGRESS", "HTTPS_PROXY", "NODE_EXTRA_CA_CERTS", "AID_QUESTION_HOOK"))}}
 with open(log, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(record) + "\n")
 
@@ -224,9 +225,22 @@ if role == "agent":
             os.makedirs(review_dir, exist_ok=True)
             os.makedirs(os.path.join(".aid", ".temp"), exist_ok=True)
             os.symlink(review_dir, os.path.join(".aid", ".temp", "review-pending"))
+    withdrawn_events = []
+    if os.environ.get("STUB_HOOK") == "1":  # the hook sent the first message back: it stays in the stream
+        withdrawn_events.append({"type": "assistant", "session_id": session, "message": {
+            "id": "msg-w" + str(count), "content": [{"type": "text", "text": "Withdrawn question " + str(count) + ": shall I go on?"}]}})
+        hook_log = os.environ.get("AID_QUESTION_HOOK_LOG")
+        if hook_log:
+            with open(hook_log, "a", encoding="utf-8") as fh:
+                if count == 1:
+                    fh.write("not json\n")  # an unreadable line the runner must skip
+                fh.write(json.dumps({"time": "2026-01-01T00:00:00Z", "session_id": session,
+                                     "missing": ["the record", "the \"Why I ask:\" line"],
+                                     "message": "Withdrawn question " + str(count) + ": shall I go on?"}) + "\n")
     lines = [
         {"type": "system", "subtype": "init", "session_id": session},
-        {"type": "assistant", "session_id": session, "message": {"content": content}},
+        *withdrawn_events,
+        {"type": "assistant", "session_id": session, "message": {"id": "msg-r" + str(count), "content": content}},
         {"type": "result", "subtype": "success", "session_id": session, "result": "Reply."},
     ]
     print("\n".join(json.dumps(item) for item in lines))
@@ -1659,6 +1673,219 @@ group_protocol() {
         test "$(cat "$T/log/nocheckm.rc")" = 2
 }
 
+# ---------------------------------------------------------------- HOOK
+# The question-form hook: the runner sets AID_QUESTION_HOOK_LOG to hook.jsonl in the run folder, marks a message
+# the hook sent back as withdrawn (transcript.md and transcript.jsonl), and hides it from the simulated user.
+# The stub agent plays the hook (STUB_HOOK=1): a withdrawn message in the stream and its line in the log.
+need_hook() {
+    STUB_HOOK=1 AID_QUESTION_HOOK=off AID_QUESTION_HOOK_LOG=/nowhere/hook.jsonl \
+        need hook invoke hook two-turns clean --sample s-pass --runs 1
+}
+# the mutant run: the runner does not set the log variable and keeps the kill switch
+need_hookm() {
+    started hookm && return 0
+    make_mutant hookm 'agent_env[HOOK_LOG_ENV] = str(run_dir / HOOK_LOG_NAME)  # outside the fixture: files.diff stays clean' 'pass' \
+        '"AID_QUESTION_HOOK",' '' \
+        || fail "HK09 the hook-environment mutation did not apply"
+    STUB_HOOK=1 AID_QUESTION_HOOK=off AID_QUESTION_HOOK_LOG=/nowhere/hook.jsonl INVOKE_RUNNER="$MUT_PATH" \
+        need hookm invoke hookm two-turns clean --sample s-pass --runs 1
+}
+group_hook() {
+    echo "--- HOOK"
+    need_pass
+    need_hook
+    need_hookm
+    await_runs
+    cat > "$T/hookfacts.py" <<'PYHF'
+import json
+import sys
+
+calls = []
+with open(sys.argv[1], encoding="utf-8") as fh:
+    calls = [json.loads(line) for line in fh if line.strip()]
+agents = [c for c in calls if c["role"] == "agent"]
+users = [c for c in calls if c["role"] == "user"]
+print("agent_hook_logs=" + ",".join(sorted({c["env"].get("AID_QUESTION_HOOK_LOG", "<unset>") for c in agents})))
+print("agent_hook_off=" + ",".join(sorted({c["env"].get("AID_QUESTION_HOOK", "<unset>") for c in agents})))
+first = users[0]["prompt"] if users else ""
+print("user_has_reply=" + ("1" if "Reply 1." in first else "0"))
+print("user_has_withdrawn=" + ("1" if "Withdrawn question" in first else "0"))
+print("user_has_marker=" + ("1" if "Withdrawn by the question-form hook" in first else "0"))
+PYHF
+    "$PY" "$T/hookfacts.py" "$T/log/hook.jsonl" > "$T/log/hook.hookfacts"
+    "$PY" "$T/hookfacts.py" "$T/log/hookm.jsonl" > "$T/log/hookm.hookfacts"
+    local d f="$T/log/hook.hookfacts" md pd
+    d="$(run_dir_of "$T/log/hook.out" PASS s-pass 1)"
+    pd="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)"
+    assert_exit_eq "$(cat "$T/log/hook.rc")" 0 "HK00 a run with a withdrawn message passes"
+    assert_eq "$(fact "$f" agent_hook_logs)" "$d/hook.jsonl" \
+        "HK01 the agent's environment names hook.jsonl in the run folder, on every turn"
+    assert_eq "$(fact "$f" agent_hook_off)" "<unset>" \
+        "HK02 the hook's kill switch is dropped from the agent's environment"
+    assert_file_exists "$d/hook.jsonl" "HK03 the hook log is kept in the run folder"
+    assert_eq "$(grep -c -F -- 'Withdrawn question' "$d/hook.jsonl")" 2 "HK03b it holds the hook's two lines, and the run went on past the unreadable one"
+    assert_eq "$(grep -c -F -- 'hook.jsonl' "$d/files.diff")" 0 "HK04 the hook log is outside the fixture: files.diff does not show it"
+    md="$d/transcript.md"
+    assert_eq "$(grep -c -F -- '[Withdrawn by the question-form hook -- missing: the record; the "Why I ask:" line]' "$md")" 2 \
+        "HK05 each withdrawn message is shown under the marker with its missing items"
+    assert_file_contains "$md" '> Withdrawn question 1: shall I go on?' "HK06 the withdrawn text is quoted in transcript.md"
+    assert_file_contains "$md" '> Withdrawn question 2: shall I go on?' "HK06b the second call's withdrawn text is matched to the second call"
+    assert_eq "$(grep -c -F -- 'Withdrawn question 1' "$md")" 1 "HK06c a logged message is not marked again in a later call"
+    assert_eq "$(grep -n -F -e '> Withdrawn question 1' -e "the agent's replacement follows" -e 'Reply 1.' "$md" | head -3 | cut -d: -f2 | cut -c1-14 | tr '\n' '|')" \
+        "> Withdrawn qu|[End of the wi|Reply 1.|" "HK07 the replacement follows the withdrawn message"
+    assert_eq "$("$PY" - "$d/transcript.jsonl" <<'PYJ'
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+agents = [r for r in rows if r["role"] == "agent"]
+print("|".join(a["text"] + "~" + ",".join(w["text"][:20] for w in a["withdrawn"]) + "~" + ";".join("/".join(w["missing"]) for w in a["withdrawn"]) for a in agents))
+PYJ
+)" 'Reply 1.~Withdrawn question 1~the record/the "Why I ask:" line|Reply 2.~Withdrawn question 2~the record/the "Why I ask:" line' \
+        "HK08 transcript.jsonl keeps the replacement as the text and the withdrawn messages with their missing items"
+    assert_eq "$(fact "$f" user_has_reply)$(fact "$f" user_has_withdrawn)$(fact "$f" user_has_marker)" 100 \
+        "HK09 the simulated user is given the replacement and neither the withdrawn text nor the marker"
+    assert_eq "$(grep -c -F -e '> Withdrawn question 1: shall I go on?' "$T/log/hook.judge-prompt")$(grep -c -F -e '[Withdrawn by the question-form hook' "$T/log/hook.judge-prompt")" 12 \
+        "HK10 the judge is given the withdrawn text under the marker"
+    assert_eq "$(grep -c -F -- 'Withdrawn by' "$pd/transcript.md")$([ -e "$pd/hook.jsonl" ] && echo present || echo absent)" 0absent \
+        "HK11 a run the hook sent nothing back in has no marker and no hook log"
+    expect_fail "HK12 a runner that does not set the log variable fails HK01" \
+        test "$(fact "$T/log/hookm.hookfacts" agent_hook_logs)" = "$(run_dir_of "$T/log/hookm.out" PASS s-pass 1)/hook.jsonl"
+    expect_fail "HK13 a runner that keeps the kill switch fails HK02" \
+        test "$(fact "$T/log/hookm.hookfacts" agent_hook_off)" = "<unset>"
+
+    # the stream, the log and the transcript, through the module itself: no run is made
+    cat > "$T/hookunit.py" <<'PYHU'
+import importlib.util
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+
+
+def text_event(key, *texts):
+    return json.dumps({"type": "assistant", "session_id": "s1", "message": {
+        "id": key, "content": [{"type": "text", "text": t} for t in texts]}})
+
+
+def stream(*events):
+    return "\n".join(["noise", *events, json.dumps({"type": "result", "session_id": "s1", "result": "last"})])
+
+
+def entry(text, *missing):
+    return {"text": text, "missing": list(missing)}
+
+
+def parts(out, blocked):
+    session, text, tools, withdrawn = mod.read_stream_parts(out, "", blocked)
+    return text, [(w["text"], w["missing"]) for w in withdrawn]
+
+
+def log_entries(lines, seen=0):
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "hook.jsonl"
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return mod.blocked_entries(path, seen)
+
+
+def case_basic():
+    out = stream(text_event("m1", "Shall I go on?"), text_event("m2", "Record done.\n\nQuestion 1 of 1"))
+    return parts(out, [entry("Shall I go on?", "the record")]) == ("Record done.\n\nQuestion 1 of 1", [("Shall I go on?", ["the record"])])
+
+
+def case_trim():
+    out = stream(text_event("m1", "  Shall I go on?\n\n"), text_event("m2", "Replacement"))
+    return parts(out, [entry("Shall I go on?")]) == ("Replacement", [("Shall I go on?", [])])
+
+
+def case_grouped():
+    out = stream(text_event("m1", "Part one", "Part two"), text_event("m2", "Replacement"))
+    return parts(out, [entry("Part one\n\nPart two")]) == ("Replacement", [("Part one\n\nPart two", [])])
+
+
+def case_unmatched():
+    out = stream(text_event("m1", "Other text"))
+    return parts(out, [entry("Not in the stream")]) == ("Other text", [])
+
+
+def case_once():
+    out = stream(text_event("m1", "Same"), text_event("m2", "Same"))
+    return (parts(out, [entry("Same")]) == ("Same", [("Same", [])])
+            and parts(out, [entry("Same"), entry("Same")]) == ("", [("Same", []), ("Same", [])]))
+
+
+def case_none():
+    out = stream(text_event("m1", "Plain"))
+    return mod.read_stream_parts(out)[1:] == ("Plain", [], []) and mod.read_stream(out) == ("s1", "Plain", [])
+
+
+def case_tolerant():
+    entries, total = log_entries(["not json", "[1]", json.dumps({"message": "  "}), json.dumps({"time": 1}),
+                                  json.dumps({"message": "A", "missing": "the record"}),
+                                  json.dumps({"text": "B", "missing": ["x", "y"]})])
+    return entries == [entry("A", "the record"), entry("B", "x", "y")] and total == 2
+
+
+def case_offset():
+    lines = [json.dumps({"message": "A"}), "junk", json.dumps({"message": "B"})]
+    first, total = log_entries(lines[:1])
+    later, total2 = log_entries(lines, total)
+    return [e["text"] for e in first] == ["A"] and [e["text"] for e in later] == ["B"] and total2 == 2
+
+
+def case_nolog():
+    return mod.blocked_entries(None, 3) == ([], 3) and mod.blocked_entries(Path("/nowhere/hook.jsonl"), 0) == ([], 0)
+
+
+def case_render():
+    transcript = [{"turn": 1, "role": "agent", "text": "Replacement", "tools": [],
+                   "withdrawn": [entry("Line one\nLine two", "the record", "the reason")]}]
+    shown = mod.render_transcript_md(transcript)
+    return ("[Withdrawn by the question-form hook -- missing: the record; the reason]\n\n> Line one\n> Line two\n\n"
+            "[End of the withdrawn message(s); the agent's replacement follows]\n\nReplacement" in shown)
+
+
+def case_user_view():
+    transcript = [{"turn": 1, "role": "agent", "text": "Replacement", "tools": [], "withdrawn": [entry("Hidden words")]}]
+    plain = mod.render_transcript_md(transcript, show_withdrawn=False)
+    seen = []
+    mod.helper_call = lambda prompt, system, **kw: seen.append(prompt) or "ok"
+    sample = mod.Sample(path=Path("x"), id="x", meta={}, sections={"User": "u", "Answer sheet": "a"}, checks=[])
+    mod.ask_user("brief", sample, transcript, Path("."), {})
+    return "Hidden words" not in plain and "Replacement" in plain and "Hidden words" not in seen[0] and "Replacement" in seen[0]
+
+
+try:
+    ok = globals()["case_" + sys.argv[2]]()
+except Exception:  # a runner that cannot read the stream or the log fails the case
+    ok = False
+print("pass" if ok else "fail")
+PYHU
+    local c
+    for c in basic trim grouped unmatched once none tolerant offset nolog render user_view; do
+        assert_eq "$("$PY" "$T/hookunit.py" "$RUNNER" "$c" 2>&1 | tail -1)" pass "HU-$c the runner's withdrawn-message handling: case $c"
+    done
+    hu_mutant() {  # NAME CASE OLD NEW: the case must fail on a runner with that one change
+        local name="$1" case="$2"
+        shift 2
+        make_mutant "hu-$name" "$@" || { fail "HU-$name the mutation did not apply"; return; }
+        assert_eq "$("$PY" "$T/hookunit.py" "$MUT_PATH" "$case" 2>&1 | tail -1)" fail "HU-$name a runner broken that way fails case $case"
+    }
+    hu_mutant nomark basic 'marks[i] = number' 'pass'
+    hu_mutant notrim trim 'and text.strip() == want' 'and text == want'
+    hu_mutant nogroup grouped '("\n\n", "\n", "")' '()'
+    hu_mutant everyblock once 'marks[i] is None and text.strip()' 'text.strip()'
+    hu_mutant fatal tolerant $'        except ValueError:\n            continue\n        if not isinstance(obj, dict):\n            continue\n        text = next' \
+        $'        except ValueError:\n            raise\n        if not isinstance(obj, dict):\n            continue\n        text = next'
+    hu_mutant reread offset 'return entries[seen:], max(seen, len(entries))' 'return entries, len(entries)'
+    hu_mutant nomarker render 'out += [f"[{WITHDRAWN_MARK} -- missing: {missing}]", ""]' 'out += [""]'
+    hu_mutant userseeshidden user_view 'render_transcript_md(transcript, show_withdrawn=False)' 'render_transcript_md(transcript)'
+    hu_mutant alwaysshow user_view $'        if show_withdrawn:\n            out += render_withdrawn' $'        if True:\n            out += render_withdrawn'
+}
+
 # ---------------------------------------------------------------- CODEX
 group_codex() {
     echo "--- CODEX"
@@ -1836,6 +2063,7 @@ want VSAMPLES && group_vsamples
 want CAP && group_cap
 want CODEX && group_codex
 want PROTO && group_protocol
+want HOOK && group_hook
 
 test_summary
 exit $?

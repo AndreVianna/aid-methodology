@@ -17,8 +17,21 @@ Exit codes:
      for a sample that covers AC-8 or AC-28, no claude)
 
 Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding transcript.jsonl,
-transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger) and model.txt (the model the
-agent under test ran with). The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
+transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger), model.txt (the model the
+agent under test ran with) and hook.jsonl (see below; absent when the hook sent nothing back).
+The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
+
+Question-form hook: the installed Claude Code Stop hook checks a message that waits on the user and, when
+it falls short, sends it back, so the agent shows a replacement. The runner sets AID_QUESTION_HOOK_LOG to
+<run folder>/hook.jsonl (outside the fixture, so files.diff stays clean) for the agent's turns; the hook
+appends one JSON line per message it sent back (the message text and the missing items). After each agent
+call the runner reads the lines that call added and marks every text block of the stream that equals a
+logged message (trimmed) as withdrawn. transcript.md shows it under "[Withdrawn by the question-form hook
+-- missing: ...]", followed by the replacement; transcript.jsonl keeps the replacement as the turn's text
+and the withdrawn messages in a "withdrawn" list. The simulated user sees the replacement only. The judge
+grades the replacement, and reads the withdrawn text for the Must-not items only (protocol-checks.md).
+A message the stream does not show is left as it is. AID_QUESTION_HOOK (the hook's kill switch) is dropped
+from the agent's environment, so a parent session that set it cannot switch the hook off for a run.
 
 Agent model: Claude Code uses claude-sonnet-5-5 (DEFAULT_MODEL), passed as --model on every agent turn;
 Codex uses its CLI default unless AID_CODEX_MODEL names another model. AID_CONV_MODEL names another
@@ -103,6 +116,9 @@ END_MARK = "<<END>>"
 AGENT_TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 MODEL_ENV = "AID_CONV_MODEL"
+HOOK_LOG_ENV = "AID_QUESTION_HOOK_LOG"  # the question-form hook appends a line here for each message it sends back
+HOOK_LOG_NAME = "hook.jsonl"  # that log, in the run folder
+WITHDRAWN_MARK = "Withdrawn by the question-form hook"
 REQUIRED_KEYS = ("id", "covers", "fixture")
 PROTOCOL_CHECKS = "protocol-checks.md"  # the judge's checklist for the question protocol, in the briefs folder
 PROTOCOL_COVERS_RE = re.compile(r"\bAC-(8|28)\b")  # the criteria whose samples the judge checks against it
@@ -125,6 +141,8 @@ ENV_DROP_NAMES = (
     "CLAUDE_CODE_SYNC_SESSION_REFS", "CLAUDE_CODE_SYNC_PLUGINS", "CLAUDE_CODE_SYNC_SKILLS",
     "CLAUDE_CODE_WORKER_EPOCH", "CLAUDE_CODE_USE_CCR_V2", "CLAUDE_CODE_ENVIRONMENT_RUNNER_VERSION",
     "CLAUDE_CODE_DIAGNOSTICS_FILE", "CLAUDE_CODE_TEE_SDK_STDOUT", "CLAUDE_CODE_EXECPATH",
+    # the question-form hook's kill switch: the runs exercise the hook, whatever the parent session set
+    "AID_QUESTION_HOOK",
 )
 # every CLAUDE_CODE_REMOTE* variable (the remote-session wiring); no auth or provider name starts with it
 ENV_DROP_PREFIXES = ("CLAUDE_CODE_REMOTE",)
@@ -302,13 +320,68 @@ def target_of(name: str, inp: dict, base: str) -> str:
     return target
 
 
-def read_stream(stdout: str, base: str = "") -> tuple[str | None, str, list[dict]]:
-    """Return (session_id, reply text, tool calls) from stream-json output, or the plain text."""
+def blocked_entries(log: Path | None, seen: int) -> tuple[list[dict], int]:
+    """The messages the question-form hook sent back, from the log lines after the first `seen` readable
+    ones: ([{"text": ..., "missing": [...]}, ...], readable lines in all). A missing log, an unreadable
+    line or a line with no message text is skipped, never fatal. The text is read from "message" (or
+    "text", "blocked_message", "last_assistant_message"); the missing items from "missing" (a list or one
+    string)."""
+    if log is None:
+        return [], seen
+    try:
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return [], seen
+    entries: list[dict] = []
+    for line in lines:
+        try:
+            obj = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(obj, dict):
+            continue
+        text = next((obj[k] for k in ("message", "text", "blocked_message", "last_assistant_message")
+                     if isinstance(obj.get(k), str) and obj[k].strip()), None)
+        if text is None:
+            continue
+        missing = obj.get("missing")
+        if isinstance(missing, str):
+            missing = [missing]
+        entries.append({"text": text.strip(), "missing": [str(m) for m in missing] if isinstance(missing, list) else []})
+    return entries[seen:], max(seen, len(entries))
+
+
+def mark_withdrawn(blocks: list[tuple[str, str]], blocked: list[dict]) -> list[int | None]:
+    """For each (message key, text) block of a call: the index in `blocked` of the hook entry that withdrew it,
+    or None. An entry matches the first unmarked block whose trimmed text equals its text; failing that, the
+    blocks of one message (same key) whose texts, joined, equal it. An entry withdraws at most one message."""
+    marks: list[int | None] = [None] * len(blocks)
+    for number, entry in enumerate(blocked):
+        want = entry["text"].strip()
+        hit = next(([i] for i, (_, text) in enumerate(blocks) if marks[i] is None and text.strip() == want), None)
+        if hit is None:
+            groups: dict[str, list[int]] = {}
+            for i, (key, _) in enumerate(blocks):
+                groups.setdefault(key, []).append(i)
+            for idx in groups.values():
+                if len(idx) > 1 and all(marks[i] is None for i in idx) and any(
+                        sep.join(blocks[i][1] for i in idx).strip() == want for sep in ("\n\n", "\n", "")):
+                    hit = idx
+                    break
+        for i in hit or []:
+            marks[i] = number
+    return marks
+
+
+def read_stream_parts(stdout: str, base: str = "", blocked: list[dict] | None = None):
+    """Return (session_id, reply text, tool calls, withdrawn messages) from stream-json output, or the plain
+    text. The reply text is the text blocks the hook did not withdraw; withdrawn is one {"text", "missing"}
+    per message of `blocked` (see blocked_entries) that the stream shows, in the order they were logged."""
     session: str | None = None
-    texts: list[str] = []
+    blocks: list[tuple[str, str]] = []  # (message key, text) of every text block, in stream order
     tools: list[dict] = []
     saw_json = False
-    for line in stdout.splitlines():
+    for index, line in enumerate(stdout.splitlines()):
         line = line.strip()
         if not line.startswith("{"):
             continue
@@ -322,20 +395,32 @@ def read_stream(stdout: str, base: str = "") -> tuple[str | None, str, list[dict
         session = session or obj.get("session_id")
         kind = obj.get("type")
         if kind == "assistant":
-            for block in (obj.get("message") or {}).get("content") or []:
+            message = obj.get("message") or {}
+            key = str(message.get("id") or f"line-{index}")  # blocks of one message share its id
+            for block in message.get("content") or []:
                 if block.get("type") == "text":
-                    texts.append(block.get("text", ""))
+                    if block.get("text"):
+                        blocks.append((key, block["text"]))
                 elif block.get("type") == "tool_use":
                     name = block.get("name", "")
                     tools.append({"name": name, "target": target_of(name, block.get("input") or {}, base)})
         elif kind == "tool_use":
             name = obj.get("name", "")
             tools.append({"name": name, "target": target_of(name, obj.get("input") or {}, base)})
-        elif kind == "result" and not texts and isinstance(obj.get("result"), str):
-            texts.append(obj["result"])
+        elif kind == "result" and not blocks and isinstance(obj.get("result"), str) and obj["result"]:
+            blocks.append((f"result-{index}", obj["result"]))
     if not saw_json:
-        return None, stdout.strip(), []
-    return session, "\n\n".join(t for t in texts if t).strip(), tools
+        return None, stdout.strip(), [], []
+    marks = mark_withdrawn(blocks, blocked or [])
+    withdrawn = [dict(blocked[n]) for n in sorted({m for m in marks if m is not None})]
+    kept = [text for (_, text), mark in zip(blocks, marks) if mark is None]
+    return session, "\n\n".join(kept).strip(), tools, withdrawn
+
+
+def read_stream(stdout: str, base: str = "") -> tuple[str | None, str, list[dict]]:
+    """Return (session_id, reply text, tool calls) from stream-json output, or the plain text."""
+    session, text, tools, _ = read_stream_parts(stdout, base)
+    return session, text, tools
 
 
 def run_cli(cli: str, args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
@@ -381,11 +466,18 @@ class ClaudeCodeAgent:
         self.env = env
         self.model = model
         self.session_id: str | None = None
+        log = env.get(HOOK_LOG_ENV)
+        self.hook_log = Path(log) if log else None  # the question-form hook's log (see the module docstring)
+        self.hook_seen = 0  # the hook's log lines already matched to an earlier call
 
     def start(self) -> None:
         self.session_id = None
+        self.hook_seen = 0
 
-    def send(self, message: str) -> tuple[str, list[dict]]:
+    def send(self, message: str) -> tuple[str, list[dict], list[dict]]:
+        """One agent turn: (the reply, the tool calls, the messages the question-form hook withdrew). The
+        reply is the replacement; a withdrawn message is a text block that equals a line the hook logged
+        during this call."""
         args = [
             "-p",
             "--output-format", "stream-json",
@@ -400,12 +492,13 @@ class ClaudeCodeAgent:
         if self.session_id:
             args += ["--resume", self.session_id]
         out = run_claude(args, cwd=self.fixture, env=self.env, stdin=message)
-        session, text, tools = read_stream(out, str(self.fixture))
+        blocked, self.hook_seen = blocked_entries(self.hook_log, self.hook_seen)
+        session, text, tools, withdrawn = read_stream_parts(out, str(self.fixture), blocked)
         if session and not self.session_id:
             self.session_id = session
         if not self.session_id:
             raise RunError("the agent turn returned no session id, so the next turn cannot resume")
-        return text, tools
+        return text, tools, withdrawn
 
 
 class CodexAgent:
@@ -427,7 +520,7 @@ class CodexAgent:
     def start(self) -> None:
         self.session_id = None
 
-    def send(self, message: str) -> tuple[str, list[dict]]:
+    def send(self, message: str) -> tuple[str, list[dict], list[dict]]:
         # Options as `codex exec --help` lists them: --json, --model, --sandbox, --approve-for-me and
         # --output-last-message; the prompt is read from stdin ("-").
         with tempfile.TemporaryDirectory(prefix="aid-codex-turn-") as turn_dir:
@@ -465,7 +558,7 @@ class CodexAgent:
                 text = last_message.read_text(encoding="utf-8").strip()
             except OSError:
                 text = ""
-            return text, []  # Codex JSON output is not normalized to the runner's tool-call schema.
+            return text, [], []  # Codex JSON output is not normalized to the runner's tool-call schema; it has no hook.
 
     @staticmethod
     def available() -> tuple[bool, str]:
@@ -963,11 +1056,29 @@ def opening_message(sample: Sample) -> str:
     return re.split(r"\n\s*\n", sample.sections["User"].strip())[0].strip()
 
 
-def render_transcript_md(transcript: list[dict]) -> str:
+def render_withdrawn(withdrawn: list[dict]) -> list[str]:
+    """The lines that show the messages the question-form hook withdrew, each under its marker and quoted,
+    followed by the line that says the replacement comes next."""
+    out: list[str] = []
+    for item in withdrawn:
+        missing = "; ".join(item.get("missing") or []) or "(not logged)"
+        out += [f"[{WITHDRAWN_MARK} -- missing: {missing}]", ""]
+        out += [("> " + line).rstrip() for line in item["text"].splitlines()] + [""]
+    if withdrawn:
+        out += ["[End of the withdrawn message(s); the agent's replacement follows]", ""]
+    return out
+
+
+def render_transcript_md(transcript: list[dict], show_withdrawn: bool = True) -> str:
+    """transcript.md. A message the hook withdrew is shown (show_withdrawn) before the replacement; the
+    simulated user is given the transcript without it, because it never saw it."""
     out = ["# Transcript", ""]
     for entry in transcript:
         who = "User" if entry["role"] == "user" else "Agent"
-        out += [f"## Turn {entry['turn']} -- {who}", "", entry["text"] or "(empty)", ""]
+        out += [f"## Turn {entry['turn']} -- {who}", ""]
+        if show_withdrawn:
+            out += render_withdrawn(entry.get("withdrawn") or [])
+        out += [entry["text"] or "(empty)", ""]
         if entry["tools"]:
             calls = ", ".join(f"{t['name']}({t['target']})" for t in entry["tools"])
             out += [f"Tool calls: {calls}", ""]
@@ -983,7 +1094,7 @@ def ask_user(brief: str, sample: Sample, transcript: list[dict], scratch: Path, 
         f"{END_FIRST_RULE}\n\n"
         f"## Persona (from the sample)\n\n{sample.sections['User']}\n\n"
         f"## Answer sheet\n\n{sample.sections['Answer sheet']}\n\n"
-        f"## Transcript so far\n\n{render_transcript_md(transcript)}\n"
+        f"## Transcript so far\n\n{render_transcript_md(transcript, show_withdrawn=False)}\n"
         f"Write the simulated user's next message, or {END_MARK} if the sheet has nothing left to say "
         "or the agent has finished.\n"
     )
@@ -996,8 +1107,8 @@ def run_conversation(agent, brief: str, sample: Sample, transcript: list[dict], 
     agent.start()
     for turn in range(1, TURN_CAP + 1):
         transcript.append({"turn": turn, "role": "user", "text": message, "tools": [], "ts": now()})
-        reply, tools = agent.send(message)
-        transcript.append({"turn": turn, "role": "agent", "text": reply, "tools": tools, "ts": now()})
+        reply, tools, withdrawn = agent.send(message)
+        transcript.append({"turn": turn, "role": "agent", "text": reply, "tools": tools, "withdrawn": withdrawn, "ts": now()})
         nxt = ask_user(brief, sample, transcript, scratch, env)
         if END_MARK in nxt:
             return
@@ -1081,6 +1192,8 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         env = base_env(home)
         fixture_bin = fixture / "bin"
         agent_env = dict(env)
+        agent_env[HOOK_LOG_ENV] = str(run_dir / HOOK_LOG_NAME)  # outside the fixture: files.diff stays clean
+        (run_dir / HOOK_LOG_NAME).unlink(missing_ok=True)
         if fixture_bin.is_dir():
             agent_env["PATH"] = str(fixture_bin) + os.pathsep + env.get("PATH", "")
         before, dirs_before = capture(fixture, home)

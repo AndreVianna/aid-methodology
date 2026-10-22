@@ -10,7 +10,7 @@ names the evidence to read. A check the run breaks is recorded as a PC-n row, wh
 says, even when no EO-n or MN-n item of the sample names it.
 
 Read every question in the transcript as the agent asked it: a question is a question the agent put to the
-user, whatever its wording.
+user, whatever its wording. A message the hook withdrew is not one (see "Messages the hook withdrew").
 
 ## Questions before a work exists
 
@@ -41,6 +41,37 @@ does not apply to their missing `Pending` entry or outcome entry.
 
 Questions asked while setting up the project's settings or connections, and questions asked while building
 the knowledge base, are not design-stage questions. Check 10 applies to them in full.
+
+## Messages the hook withdrew
+
+A hook installed with the agent checks each message that waits on the user. When a message falls short, the hook
+sends it back and the agent shows a replacement. The withdrawn text stays in the turn, so `transcript.md` shows
+it quoted (each line starts with `>`) under a marker line, followed by the line that announces the replacement:
+
+```text
+[Withdrawn by the question-form hook -- missing: {the items the hook named}]
+
+> {the withdrawn message}
+
+[End of the withdrawn message(s); the agent's replacement follows]
+
+{the replacement}
+```
+
+The simulated user saw the replacement only, so its next turn answers the replacement. Judge the two parts
+differently:
+
+- **Checks 1 to 11 judge the replacement.** The withdrawn text is not a question the agent put to the user, so it
+  breaks no check, whatever it lacked (a missing reason, a missing record, a wrong closing line). The replacement
+  is the question as the user saw it: its form, its record write (the turn's `Tool calls:` line, which sits below the
+  turn's messages as in any turn) and its place in the group are read as for any question. A turn whose replacement is empty asked the user nothing.
+- **A Must-not item judges both parts.** Read the withdrawn text as well as the replacement for what the sample
+  forbids doing or offering: a publish or push offer, a fix offer, invented figures, and the like. A withdrawn
+  message that offers it counts, because the agent wrote it.
+- **A Must-not item about the shape of a question** (several questions in one message, a question outside the
+  form) judges the replacement only, like the checks.
+- A turn the hook sent back is not a failure by itself. The same rules apply to a transcript with no marker, where
+  the whole turn is read as the agent's message.
 
 ## The checks
 
