@@ -2118,3 +2118,14 @@ qa:
     answer: '1 (maintainer): approve the fix round 3 design as written, with the defaults'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q184
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Delivery-003 has run two days. The fix round 3 verify pass was lost to a container restart. All 8 review rows are fixed and covered by passing suites (host-hooks 216, aid-cli-ps1 408, aid-cli-parity 1529, Windows 379, and others). Options: 1 skip the verify pass, resync now, then the smoke runs and the final 3-run check; 2 re-run the verify pass first, then resync; 3 after one final 3-run check, close delivery-003 with KI-008 for any sample short of 3/3 (reverses Q180).'
+    suggested: '1: skip the verify pass and resync now'
+    answer: --
+    answered_by: --
+    applied_to: --
