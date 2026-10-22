@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "030b511c5e809f6d868eda40ca67a7ed36f00852362da85d3630d692bd6e2d78"
+          "sha256": "1fdf68f9c43a98878ad66b1d8b8d25be98f12e82d6e6386db3817fe65ba43d82"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1366,7 +1366,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "77141cf3b09a264d416bf041386efc3acd57ce7efe3b94d6d19f37acd1543c5e"
+          "sha256": "4fa20f178f46604c3905be588635442c188beee74fab5484e720a1cd207d0aae"
         },
         {
           "path": "templates/requirements.md",
