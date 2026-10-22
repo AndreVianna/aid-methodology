@@ -219,7 +219,9 @@ waits until it is answered. Nothing is written before the user's yes, the work r
 question is not recorded with `--ask`: it is asked while the record cannot be
 trusted (`question-protocol.md` § Questions before a work exists names it among the two that concern an
 existing work), and its answer is acted on at once. The
-question names no step: it says in plain words what is missing and what will be done again:
+question names no step: it says in plain words what is missing and what will be done again. Its first line
+uses the fixed subject `Recovery` (`Recovery -- question 1 of 1 -- importance: high`), the name that marks it
+as unrecorded on purpose:
 
 - the skill and step come from the skill's own detection (for a work started before the record
   existed, from the legacy block of the gate);

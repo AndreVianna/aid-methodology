@@ -253,4 +253,8 @@ Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh
 - **Reviews are always a sub-agent dispatch** (`aid-reviewer`), never inline.
 - **Human final say before any external commit** (PRESENT-FINDINGS).
 - **Read-only** on the reviewed artifact; never fixes (hand off to `/aid-fix`).
+- **A review never turns into a fix.** This binds a review of the user's code or change: `/aid-review` and an
+  ad-hoc review the user asks for. During or after it, offer no fix and ask no question about fixing; the one
+  plain line that names `/aid-fix` is a statement. A fix starts only from the user's own new request, through its
+  own confirmation. A skill's own internal review-and-revise loop over its own output is not this rule.
 - **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

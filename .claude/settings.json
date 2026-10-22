@@ -13,5 +13,18 @@
       "Bash(grep *)",
       "Bash(chmod *)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.aid/runtime/scripts/hooks/aid-question-form.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
