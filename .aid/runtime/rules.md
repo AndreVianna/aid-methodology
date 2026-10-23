@@ -132,6 +132,8 @@ Or answer in your own words, ask me to explain, or skip this question.
   "which would you like?", "shall I go on?") is a question like any other: the second and the last as much as the first. The exceptions are
   the break offer and the confirmations the protocol leaves unrecorded (recovery, cancel); a skill with no writer for its place records
   where the protocol says, or says it cannot.
+- An open question left by an earlier session is offered by running the skill that asked it (its `asked_by`), shown with its
+  recorded text and answered on the same id; never answer it by hand or record it twice.
 - Group questions by subject, most important first, and offer a break when the subject changes.
 
 ## Skill guide

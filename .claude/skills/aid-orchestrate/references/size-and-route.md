@@ -73,7 +73,8 @@ already settled. So the start-at-once path applies only to `/aid-ask`, `/aid-res
 exactly that action. Show the reading and its reason in one line and start the skill in the same turn, with no
 go-ahead question and no wait: the flow goes on to FIND-OR-CREATE. Every other skill keeps its one
 confirmation question, and so does a reading that carries a Preparation offer (section 5): it waits for the
-answer. The approvals inside a listed skill's own run
+answer. That confirmation is an approval (a yes lets the work start and change the project), so it ends with the
+approval closing line, `Or answer in your own words, or ask me to explain.`, never with a skip. The approvals inside a listed skill's own run
 (aid-review's publish approval, aid-monitor's routing approval, anything that writes outside its own report
 or record) are unchanged.
 

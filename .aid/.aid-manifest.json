@@ -584,7 +584,7 @@
         },
         {
           "path": "aid-orchestrate/references/size-and-route.md",
-          "sha256": "548533ac8994397f9dcd58fc1092bbb01d095b167887b2abb4d8c15dc644ee1c"
+          "sha256": "92b663ecfbcfa7f69d0b1cd8efdf04f57dc36deec8b7ebcbcda7074a812c1144"
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "61290e7c63793ce0e18cbdb2d9794df93591b83b70b6b01e514e49e4bb7d5123"
+          "sha256": "699e2c5178c3fc2a56f1624b34cecbf039d2ed2037f34c32ee1e0c66650bed06"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -966,7 +966,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "c4ef78b4152d87121d3448351787f6bf3bee016b43357c46f618c9be0e813f44"
+          "sha256": "fda2a1726e2765a167763784b5a9715a996f35892a76ca73d0cc8d7c285ad4d5"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
