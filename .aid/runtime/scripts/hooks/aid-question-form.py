@@ -482,11 +482,15 @@ def build_reason(missing):
             "Record the question first (--ask; --ask --design before a work exists; --project --ask in "
             "setup skills), then show it again in full, in the form of "
             ".aid/runtime/templates/question-protocol.md.\n"
-            "If you are offering an open question again, show it under its recorded category and do "
+            "If you are offering an open question again, show it with its recorded question text and do "
             "not record it twice.\n"
         )
     else:
         reason += "Show it again in full, in the form of .aid/runtime/templates/question-protocol.md.\n"
+    reason += (
+        "The user sees only your new message, not this one: repeat everything this message told them "
+        "(results, what was recorded, whether a work was needed), then the question.\n"
+    )
     reason += "If you are not waiting on the user, end the turn without a question."
     return reason
 
