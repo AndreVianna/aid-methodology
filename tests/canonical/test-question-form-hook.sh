@@ -23,6 +23,9 @@
 #   QF-23 R3 needs the same question: the category alone never satisfies the record
 #   QF-22n..r "I need one of these:" + a list waits; "I needed to ..." / "I need to <step>:" does not
 #   QF-24 a break offer anywhere in the last three paragraphs passes; with a form question it is checked
+#   QF-26 R1 needs the --ask --context to be the question shown (double, single, $'..' quotes; unreadable passes)
+#   QF-27 a question shown in the form inside a code fence is still checked (the protocol's own example is fenced)
+#   QF-28 the block reason keeps the repeat line and never invites dropping a required question or a break offer
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -664,6 +667,88 @@ $CLOSE_Q"
 mk_t "$TMP/t.jsonl" user "carry on" text "$CATONLY"
 hook "$CATONLY"; expect_block "QF-23e a new question under a category that holds a Skipped entry blocks" "$M_RECORD"
 rm -f "$PROJ/.aid/STATE.yml"
+
+# --- QF-26 R1: the --ask context must be the question shown ---------------------------------------
+Q26='Should AID reach your Jira through the connection your tool already has?'
+ASK26='bash .aid/runtime/scripts/execute/writeback-state.sh --ask --design .aid/design/x.md --category Connections --impact High --context '
+OTHERCTX='Where do you see the same note twice: in the list output, or is the note saved twice in notes.json?'
+M_OTHER='another question than the one shown'
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${Q26}\" --suggested yes" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26a a double-quoted --context that is the shown question passes"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}'${Q26}' --suggested yes" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26b a single-quoted --context that is the shown question passes"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\" --suggested yes" text "$GOOD"
+hook "$GOOD"; expect_block "QF-26c a different --context blocks, naming the record" "$M_RECORD" "$M_OTHER" "--ask --design"
+not_in_reason "QF-26c the missing-record wording is not used" "no writeback-state.sh --ask ran"
+QOWN="Should AID reach your Jira through your tool's own connection?"
+QAPOS="${GOOD/Should AID reach your Jira through the connection your tool already has?/$QOWN}"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\$'Should AID reach your Jira through your tool\\'s own connection?'" text "$QAPOS"
+hook "$QAPOS"; expect_pass "QF-26d a \$'...' --context with an escaped quote passes"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}'Should AID reach your Jira through your tool'\\''s own connection?'" text "$QAPOS"
+hook "$QAPOS"; expect_pass "QF-26e a single-quoted --context with a '\\'' quote passes"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"\$(cat /tmp/ctx.txt)\"" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26f a --context that cannot be read (command substitution) keeps today's behaviour"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}'unterminated" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26g an unterminated quote keeps today's behaviour"
+mk_t "$TMP/t.jsonl" user "go" bash 'bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category C --impact Low' text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26h an --ask with no --context keeps today's behaviour"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\"" bash "${ASK26}\"${Q26}\"" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26i one matching --ask among several passes"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\"" text "$GOOD"
+hook "$GOOD"; expect_block "QF-26j a non-matching --ask alone blocks" "$M_OTHER"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\" && echo done" text "$GOOD"
+hook "$GOOD"; expect_block "QF-26k a chained command is read to the end of the value" "$M_OTHER"
+# the shape of a real miss: the recorded question and the shown one differ in wording and meaning
+SHOWN14="Notes -- question 1 of 2 -- importance: high
+Is it the same words added two separate times, or did one add produce two entries?
+Why I ask: it points to a different cause.
+My recommendation: the second.
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\"" text "$SHOWN14"
+hook "$SHOWN14"; expect_block "QF-26l a recorded question that differs from the one shown blocks" "$M_OTHER"
+# a matching open entry still satisfies the record (R3), whatever the --ask said
+cat > "$PROJ/.aid/STATE.yml" <<EOF
+qa:
+  - id: Q1
+    category: Connections
+    state: Pending
+    context: '${Q26}'
+EOF
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${OTHERCTX}\"" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-26m an open entry with the shown question satisfies the record"
+rm -f "$PROJ/.aid/STATE.yml"
+
+# --- QF-27 a question in the form inside a code fence is still checked ---------------------------
+FENCEDQ="Jira is not connected yet.
+
+\`\`\`text
+$GOOD
+\`\`\`
+
+I could not record it."
+mk_t "$TMP/t.jsonl" user "go" text "$FENCEDQ"
+hook "$FENCEDQ"; expect_block "QF-27a a fenced question with no record blocks, naming the record" "$M_RECORD"
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${Q26}\"" text "$FENCEDQ"
+hook "$FENCEDQ"; expect_pass "QF-27b a fenced question that was recorded passes"
+FENCEDQ2=$(grep -v '^Why I ask' <<< "$FENCEDQ")
+mk_t "$TMP/t.jsonl" user "go" bash "${ASK26}\"${Q26}\"" text "$FENCEDQ2"
+hook "$FENCEDQ2"; expect_block "QF-27c a fenced question missing a form line blocks, naming it" "$M_WHY"
+FENCEDX="The form looks like this:
+
+\`\`\`text
+$FIRST
+Some question?
+\`\`\`
+
+Nothing else changed."
+mk_t "$TMP/t.jsonl" user "go" text "$FENCEDX"
+hook "$FENCEDX"; expect_pass "QF-27d a fence without the closing line is code, not a question"
+
+# --- QF-28 the block reason ------------------------------------------------------------------------
+mk_t "$TMP/t.jsonl" user "go" text "$GOOD"
+hook "$GOOD"; expect_block "QF-28a the reason keeps the repeat line and forbids dropping a question or a break offer" \
+    "repeat everything this message told them" "Never drop a question your skill requires, or a break offer" "truly asks nothing"
+not_in_reason "QF-28b the old 'not waiting' escape is gone" "If you are not waiting on the user"
 
 # --- launcher/checker hygiene ---------------------------------------------------------------------
 if LC_ALL=C grep -qP '[^\x00-\x7F]' "$LAUNCHER" "$CHECKER"; then fail "HY-01 hook scripts must be ASCII-only"; else pass "HY-01 hook scripts are ASCII-only"; fi

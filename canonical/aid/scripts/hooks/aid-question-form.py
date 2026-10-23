@@ -6,7 +6,8 @@ Purpose:
     If it does, check that it is in the form of .aid/runtime/templates/question-protocol.md
     (first line with a lower-case importance, "Why I ask:", "My recommendation:", a closing
     line) and that the question was recorded first (a writeback-state.sh --ask call in this
-    turn, an edit of .aid/knowledge/STATE.md, or an open entry whose question the message shows again).
+    turn whose --context is the question shown, an edit of .aid/knowledge/STATE.md, or an open
+    entry whose question the message shows again).
     A failing message is sent back once, with a short reason naming what is missing.
 
 Usage:
@@ -70,23 +71,41 @@ GO_AHEAD_RE = re.compile(
     re.IGNORECASE,
 )
 M_RECORD = "the record (no writeback-state.sh --ask ran this turn)"
+M_RECORD_OTHER = "the record (the --ask this turn recorded another question than the one shown)"
+RECORD_ITEMS = (M_RECORD, M_RECORD_OTHER)
 
 
 # --------------------------------------------------------------------------- text helpers
 
+def shows_form(body):
+    """True when a fenced block is a question shown in the form (agents copy the protocol's fenced example)."""
+    return any(FIRST_LINE_RE.match(l.strip()) for l in body) and any(is_closing_line(l) for l in body)
+
+
 def strip_fences(text):
-    """Remove fenced code blocks (``` or ~~~); an unclosed fence removes the rest."""
+    """Remove fenced code blocks (``` or ~~~), except one that shows a question in the form.
+
+    An unclosed fence runs to the end of the text.
+    """
     out = []
+    body = []
     fence = None
     for line in text.splitlines():
         s = line.lstrip()
         if fence is None:
             if s.startswith("```") or s.startswith("~~~"):
                 fence = s[:3]
+                body = []
                 continue
             out.append(line)
         elif s.startswith(fence):
             fence = None
+            if shows_form(body):
+                out.extend(body)
+        else:
+            body.append(line)
+    if fence is not None and shows_form(body):
+        out.extend(body)
     return "\n".join(out)
 
 
@@ -298,18 +317,97 @@ def wait_for_transcript(path, message):
 
 # --------------------------------------------------------------------------- record signs
 
-def record_in_turn(turn):
-    """R1 (writeback-state.sh --ask) or R2 (an edit of the Knowledge Base state file)."""
+def read_word(cmd, i):
+    """The shell word at cmd[i:] as (value, ok); ok is False when it cannot be read literally."""
+    out = []
+    n = len(cmd)
+    while i < n and not cmd[i].isspace() and cmd[i] not in ";&|<>()":
+        c = cmd[i]
+        if c == "'":
+            j = cmd.find("'", i + 1)
+            if j < 0:
+                return "", False
+            out.append(cmd[i + 1:j])
+            i = j + 1
+        elif c == '"':
+            i += 1
+            while True:
+                if i >= n:
+                    return "", False
+                c = cmd[i]
+                if c == '"':
+                    i += 1
+                    break
+                if c == "\\" and i + 1 < n and cmd[i + 1] in '"\\$`':
+                    out.append(cmd[i + 1])
+                    i += 2
+                    continue
+                if c == "`" or (c == "$" and i + 1 < n and (cmd[i + 1] in "({_" or cmd[i + 1].isalpha())):
+                    return "", False
+                out.append(c)
+                i += 1
+        elif c == "$" and cmd[i + 1:i + 2] == "'":
+            i += 2
+            while True:
+                if i >= n:
+                    return "", False
+                c = cmd[i]
+                if c == "'":
+                    i += 1
+                    break
+                if c == "\\" and i + 1 < n:
+                    i += 1
+                    c = {"n": "\n", "t": "\t"}.get(cmd[i], cmd[i] if cmd[i] in "'\"\\" else "\\" + cmd[i])
+                out.append(c)
+                i += 1
+        elif c == "\\" and i + 1 < n:
+            out.append(cmd[i + 1])
+            i += 2
+        elif c in "$`\\":
+            return "", False
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out), True
+
+
+CONTEXT_FLAG_RE = re.compile(r"(?:^|\s)--context(?:=|\s+)")
+
+
+def ask_matches(cmd, question):
+    """True when a --ask call in cmd records the question shown.
+
+    A call whose --context is missing, cannot be read, or is too short to compare counts as before.
+    """
+    if not norm(question):
+        return True
+    found = False
+    for m in CONTEXT_FLAG_RE.finditer(cmd):
+        found = True
+        value, ok = read_word(cmd, m.end())
+        if not ok or len(norm(value)) < 12 or same_question(question, value):
+            return True
+    return not found
+
+
+def record_in_turn(turn, question):
+    """R1 (a writeback-state.sh --ask of the shown question) or R2 (an edit of the KB state file).
+
+    Returns "ok", "other" (an --ask ran, but for another question) or "none".
+    """
+    saw_ask = False
     for name, inp in tool_uses(turn):
         if name in SHELL_TOOLS:
             cmd = str(inp.get("command", ""))
             if "writeback-state.sh" in cmd and re.search(r"(^|\s)--ask(\s|$)", cmd):
-                return True
+                if ask_matches(cmd, question):
+                    return "ok"
+                saw_ask = True
         elif name in EDIT_TOOLS:
             path = str(inp.get("file_path") or inp.get("notebook_path") or "").replace("\\", "/")
             if path == KB_STATE_SUFFIX or path.endswith("/" + KB_STATE_SUFFIX):
-                return True
-    return False
+                return "ok"
+    return "other" if saw_ask else "none"
 
 
 def unquote(value):
@@ -489,7 +587,7 @@ def analyse(message):
 
 def build_reason(missing):
     reason = "AID question check: your message waits on the user but is missing: %s.\n" % "; ".join(missing)
-    if M_RECORD in missing:
+    if any(item in missing for item in RECORD_ITEMS):
         reason += (
             "Record the question first (--ask; --ask --design before a work exists; --project --ask in "
             "setup skills), then show it again in full, in the form of "
@@ -503,7 +601,10 @@ def build_reason(missing):
         "The user sees only your new message, not this one: repeat everything this message told them "
         "(results, what was recorded, whether a work was needed), then the question.\n"
     )
-    reason += "If you are not waiting on the user, end the turn without a question."
+    reason += (
+        "Never drop a question your skill requires, or a break offer. Only a message that truly asks "
+        "nothing may end without a question."
+    )
     return reason
 
 
@@ -557,11 +658,9 @@ def decide(event):
     waived = subject.lower() in WAIVED_SUBJECTS or last_skill(entries) in TICKET_SKILLS
     if not waived:
         cwd = event.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-        if not (
-            record_in_turn(current_turn(entries))
-            or shows_open_entry(find_root(str(cwd)), subject, message, question)
-        ):
-            missing = missing + [M_RECORD]
+        status = record_in_turn(current_turn(entries), question)
+        if status != "ok" and not shows_open_entry(find_root(str(cwd)), subject, message, question):
+            missing = missing + [M_RECORD_OTHER if status == "other" else M_RECORD]
     if not missing:
         return None
 
