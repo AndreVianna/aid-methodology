@@ -9,10 +9,7 @@ Pull data from configured sources. Scope the observation window:
 - **Scheduled:** last monitor run → now
 - **On-demand:** user-specified window
 
-**No data source available.** When no configured source can be reached (none catalogued, or every pull
-failed), do not list what is needed, and do not end the turn with "which would you like?" or any open
-request for a pointer, a log or a finding number. The wait for the user is this one question, in the
-form of `.aid/runtime/templates/question-protocol.md`, in plain text:
+**No data source available (none catalogued, or every pull failed): you MUST ask this question before the run ends.** Do not list what is needed, do not end the turn without it, and do not leave an open request for a pointer, a log or a finding number. It is one question, in the form of `.aid/runtime/templates/question-protocol.md`, in plain text:
 
 ```text
 Monitoring -- question 1 of 1 -- importance: high
@@ -24,7 +21,7 @@ My recommendation: {the candidate and why, or the export if none was found}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-Record it (in a work; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both calls, so the question and its answer land in a design document, as `question-protocol.md` § Where each record lives sets) with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after. A skipped question ends the observation with the finding `no data source`; nothing is invented.
+Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both (`question-protocol.md` § Where each record lives). A skipped question ends the observation with the finding `no data source`; nothing is invented.
 
 ▶ telemetry pull starting (~30 s–2 min per source per `.aid/runtime/templates/rough-time-hints.md`)
 For each data source, capture:

@@ -797,6 +797,13 @@ run_ss15() {
     has "canonical/skills/aid-set-connector/SKILL.md" "(f) aid-set-connector offers an open entry first" "Step 0a: Offer an open connection question first"
     has "canonical/skills/aid-set-connector/SKILL.md" "(f) aid-set-connector closes in plain words" "Close in plain words."
     has "$cfg" "(f) aid-config re-asks a skipped setting with its recorded text" "SAME question text as the entry's recorded"
+    # (g) break offer alone and never recorded; a stated value is not asked; no data source is asked; plain approval.
+    has "$cfg" "(g) aid-config: the break offer is its own message and the next question comes after the reply" "The next group's first question"
+    has "$cfg" "(g) aid-config: the break offer is never recorded" "is never recorded (question-protocol Rule 7)"
+    has "$cfg" "(g) aid-config: a value the user already stated is not asked" "A value the user already stated in their own words"
+    has "canonical/skills/aid-monitor/SKILL.md" "(g) aid-monitor MUST ask the data-source question when it has no source" "the run MUST ask the one data-source question"
+    has "canonical/skills/aid-monitor/references/state-observe.md" "(g) state-observe: no data source means the question is asked before the run ends" "you MUST ask this question before the run ends"
+    has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: a plain-words user gets a plain approval summary" "the approval message gives a plain"
     group_end
 }
 

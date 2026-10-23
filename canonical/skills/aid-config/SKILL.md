@@ -15,15 +15,12 @@ argument-hint: "(none) view all and walk the settings  |  <key> view+update one 
 `/aid-config` reads and writes `.aid/settings.yml` — the single source of truth
 for AID pipeline settings (grades, heartbeat, project identity).
 
-**Two modes, nothing else.** The walk is the bare invocation; the single-key mode is unchanged.
+**Two modes, nothing else.**
 
 | Invocation | What it does |
 |---|---|
 | `/aid-config` | Walk mode. On first run (no `settings.yml`), copy the template into place first. Show all settings as a table, then walk them in groups, one question per message. |
 | `/aid-config <key>` | Show the current value of `<key>`; prompt for new (with suggestions + always a free-form option); validate; write in place. |
-
-Examples: `/aid-config name`, `/aid-config minimum_grade`,
-`/aid-config source_control`.
 
 Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
@@ -81,18 +78,23 @@ names the evidence. Settled means:
 Nothing settles `none` or `greenfield`: when the project settles nothing, the numbered options stay. A reply
 that gives another value is validated and written as in Mode 2 Steps 5 to 7.
 
+**A value the user already stated in their own words** earlier in the conversation is not asked, even when the
+project also settles it (question-protocol Rule 9): run `--project --ask` and `--project --answer` back to back,
+`Answered` from their words (`Assumed`, with the reason, when they were unclear), write it as in Mode 2 Steps 5
+to 7, and say so in one plain line ("You said you keep it in git, so I set `source_control` to `git`."). The
+settled-value confirmation above applies only to a value the user has not stated.
+
 After the table, walk the settings straight away, with no break between a go-ahead (if one was asked) and the
 first group, because they are one subject. Group them by subject, most important first, **3 to 5 questions
-per group**, one question per message and one topic per question. Each question is shown in the form of
-Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1, `Keep current value:
-<value> (recommended)`).
+per group**, one question per message and one topic per question, each in the form of Mode 2 Step 4 (the
+same Suggestions table).
 
 | Group | Settings, in order | Importance |
 |---|---|---|
 | 1. Project identity | `name` (high), `description` (high), `type` (high) | high |
 | 2. Pipeline behaviour | `source_control` (medium), `minimum_grade` (medium), `heartbeat_interval` (low) | medium |
 
-`n` and `m` in the form count the questions of the whole walk (`question 1 of 6`).
+`n` and `m` in the form count the questions asked in the whole walk (`question 1 of 6`).
 
 - **Record each question** before it is shown and its reply right after, in the project file
   `.aid/STATE.yml`, exactly as Mode 2 Step 4 sets (`writeback-state.sh --project --ask`, then `--project
@@ -104,11 +106,13 @@ Mode 2 Step 4 (the same Suggestions table; a set value that is kept is option 1,
   text, so a reworded re-ask looks unrecorded. A non-zero exit stops the skill at once.
 - **Write a setting only after its answer**, by Mode 2 Steps 5 to 7 (validate, save in place, confirm).
   A `Keep current value` answer or a skip writes nothing.
-- **Offer a break when the subject changes**: between group 1 and group 2, and again before the last
-  group of retried skipped settings when there is one, each time in one plain line that decides nothing
-  (`Identity is done. Take a break, or go on to the pipeline settings?`; `Take a break, or go on to the
-  settings you skipped?`). The user may stop there; the answers already given stay. There is no break
-  between the go-ahead and the first group.
+- **The break offer is its own message**, made when the subject changes: between group 1 and group 2, and
+  before a last group of retried skipped settings. It is the confirmation of the group's last answer, then
+  `Identity is done. Take a break, or go on to the pipeline settings?` (or `Take a break, or go on to the
+  settings you skipped?`) and nothing else: no question, no form, no `--ask`. The next group's first question
+  comes only after the reply, and a reply to go on is not offered a second break. A break offer decides
+  nothing and is never recorded (question-protocol Rule 7); the user may stop there, and the answers given
+  stay. There is no break between the go-ahead and the first group.
 - **Skipped questions are offered again at the end**, once, in the same form, as a last group, on their
   own entries. A question skipped twice stays `Skipped` in `.aid/STATE.yml`, and the next `/aid-config`
   run walks that setting again on the same entry.
@@ -156,10 +160,9 @@ Ask for the new value for ALL keys, in plain text through the question protocol,
 The options are numbered in the question. The closing line always lets the user type a value of their
 own, ask for an explanation, or skip the question.
 
-For free-text-natural keys (`name`, `description`), the Suggestions table has no fixed defaults. When the
-value is set, the options are `Keep current value` and, if the project shows a better one, that value. When it
-is `⚠ unset`, there is no `Keep current value`: recommend a value read from the project and name where it came
-from, or, when none can be read, ask for the user's own words with no numbered option.
+For `name` and `description`, which have no fixed defaults, the options are as in Mode 1 Step 3: `Keep current
+value` and, if the project shows a better one, that value; when `⚠ unset`, a value read from the project, or the
+user's own words.
 
 Show each question in the protocol's form (one question per message):
 
@@ -240,10 +243,8 @@ intended behavior, not a gap.
 | `minimum_grade` | `A+`, `A`, `B+` |
 | `heartbeat_interval` | `0` (disabled), `1`, `5` |
 
-When the project settles `source_control` or `type` (Mode 1 Step 3), the table is not offered as options: the
-other values are not valid there, so the question is a confirmation of the settled value.
-
-Always include a `Keep current value` option, unless the value is an unset placeholder (`⚠ unset`); the closing line of the question lets the user type a free-form value.
+When the project settles `source_control` or `type` (Mode 1 Step 3), the question is a confirmation of the
+settled value, not these options.
 
 ---
 
