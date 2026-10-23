@@ -2154,11 +2154,11 @@ qa:
   - id: Q187
     category: 'Building'
     impact: Medium
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'aid-orchestrate SKILL.md is 104 lines against its 80-line target (backlog W7-34). About a third repeats rules already stated in skill-steps.md, work-initiation-gate.md, start-or-resume.md and the always-loaded rules.md. Options: 1 simplify it now to about 70-75 lines with no behaviour lost, before the 002-14 re-run, so the run tests the final file; 2 leave it for W7-34 after the gate.'
     suggested: '1: simplify now, before the re-run'
-    answer: --
-    answered_by: --
+    answer: '1 (maintainer): simplify aid-orchestrate now; and ask the same question of every file changed so far: is every line necessary, can it be simplified without losing function'
+    answered_by: 'Claude'
     applied_to: --
