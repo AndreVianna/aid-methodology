@@ -1840,6 +1840,8 @@ end-of-work checks that make the branch releasable.
   (AC-24, AC-45)
 - The full integration suite runs: every sample of every feature 3 of 3, plus `008-15` (live GitHub
   and GitLab) and `009-11` and `009-12` (live tracker).
+- The simplification analysis (G-17, Q188) of every existing file no delivery has touched since the rule came in: is every
+  line necessary? Simplify it without losing a rule or a behaviour. Files touched from delivery-003's gate on get it in their own work.
 - The conversation runner's adapters for Codex, Cursor, Copilot CLI and Antigravity (task-365, KI-006, Q144),
   built and tested on the maintainer's machine, so the integration run reaches each host.
 
