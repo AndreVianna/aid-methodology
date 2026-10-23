@@ -898,7 +898,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "452c50a121cbf9058410be8ece0269f4de2fd71abec15e0a0e5a8f243483becf"
+          "sha256": "7d4706a689da55733a0390942b2415f05fdf5360e8907d9b941e045a8d39acc0"
         },
         {
           "path": "scripts/config/read-setting.sh",

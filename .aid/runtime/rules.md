@@ -110,6 +110,8 @@ Every question to the user follows `.aid/runtime/templates/question-protocol.md`
   work, `writeback-state.sh --ask`), and record the reply with `--answer`. Before a work exists we are in
   the design stage: every question asked then, with its answer, is recorded in a design document under
   `.aid/design/` (`--ask --design`), and a build skill takes that document into the work it opens.
+  Setup skills (`/aid-config`, `/aid-set-connector`, `/aid-unset-connector`) record every question, their go-ahead included,
+  with `--project --ask` before it is shown.
 - Show it in this form, in plain text, never through the host tool's question picker:
 
 ```text
