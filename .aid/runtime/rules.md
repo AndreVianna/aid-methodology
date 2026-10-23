@@ -208,6 +208,9 @@ not the enforcer:
   its `review-criteria:` frontmatter. On a collision the most specific wins -- file over
   type over global. A `kind: exclude` entry is as binding as a `validate` one: it names
   what you must NOT add.
+- **Every line earns its place** (`authoring-conventions.md` G-17). Every file you write or edit gets the simplification check as
+  part of that work: is every line necessary? Cut what repeats a file the reader always loads or the file it points to, and say
+  the rest shorter, without losing any rule or behaviour.
 - **Introducing or retiring a document type owes the KB a registry row.** Adding the first
   file of a new type adds its row and its criteria in the same change; removing the last
   file of a type removes the row. Every in-scope file must resolve to exactly one type.
