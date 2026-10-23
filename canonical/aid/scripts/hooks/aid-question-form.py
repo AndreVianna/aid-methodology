@@ -63,6 +63,12 @@ M_FIRST = "the first line (subject -- question n of m -- importance: high, mediu
 M_WHY = 'the "Why I ask:" line'
 M_REC = 'the "My recommendation:" line'
 M_CLOSE = "the closing line (own words, ask me to explain)"
+M_APPROVAL = "the approval closing line (a go-ahead offers no skip: 'Or answer in your own words, or ask me to explain.')"
+GO_AHEAD_RE = re.compile(
+    r"^\W*(?:shall i|may i|should i (?:start|go|run|apply|create|make|set|write|save|publish|post|push|delete|change)"
+    r"|can i go ahead|do you approve|is it ok(?:ay)? (?:to|if)|ok to)\b",
+    re.IGNORECASE,
+)
 M_RECORD = "the record (no writeback-state.sh --ask ran this turn)"
 
 
@@ -472,7 +478,13 @@ def analyse(message):
             if WHY_RE.match(line):
                 break
             question.append(line)
-    return True, subject, missing, " ".join(question)
+    # A go-ahead is an approval: its closing line offers no skip.
+    asked = " ".join(l.strip() for l in question if l.strip())
+    if has_close and GO_AHEAD_RE.match(asked) and any(
+        is_closing_line(l) and "skip" in l.lower() for l in lines
+    ):
+        missing.append(M_APPROVAL)
+    return True, subject, missing, asked
 
 
 def build_reason(missing):

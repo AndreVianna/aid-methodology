@@ -9,6 +9,7 @@
 # to the temp project for every run).
 #
 # Cases:
+#   QF-25 a go-ahead (Shall I / May I / Do you approve ...) with the skip closing line blocks
 #   QF-01 formed and recorded passes        QF-02..05 each of F1..F4 missing blocks, naming it
 #   QF-06 no --ask blocks, names the record QF-07 --ask --design and --project --ask pass
 #   QF-08 --ask in an earlier turn blocks   QF-09 a report with no question passes
@@ -183,6 +184,23 @@ Should AID reach your Jira?
 $CLOSE_Q"
 mk_t "$TMP/t.jsonl" user "go" bash "$ASK" text "$BOLD"
 hook "$BOLD"; expect_pass "QF-01c bold markers tolerated"
+# --- QF-25 a go-ahead is an approval: its closing line offers no skip --------------------------
+GOSKIP="Fix -- question 1 of 1 -- importance: high
+Shall I start a fix for the duplicate notes?
+Why I ask: starting creates a tracked piece of work, and nothing changes until you agree.
+My recommendation: yes.
+$CLOSE_Q"
+mk_t "$TMP/t.jsonl" user "go" bash "$ASK" text "$GOSKIP"
+hook "$GOSKIP"; expect_block "QF-25a a go-ahead with the skip closing line blocks" "the approval closing line"
+GOOK="Fix -- question 1 of 1 -- importance: high
+Shall I start a fix for the duplicate notes?
+Why I ask: starting creates a tracked piece of work, and nothing changes until you agree.
+My recommendation: yes.
+$CLOSE_A"
+mk_t "$TMP/t.jsonl" user "go" bash "$ASK" text "$GOOK"
+hook "$GOOK"; expect_pass "QF-25b a go-ahead with the approval closing line passes"
+mk_t "$TMP/t.jsonl" user "set up jira" bash "$ASK" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-25c a plain question keeps the skip closing line"
 EMDASH="Connections $(printf '\xe2\x80\x94') question 1 of 3 $(printf '\xe2\x80\x93') importance: low
 Should AID reach your Jira?
 Why I ask: it needs a connection.
