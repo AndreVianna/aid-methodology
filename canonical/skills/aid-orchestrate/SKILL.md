@@ -44,15 +44,15 @@ passes `--seed` that document, so the questions move into the work's `qa` list.
 3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth. When the project has no Knowledge Base, offer Preparation too
    (`references/size-and-route.md` section 5). **Advance:** **CHAIN** → SHOW-READING.
-4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, with the first real question or approval, or
-   alone when `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
+4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, inside the go-ahead: one approval question
+   that asks to start it (clarifying questions come first, each alone; the reading never rides on one), or alone when
+   `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
-5. **Read the answer** (`ACTION-HANDOVER`). The user's answer to SHOW-READING decides. A reading that matches an
-   action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
-   `/aid-test`, `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A
-   correction goes back to the check. **Advance:** **CHAIN** → START-ACTION when the approved reading matches an
-   action skill; **CHAIN** → FIND-OR-CREATE when it matches none; **CHAIN** → CHECK-READING when the user corrects it;
-   **HALT** when the user declines.
+5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead decides; an answer to a clarifying question never
+   does. A reading that matches an action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`,
+   `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A correction goes back to the check.
+   **Advance:** **CHAIN** → START-ACTION when the approved reading matches an action skill; **CHAIN** → FIND-OR-CREATE when it matches
+   none; **CHAIN** → CHECK-READING when the user corrects it; **HALT** when the user declines.
 5a. **Start an action skill** (`START-ACTION`). Start that skill in this turn, with the reading as an `intent:`
    block (see `.aid/runtime/templates/work-state-template.yml`); where the tool cannot start it, name its
    command. No work exists yet, so there is no hand-off to write; its START creates the work.
