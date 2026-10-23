@@ -79,9 +79,9 @@ Nothing settles `none` or `greenfield`: when the project settles nothing, the nu
 that gives another value is validated and written as in Mode 2 Steps 5 to 7.
 
 **A value the user already stated in their own words** earlier in the conversation is not asked, even when the
-project also settles it (question-protocol Rule 9): run `--project --ask` and `--project --answer` back to back,
-`Answered` from their words (`Assumed`, with the reason, when they were unclear), write it as in Mode 2 Steps 5
-to 7, and say so in one plain line ("You said you keep it in git, so I set `source_control` to `git`."). The
+project also settles it (question-protocol Rule 9): it is recorded `Assumed`, never `Answered`, with the reason
+"the user said ..." (`--project --ask`, then `--project --answer --state Assumed`), written as in Mode 2 Steps 5
+to 7, and said in one plain line ("You said you keep it in git, so I set `source_control` to `git`."). The
 settled-value confirmation above applies only to a value the user has not stated.
 
 After the table, walk the settings straight away, with no break between a go-ahead (if one was asked) and the
