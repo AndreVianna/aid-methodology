@@ -2162,3 +2162,14 @@ qa:
     answer: '1 (maintainer): simplify aid-orchestrate now; and ask the same question of every file changed so far: is every line necessary, can it be simplified without losing function'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q188
+    category: 'Building'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Q187 asks the "is every line necessary" question of every file changed so far: 242 canonical files, about 8,400 lines added. Many of them are rewritten or retired in deliveries 004-013 (aid-discover, aid-update-kb, aid-specify and their references). Options: 1 make it a standing global review criterion in authoring-conventions.md (every line earns its place: none repeats what an always-loaded file or the file it cites already says), so every delivery build and review apply it, and sweep now only the delivery-001..003 files no later delivery rewrites; 2 sweep all 242 files now, inside delivery-003; 3 one dedicated sweep at delivery-014.'
+    suggested: '1: a standing criterion, plus a sweep now of the files no later delivery rewrites'
+    answer: --
+    answered_by: --
+    applied_to: --
