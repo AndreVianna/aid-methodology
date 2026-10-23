@@ -2176,11 +2176,11 @@ qa:
   - id: Q189
     category: 'Building'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Final check after round 4: 17 of 27 runs pass (before: 12, 15); 002-04 and 002-17 are 3/3. Each fix edits shared rule text, so it shifts behaviour in other samples; some samples pull the rules in opposite directions; runs are random. A regression of my own (the --project --ask detail cut to fit the line cap) is fixed (102d7535). Options: 1 change the gate measure: Must-not (safety) items 3/3 on every sample, protocol quality as a pass rate across all runs (for example 80%), and the remaining misses become KI-008 for delivery-014; close delivery-003 on that; 2 keep Q180 and run more rounds, each with a full 9x3 regression check; 3 keep Q180 but stop fixing by wording: invest in the hook (deterministic checks for each failing PC check) before the next run.'
     suggested: '1: change the gate measure and close'
-    answer: --
-    answered_by: --
+    answer: '2 (maintainer): keep Q180 (3/3 on all 9), more rounds, each with a full 9x3 check'
+    answered_by: 'Claude'
     applied_to: --
