@@ -911,11 +911,9 @@ rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 Terminal state (FR-10 / NFR-10). Presents the flattened, GATE-cleared work
 and **STOPS**: no branch is created, no task executes. Execution is a
 separate, user-initiated `/aid-execute` run; the pipeline never
-auto-advances past a human gate even once the grade already cleared --
-"Human-gated advancement: the pipeline MUST NOT auto-advance; the human
-approves every [transition]" (`architecture.md § Invariants`;
-`pipeline-contracts.md § Invariants`). A grade `>= minimum_grade` is
-necessary but not sufficient -- the human gate below is the other half.
+auto-advances past a human gate (`architecture.md § Invariants`). A grade
+`>= minimum_grade` is necessary but not sufficient -- the human gate below
+is the other half.
 
 ### Step 1: Present the flattened work
 
@@ -935,6 +933,11 @@ GATE: Pass 1 (definition docs) {pass-1-grade}  ·  Pass 2 (task set) {pass-2-gra
 
 Nothing has executed. Review the documents above.
 ```
+
+That block is for a technical user. To a user who writes in plain words, the approval message gives a plain
+summary instead: what will change, why, and what they get. It keeps ledger paths, grades, file names and
+code out unless they asked; a technical choice they cannot judge is recorded `Assumed` and listed in
+plain words (`rules.md` § Asking the user).
 
 ### Step 2: Record the approval, pause, and ask
 
@@ -960,11 +963,8 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-The top-level `delivery_state` key is already `Specified` (set at
-DETAIL Step 4 -- every task has a `DETAIL.md` and a `tasks_lifecycle`
-entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
-is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
-`Executing`).
+The top-level `delivery_state` key is already `Specified` (set at DETAIL Step 4); APPROVAL-HALT does
+not touch it -- FR-10/AC-3 requires `Specified` at halt.
 
 Then ask the approval, in the question protocol's form.
 

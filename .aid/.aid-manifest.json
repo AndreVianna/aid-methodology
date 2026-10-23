@@ -28,7 +28,7 @@
         },
         {
           "path": "aid-config/SKILL.md",
-          "sha256": "220f324f6c1fe9c1b2c5631cc5a7271e2b8e4088d0894fa980b559a901bcb431"
+          "sha256": "d287e566ab863595829db558c5728515cb942ea1bd9e39765c2175105e2655ca"
         },
         {
           "path": "aid-create-api/SKILL.md",
@@ -552,7 +552,7 @@
         },
         {
           "path": "aid-monitor/SKILL.md",
-          "sha256": "c7737a7f5bce5778e0551e3d1cfbba33f6b050f415abcb17d5860ab80e567e25"
+          "sha256": "a07a24c231f722ae0c873382ede515ab0df49852e1c3ae282a19f573a84e256d"
         },
         {
           "path": "aid-monitor/references/state-classify.md",
@@ -560,7 +560,7 @@
         },
         {
           "path": "aid-monitor/references/state-observe.md",
-          "sha256": "537c7458895e3491a6b9ddb4fd0ac26fa42e7d6834c9d09d2d714df19726111f"
+          "sha256": "8532b8de564570399309ec848bc6fadd78caae34c6dad0d197d6fc4d41a19751"
         },
         {
           "path": "aid-monitor/references/state-route.md",
@@ -966,7 +966,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "fda2a1726e2765a167763784b5a9715a996f35892a76ca73d0cc8d7c285ad4d5"
+          "sha256": "dff3eceb28d8189f8b0585f8b72707534b335099037e8e8cf855c41e904b2498"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
@@ -1402,7 +1402,7 @@
         },
         {
           "path": "templates/shortcut-engine.md",
-          "sha256": "22471e59c25b82af8717d0fefab5c69a67186080be96aaa538e963f1e1ace1e0"
+          "sha256": "8a0300c3e579352ee213e0f7c5f2dd782bf2e70ec28f7ca3ead86eebd500a03e"
         },
         {
           "path": "templates/shortcut-scaffolding/analyze-report.md",

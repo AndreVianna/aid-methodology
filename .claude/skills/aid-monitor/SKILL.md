@@ -116,7 +116,8 @@ Determine the entry step of a fresh start from context:
 
 **From the project (what to observe):**
 Any combination of: error tracking (Sentry, AppInsights, CloudWatch), CI/CD results,
-APM/performance metrics, test trends, user feedback, support tickets, log files.
+APM/performance metrics, test trends, user feedback, support tickets, log files. This list is for
+you to read, never an answer to give the user: none available means the data-source question (Dispatch).
 
 **From AID artifacts (what's expected):**
 - Feature specifications (`.aid/works/{work}/REQUIREMENTS.md § 11`) — expected behavior
@@ -179,10 +180,6 @@ protocol lives in two reference docs; this section is a checklist citing them.
 - `.aid/runtime/templates/rough-time-hints.md` — current measured ETAs
 - `aid-*` agent definitions, `## Heartbeat protocol` section — subagent-side contract
 
-The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
-lines elsewhere in this skill body remain in place; this protocol just makes
-them more informative by adding mid-wait check-ins + structured progress.
-
 ## Dispatch
 
 | State | Detail | Worker | Advance |
@@ -193,6 +190,8 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise |
 
 Talking with the user: follow `.aid/runtime/templates/question-protocol.md`. Every wait on the user, a request for data included, is one question in that form, recorded with `--ask` before it is shown and `--answer` after (`--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` on both when no work is open, as `question-protocol.md` § Where each record lives sets for a question asked before a work exists), never a list of what is needed.
+
+**With no data source (none catalogued, or none reachable), the run MUST ask the one data-source question, with a recommendation, as `references/state-observe.md` sets it, before it ends.** It never ends that path without it, nor on a list of inputs.
 
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
