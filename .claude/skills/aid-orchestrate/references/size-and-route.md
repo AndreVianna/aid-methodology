@@ -74,7 +74,9 @@ exactly that action. Show the reading and its reason in one line and start the s
 go-ahead question and no wait: the flow goes on to FIND-OR-CREATE. Every other skill keeps its one
 confirmation question, and so does a reading that carries a Preparation offer (section 5): it waits for the
 answer. That confirmation is an approval (a yes lets the work start and change the project), so it ends with the
-approval closing line, `Or answer in your own words, or ask me to explain.`, never with a skip. The approvals inside a listed skill's own run
+approval closing line, `Or answer in your own words, or ask me to explain.`, never with a skip. The reading goes inside that
+go-ahead, never on a clarifying question: ask what must be clarified first, one question at a time, then the
+go-ahead. An answer to a clarifying question is never a go-ahead, and no work is created before the yes. The approvals inside a listed skill's own run
 (aid-review's publish approval, aid-monitor's routing approval, anything that writes outside its own report
 or record) are unchanged.
 

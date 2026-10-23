@@ -568,7 +568,7 @@
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "373abb8f6a125dbabef72c0753b55273fe5d86cfc5268afbd9ab296ba310f059"
+          "sha256": "27e0e964205a3f1849f8417d37ddf299bb9727ae750a87501228594e089dacfb"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
@@ -584,7 +584,7 @@
         },
         {
           "path": "aid-orchestrate/references/size-and-route.md",
-          "sha256": "92b663ecfbcfa7f69d0b1cd8efdf04f57dc36deec8b7ebcbcda7074a812c1144"
+          "sha256": "7df763a9f1cdab0424ca313ab42ca89440c0ed1e7ff66ff1c5b76e0dbb5c0b8b"
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
