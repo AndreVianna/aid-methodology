@@ -200,7 +200,9 @@ A work's question and a project question are written through `writeback-state.sh
 of those records (`.aid/runtime/scripts/execute/writeback-state.sh`). A Knowledge Base question is
 written to the Knowledge Base state file instead, in the same states, until that file takes this shape.
 
-- **`--ask`** appends a `Pending` entry and prints its id. It runs **before** the question is shown.
+- **`--ask`** appends a `Pending` entry and prints its id. Finalize the unanswered question and its
+  recommendation first, pass those texts as `--context` and `--suggested`, then show them unchanged
+  after the write succeeds. The write runs **before** the question is shown.
 - **`--answer`** updates that entry, for example `--answer --id <id> --state Answered --value '<reply>'`.
   It runs **right after** the reply, with the same work, project or design target as the question.
 - **`--project`** points either mode at the project file `.aid/STATE.yml`, which is created from

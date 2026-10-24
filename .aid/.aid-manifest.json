@@ -1362,7 +1362,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "5773794d1259cc7ecde77dca6aa687637bf503a35437310bf4244d775f2ff382"
+          "sha256": "1fd9f2681cd6e2e5f99fe53f1a15b095a361a3f5b5ed031cee679ff2b038e622"
         },
         {
           "path": "templates/requirements.md",
@@ -1398,7 +1398,7 @@
         },
         {
           "path": "templates/shortcut-engine.md",
-          "sha256": "8a0300c3e579352ee213e0f7c5f2dd782bf2e70ec28f7ca3ead86eebd500a03e"
+          "sha256": "3e460149179046e82e94247c28c009cade4074586aad13aeca118ba888322f7a"
         },
         {
           "path": "templates/shortcut-scaffolding/analyze-report.md",
