@@ -644,7 +644,7 @@
         },
         {
           "path": "aid-set-connector/SKILL.md",
-          "sha256": "2b283ef173ab11790dc6d15d5387b34f1de07b7c7f0c906e2be03f8443cd4d69"
+          "sha256": "a11f3a51870ea53e39e52fd1d39c78fb8d484c483a30e39b11eedce3e5e21498"
         },
         {
           "path": "aid-set-connector/references/question-sets.md",
@@ -906,7 +906,7 @@
         },
         {
           "path": "scripts/connectors/build-connectors-index.ps1",
-          "sha256": "22287067fb2f1a0f29699e5f399160dd6677c589b150304668680c0701f15170"
+          "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0"
         },
         {
           "path": "scripts/connectors/build-connectors-index.sh",
@@ -914,7 +914,7 @@
         },
         {
           "path": "scripts/connectors/connector-registry.ps1",
-          "sha256": "94813c264667a5ba8205f5732af2a2812bf3b1ad487e724c2be991f7add60b18"
+          "sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe"
         },
         {
           "path": "scripts/connectors/connector-registry.sh",
@@ -922,7 +922,7 @@
         },
         {
           "path": "scripts/connectors/connector-secret.ps1",
-          "sha256": "3ae48243ec17bcd71c8bd90ab4c13671cb550f45c379a430e24e3998a9a9aaba"
+          "sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef"
         },
         {
           "path": "scripts/connectors/connector-secret.sh",
@@ -998,7 +998,7 @@
         },
         {
           "path": "scripts/kb/coined-term-denylist.txt",
-          "sha256": "271e7f5706fee78caa61be02d611a8cde95be2dfb4ecadbb8e058729dc724278"
+          "sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec"
         },
         {
           "path": "scripts/kb/discover-preflight.sh",
@@ -1042,7 +1042,7 @@
         },
         {
           "path": "scripts/migrate/migrate-work-hierarchy.ps1",
-          "sha256": "c2424d977aef5a5bfc2750459b78548f8e72708710f6c8eed26e1657790353f8"
+          "sha256": "501215720a0232eb2110c04626489f7320b1ff3c35c3d8dc63d9bcf4303bba83"
         },
         {
           "path": "scripts/migrate/migrate-work-hierarchy.sh",
@@ -1054,7 +1054,7 @@
         },
         {
           "path": "scripts/summarize/assemble-3part.ps1",
-          "sha256": "8efb38147f42f75aa40fe0143817a707820e6165f6bfc7dc3fccfe6230958912"
+          "sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10"
         },
         {
           "path": "scripts/summarize/assemble-3part.sh",
@@ -1158,7 +1158,7 @@
         },
         {
           "path": "templates/delivery-state-template.yml",
-          "sha256": "348c5585a1c068348737121f04fc41a6d4b6af889cc3e162ee61b49d95ab3cbd"
+          "sha256": "789d927c725d8281807c64b6474f25b8af9c95b1d0c634b640f59334e5d49e32"
         },
         {
           "path": "templates/design-folder-readme.md",
@@ -1290,7 +1290,7 @@
         },
         {
           "path": "templates/knowledge-summary/component-css.css",
-          "sha256": "f6d07f2752b7b771c7d696f4950c027aa500babded27daa07bb42c830f3eda37"
+          "sha256": "3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32"
         },
         {
           "path": "templates/knowledge-summary/design-tokens.md",
@@ -1302,11 +1302,11 @@
         },
         {
           "path": "templates/knowledge-summary/html-skeleton.html",
-          "sha256": "9fb1799d598a5d4f889944229330bd541e90e3eb7e252b8966fcc6158842009b"
+          "sha256": "c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205"
         },
         {
           "path": "templates/knowledge-summary/lightbox.js",
-          "sha256": "20539ea4043511c93f5781e43064273df725fee5d9410a9efffea651bca7010f"
+          "sha256": "118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa"
         },
         {
           "path": "templates/knowledge-summary/prompt.md",
@@ -1358,7 +1358,7 @@
         },
         {
           "path": "templates/project-state-template.yml",
-          "sha256": "b629139c2d42634f1ce5be9b591983d5c534a469b0cbc27515e87a03f49c40a3"
+          "sha256": "007d012cd8e9b1ffdde5e383e53e4812f664dabb67074f8a575d97d25e9836fe"
         },
         {
           "path": "templates/question-protocol.md",
@@ -1394,7 +1394,7 @@
         },
         {
           "path": "templates/shortcut-catalog.yml",
-          "sha256": "49c2668772ca0964553247b1ed06833b5ecb4258c6baa34fcaf22447e626c724"
+          "sha256": "1cf5d00344601ec9cdfdbcf0a54bb24feb01e6571088cea0f8d0a29f043df9fe"
         },
         {
           "path": "templates/shortcut-engine.md",
@@ -1446,7 +1446,7 @@
         },
         {
           "path": "templates/task-state-template.yml",
-          "sha256": "53674bda0799a145b46a6fc8f7a4edea2c00bae589a1983b3ab8430e58381d68"
+          "sha256": "fca3f404d020bba121587e6ac3de5f28e42739942262c736d5ecef417b46ecd1"
         },
         {
           "path": "templates/work-initiation-gate.md",
@@ -1454,7 +1454,7 @@
         },
         {
           "path": "templates/work-state-template.yml",
-          "sha256": "4f3aa0eaeb0c53384450b309a6eaa30f62b7de9a09d6641956a3b2aa308fc1e6"
+          "sha256": "77d1d347422a12cafa42b7870b05787a3fbcdccde1d08d1319bfdff65b38d34f"
         },
         {
           "path": "templates/worktree-lifecycle.md",

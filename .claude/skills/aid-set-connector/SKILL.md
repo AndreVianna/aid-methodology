@@ -155,12 +155,15 @@ out, and do not ask again. An offer to set up a connector, made before this skil
 question like any other (`question-protocol.md` § One question); its subject is `Connections`, and it is
 recorded with `--project --ask` and `--project --answer`, as above.
 
-**Unavailable host connection.** State what is unavailable without promising access. If progress needs
-the user to enable or install a connection, that request is a question by meaning: use the full form,
-importance label and project question record before showing it, then record the reply. Never end with
-an unrecorded imperative such as "Please enable your connection." Give only setup steps supported by
-observed host controls; when those controls are unknown, ask for the needed information in the same
-group instead of inventing steps. A factual blocker that needs no reply is not a question.
+**Unavailable host connection.** State what is unavailable without promising access. Ask for information
+or action only when the answer enables a concrete next step supported by observed host capabilities
+or controls; otherwise report the blocker without requesting a reply. Being signed into another app
+does not expose a connection to this session by itself.
+Every needed follow-up uses the full question form, importance label and project question record
+before presentation, then records its reply. A distinct question needs its own record; do not reuse
+a completed setup approval. This includes information requests and instructions to enable or install
+a connection. Never end with an unrecorded imperative such as "Please enable your connection."
+Give only setup steps supported by observed host controls; invent none.
 When the user has authorized setup and the tool and type are known, still write the local descriptor
 and index: cataloguing the intended host connection does not claim that sign-in or live access works.
 Say what was recorded and where, and mark live access unverified when no host connection is exposed.
