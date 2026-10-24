@@ -1,83 +1,63 @@
 # Delivery-003 gate status
 
-**Current outcome: not passed. Delivery grade: Pending.** The historical approval below used
-Q166's known-issue exception; Q180, Q186 and Q189 require fresh success on every selected
-sample, three runs each. That exception cannot close the current gate.
+**Current outcome: not passed. Delivery grade: Pending.** Q180, Q186 and Q189
+require all ten selected conversation samples to succeed three times each. The
+historical Q166 known-issue exception below cannot close this gate.
 
-At the 2026-10-24T21:22Z evidence snapshot:
+At the 2026-10-24T21:40Z evidence snapshot:
 
-- Strict attempt 11 ended failed/incomplete after 14 passes. `002-14` run 3 changed the
-  same-issue question subject while advancing its counter (PC-8). Its exact batch is
-  `20261024T184825Z-codex-user-codex-judge-codex-24029`. Independent inspection confirms
-  the existing Rule 8 and shortcut engine were loaded; no conflicting instruction or
-  source cause was established. A reviewed pre-send header comparison reinforces that
-  rule. Subsequent focused retries exposed premature symptom intake, an incorrect
-  answer flag and a prohibited retry after a failed write. Scope ordering and the local
-  answer recipe were corrected and reviewed, with an actual writer smoke check.
-  An earlier batch failed because recording order could not be proved. Passive raw
-  capture is now implemented, independently reviewed and covered by the passing 279/0
-  offline regression. Subsequent raw traces establish actual write order; the older
-  missing chronology remains unrecoverable. The latest default-profile focused batch,
-  `20261024T202557Z-codex-user-codex-judge-codex-147593`, was judged 3/3, but its actual
-  audit rejects acceptance: two runs halted after omitting a required directory, and
-  one retried the failed write and omitted a recorded approval condition in its display.
-  A controlled same-source comparison using the existing model override for all three
-  Codex roles (`gpt-6-astra`) passed one trial then failed scope ordering. It does not
-  approve a different final profile. The default adapter probe selected `gpt-6.1-sol`
-  with no explicit effort value; no low-effort cause is established. No model batch is
-  active and no full gate passed. Reviewed source is complete; further wording changes
-  are not justified solely by these execution failures. Independent read-only host
-  diagnosis found no categorical instruction conflict. A bounded Codex guard proposal
-  is reviewed and awaits a future owner scope decision; no guard is implemented.
-- Reviewed recipe source `67a7882c` was resynced successfully as `34f54b726`.
-  The isolated resync changes only two runtime templates and their manifest hashes;
-  both installed templates equal canonical bytes. Exact-candidate formal validation
-  is running in a separate own-Git clone. Scratch generator/install parity has
-  already passed with all 3,513 raw files and modes unchanged, including the manifest.
-  Its official canonical run passed all 178 suites, exit 0, with unchanged timeouts;
-  all tracked files and modes remained unchanged afterward. Four platform skip
-  notices and 20 actual skip-placeholder labels remain explicit, requiring the appropriate
-  platform evidence. Current cost collection has all 645 keys, no new or removed keys, and 81 growing
-  metrics; its comparison exits 1. Always-on input decreases from 54,546 to 53,977
-  characters; per-skill, template and reference exposure still grows. Overlapping
-  exposure metrics are not summed as source bytes. Neither a tolerance waiver nor a baseline refresh
-  has been applied. Full site testing then passed all 50 files and 2,822 tests in a
-  separate clone. Its current 70 generated outputs were independently reviewed and
-  guard-integrated: every prior Windows byte matched the candidate, and every output
-  now matches the tested clone exactly. A report-only skip classifier incorrectly
-  included one actual passing normalizer test; its correction uses the existing log
-  and requires no suite rerun.
-  Official executed coverage collection is running separately. These component
-  passes do not close behavioral acceptance or overall G0.
-- At resync commit `d6cfb5f7bf0d2abc1f8a7061fe45bfbe0a945cce`, the official canonical
-  run passed all 178 suites with unchanged defaults. Full site testing passed all 50
-  files and 2,822 tests. Scratch generator/install parity passed with an empty tracked
-  diff and a separate raw-byte comparison of all 3,513 tracked files. Only four
-  platform-specific skip lines remain; native Windows evidence is still owed by CI.
-- All 87 generated site outputs from that earlier candidate match its tested site run, were independently
-  verified and were committed as `c12a0716f343464343528c180aec794d5fd1829c`. That commit
-  changes no model instruction, installed payload or test input.
-- Official coverage collection executed all 178 suites. Actual supplementary cohorts
-  supply the previously missing quiet assertions, native-rg comparison and real
-  Playwright-absence checks. Their independently verified maximum-count union has
-  10,989 keys and 13,364 emissions across five actual passing datasets. The native
-  Windows remote suite passed 50/50 without skips after private runtime preparation.
-  An additive malformed-handle assertion exercises the real installed function and
-  preserves all 66 existing assertion lines. The reviewed label mappings and stale
-  target correction are integrated; the official comparison now passes with 21 rehomes
-  and no accepted removals used. Failed runs are excluded from the union. This comparison
-  covers the audited source and remote-test addition; final candidate collection and
-  coverage/cost baselines remain open.
-- Source reviews are A+ source-only. The earlier research focused run was judged 3/3,
-  but its manual decision-ownership finding remains Pending until fresh `002-16`
-  evidence proves it. All 30 fresh successes, final candidate validation, report/grade,
-  baselines and exact-commit Installer CI remain required. The maintainer's push follows
-  completed local preparation. No push or merge has been performed.
+- The last strict batch failed/incomplete after 14 passes. Later focused runs
+  exposed real scope-ordering, record/display and failed-write retry violations.
+  The latest default-profile batch was judged 3/3, but actual audit rejects it:
+  two runs halted after omitting a required directory, and one retried a failed
+  write and omitted a recorded approval condition from its display. Its exact
+  batch is `20261024T202557Z-codex-user-codex-judge-codex-147593`. The same-source
+  Astra comparison also failed scope ordering. It approves no final profile change.
+- Reviewed source `67a7882c` and isolated resync `34f54b726` supply complete recipes.
+  The full loaded instructions are present in the failing traces; no new missing
+  source rule, low-effort cause or categorical host conflict is established.
+  Passive raw evidence capture is independently verified and the offline runner
+  passes 279 checks. Older missing chronology remains unrecoverable.
+- Exact-candidate local validation passed all 178 canonical suites with unchanged
+  defaults and all 50 site files / 2,822 tests. Scratch generator/install parity
+  passed with every one of 3,513 tracked raw files and modes unchanged, including
+  the manifest. Four platform skip notices and 20 actual placeholder labels remain
+  explicit. The one report-only skip misclassification was corrected from the
+  existing log without rerunning suites.
+- All 70 current generated site outputs were guard-integrated, independently
+  verified against the tested bytes and committed as `0af277dce`. Its other changes
+  are work bookkeeping; canonical, installed and test inputs remain unchanged.
+- Official coverage collection separately executed all 178 suites. The audited
+  maximum-count union of that run and three actual passing environment cohorts has
+  11,135 keys / 13,542 emissions. Every raw observation has execution provenance;
+  no old or unexecuted row is carried forward and duplicate counts are not summed.
+  Historical comparison passes with 21 reviewed rehomes, no accepted-removal use
+  and 1,174 additions. Real Playwright absence, rg absence and native Windows
+  remote checks all passed; the latter has 50 assertions and no skips.
+- Coverage and cost baseline inventories and metadata were re-recorded from those
+  exact independently verified captures under the plan's G0 requirement. Original
+  files and historical comparisons are preserved. Cost retains all 645 metric keys;
+  always-on input falls 569 characters, from 54,546 to 53,977, while 81 other metrics
+  grow. That historical zero-tolerance comparison remains exit 1. No tolerance or
+  accepted-removal change was made; refreshing a baseline is not a no-growth claim.
+- Source reviews are source-only. Actual behavioral findings remain open, including
+  the fresh research decision-ownership check. All 30 fresh compliant runs and
+  exact-commit Installer CI after the maintainer's required push are still owed.
+  No push or merge has been performed. The native Windows remote cohort does not
+  replace native installer CI.
 
-Exact current captures, review ledgers and provisioned-runtime evidence are under
-`.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`; the work STATE records
-the current step. The historical `002-14` routing success did not prove successful tracking
-setup or repair: the agent omitted the required directory creation and truthfully halted.
+The next scope decision is the reviewed proposal in
+`analysis/delivery-003-codex-guard-proposal.md` under **Proposed work**. Q183 approved
+Claude-only integration and Q189 selected wording rounds rather than guard work;
+fresh Codex authorization is a scope interpretation of those decisions, not a
+literal ban on future hooks. No Codex guard has been implemented. Its feasibility
+must be proved without hiding original messages, retrying failed writes or changing
+the acceptance criteria. A refusal leaves delivery-003 open.
+
+Current captures, component ledgers, preserved baselines and measurement provenance
+are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
+component runs and every failed model batch remain preserved as historical evidence.
+The historical `002-14` routing success never proved successful setup or repair.
 
 ## Historical gate report — superseded for current closure
 

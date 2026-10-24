@@ -199,6 +199,327 @@ test-aid-cli-parity.sh	FIX-E sh update after deleting AGENTS.md -> exit 0	1
 test-aid-cli-parity.sh	FIX-E sh update after deleting CLAUDE.md -> exit 0	1
 test-aid-cli-parity.sh	FIX-E sh update restores a deleted AGENTS.md	1
 test-aid-cli-parity.sh	FIX-E sh update restores a deleted CLAUDE.md	1
+test-aid-cli-parity.sh	HH-PAR-1 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-1 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-1 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-1 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-1 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-1 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-1 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-1 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-1 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-1 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-1 the record of an existing file says created false	1
+test-aid-cli-parity.sh	HH-PAR-1 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-1 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-10 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-10 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-10 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-10 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-10 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-10 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-10 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-10 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-10 ps warns with the reason: is nested too deeply	1
+test-aid-cli-parity.sh	HH-PAR-10 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-10 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-10 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-10 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-10 sh warns with the reason: is nested too deeply	1
+test-aid-cli-parity.sh	HH-PAR-10 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-10 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-10 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-10 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-11 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-11 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-11 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-11 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-11 nesting of exactly 100 levels is edited, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-11 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-11 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-11 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-11 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-11 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-11 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-11 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-11 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-12 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-12 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-12 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-12 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-12 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-12 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-12 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-12 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-12 ps warns with the reason: holds text that cannot be written as UTF-8	1
+test-aid-cli-parity.sh	HH-PAR-12 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-12 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-12 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-12 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-12 sh warns with the reason: holds text that cannot be written as UTF-8	1
+test-aid-cli-parity.sh	HH-PAR-12 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-12 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-12 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-12 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-13 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-13 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-13 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-13 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-13 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-13 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-13 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-13 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-13 ps warns with the reason: has a hooks entry that is not an object	1
+test-aid-cli-parity.sh	HH-PAR-13 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-13 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-13 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-13 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-13 sh warns with the reason: has a hooks entry that is not an object	1
+test-aid-cli-parity.sh	HH-PAR-13 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-13 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-13 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-13 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-14 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-14 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-14 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-14 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-14 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-14 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-14 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-14 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-14 ps warns with the reason: has a hooks.Stop entry that is not a list	1
+test-aid-cli-parity.sh	HH-PAR-14 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-14 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-14 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-14 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-14 sh warns with the reason: has a hooks.Stop entry that is not a list	1
+test-aid-cli-parity.sh	HH-PAR-14 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-14 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-14 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-14 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-15 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-15 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-15 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-15 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-15 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-15 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-15 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-15 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-15 ps warns with the reason: is not a JSON object	1
+test-aid-cli-parity.sh	HH-PAR-15 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-15 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-15 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-15 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-15 sh warns with the reason: is not a JSON object	1
+test-aid-cli-parity.sh	HH-PAR-15 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-15 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-15 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-15 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-16 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-16 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-16 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-16 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-16 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-16 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-16 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-16 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-16 ps warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-16 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-16 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-16 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-16 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-16 sh warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-16 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-16 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-16 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-16 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-17 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-17 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-17 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-17 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-17 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-17 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-17 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-17 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-17 ps warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-17 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-17 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-17 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-17 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-17 sh warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-17 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-17 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-17 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-17 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-18 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-18 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-18 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-18 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-18 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-18 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-18 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-18 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-18 ps warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-18 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-18 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-18 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-18 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-18 sh warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-18 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-18 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-18 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-18 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-19 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-19 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-19 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-19 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-19 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-19 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-19 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-19 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-19 ps warns with the reason: is nested too deeply	1
+test-aid-cli-parity.sh	HH-PAR-19 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-19 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-19 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-19 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-19 sh warns with the reason: is nested too deeply	1
+test-aid-cli-parity.sh	HH-PAR-19 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-19 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-19 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-19 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-2 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-2 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-2 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-2 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-2 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-2 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-2 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-2 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-2 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-2 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-2 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-2 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-3 a file AID created is deleted when the tool goes	1
+test-aid-cli-parity.sh	HH-PAR-3 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-3 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-3 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-3 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-3 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-3 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-3 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-3 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-3 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-3 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-3 the record of a new file says created true	1
+test-aid-cli-parity.sh	HH-PAR-3 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-3 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-4 a file neither twin will edit gets no record	1
+test-aid-cli-parity.sh	HH-PAR-4 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-4 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-4 and is left untouched	1
+test-aid-cli-parity.sh	HH-PAR-4 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-4 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-4 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-4 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-4 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-4 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-4 ps warns with the reason: contains a number that is not an integer	1
+test-aid-cli-parity.sh	HH-PAR-4 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-4 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-4 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-4 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-4 sh warns with the reason: contains a number that is not an integer	1
+test-aid-cli-parity.sh	HH-PAR-4 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-4 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-4 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-4 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-5 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-5 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-5 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-5 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-5 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-5 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-5 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-5 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-5 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-5 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-5 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-5 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-6 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-6 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-6 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-6 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-6 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-6 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-6 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-6 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-6 ps warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-6 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-6 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-6 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-6 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-6 sh warns with the reason: is not valid JSON	1
+test-aid-cli-parity.sh	HH-PAR-6 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-6 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-6 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-6 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-7 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-7 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-7 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-7 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-7 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-7 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-7 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-7 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-7 ps warns with the reason: has two keys that differ only in case	1
+test-aid-cli-parity.sh	HH-PAR-7 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-7 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-7 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-7 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-7 sh warns with the reason: has two keys that differ only in case	1
+test-aid-cli-parity.sh	HH-PAR-7 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-7 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-7 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-7 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-8 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-8 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-8 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-8 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-8 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-8 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-8 ps warns with the reason: is a symbolic link	1
+test-aid-cli-parity.sh	HH-PAR-8 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-8 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-8 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-8 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-8 sh warns with the reason: is a symbolic link	1
+test-aid-cli-parity.sh	HH-PAR-8 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 the settings file after remove is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-8 the symbolic link and the file it points to are untouched in both twins	1
+test-aid-cli-parity.sh	HH-PAR-9 a directory at the settings path gets nothing inside it, in either twin	1
+test-aid-cli-parity.sh	HH-PAR-9 a link or directory at the settings path is still there after remove, in both twins	1
+test-aid-cli-parity.sh	HH-PAR-9 add exits the same in both twins	1
+test-aid-cli-parity.sh	HH-PAR-9 both twins leave the same files in .claude	1
+test-aid-cli-parity.sh	HH-PAR-9 every WARN line of add, update and remove is byte-identical across twins	1
+test-aid-cli-parity.sh	HH-PAR-9 nothing is moved into the directory	1
+test-aid-cli-parity.sh	HH-PAR-9 ps leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-9 ps prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-9 ps records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-9 ps update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-9 ps warns with the reason: is not a regular file	1
+test-aid-cli-parity.sh	HH-PAR-9 sh leaves no temp file in .claude	1
+test-aid-cli-parity.sh	HH-PAR-9 sh prints no Hook line for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-9 sh records nothing for a refused file	1
+test-aid-cli-parity.sh	HH-PAR-9 sh update changes no byte of the settings file	1
+test-aid-cli-parity.sh	HH-PAR-9 sh warns with the reason: is not a regular file	1
+test-aid-cli-parity.sh	HH-PAR-9 the Hook line is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-9 the manifest hook entry is the same across twins	1
+test-aid-cli-parity.sh	HH-PAR-9 the settings file after add is byte-equal across twins	1
+test-aid-cli-parity.sh	HH-PAR-9 the settings file after remove is byte-equal across twins	1
 test-aid-cli-parity.sh	PAR-DW01a Bash degrade WARN silent by default	1
 test-aid-cli-parity.sh	PAR-DW01b Bash degrade WARN shown under --verbose	1
 test-aid-cli-parity.sh	PAR-DW02a PS1 degrade WARN silent by default	1
@@ -947,11 +1268,13 @@ test-aid-cli-parity.sh	STATIC-TWIN _aid_scaffold_bare_project <-> Invoke-AidScaf
 test-aid-cli-parity.sh	STATIC-TWIN _check_staged_version <-> Test-StagedVersion: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _copy_root_agent_file <-> Copy-RootAgentFile: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _ensure_claude_md_region <-> Invoke-EnsureClaudeMdRegion: both defined in their files	1
+test-aid-cli-parity.sh	STATIC-TWIN _ensure_host_hooks <-> Invoke-EnsureHostHooks: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _is_aid_owned_path <-> Test-AidOwnedPath: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _migrate_retired_layout <-> Invoke-MigrateRetiredLayout: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _prepare_release_staging_aid <-> Prepare-AidReleaseStaging: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _remove_claude_md_region <-> Invoke-RemoveClaudeMdRegion: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _remove_gitattributes_block <-> Remove-AidGitattributesBlock: both defined in their files	1
+test-aid-cli-parity.sh	STATIC-TWIN _remove_host_hooks <-> Invoke-RemoveHostHooks: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _repair_root_region <-> Repair-AidRootRegion: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN _root_agent_file <-> Get-RootAgentFile: both defined in their files	1
 test-aid-cli-parity.sh	STATIC-TWIN clear_upgrade_recovery <-> Clear-AidUpgradeRecovery: both defined in their files	1
@@ -1199,6 +1522,201 @@ test-aid-cli-ps1.sh	PS029-J05	1
 test-aid-cli-ps1.sh	PS029-J06	1
 test-aid-cli-ps1.sh	PS029-J07	1
 test-aid-cli-ps1.sh	PS029-J08	1
+test-aid-cli-ps1.sh	PSHH-01 LF, 2-space indent, no BOM	1
+test-aid-cli-ps1.sh	PSHH-01 a tool with no hook has no hooks member	1
+test-aid-cli-ps1.sh	PSHH-01 add claude-code -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-01 add prints the one hook line	1
+test-aid-cli-ps1.sh	PSHH-01 adding other tools keeps claude-code's record	1
+test-aid-cli-ps1.sh	PSHH-01 adding tools that declare no hook prints no hook line	1
+test-aid-cli-ps1.sh	PSHH-01 exactly one AID handler	1
+test-aid-cli-ps1.sh	PSHH-01 format_version stays 3 and hooks is the last member of the tool entry	1
+test-aid-cli-ps1.sh	PSHH-01 settings file created	1
+test-aid-cli-ps1.sh	PSHH-01 the created file ends with a newline	1
+test-aid-cli-ps1.sh	PSHH-01 the handler is the fixed command string with timeout 30, in its own group	1
+test-aid-cli-ps1.sh	PSHH-01 the hook script ships to the runtime	1
+test-aid-cli-ps1.sh	PSHH-01 the manifest records the hook with created true	1
+test-aid-cli-ps1.sh	PSHH-02 a file with no final newline stays without one	1
+test-aid-cli-ps1.sh	PSHH-02 a second add changes no byte of the settings file	1
+test-aid-cli-ps1.sh	PSHH-02 add into an existing settings file -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-02 an already-merged hand-formatted file is left byte for byte	1
+test-aid-cli-ps1.sh	PSHH-02 an empty Stop list takes the AID group	1
+test-aid-cli-ps1.sh	PSHH-02 an existing file is recorded created false	1
+test-aid-cli-ps1.sh	PSHH-02 non-ASCII stays as UTF-8 and control characters as \u00xx	1
+test-aid-cli-ps1.sh	PSHH-02 stale AID handlers are stripped, the user handler stays, an emptied group is dropped	1
+test-aid-cli-ps1.sh	PSHH-02 still one AID handler after add and update	1
+test-aid-cli-ps1.sh	PSHH-02 the AID group is appended after the user group	1
+test-aid-cli-ps1.sh	PSHH-02 the file's final newline is kept	1
+test-aid-cli-ps1.sh	PSHH-02 update -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-02 update changes no byte of the settings file	1
+test-aid-cli-ps1.sh	PSHH-02 update keeps the manifest record	1
+test-aid-cli-ps1.sh	PSHH-02 user keys, order, values and the user Stop hook are kept	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03a unparseable: the warning gives the reason 'is not valid JSON' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03b not an object: the warning gives the reason 'is not a JSON object' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03c hooks of the wrong type: the warning gives the reason 'has a hooks entry that is not an object' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03d hooks.Stop of the wrong type: the warning gives the reason 'has a hooks.Stop entry that is not a list' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03e a non-integer number: the warning gives the reason 'contains a number that is not an integer' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03f two keys that differ only in case: the warning gives the reason 'has two keys that differ only in case' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03g an empty file: the warning gives the reason 'is not valid JSON' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03h a BOM: the warning gives the reason 'is not valid JSON' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03i a NaN constant: the warning gives the reason 'is not valid JSON' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03j a lone surrogate: the warning gives the reason 'holds text that cannot be written as UTF-8' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03k 101 levels of nesting: the warning gives the reason 'is nested too deeply' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: no Hook line is printed	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: no stray file is left in .claude	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: one warning names the file	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: the file is untouched	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: the install still succeeds	1
+test-aid-cli-ps1.sh	PSHH-03l 990 levels of nesting: the warning gives the reason 'is nested too deeply' (the Bash twin's text)	1
+test-aid-cli-ps1.sh	PSHH-03m 100 levels of nesting are edited	1
+test-aid-cli-ps1.sh	PSHH-04 a created file that grew keeps the user's key; empty hooks keys are dropped	1
+test-aid-cli-ps1.sh	PSHH-04 a file AID created, left as {}, is deleted	1
+test-aid-cli-ps1.sh	PSHH-04 a file with user entries stays	1
+test-aid-cli-ps1.sh	PSHH-04 remove claude-code -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-04 remove of a hook-only install -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-04 the AID handler is gone	1
+test-aid-cli-ps1.sh	PSHH-04 the emptied .claude directory goes too	1
+test-aid-cli-ps1.sh	PSHH-04 the user hook and keys stay	1
+test-aid-cli-ps1.sh	PSHH-05 and does not warn about it	1
+test-aid-cli-ps1.sh	PSHH-05 and leaves the file	1
+test-aid-cli-ps1.sh	PSHH-05 and warns	1
+test-aid-cli-ps1.sh	PSHH-05 remove leaves a settings file without the marker alone	1
+test-aid-cli-ps1.sh	PSHH-05 remove with an uneditable settings file -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-05 remove without a record -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-05 the AID handler is stripped by its path marker; with no record the emptied file is kept as {}	1
+test-aid-cli-ps1.sh	PSHH-05 the unrelated file is byte for byte	1
+test-aid-cli-ps1.sh	PSHH-07 and records it (the file was absent, so created true)	1
+test-aid-cli-ps1.sh	PSHH-07 update -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-07 update adds the hook to an install without it	1
+test-aid-cli-ps1.sh	PSHH-07 update reports the hook	1
+test-aid-cli-ps1.sh	PSHH-09a diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09a nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09a refused	1
+test-aid-cli-ps1.sh	PSHH-09b diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09b nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09b refused	1
+test-aid-cli-ps1.sh	PSHH-09c diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09c nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09c refused	1
+test-aid-cli-ps1.sh	PSHH-09d diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09d nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09d refused	1
+test-aid-cli-ps1.sh	PSHH-09e diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09e nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09e refused	1
+test-aid-cli-ps1.sh	PSHH-09f diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09f nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09f refused	1
+test-aid-cli-ps1.sh	PSHH-09g diagnostic	1
+test-aid-cli-ps1.sh	PSHH-09g nothing installed	1
+test-aid-cli-ps1.sh	PSHH-09g refused	1
+test-aid-cli-ps1.sh	PSHH-11 a dangling link is not followed or replaced	1
+test-aid-cli-ps1.sh	PSHH-11 a dangling link is refused as a link	1
+test-aid-cli-ps1.sh	PSHH-11 add over a symbolic link -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-11 add prints no Hook line	1
+test-aid-cli-ps1.sh	PSHH-11 add warns with the reason	1
+test-aid-cli-ps1.sh	PSHH-11 and the file it points to is unchanged	1
+test-aid-cli-ps1.sh	PSHH-11 no temp file is left next to the link or its target	1
+test-aid-cli-ps1.sh	PSHH-11 nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-11 remove neither replaces nor deletes the link	1
+test-aid-cli-ps1.sh	PSHH-11 remove over a symbolic link -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-11 remove warns with the reason	1
+test-aid-cli-ps1.sh	PSHH-11 the file it points to is unchanged	1
+test-aid-cli-ps1.sh	PSHH-11 the link is still a link to the same file	1
+test-aid-cli-ps1.sh	PSHH-11 update over a symbolic link -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-11 update warns too	1
+test-aid-cli-ps1.sh	PSHH-12 add over a directory -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-12 add prints no Hook line	1
+test-aid-cli-ps1.sh	PSHH-12 add warns with the reason	1
+test-aid-cli-ps1.sh	PSHH-12 no temp file is left next to it	1
+test-aid-cli-ps1.sh	PSHH-12 nothing is moved into the directory	1
+test-aid-cli-ps1.sh	PSHH-12 nothing is recorded	1
+test-aid-cli-ps1.sh	PSHH-12 remove leaves the directory	1
+test-aid-cli-ps1.sh	PSHH-12 remove over a directory -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-13 a failing publish does not fail the step	1
+test-aid-cli-ps1.sh	PSHH-13 a failing publish of a new file warns too	1
+test-aid-cli-ps1.sh	PSHH-13 a failing publish on remove warns with the Bash twin's text	1
+test-aid-cli-ps1.sh	PSHH-13 a failing publish warns with the Bash twin's text	1
+test-aid-cli-ps1.sh	PSHH-13 add into a read-only .claude -> exit 0	1
+test-aid-cli-ps1.sh	PSHH-13 and its temp file is removed	1
+test-aid-cli-ps1.sh	PSHH-13 and no settings file appears	1
+test-aid-cli-ps1.sh	PSHH-13 and no temp file is left	1
+test-aid-cli-ps1.sh	PSHH-13 and prints no Hook line	2
+test-aid-cli-ps1.sh	PSHH-13 and prints no Hook line for it	1
+test-aid-cli-ps1.sh	PSHH-13 and remove prints no Hook line	1
+test-aid-cli-ps1.sh	PSHH-13 and returns that record unchanged	1
+test-aid-cli-ps1.sh	PSHH-13 and returns the one record it was given	1
+test-aid-cli-ps1.sh	PSHH-13 and the original is byte for byte	1
+test-aid-cli-ps1.sh	PSHH-13 and the original is byte for byte after a failed remove	1
+test-aid-cli-ps1.sh	PSHH-13 and the temp file is removed	1
+test-aid-cli-ps1.sh	PSHH-13 and warns with the reason	1
+test-aid-cli-ps1.sh	PSHH-13 the original file is byte for byte	1
 test-aid-cli.sh	CLI019-D01	1
 test-aid-cli.sh	CLI019-D02	1
 test-aid-cli.sh	CLI019-D03	1
@@ -1553,13 +2071,10 @@ test-aid-dashboard-cli.sh	T-5: second stop also exit 0	1
 test-aid-dashboard-cli.sh	T-5: second stop nothing-to-stop message	1
 test-aid-dashboard-cli.sh	T-5: stop nothing exit 0	1
 test-aid-dashboard-cli.sh	T-6: URL printed after stale reclaim	1
-test-aid-dashboard-cli.sh	T-6: URL printed after stale reclaim — pattern not found: 'Dashboard (python) running at htt<PATH>	1
 test-aid-dashboard-cli.sh	T-6: fresh child alive after stale reclaim	1
 test-aid-dashboard-cli.sh	T-6: initial start exits 0	1
 test-aid-dashboard-cli.sh	T-6: restart after crash exits 0	1
-test-aid-dashboard-cli.sh	T-6: restart after crash exits 0 — expected exit 0, got 8	1
 test-aid-dashboard-cli.sh	T-6: simulated crash confirmed (child dead)	1
-test-aid-dashboard-cli.sh	T-6: simulated crash confirmed (child dead) — expected 'dead' got 'alive'	1
 test-aid-dashboard-cli.sh	T-6: stale record still present after crash	1
 test-aid-dashboard-cli.sh	T-7: no dashboard.pid written on usage errors	1
 test-aid-dashboard-cli.sh	T-7a: bad runtime exit 2	1
@@ -2132,14 +2647,14 @@ test-aid-migrate.sh	G9E-02 repo canonical path registered in STATE_HOME<PATH>	1
 test-aid-migrate.sh	ISO-01 real .aid<PATH> is untouched (name: AID still present)	1
 test-aid-migrate.sh	ISO-02 real .aid<PATH> type line untouched	1
 test-aid-migrate.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
+test-aid-migration-stamp.sh	migration stamp: format-2 bare manifest with recovery stays at 4	1
+test-aid-migration-stamp.sh	migration stamp: format-3 manifest advances to 5 despite stale recovery	1
 test-aid-provisioning.sh	PRV-I01a install.sh contains _AID_HOME_PRESET guard (at least 2 occurrences)	1
 test-aid-provisioning.sh	PRV-I02a install.sh guard combines id -u==0 AND -z _AID_HOME_PRESET	1
 test-aid-provisioning.sh	PRV-I03 env-pin: shared dir not created (non-root + AID_HOME preset)	1
 test-aid-provisioning.sh	PRV-I04 _AID_HOME_PRESET captured (line 61) before first _provision call (line 831)	1
 test-aid-provisioning.sh	PRV-N01 non-root: shared dir not created (getuid != 0 guard active)	1
-test-aid-provisioning.sh	PRV-N01 non-root: shared dir should NOT be created by non-root postinstall	1
 test-aid-provisioning.sh	PRV-N02 non-root: registry.yml not created (getuid != 0 guard active)	1
-test-aid-provisioning.sh	PRV-N02 non-root: registry.yml should NOT be seeded by non-root postinstall	1
 test-aid-provisioning.sh	PRV-N04a postinstall.js contains getuid()===0 guard	1
 test-aid-provisioning.sh	PRV-N04b postinstall.js contains existsSync no-clobber check	1
 test-aid-provisioning.sh	PRV-N04c postinstall.js uses AID_SHARED_STATE_HOME seam	1
@@ -2156,9 +2671,7 @@ test-aid-provisioning.sh	PRV-P03a re-provision with existing registry -> exit 0	
 test-aid-provisioning.sh	PRV-P03b pre-existing entry preserved (no-clobber)	1
 test-aid-provisioning.sh	PRV-P04 no temp file left behind after provision	1
 test-aid-provisioning.sh	PRV-P05a non-writable parent -> returns non-zero (error path)	1
-test-aid-provisioning.sh	PRV-P05a non-writable parent -> returns non-zero (error path) — expected non-zero exit, got 0	1
 test-aid-provisioning.sh	PRV-P05b no partial artifact left in non-writable parent	1
-test-aid-provisioning.sh	PRV-P05b no partial artifact left in non-writable parent — expected '0' got '1'	1
 test-aid-provisioning.sh	PRV-P06 double-provision -> exactly one registry.yml	1
 test-aid-provisioning.sh	PRV-R01a register in writable state -> exit 0	1
 test-aid-provisioning.sh	PRV-R01b registry.yml in shared tier	1
@@ -2166,15 +2679,12 @@ test-aid-provisioning.sh	PRV-R01c repo entry in shared tier	1
 test-aid-provisioning.sh	PRV-R01d no WARN when shared is writable	1
 test-aid-provisioning.sh	PRV-R02a register with non-writable shared -> exit 0 (degrade)	1
 test-aid-provisioning.sh	PRV-R02b entry written to user tier <PATH>	1
-test-aid-provisioning.sh	PRV-R02b entry written to user tier <PATH> — file does not exist: <PATH>	1
 test-aid-provisioning.sh	PRV-R02c entry PRESERVED in user tier	1
-test-aid-provisioning.sh	PRV-R02c entry PRESERVED in user tier — pattern not found: '<PATH> in <PATH>	1
 test-aid-provisioning.sh	PRV-R02d degrade WARN suppressed by default (verbose-gated)	1
 test-aid-provisioning.sh	PRV-R02e no temp leak in user tier after degrade	1
 test-aid-provisioning.sh	PRV-R03 no 'sudo' invoked on degrade (empty-probe never-elevate)	1
 test-aid-provisioning.sh	PRV-R04a re-register same path on non-writable shared -> exit 0	1
 test-aid-provisioning.sh	PRV-R04b idempotent: still one entry after double register	1
-test-aid-provisioning.sh	PRV-R04b idempotent: still one entry after double register — expected '1' got '0'	1
 test-aid-provisioning.sh	PRV-SAFETY-01 real repo git status unchanged (no real <PATH> touched)	1
 test-aid-provisioning.sh	PRV-U01a user-scope register -> exit 0	1
 test-aid-provisioning.sh	PRV-U01b registry.yml in user tier (~<PATH>	1
@@ -2225,13 +2735,33 @@ test-aid-remote.sh	T-7: SEC-1 confirmed -- funnel not called in T-7	1
 test-aid-remote.sh	T-7: serve failure -> expose exit 12	1
 test-aid-remote.sh	T-7: serve-fail triggered revert ('serve --bg --https=443 off' called)	1
 test-aid-remote.sh	T-8: Bash expose no-mechanism -> exit 10 (T-3 Bash side)	1
+test-aid-remote.sh	T-8: Bash<->PS exit code parity for --remote no mechanism	1
+test-aid-remote.sh	T-8: PS NOT-exposed message (T-3 parity)	1
 test-aid-remote.sh	T-8: PS dashboard stop nothing-running -> exit 0 (T-5 parity)	1
+test-aid-remote.sh	T-8: PS start --remote no mechanism -> exit 10 (T-3 parity)	1
+test-aid-remote.sh	T-8: PS teardown malformed handle -> exit 0 (T-5 parity)	1
 test-aid-remote.sh	T-8: PS-T1-parity expose exit 0	1
 test-aid-remote.sh	T-8: PS-T1-parity handle shape	1
-test-aid-remote.sh	T-8: PS-T3-parity expose no-mechanism exit 10	1
 test-aid-remote.sh	T-8: PS-T3-parity start --remote exit 10	1
-test-aid-remote.sh	T-8: PS-T5-parity teardown malformed exit 0	1
 test-aid-update-dry-run-plan.sh	update dry-run reports guarded tool drift and stale AID files without changing the target	1
+test-artifact-discipline.sh	AD01	1
+test-artifact-discipline.sh	AD02	1
+test-artifact-discipline.sh	AD03	1
+test-artifact-discipline.sh	AD04	1
+test-artifact-discipline.sh	AD05	1
+test-artifact-discipline.sh	AD06	2
+test-artifact-discipline.sh	AD07	1
+test-artifact-discipline.sh	AD08a	1
+test-artifact-discipline.sh	AD08b	1
+test-artifact-discipline.sh	AD08c	1
+test-artifact-discipline.sh	AD09	1
+test-artifact-discipline.sh	AD10	1
+test-artifact-discipline.sh	AD11	1
+test-artifact-discipline.sh	AD12a	1
+test-artifact-discipline.sh	AD12b	1
+test-artifact-discipline.sh	AD12c	1
+test-artifact-discipline.sh	AD13	5
+test-artifact-discipline.sh	AD14	1
 test-ascii-only.sh	ASCII-only: bin<PATH>	3
 test-ascii-only.sh	ASCII-only: canonical<PATH>	13
 test-ascii-only.sh	ASCII-only: dashboard<PATH>	3
@@ -3611,6 +4141,8 @@ test-conversation-runner.sh	CX31	1
 test-conversation-runner.sh	CX32	1
 test-conversation-runner.sh	CX33	1
 test-conversation-runner.sh	CX34	1
+test-conversation-runner.sh	CX35	1
+test-conversation-runner.sh	CX36	1
 test-conversation-runner.sh	DF01	1
 test-conversation-runner.sh	DF02	1
 test-conversation-runner.sh	DF03	1
@@ -3648,6 +4180,7 @@ test-conversation-runner.sh	EN07	1
 test-conversation-runner.sh	EN08	1
 test-conversation-runner.sh	EN09	1
 test-conversation-runner.sh	EN10	1
+test-conversation-runner.sh	EV01	1
 test-conversation-runner.sh	EX01	1
 test-conversation-runner.sh	EX02	1
 test-conversation-runner.sh	EX03	1
@@ -3676,6 +4209,70 @@ test-conversation-runner.sh	FL14	1
 test-conversation-runner.sh	FL15	1
 test-conversation-runner.sh	FL16	1
 test-conversation-runner.sh	FL17	1
+test-conversation-runner.sh	HK00	1
+test-conversation-runner.sh	HK01	1
+test-conversation-runner.sh	HK02	1
+test-conversation-runner.sh	HK03	1
+test-conversation-runner.sh	HK03b	1
+test-conversation-runner.sh	HK04	1
+test-conversation-runner.sh	HK05	1
+test-conversation-runner.sh	HK06	1
+test-conversation-runner.sh	HK06b	1
+test-conversation-runner.sh	HK06c	1
+test-conversation-runner.sh	HK07	1
+test-conversation-runner.sh	HK08	1
+test-conversation-runner.sh	HK09	1
+test-conversation-runner.sh	HK10	1
+test-conversation-runner.sh	HK11	1
+test-conversation-runner.sh	HK12	1
+test-conversation-runner.sh	HK13	1
+test-conversation-runner.sh	HP-auth Codex helpers preserve auth	1
+test-conversation-runner.sh	HP-briefs Codex helpers preserve briefs	1
+test-conversation-runner.sh	HP-context Codex helpers preserve context	1
+test-conversation-runner.sh	HP-isolated Codex helpers preserve isolated	1
+test-conversation-runner.sh	HP-models Codex helpers preserve models	1
+test-conversation-runner.sh	HP-providers Codex helpers preserve providers	1
+test-conversation-runner.sh	HP-restrained Codex helpers preserve restrained	1
+test-conversation-runner.sh	HP-roles Codex helpers preserve roles	1
+test-conversation-runner.sh	HP01	1
+test-conversation-runner.sh	HP02	1
+test-conversation-runner.sh	HP03	1
+test-conversation-runner.sh	HP04	1
+test-conversation-runner.sh	HP05	1
+test-conversation-runner.sh	HP06	1
+test-conversation-runner.sh	HP07	1
+test-conversation-runner.sh	HP08	1
+test-conversation-runner.sh	HP09	1
+test-conversation-runner.sh	HP10	1
+test-conversation-runner.sh	HP11	1
+test-conversation-runner.sh	HP12	1
+test-conversation-runner.sh	HP13	1
+test-conversation-runner.sh	HP14	1
+test-conversation-runner.sh	HP15	1
+test-conversation-runner.sh	HP16	1
+test-conversation-runner.sh	HP17	1
+test-conversation-runner.sh	HP18	1
+test-conversation-runner.sh	HP19	1
+test-conversation-runner.sh	HU-alwaysshow a runner broken that way fails case user_view	1
+test-conversation-runner.sh	HU-basic the runner's withdrawn-message handling: case basic	1
+test-conversation-runner.sh	HU-everyblock a runner broken that way fails case once	1
+test-conversation-runner.sh	HU-fatal a runner broken that way fails case tolerant	1
+test-conversation-runner.sh	HU-grouped the runner's withdrawn-message handling: case grouped	1
+test-conversation-runner.sh	HU-nogroup a runner broken that way fails case grouped	1
+test-conversation-runner.sh	HU-nolog the runner's withdrawn-message handling: case nolog	1
+test-conversation-runner.sh	HU-nomark a runner broken that way fails case basic	1
+test-conversation-runner.sh	HU-nomarker a runner broken that way fails case render	1
+test-conversation-runner.sh	HU-none the runner's withdrawn-message handling: case none	1
+test-conversation-runner.sh	HU-notrim a runner broken that way fails case trim	1
+test-conversation-runner.sh	HU-offset the runner's withdrawn-message handling: case offset	1
+test-conversation-runner.sh	HU-once the runner's withdrawn-message handling: case once	1
+test-conversation-runner.sh	HU-render the runner's withdrawn-message handling: case render	1
+test-conversation-runner.sh	HU-reread a runner broken that way fails case offset	1
+test-conversation-runner.sh	HU-tolerant the runner's withdrawn-message handling: case tolerant	1
+test-conversation-runner.sh	HU-trim the runner's withdrawn-message handling: case trim	1
+test-conversation-runner.sh	HU-unmatched the runner's withdrawn-message handling: case unmatched	1
+test-conversation-runner.sh	HU-user_view the runner's withdrawn-message handling: case user_view	1
+test-conversation-runner.sh	HU-userseeshidden a runner broken that way fails case user_view	1
 test-conversation-runner.sh	JD01	1
 test-conversation-runner.sh	JD02	1
 test-conversation-runner.sh	JD03	1
@@ -3703,6 +4300,7 @@ test-conversation-runner.sh	LG13	1
 test-conversation-runner.sh	LG14	1
 test-conversation-runner.sh	LG15	1
 test-conversation-runner.sh	LG16	1
+test-conversation-runner.sh	MC01	1
 test-conversation-runner.sh	NP01	1
 test-conversation-runner.sh	NP02	1
 test-conversation-runner.sh	NP03	1
@@ -3710,6 +4308,14 @@ test-conversation-runner.sh	NP04	1
 test-conversation-runner.sh	NP05	1
 test-conversation-runner.sh	NP06	1
 test-conversation-runner.sh	NP07	1
+test-conversation-runner.sh	PQ01	1
+test-conversation-runner.sh	PQ01b	1
+test-conversation-runner.sh	PQ02	1
+test-conversation-runner.sh	PQ03	1
+test-conversation-runner.sh	PQ03b	1
+test-conversation-runner.sh	PQ03c	1
+test-conversation-runner.sh	PQ04	1
+test-conversation-runner.sh	PQ05	1
 test-conversation-runner.sh	RF01	1
 test-conversation-runner.sh	RF02	1
 test-conversation-runner.sh	RF03	1
@@ -3721,6 +4327,7 @@ test-conversation-runner.sh	RF08	1
 test-conversation-runner.sh	RF09	1
 test-conversation-runner.sh	RF10	1
 test-conversation-runner.sh	RF11	1
+test-conversation-runner.sh	RW01	1
 test-conversation-runner.sh	SA01	1
 test-conversation-runner.sh	SA02	1
 test-conversation-runner.sh	SA03	1
@@ -5541,7 +6148,7 @@ test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-BODY AGENTS.md AID region is the r
 test-dogfood-byte-identity.sh	DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)	1
 test-dogfood-byte-identity.sh	DBI-ROOT-CLAUDE CLAUDE.md AID region is the AGENTS.md body plus the single @.aid<PATH> import	1
 test-dogfood-byte-identity.sh	DBI-ROOT-PROJECT CLAUDE.md keeps its ## Project section	1
-test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	139
+test-dogfood-byte-identity.sh	DBI-RT .aid<PATH>	141
 test-dogfood-byte-identity.sh	DBI-RT-EXTRA .aid<PATH> holds no file beyond canonical<PATH> and host.conf	1
 test-dogfood-byte-identity.sh	DBI-RT-HOST .aid<PATH> holds exactly worktree_root=.claude<PATH>	1
 test-dogfood-byte-identity.sh	DBI-RT-RULES .aid<PATH> == canonical<PATH>	1
@@ -5911,6 +6518,225 @@ test-harvest-coined-terms.sh	T10d output has documented column header row	1
 test-harvest-coined-terms.sh	T10e output has at least one harvest data row	1
 test-harvest-coined-terms.sh	T10f all harvest data rows have exactly 9 columns	1
 test-harvest-coined-terms.sh	T10g all data rows have Source='harvest'	1
+test-host-hooks.sh	HH-01 LF, 2-space indent, no BOM	1
+test-host-hooks.sh	HH-01 add claude-code succeeds	1
+test-host-hooks.sh	HH-01 add prints the one hook line	1
+test-host-hooks.sh	HH-01 exactly one AID handler	1
+test-host-hooks.sh	HH-01 hooks is the last member of the tool entry	1
+test-host-hooks.sh	HH-01 manifest format_version stays 3	1
+test-host-hooks.sh	HH-01 settings file created	1
+test-host-hooks.sh	HH-01 the AID handler sits in its own group	1
+test-host-hooks.sh	HH-01 the created file ends with a newline	1
+test-host-hooks.sh	HH-01 the handler is the fixed command string with timeout 30	1
+test-host-hooks.sh	HH-01 the hook script ships to the runtime	1
+test-host-hooks.sh	HH-01 the manifest records the hook with created true	1
+test-host-hooks.sh	HH-02 a file with no final newline stays without one	1
+test-host-hooks.sh	HH-02 a run that changes nothing writes nothing	1
+test-host-hooks.sh	HH-02 a second add changes no byte of the settings file	1
+test-host-hooks.sh	HH-02 add into an existing settings file succeeds	1
+test-host-hooks.sh	HH-02 an already-merged hand-formatted file is left byte for byte	1
+test-host-hooks.sh	HH-02 an empty Stop list takes the AID group	1
+test-host-hooks.sh	HH-02 an existing file is recorded created false	1
+test-host-hooks.sh	HH-02 non-ASCII stays as UTF-8 and control characters as \u00xx	1
+test-host-hooks.sh	HH-02 stale AID handlers are stripped, the user handler stays, an emptied group is dropped	1
+test-host-hooks.sh	HH-02 still one AID handler after add and update	1
+test-host-hooks.sh	HH-02 the AID group is appended after the user group	1
+test-host-hooks.sh	HH-02 the file's final newline is kept	1
+test-host-hooks.sh	HH-02 update changes no byte of the settings file	1
+test-host-hooks.sh	HH-02 update keeps the manifest record	1
+test-host-hooks.sh	HH-02 user keys, order, values and the user Stop hook are kept	1
+test-host-hooks.sh	HH-03 update keeps the record the manifest already held	1
+test-host-hooks.sh	HH-03 update over a file that became unparseable succeeds	1
+test-host-hooks.sh	HH-03 update warns	1
+test-host-hooks.sh	HH-03a unparseable: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03a unparseable: nothing is recorded	1
+test-host-hooks.sh	HH-03a unparseable: one warning names the file	1
+test-host-hooks.sh	HH-03a unparseable: the file is untouched	1
+test-host-hooks.sh	HH-03a unparseable: the install still succeeds	1
+test-host-hooks.sh	HH-03a unparseable: the rest of the install is in place	1
+test-host-hooks.sh	HH-03a unparseable: the warning gives the reason 'is not valid JSON'	1
+test-host-hooks.sh	HH-03b not an object: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03b not an object: nothing is recorded	1
+test-host-hooks.sh	HH-03b not an object: one warning names the file	1
+test-host-hooks.sh	HH-03b not an object: the file is untouched	1
+test-host-hooks.sh	HH-03b not an object: the install still succeeds	1
+test-host-hooks.sh	HH-03b not an object: the rest of the install is in place	1
+test-host-hooks.sh	HH-03b not an object: the warning gives the reason 'is not a JSON object'	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: nothing is recorded	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: one warning names the file	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: the file is untouched	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: the install still succeeds	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: the rest of the install is in place	1
+test-host-hooks.sh	HH-03c hooks of the wrong type: the warning gives the reason 'has a hooks entry that is not an object'	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: nothing is recorded	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: one warning names the file	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: the file is untouched	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: the install still succeeds	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: the rest of the install is in place	1
+test-host-hooks.sh	HH-03d hooks.Stop of the wrong type: the warning gives the reason 'has a hooks.Stop entry that is not a list'	1
+test-host-hooks.sh	HH-03e a non-integer number: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03e a non-integer number: nothing is recorded	1
+test-host-hooks.sh	HH-03e a non-integer number: one warning names the file	1
+test-host-hooks.sh	HH-03e a non-integer number: the file is untouched	1
+test-host-hooks.sh	HH-03e a non-integer number: the install still succeeds	1
+test-host-hooks.sh	HH-03e a non-integer number: the rest of the install is in place	1
+test-host-hooks.sh	HH-03e a non-integer number: the warning gives the reason 'contains a number that is not an integer'	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: nothing is recorded	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: one warning names the file	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: the file is untouched	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: the install still succeeds	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: the rest of the install is in place	1
+test-host-hooks.sh	HH-03f two keys that differ only in case: the warning gives the reason 'has two keys that differ only in case'	1
+test-host-hooks.sh	HH-03g an empty file: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03g an empty file: nothing is recorded	1
+test-host-hooks.sh	HH-03g an empty file: one warning names the file	1
+test-host-hooks.sh	HH-03g an empty file: the file is untouched	1
+test-host-hooks.sh	HH-03g an empty file: the install still succeeds	1
+test-host-hooks.sh	HH-03g an empty file: the rest of the install is in place	1
+test-host-hooks.sh	HH-03g an empty file: the warning gives the reason 'is not valid JSON'	1
+test-host-hooks.sh	HH-03h a BOM: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03h a BOM: nothing is recorded	1
+test-host-hooks.sh	HH-03h a BOM: one warning names the file	1
+test-host-hooks.sh	HH-03h a BOM: the file is untouched	1
+test-host-hooks.sh	HH-03h a BOM: the install still succeeds	1
+test-host-hooks.sh	HH-03h a BOM: the rest of the install is in place	1
+test-host-hooks.sh	HH-03h a BOM: the warning gives the reason 'is not valid JSON'	1
+test-host-hooks.sh	HH-03i a NaN constant: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03i a NaN constant: nothing is recorded	1
+test-host-hooks.sh	HH-03i a NaN constant: one warning names the file	1
+test-host-hooks.sh	HH-03i a NaN constant: the file is untouched	1
+test-host-hooks.sh	HH-03i a NaN constant: the install still succeeds	1
+test-host-hooks.sh	HH-03i a NaN constant: the rest of the install is in place	1
+test-host-hooks.sh	HH-03i a NaN constant: the warning gives the reason 'is not valid JSON'	1
+test-host-hooks.sh	HH-03j a lone surrogate: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03j a lone surrogate: nothing is recorded	1
+test-host-hooks.sh	HH-03j a lone surrogate: one warning names the file	1
+test-host-hooks.sh	HH-03j a lone surrogate: the file is untouched	1
+test-host-hooks.sh	HH-03j a lone surrogate: the install still succeeds	1
+test-host-hooks.sh	HH-03j a lone surrogate: the rest of the install is in place	1
+test-host-hooks.sh	HH-03j a lone surrogate: the warning gives the reason 'holds text that cannot be written as UTF-8'	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: nothing is recorded	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: one warning names the file	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: the file is untouched	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: the install still succeeds	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: the rest of the install is in place	1
+test-host-hooks.sh	HH-03k 101 levels of nesting: the warning gives the reason 'is nested too deeply'	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: no stray file is left in .claude	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: nothing is recorded	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: one warning names the file	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: the file is untouched	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: the install still succeeds	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: the rest of the install is in place	1
+test-host-hooks.sh	HH-03l 990 levels of nesting: the warning gives the reason 'is nested too deeply'	1
+test-host-hooks.sh	HH-03m 100 levels of nesting are edited	1
+test-host-hooks.sh	HH-04 a created file that grew keeps the user's key; empty hooks keys are dropped	1
+test-host-hooks.sh	HH-04 a file AID created, left as {}, is deleted	1
+test-host-hooks.sh	HH-04 a file with user entries stays	1
+test-host-hooks.sh	HH-04 remove claude-code succeeds	1
+test-host-hooks.sh	HH-04 remove of a hook-only install succeeds	1
+test-host-hooks.sh	HH-04 the AID handler is gone	1
+test-host-hooks.sh	HH-04 the emptied .claude directory goes too	1
+test-host-hooks.sh	HH-04 the other tool's manifest entry is untouched	1
+test-host-hooks.sh	HH-04 the user hook and keys stay	1
+test-host-hooks.sh	HH-05 and does not warn about it	1
+test-host-hooks.sh	HH-05 and leaves the file	1
+test-host-hooks.sh	HH-05 and warns	1
+test-host-hooks.sh	HH-05 fixture: the manifest has no hook record	1
+test-host-hooks.sh	HH-05 remove leaves a settings file without the marker alone	1
+test-host-hooks.sh	HH-05 remove with an uneditable settings file succeeds	1
+test-host-hooks.sh	HH-05 remove without a record succeeds	1
+test-host-hooks.sh	HH-05 the AID handler is stripped by its path marker	1
+test-host-hooks.sh	HH-05 the unrelated file is byte for byte	1
+test-host-hooks.sh	HH-05 with no record the emptied file is kept as {} (created is unknown)	1
+test-host-hooks.sh	HH-06 add cursor,codex succeeds	1
+test-host-hooks.sh	HH-06 no hook line	1
+test-host-hooks.sh	HH-06 no hook records	1
+test-host-hooks.sh	HH-06 no settings file for cursor or codex	1
+test-host-hooks.sh	HH-06 the manifest has no hooks member at all	1
+test-host-hooks.sh	HH-07 adding another tool keeps claude-code's record	1
+test-host-hooks.sh	HH-07 adding claude-code to a cursor project places the hook	1
+test-host-hooks.sh	HH-07 and cursor's entry stays hook-free	1
+test-host-hooks.sh	HH-07 and records it (the file was absent, so created true)	1
+test-host-hooks.sh	HH-07 update adds the hook to an install without it	1
+test-host-hooks.sh	HH-07 update reports the hook	1
+test-host-hooks.sh	HH-07 update succeeds	1
+test-host-hooks.sh	HH-08 add without python3 succeeds	1
+test-host-hooks.sh	HH-08 fixture: PATH lacks python3	1
+test-host-hooks.sh	HH-08 nothing is recorded	1
+test-host-hooks.sh	HH-08 nothing is written	1
+test-host-hooks.sh	HH-08 one warning	1
+test-host-hooks.sh	HH-08 remove warns that the settings file stays	1
+test-host-hooks.sh	HH-08 remove without python3 succeeds	1
+test-host-hooks.sh	HH-08 the settings file is left as it was	1
+test-host-hooks.sh	HH-09a diagnostic	1
+test-host-hooks.sh	HH-09a nothing installed	1
+test-host-hooks.sh	HH-09a refused	1
+test-host-hooks.sh	HH-09b diagnostic	1
+test-host-hooks.sh	HH-09b nothing installed	1
+test-host-hooks.sh	HH-09b refused	1
+test-host-hooks.sh	HH-09c diagnostic	1
+test-host-hooks.sh	HH-09c nothing installed	1
+test-host-hooks.sh	HH-09c refused	1
+test-host-hooks.sh	HH-09d diagnostic	1
+test-host-hooks.sh	HH-09d nothing installed	1
+test-host-hooks.sh	HH-09d refused	1
+test-host-hooks.sh	HH-09e diagnostic	1
+test-host-hooks.sh	HH-09e nothing installed	1
+test-host-hooks.sh	HH-09e refused	1
+test-host-hooks.sh	HH-09f diagnostic	1
+test-host-hooks.sh	HH-09f nothing installed	1
+test-host-hooks.sh	HH-09f refused	1
+test-host-hooks.sh	HH-09g diagnostic	1
+test-host-hooks.sh	HH-09g nothing installed	1
+test-host-hooks.sh	HH-09g refused	1
+test-host-hooks.sh	HH-10 aid_profile self-test passes	1
+test-host-hooks.sh	HH-10 antigravity declares no hook	1
+test-host-hooks.sh	HH-10 codex declares no hook	1
+test-host-hooks.sh	HH-10 copilot-cli declares no hook	1
+test-host-hooks.sh	HH-10 cursor declares no hook	1
+test-host-hooks.sh	HH-10 render self-test passes	1
+test-host-hooks.sh	HH-10 the shipped descriptor names the hook	1
+test-host-hooks.sh	HH-10 the shipped descriptor names the settings file	1
+test-host-hooks.sh	HH-11 a dangling link is not followed or replaced	1
+test-host-hooks.sh	HH-11 a dangling link is refused as a link	1
+test-host-hooks.sh	HH-11 add over a dangling link succeeds	1
+test-host-hooks.sh	HH-11 add over a symbolic link succeeds	1
+test-host-hooks.sh	HH-11 add prints no Hook line	1
+test-host-hooks.sh	HH-11 add warns with the reason	1
+test-host-hooks.sh	HH-11 and the file it points to is unchanged	1
+test-host-hooks.sh	HH-11 no temp file is left next to the link or its target	1
+test-host-hooks.sh	HH-11 nothing is recorded	1
+test-host-hooks.sh	HH-11 remove neither replaces nor deletes the link	1
+test-host-hooks.sh	HH-11 remove over a symbolic link succeeds	1
+test-host-hooks.sh	HH-11 remove warns with the reason	1
+test-host-hooks.sh	HH-11 the file it points to is unchanged	1
+test-host-hooks.sh	HH-11 the link is still a link to the same file	1
+test-host-hooks.sh	HH-11 update leaves the link	1
+test-host-hooks.sh	HH-11 update over a symbolic link succeeds	1
+test-host-hooks.sh	HH-11 update warns too	1
+test-host-hooks.sh	HH-12 add over a directory succeeds	1
+test-host-hooks.sh	HH-12 add prints no Hook line	1
+test-host-hooks.sh	HH-12 add warns with the reason	1
+test-host-hooks.sh	HH-12 no temp file is left next to it	1
+test-host-hooks.sh	HH-12 nothing goes into the directory	1
+test-host-hooks.sh	HH-12 nothing is recorded	1
+test-host-hooks.sh	HH-12 remove leaves the directory	1
+test-host-hooks.sh	HH-12 remove over a directory succeeds	1
+test-host-hooks.sh	HH-12 update over a directory succeeds	1
+test-host-hooks.sh	HH-13 a failing replace leaves the original byte for byte	1
+test-host-hooks.sh	HH-13 a failing replace warns with the reason	1
+test-host-hooks.sh	HH-13 add into a read-only .claude succeeds	1
+test-host-hooks.sh	HH-13 add warns with the reason	1
+test-host-hooks.sh	HH-13 add with a failing replace succeeds	1
+test-host-hooks.sh	HH-13 and prints no Hook line	2
+test-host-hooks.sh	HH-13 and records nothing	1
+test-host-hooks.sh	HH-13 and removes its temp file	1
+test-host-hooks.sh	HH-13 nothing is recorded	1
+test-host-hooks.sh	HH-13 the original file is byte for byte	1
 test-housekeep-branch-commit.sh	U10: --add-all commit exits 0	1
 test-housekeep-branch-commit.sh	U10: both files staged and committed via --add-all	1
 test-housekeep-branch-commit.sh	U10: exactly one commit with --add-all	1
@@ -6176,7 +7002,7 @@ test-install-core-primitives.sh	writer: python3 writer exits 0	1
 test-install-parity.sh	PAR13a	1
 test-install-parity.sh	PAR13b	1
 test-install-parity.sh	PAR13c	1
-test-install-parity.sh	PAR14	32
+test-install-parity.sh	PAR14	34
 test-install-provisioning.sh	C1 exactly one ## Workflow after C2 migration (no duplicate)	1
 test-install-provisioning.sh	C1b user ## Project content preserved	1
 test-install-provisioning.sh	C1c region markers inserted	1
@@ -6263,6 +7089,18 @@ test-install.sh	IN07c	1
 test-install.sh	IN07d	1
 test-install.sh	IN07e	1
 test-install.sh	IN07f	1
+test-kb-citation-lint.sh	CL01	1
+test-kb-citation-lint.sh	CL02	1
+test-kb-citation-lint.sh	CL03	1
+test-kb-citation-lint.sh	CL04	1
+test-kb-citation-lint.sh	CL05	1
+test-kb-citation-lint.sh	CL06	1
+test-kb-citation-lint.sh	CL07	1
+test-kb-citation-lint.sh	CL08	1
+test-kb-citation-lint.sh	CL09	7
+test-kb-citation-lint.sh	CL10	1
+test-kb-citation-lint.sh	CL11	5
+test-kb-citation-lint.sh	CL12	2
 test-kb-export.sh	KB01	1
 test-kb-export.sh	KB02	1
 test-kb-export.sh	KB03a	1
@@ -6289,6 +7127,20 @@ test-kb-export.sh	KB25d	1
 test-kb-export.sh	KB25e	1
 test-kb-export.sh	KB30	1
 test-kb-export.sh	KB31	1
+test-kb-export.sh	PW30a	1
+test-kb-export.sh	PW30b	1
+test-kb-export.sh	PW30c	1
+test-kb-export.sh	PW30d	1
+test-kb-export.sh	PW31a	1
+test-kb-export.sh	PW31b	1
+test-kb-export.sh	PW32a	1
+test-kb-export.sh	PW32b	1
+test-kb-export.sh	PW33a	1
+test-kb-export.sh	PW33b	1
+test-kb-export.sh	PW33c	1
+test-kb-export.sh	PW34	1
+test-kb-export.sh	PW35	1
+test-kb-export.sh	PW36	1
 test-kb-forward-authored-marker.sh	FA01	2
 test-kb-forward-authored-marker.sh	FA02	2
 test-kb-forward-authored-marker.sh	FA03	5
@@ -6325,7 +7177,12 @@ test-kb-freshness-check.sh	FR18	1
 test-kb-freshness-check.sh	FR19	1
 test-kb-freshness-check.sh	FR20	1
 test-kb-freshness-check.sh	FR21	1
-test-kb-html-claims-check.sh	KH05	1
+test-kb-html-claims-check.sh	KH01	4
+test-kb-html-claims-check.sh	KH02	3
+test-kb-html-claims-check.sh	KH03	3
+test-kb-html-claims-check.sh	KH04	2
+test-kb-html-claims-check.sh	KH05	2
+test-kb-html-claims-check.sh	KH06	6
 test-kb-index-extract-list.sh	EL01	4
 test-kb-index-extract-list.sh	EL02	3
 test-kb-index-extract-list.sh	EL03	1
@@ -6451,6 +7308,11 @@ test-layout-format-guard.sh	recovery add<PATH> gate (no manifest): aid add names
 test-layout-format-guard.sh	recovery add<PATH> gate (no manifest): aid remove exits 2	1
 test-layout-format-guard.sh	recovery add<PATH> gate (no manifest): aid remove leaves snapshot unchanged	1
 test-layout-format-guard.sh	recovery add<PATH> gate (no manifest): aid remove names aid update	1
+test-ledger-isolation.sh	LI01	3
+test-ledger-isolation.sh	LI02	3
+test-ledger-isolation.sh	LI03	4
+test-ledger-isolation.sh	LI04	1
+test-ledger-isolation.sh	LI05	2
 test-lite-work-end-to-end.sh	E2E01 the slice defines exactly the cited criteria (AC-1, AC-2; 2 total) and not AC-3	1
 test-lite-work-end-to-end.sh	E2E02 derive-waves --from-tasks orders the waves from the task dependencies	1
 test-lite-work-end-to-end.sh	E2E03 the forked writer routed the write to the FLAT target on a work with no BLUEPRINT.md	1
@@ -6548,7 +7410,6 @@ test-migrate-hierarchy.sh	G5-12 golden parity: work STATE.md Lifecycle History	1
 test-migrate-hierarchy.sh	G5-file-STATE.md: present in bash sandbox	1
 test-migrate-hierarchy.sh	G5-file-deliveries<PATH> present in bash sandbox	12
 test-migrate-hierarchy.sh	G5-file-tasks<PATH> present in bash sandbox	4
-test-migrate-hierarchy.sh	G6-00 PowerShell parity gate skipped (pwsh absent)	1
 test-migrate-hierarchy.sh	G6-01 migrate-work-hierarchy.ps1 exits 0	1
 test-migrate-hierarchy.sh	G6-02 PS: delivery-001<PATH> created	1
 test-migrate-hierarchy.sh	G6-03 PS: delivery-001<PATH>	1
@@ -7061,6 +7922,8 @@ test-pypi-installer.sh	PW06-03	1
 test-pypi-installer.sh	PW06-04	1
 test-pypi-installer.sh	PW06-05	1
 test-pypi-installer.sh	PW06-06	1
+test-pypi-installer.sh	PW06-06a	1
+test-pypi-installer.sh	PW06-06b	1
 test-pypi-installer.sh	PW06-07	1
 test-pypi-installer.sh	PW06-08	1
 test-pypi-installer.sh	PW06-09	1
@@ -7070,6 +7933,124 @@ test-pypi-installer.sh	PW07-03	1
 test-pypi-installer.sh	PW07-04	1
 test-pypi-installer.sh	PW08-01	1
 test-pypi-installer.sh	PW08-02	1
+test-question-form-hook.sh	HY-01 hook scripts are ASCII-only	1
+test-question-form-hook.sh	HY-02 launcher is executable	1
+test-question-form-hook.sh	HY-03 aid-question-form.py header has Purpose, Usage and Exit codes	1
+test-question-form-hook.sh	HY-03 aid-question-form.sh header has Purpose, Usage and Exit codes	1
+test-question-form-hook.sh	QF-01a formed and recorded passes	1
+test-question-form-hook.sh	QF-01b approval closing line passes	1
+test-question-form-hook.sh	QF-01c bold markers tolerated	1
+test-question-form-hook.sh	QF-01d en and em dash separators accepted	1
+test-question-form-hook.sh	QF-02a F1 missing blocks, names the first line	1
+test-question-form-hook.sh	QF-02a only F1 named (no Why I ask complaint)	1
+test-question-form-hook.sh	QF-02b upper-case importance blocks	1
+test-question-form-hook.sh	QF-03 F2 missing blocks, names Why I ask	1
+test-question-form-hook.sh	QF-04 F3 missing blocks, names My recommendation	1
+test-question-form-hook.sh	QF-05 F4 missing blocks, names the closing line	1
+test-question-form-hook.sh	QF-05b a bare question blocks, names all four form items	1
+test-question-form-hook.sh	QF-06a formed but no --ask blocks, names the record	1
+test-question-form-hook.sh	QF-06a only the record named	1
+test-question-form-hook.sh	QF-06b no tool call at all blocks	1
+test-question-form-hook.sh	QF-06c --ask without writeback-state.sh blocks	1
+test-question-form-hook.sh	QF-06d an --ask in a sidechain does not count	1
+test-question-form-hook.sh	QF-06e both form and record missing names both	1
+test-question-form-hook.sh	QF-07a --ask --design passes	1
+test-question-form-hook.sh	QF-07b --project --ask passes	1
+test-question-form-hook.sh	QF-08a --ask before the last user prompt blocks	1
+test-question-form-hook.sh	QF-08b an isMeta entry does not start a new turn	1
+test-question-form-hook.sh	QF-09a a report with no question passes	1
+test-question-form-hook.sh	QF-09b a '?' inside a URL or inline code does not count	1
+test-question-form-hook.sh	QF-09c a '?' inside inline code does not count	1
+test-question-form-hook.sh	QF-10 stop_hook_active passes a bad message	1
+test-question-form-hook.sh	QF-11 break offer passes	1
+test-question-form-hook.sh	QF-12a Recovery subject passes with no record	1
+test-question-form-hook.sh	QF-12b Cancel work subject passes with no record	1
+test-question-form-hook.sh	QF-12c another subject after a --check, no record, blocks	1
+test-question-form-hook.sh	QF-12d a waived record still needs F1 to F4	1
+test-question-form-hook.sh	QF-13a a skipped question offered again with the same text passes	1
+test-question-form-hook.sh	QF-13b same question text under a new subject matches the entry's context	1
+test-question-form-hook.sh	QF-13c an Answered entry is not open; blocks	1
+test-question-form-hook.sh	QF-13d no open entry; blocks, says not to record twice	1
+test-question-form-hook.sh	QF-13e a Pending design-table entry offered again with its text passes	1
+test-question-form-hook.sh	QF-13f a Pending work qa entry offered again with its text passes	1
+test-question-form-hook.sh	QF-14a Edit of .aid<PATH> passes	1
+test-question-form-hook.sh	QF-14b Edit of another KB file does not count	1
+test-question-form-hook.sh	QF-15a ticket skill most recent passes with no record	1
+test-question-form-hook.sh	QF-15b a later non-ticket skill ends the waiver	1
+test-question-form-hook.sh	QF-16 a '?' only inside a code fence passes	1
+test-question-form-hook.sh	QF-17a bad stdin prints {} exit 0	1
+test-question-form-hook.sh	QF-17b empty stdin prints {} exit 0	1
+test-question-form-hook.sh	QF-17c non-object stdin prints {} exit 0	1
+test-question-form-hook.sh	QF-17d missing transcript prints {} exit 0	1
+test-question-form-hook.sh	QF-17e unreadable transcript lines never crash	1
+test-question-form-hook.sh	QF-17f control: the event blocks with a normal PATH	1
+test-question-form-hook.sh	QF-17g no Python on PATH prints {} exit 0	1
+test-question-form-hook.sh	QF-17h a Python below <VER> (or broken) prints {} exit 0	1
+test-question-form-hook.sh	QF-18a AID_QUESTION_HOOK=off passes	1
+test-question-form-hook.sh	QF-18b the switch is case-insensitive	1
+test-question-form-hook.sh	QF-18c another value does not turn the hook off	1
+test-question-form-hook.sh	QF-19a fallback reads the last assistant text (formed, recorded)	1
+test-question-form-hook.sh	QF-19b fallback blocks a bare question	1
+test-question-form-hook.sh	QF-19c fallback passes a report	1
+test-question-form-hook.sh	QF-19d fallback with no assistant text passes	1
+test-question-form-hook.sh	QF-20a no log line on a pass	1
+test-question-form-hook.sh	QF-20b block with the log set	1
+test-question-form-hook.sh	QF-20c log line holds time, session_id, missing (list) and message	1
+test-question-form-hook.sh	QF-20d no log line when stop_hook_active passes it	1
+test-question-form-hook.sh	QF-21a block output is one single-line JSON object {decision, reason}	1
+test-question-form-hook.sh	QF-21b a block exits 0	1
+test-question-form-hook.sh	QF-21c exactly one output line	1
+test-question-form-hook.sh	QF-22a a lead-in ending with ':' and a list of ways forward blocks	1
+test-question-form-hook.sh	QF-22b a 'ways forward' lead-in with a list blocks even with no request verb	1
+test-question-form-hook.sh	QF-22c 'Tell me if you want it cancelled.' blocks	1
+test-question-form-hook.sh	QF-22d 'Let me know if you want X.' blocks	1
+test-question-form-hook.sh	QF-22e 'would you like' without a '?' blocks	1
+test-question-form-hook.sh	QF-22f an imperative 'pick' blocks	1
+test-question-form-hook.sh	QF-22g a final report ending with a done-list passes	1
+test-question-form-hook.sh	QF-22h a report that only tells what was chosen passes	1
+test-question-form-hook.sh	QF-22i a request phrase only inside a code fence passes	1
+test-question-form-hook.sh	QF-22j a request phrase only inside inline code passes	1
+test-question-form-hook.sh	QF-22k a request phrase more than three paragraphs before the end passes	1
+test-question-form-hook.sh	QF-22l a request followed by a closing remark still waits on the user	1
+test-question-form-hook.sh	QF-22m a numbered request in the middle, then a closing remark, waits on the user	1
+test-question-form-hook.sh	QF-22n 'I need one of these:' + a list + a closing remark waits on the user	1
+test-question-form-hook.sh	QF-22o "I'd need the following:" + a list waits on the user	1
+test-question-form-hook.sh	QF-22p 'I would need two things' + a list waits on the user	1
+test-question-form-hook.sh	QF-22q a report that says 'I needed to ...' about the past passes	1
+test-question-form-hook.sh	QF-22r 'I need to <do something>:' + a list (the agent's own steps) passes	1
+test-question-form-hook.sh	QF-23a an open entry with the same category but another question does not satisfy the record	1
+test-question-form-hook.sh	QF-23a only the record named	1
+test-question-form-hook.sh	QF-23b the same question text under the same category passes	1
+test-question-form-hook.sh	QF-23c a near-identical wording (token overlap of <VER> or more) passes	1
+test-question-form-hook.sh	QF-23d a re-offered skipped question with the same text still passes	1
+test-question-form-hook.sh	QF-23e a new question under a category that holds a Skipped entry blocks	1
+test-question-form-hook.sh	QF-24a a break offer followed by a short closing line passes	1
+test-question-form-hook.sh	QF-24b a break offer two paragraphs before the end passes	1
+test-question-form-hook.sh	QF-24c a break offer plus a separate form question is still checked as a question	1
+test-question-form-hook.sh	QF-24d a break offer plus a form question missing its lines still blocks	1
+test-question-form-hook.sh	QF-25a a go-ahead with the skip closing line blocks	1
+test-question-form-hook.sh	QF-25b a go-ahead with the approval closing line passes	1
+test-question-form-hook.sh	QF-25c a plain question keeps the skip closing line	1
+test-question-form-hook.sh	QF-26a a double-quoted --context that is the shown question passes	1
+test-question-form-hook.sh	QF-26b a single-quoted --context that is the shown question passes	1
+test-question-form-hook.sh	QF-26c a different --context blocks, naming the record	1
+test-question-form-hook.sh	QF-26c the missing-record wording is not used	1
+test-question-form-hook.sh	QF-26d a $'...' --context with an escaped quote passes	1
+test-question-form-hook.sh	QF-26e a single-quoted --context with a '\'' quote passes	1
+test-question-form-hook.sh	QF-26f a --context that cannot be read (command substitution) keeps today's behaviour	1
+test-question-form-hook.sh	QF-26g an unterminated quote keeps today's behaviour	1
+test-question-form-hook.sh	QF-26h an --ask with no --context keeps today's behaviour	1
+test-question-form-hook.sh	QF-26i one matching --ask among several passes	1
+test-question-form-hook.sh	QF-26j a non-matching --ask alone blocks	1
+test-question-form-hook.sh	QF-26k a chained command is read to the end of the value	1
+test-question-form-hook.sh	QF-26l a recorded question that differs from the one shown blocks	1
+test-question-form-hook.sh	QF-26m an open entry with the shown question satisfies the record	1
+test-question-form-hook.sh	QF-27a a fenced question with no record blocks, naming the record	1
+test-question-form-hook.sh	QF-27b a fenced question that was recorded passes	1
+test-question-form-hook.sh	QF-27c a fenced question missing a form line blocks, naming it	1
+test-question-form-hook.sh	QF-27d a fence without the closing line is code, not a question	1
+test-question-form-hook.sh	QF-28a the reason keeps the repeat line and forbids dropping a question or a break offer	1
+test-question-form-hook.sh	QF-28b the old 'not waiting' escape is gone	1
 test-read-setting.sh	T10: unknown flag exits 2	1
 test-read-setting.sh	T11: --skill without --key exits 2	1
 test-read-setting.sh	T12: execute.minimum_grade=B+ honored (different per-skill than discover)	1
@@ -7173,7 +8154,6 @@ test-reconcile-scenarios.sh	RS07b	1
 test-reconcile-scenarios.sh	RS07c	1
 test-reconcile-scenarios.sh	RS07d	1
 test-registry.sh	ESCAPE-CANARY: <PATH> absent (real <PATH> untouched)	1
-test-registry.sh	ESCAPE-CANARY: <PATH> pre-existed before suite; skipping creation check	1
 test-registry.sh	REG-C01a aid add codex -> exit 0	1
 test-registry.sh	REG-C01b registry.yml created after add	1
 test-registry.sh	REG-C01c repo path in registry after add	1
@@ -7209,7 +8189,6 @@ test-registry.sh	REG-C09d AID_HOME (including registry) removed by remove self	1
 test-registry.sh	REG-C09e per-repo manifest untouched by remove self	1
 test-registry.sh	REG-DW01 degrade WARN silent by default (no verbose)	1
 test-registry.sh	REG-DW02 degrade WARN shown under verbose (_AID_VERBOSE=1)	1
-test-registry.sh	REG-DW03 degrade: WARN-path acceptable (function returned 0 -- contract satisfied)	1
 test-registry.sh	REG-DW03 degrade: repo still registered in fallback HOME<PATH>	1
 test-registry.sh	REG-EC real-HOME escape canary: developer ~<PATH> untouched	1
 test-registry.sh	REG-F01a add for format test -> exit 0	1
@@ -7283,7 +8262,6 @@ test-registry.sh	REG-P06b-02 no 'Register this' prompt from dashboard auto-regis
 test-registry.sh	REG-P06b-03 no interactive y<PATH> prompt from dashboard auto-register	1
 test-registry.sh	REG-P06b-04 no ERROR from degrade path (silent degrade)	1
 test-registry.sh	REG-P06b-05 degrade: entry lands in user-tier registry	1
-test-registry.sh	REG-P06b-05 degrade: no user-tier write (WARN path; no prompt is the contract)	1
 test-registry.sh	REG-P06c-01 tier resolver returns user for per-user install	1
 test-registry.sh	REG-P06c-02 projects add succeeds	1
 test-registry.sh	REG-P06c-03 projects add output confirms user tier	1
@@ -7408,7 +8386,6 @@ test-registry.sh	REG-V03a degrade: register returns 0 even when AID_STATE_HOME n
 test-registry.sh	REG-V03b degrade: WARN suppressed by default (_AID_VERBOSE=0)	1
 test-registry.sh	REG-V03b2 degrade: WARN emitted under _AID_VERBOSE=1	1
 test-registry.sh	REG-V03c degrade: entry preserved in fallback user tier	1
-test-registry.sh	REG-V03c degrade: fallback not written (WARN path -- acceptable per task-010 contract)	1
 test-registry.sh	REG-V04a prune-on-read -> exit 0	1
 test-registry.sh	REG-V04b prune-on-read: dead repo (no .aid<PATH> dropped from union	1
 test-registry.sh	REG-V04c prune-on-read: live repo still in union	1
@@ -7568,6 +8545,12 @@ test-release-migrate-smoke.sh	RMS-NPM-02-D -- after __migrate-repo: legacy STATE
 test-release-migrate-smoke.sh	RMS-NPM-02-E -- clean-slate upgrade via channel: settings stamped format_version: 5, manifest format_version: 3	1
 test-release-migrate-smoke.sh	RMS-NPM-02-F -- after the upgrade: no older-format WARN on encounter	1
 test-release-migrate-smoke.sh	RMS-PYPI-01 wheel build + pip install su<HEX>	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-B -- after __migrate-repo: settings.yml keeps legacy stamp format_version: 4	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-C -- after __migrate-repo: legacy work-state STATE.md converted to STATE.yml	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-E -- clean-slate upgrade via channel: settings stamped format_version: 5, manifest format_version: 3	1
+test-release-migrate-smoke.sh	RMS-PYPI-02-F -- after the upgrade: no older-format WARN on encounter	1
 test-release-migrate-smoke.sh	RMS-SAFETY-01 real repo git status unchanged (scan stayed in throwaway HOME)	1
 test-release-staging-descriptors.sh	RSD01	1
 test-release-staging-descriptors.sh	RSD02	4
@@ -7579,6 +8562,14 @@ test-release-staging-descriptors.sh	RSD07	4
 test-release-staging-descriptors.sh	RSD08	4
 test-release-staging-descriptors.sh	RSD09	4
 test-release-staging-descriptors.sh	RSD10	4
+test-release-staging-descriptors.sh	RSD11	4
+test-release-staging-descriptors.sh	RSD12	4
+test-release-staging-descriptors.sh	RSD13	4
+test-release-staging-descriptors.sh	RSD14	4
+test-release-staging-descriptors.sh	RSD15	4
+test-release-staging-descriptors.sh	RSD16	4
+test-release-staging-descriptors.sh	RSD17	4
+test-release-staging-descriptors.sh	RSD18	4
 test-release.sh	RL01	2
 test-release.sh	RL02	6
 test-release.sh	RL03	20
@@ -7628,7 +8619,12 @@ test-review-path-audit.sh	PA02	2
 test-review-path-audit.sh	PA03	4
 test-review-path-audit.sh	PA04	4
 test-review-path-audit.sh	PA05	4
-test-review-recall.sh	RC06	1
+test-review-recall.sh	RC01	2
+test-review-recall.sh	RC02	1
+test-review-recall.sh	RC03	2
+test-review-recall.sh	RC04	2
+test-review-recall.sh	RC05	1
+test-review-recall.sh	RC06	2
 test-scoped-review-cycles.sh	SC01	1
 test-scoped-review-cycles.sh	SC02	1
 test-scoped-review-cycles.sh	SC03	1
@@ -7690,7 +8686,24 @@ test-self-commands.sh	SELF017-PS02	1
 test-self-commands.sh	SELF017-PS03	1
 test-self-commands.sh	SELF018-PS01	1
 test-self-commands.sh	SELF018-PS02	1
-test-settings-schema-check.sh	SS10	1
+test-settings-schema-check.sh	SS01	2
+test-settings-schema-check.sh	SS02	2
+test-settings-schema-check.sh	SS03	2
+test-settings-schema-check.sh	SS04	2
+test-settings-schema-check.sh	SS05	3
+test-settings-schema-check.sh	SS06	2
+test-settings-schema-check.sh	SS07	2
+test-settings-schema-check.sh	SS08	6
+test-settings-schema-check.sh	SS09	2
+test-settings-schema-check.sh	SS10	2
+test-settings-schema-check.sh	SS11	2
+test-severity-why-line.sh	WL01	1
+test-severity-why-line.sh	WL02	1
+test-severity-why-line.sh	WL03	1
+test-severity-why-line.sh	WL04	2
+test-severity-why-line.sh	WL05	5
+test-severity-why-line.sh	WL06	1
+test-severity-why-line.sh	WL07	2
 test-shared-install.sh	AC-14(a) AGENTS.md and CLAUDE.md regions share the same body	1
 test-shared-install.sh	AC-14(a) AGENTS.md region bullets equal the installed rules.md summary block byte for byte	1
 test-shared-install.sh	AC-14(a) AGENTS.md region contains no @ line	1
@@ -7858,7 +8871,7 @@ test-shared-install.sh	AC-7 cursor update preserves node_modules file	1
 test-shared-install.sh	AC-7 cursor update preserves user .aid state	1
 test-shared-install.sh	AC-7 cursor update prunes stray runtime file	1
 test-shared-install.sh	AC-7 cursor update succeeds	1
-test-shared-install.sh	NP add<PATH> output identical without python3	1
+test-shared-install.sh	NP add<PATH> output identical without python3 (host-hook lines aside)	1
 test-shared-install.sh	NP bash and python3 writers emit identical bytes for non-ASCII and escaped values	1
 test-shared-install.sh	NP bash writer escapes a non-BMP character as a surrogate pair	1
 test-shared-install.sh	NP bash writer escapes non-ASCII as \uXXXX	1
@@ -7868,6 +8881,9 @@ test-shared-install.sh	NP no-python PATH really lacks python3	1
 test-shared-install.sh	NP snapshot captured the manifest	1
 test-shared-install.sh	NP the v3 upgrade ran without python3	1
 test-shared-install.sh	NP trees and manifest bytes (installed_at masked) identical without python3 after every step	1
+test-shared-install.sh	NP-H with python3 the hook is installed	1
+test-shared-install.sh	NP-H without python3 no hook is reported installed	1
+test-shared-install.sh	NP-H without python3 the hook step warns	1
 test-shared-install.sh	SHA add claude-code on a shasum-only host succeeds	1
 test-shared-install.sh	SHA add<PATH> output identical on a shasum-only host	1
 test-shared-install.sh	SHA agents_md and claude_md region_sha256 are both recorded (64 hex)	1
@@ -7905,6 +8921,81 @@ test-shared-layout-sources.sh	rules source contains no host path, canonical toke
 test-shared-layout-sources.sh	rules source exists	1
 test-shared-layout-sources.sh	rules source has exactly one summary block	1
 test-shared-layout-sources.sh	rules summary block carries the eight bullets	1
+test-shared-prune.sh	Canonical skill present in the new manifest remains installed	1
+test-shared-prune.sh	Canonical stray trash bytes are unchanged	1
+test-shared-prune.sh	Clean previous skill is not copied to trash	1
+test-shared-prune.sh	Initial install records the canonical skill	1
+test-shared-prune.sh	Manifested old skill is deleted when its previous SHA matches	1
+test-shared-prune.sh	Non-AID user skill remains unchanged	1
+test-shared-prune.sh	Previous manifest records the old skill SHA	1
+test-shared-prune.sh	Unrecorded canonical aid skill is preserved in trash	1
+test-shared-prune.sh	Unrecorded canonical aid skill leaves its source path	1
+test-shared-remove.sh	AGENTS.md region contains no @ line after add	1
+test-shared-remove.sh	CLAUDE.md has exactly one @ line, the rules import, while no tool is inline	1
+test-shared-remove.sh	CLAUDE.md region and its manifest hash follow the inline state on remove	1
+test-shared-remove.sh	Changed shared skill is preserved in trash	1
+test-shared-remove.sh	Claude shared record and mirror disappear while AGENTS user remains	1
+test-shared-remove.sh	Edited AGENTS.md prints the exact preservation notice	1
+test-shared-remove.sh	Edited AGENTS.md stays in place	1
+test-shared-remove.sh	Edited AGENTS.md user bytes remain	1
+test-shared-remove.sh	Edited tool agent is moved to trash	1
+test-shared-remove.sh	Empty AID skill directories are pruned	1
+test-shared-remove.sh	Final inline removal deletes the rewritten owned AGENTS file	1
+test-shared-remove.sh	Final inline removal deletes the rewritten owned host.conf	1
+test-shared-remove.sh	Final inline removal does not misclassify unchanged AGENTS as drift	1
+test-shared-remove.sh	Final inline removal does not misclassify unchanged host.conf as drift	1
+test-shared-remove.sh	Final inline removal recognizes the rewritten AGENTS file as AID-owned	1
+test-shared-remove.sh	Final removal deletes the rewritten owned AGENTS file	1
+test-shared-remove.sh	Final removal deletes the rewritten owned host.conf	1
+test-shared-remove.sh	Final removal does not misclassify unchanged host.conf as drift	1
+test-shared-remove.sh	Final removal recognizes the rewritten AGENTS region as AID-owned	1
+test-shared-remove.sh	Last Claude import removal restores pre-existing bytes	1
+test-shared-remove.sh	Last mirror user removes AID Claude skill files	1
+test-shared-remove.sh	Last removal preserves content outside the managed region	1
+test-shared-remove.sh	Last removal still detects the pre-existing outside edit	1
+test-shared-remove.sh	Last shared user removes canonical skill	1
+test-shared-remove.sh	Last shared user removes runtime payload	1
+test-shared-remove.sh	Last shared user removes the empty runtime root	1
+test-shared-remove.sh	Last tool removal keeps the project question file .aid<PATH>	1
+test-shared-remove.sh	Last tool removal leaves .aid<PATH> bytes unchanged	1
+test-shared-remove.sh	Last tool removes a gitattributes file containing only the managed block	1
+test-shared-remove.sh	Last tool removes manifest	1
+test-shared-remove.sh	Last unchanged AGENTS region is removed	1
+test-shared-remove.sh	Manifest drops cursor from every shared user list	1
+test-shared-remove.sh	Non-last remove of an undrifted region trashes nothing	1
+test-shared-remove.sh	Non-last remove trashes AGENTS.md when its region was edited	1
+test-shared-remove.sh	Outside edits stay outside the refreshed whole-file ownership baseline	1
+test-shared-remove.sh	Partial removal refreshes owned AGENTS and host.conf hashes	1
+test-shared-remove.sh	Partial removal updates the managed region to the remaining tool choice	1
+test-shared-remove.sh	Pointer rewrite removes the previous inline body	1
+test-shared-remove.sh	Remaining cursor keeps exactly one AGENTS region	1
+test-shared-remove.sh	Remaining cursor worktree root rewrites host.conf	1
+test-shared-remove.sh	Remaining inline tool keeps standalone markers, full rules bytes, and actual manifest hashes	1
+test-shared-remove.sh	Remaining inline-rules tool does not receive a pointer region	1
+test-shared-remove.sh	Removed tool agent leaves its source path	1
+test-shared-remove.sh	Removing managed gitattributes bytes preserves the original user line bytes	1
+test-shared-remove.sh	Removing mirror preserves non-AID user skills	1
+test-shared-remove.sh	Removing one user preserves AGENTS.md bytes	1
+test-shared-remove.sh	Removing one user preserves shared skills, mirrors, and runtime bytes	1
+test-shared-remove.sh	Removing the last inline tool restores the CLAUDE.md rules import	1
+test-shared-remove.sh	Removing the last inline-rules tool restores the pointer region	1
+test-shared-remove.sh	Restored AGENTS.md pointer region contains no @ line	1
+test-shared-remove.sh	Root rules remain while claude-code is installed	1
+test-shared-remove.sh	Runtime root remains while protected node_modules content remains	1
+test-shared-remove.sh	Runtime-local node_modules empty descendants are preserved	1
+test-shared-remove.sh	Runtime-local node_modules file remains unchanged after last removal	1
+test-shared-remove.sh	Shared skill remains while claude-code is installed	1
+test-shared-remove.sh	The .aid<PATH> folder stays while .aid<PATH> is in it	1
+test-shared-remove.sh	The edited region text survives in the trash copy	1
+test-shared-remove.sh	The live AGENTS.md region is rewritten to the managed bytes	1
+test-shared-remove.sh	The region edit is reported by status as modified: AGENTS.md	1
+test-shared-remove.sh	The remaining tool keeps its managed region	1
+test-shared-remove.sh	The trash copy is the full edited AGENTS.md	1
+test-shared-remove.sh	User KB state bytes remain unchanged	1
+test-shared-remove.sh	User design remains present	1
+test-shared-remove.sh	User mirror bytes remain unchanged	1
+test-shared-remove.sh	User skill bytes remain unchanged	1
+test-shared-remove.sh	User work state remains present	1
 test-shortcut-builder-invariants.sh	SBI01a	1
 test-shortcut-builder-invariants.sh	SBI01b	1
 test-shortcut-builder-invariants.sh	SBI01c	1
@@ -8048,13 +9139,72 @@ test-skill-steps.sh	SS-09 110 asking skill(s): each has an AC-28 sample or a ski
 test-skill-steps.sh	SS-10 7 AGENT.md file(s) include {{include:agent-boilerplate}}	1
 test-skill-steps.sh	SS-10 agent-boilerplate.md has the ## Talking with the user section	1
 test-skill-steps.sh	SS-10 no AGENT.md tells its agent to ask the user	1
-test-skill-steps.sh	SS-11 353 tracked file(s) in scope name no old phase	1
+test-skill-steps.sh	SS-11 355 tracked file(s) in scope name no old phase	1
 test-skill-steps.sh	SS-12 no hand-written lifecycle: Completed or Canceled outside the exempt list	1
 test-skill-steps.sh	SS-13 8 file(s) have a ### What to report heading	1
 test-skill-steps.sh	SS-14(a) section 3a runs writeback-state.sh --create with --reading, --skill and --step	1
 test-skill-steps.sh	SS-14(b) no record key, template copy or hand-written record block outside the exceptions	1
 test-skill-steps.sh	SS-14(c) skill-steps.md section The work record has the fail-closed and recovery rules	1
 test-skill-steps.sh	SS-14(d) no skill routes a continuation itself	1
+test-skill-steps.sh	SS-15 (a) aid-config asks a confirmation when the project settles a value	1
+test-skill-steps.sh	SS-15 (a) aid-config says nothing settles none or greenfield	1
+test-skill-steps.sh	SS-15 (a) aid-config settles source_control from git rev-parse	1
+test-skill-steps.sh	SS-15 (a) aid-config settles type brownfield from source files outside .aid<PATH>	1
+test-skill-steps.sh	SS-15 (b) aid-report Fast path needs the user's words to name data and question	1
+test-skill-steps.sh	SS-15 (b) aid-report asks what to analyze and what the report should answer, recorded with --ask --design	1
+test-skill-steps.sh	SS-15 (b) aid-report: data found on disk never makes the path Fast	1
+test-skill-steps.sh	SS-15 (b) aid-report: one candidate file is a recommendation, never a reason to skip the question	1
+test-skill-steps.sh	SS-15 (b) aid-report: the question is recorded --ask --design before a work is opened	1
+test-skill-steps.sh	SS-15 (b) rules.md: starting at once skips only the go-ahead	1
+test-skill-steps.sh	SS-15 (c) aid-review Constraints: a review never turns into a fix	1
+test-skill-steps.sh	SS-15 (c) aid-review: every approval to write, save, publish or post shows the exact text in full first	1
+test-skill-steps.sh	SS-15 (c) ledger schema step 5 ends with the <PATH> statement	1
+test-skill-steps.sh	SS-15 (c) no 'fix them now?' example in canonical<PATH>	2
+test-skill-steps.sh	SS-15 (c) rules.md: a review never turns into a fix	1
+test-skill-steps.sh	SS-15 (c) the ad-hoc review section of the ledger schema offers no fix	1
+test-skill-steps.sh	SS-15 (d) aid-research closes an unanswerable scoping question Assumed	1
+test-skill-steps.sh	SS-15 (d) aid-research names the assumption under Gaps	1
+test-skill-steps.sh	SS-15 (d) aid-research records a settled scoping question Assumed	1
+test-skill-steps.sh	SS-15 (e) skill-steps.md Recovery uses the fixed subject Recovery	1
+test-skill-steps.sh	SS-15 (e) start-or-resume.md cancel uses the fixed subject Cancel work	1
+test-skill-steps.sh	SS-15 (f) aid-config re-asks a skipped setting with its recorded text	1
+test-skill-steps.sh	SS-15 (f) aid-set-connector closes in plain words	1
+test-skill-steps.sh	SS-15 (f) aid-set-connector offers an open entry first	1
+test-skill-steps.sh	SS-15 (f) question-protocol: a re-offered question keeps its recorded text	1
+test-skill-steps.sh	SS-15 (f) question-protocol: an open entry is offered through the skill in its asked_by	1
+test-skill-steps.sh	SS-15 (f) rules.md: setup skills skip <PATH> and open no work	1
+test-skill-steps.sh	SS-15 (g) aid-config: a value the user already stated is not asked	1
+test-skill-steps.sh	SS-15 (g) aid-config: the break offer is its own message and the next question comes after the reply	1
+test-skill-steps.sh	SS-15 (g) aid-config: the break offer is never recorded	1
+test-skill-steps.sh	SS-15 (g) aid-monitor MUST ask the data-source question when it has no source	1
+test-skill-steps.sh	SS-15 (g) shortcut-engine: a plain-words user gets a plain approval summary	1
+test-skill-steps.sh	SS-15 (g) state-observe: no data source means the question is asked before the run ends	1
+test-slice-requirements.sh	SR01	1
+test-slice-requirements.sh	SR02	1
+test-slice-requirements.sh	SR03a	1
+test-slice-requirements.sh	SR03b	1
+test-slice-requirements.sh	SR03c	1
+test-slice-requirements.sh	SR03d	1
+test-slice-requirements.sh	SR04	1
+test-slice-requirements.sh	SR05	1
+test-slice-requirements.sh	SR06	1
+test-slice-requirements.sh	SR07	1
+test-slice-requirements.sh	SR08	1
+test-slice-requirements.sh	SR09a	1
+test-slice-requirements.sh	SR09b	1
+test-slice-requirements.sh	SR09c	1
+test-slice-requirements.sh	SR10a	1
+test-slice-requirements.sh	SR10b	1
+test-slice-requirements.sh	SR10c	1
+test-slice-requirements.sh	SR11	1
+test-slice-requirements.sh	SR12a	1
+test-slice-requirements.sh	SR12b	1
+test-slice-requirements.sh	SR12c	1
+test-slice-requirements.sh	SR13	3
+test-slice-requirements.sh	SR14a	1
+test-slice-requirements.sh	SR14b	1
+test-slice-requirements.sh	SR15	1
+test-slice-requirements.sh	SR16	1
 test-spine-depth-coverage.sh	SD01	1
 test-spine-depth-coverage.sh	SD02	11
 test-spine-depth-coverage.sh	SD03	11
@@ -8097,8 +9247,6 @@ test-summarize-preflight.sh	T1b: preflight exits 0 when both present	1
 test-summarize-preflight.sh	T1c: neither path created (correct no-op)	1
 test-summarize-preflight.sh	T1c: preflight exits 0 when neither file present	1
 test-summarize-preflight.sh	T1d: new path absent after failed migrate (correct)	1
-test-summarize-preflight.sh	T1d: new path created despite unwritable knowledge dir	1
-test-summarize-preflight.sh	T1d: old path deleted despite migrate failure	1
 test-summarize-preflight.sh	T1d: old path preserved after failed migrate	1
 test-summarize-preflight.sh	T1d: preflight exits 0 even when migrate fails (best-effort)	1
 test-summarize-preflight.sh	T1e: first run exits 0	1
