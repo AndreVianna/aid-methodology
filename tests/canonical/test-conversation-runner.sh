@@ -15,7 +15,7 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE MCP PROTO HOOK
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE RAW MCP PROTO HOOK
 #
 # Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
 # a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE MCP PROTO HOOK"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE RAW MCP PROTO HOOK"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -2294,6 +2294,125 @@ PYEVIDENCE
     assert_exit_eq "$?" 0 "EV01 ordered Codex evidence and failed conversation verdicts are preserved"
 }
 
+group_raw() {
+    echo "--- RAW (offline main-agent evidence and artifact parity; no release staging)"
+    "$PY" - "$RUNNER" <<'PYRAW'
+import importlib.util, json, pathlib, sys, tempfile
+
+spec=importlib.util.spec_from_file_location('raw_runner',sys.argv[1])
+r=importlib.util.module_from_spec(spec);sys.modules[spec.name]=r;spec.loader.exec_module(r)
+real_agent=r.CodexAgent
+real_conversation=r.run_conversation
+ledger='| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|'
+streams=[]
+for turn in (1,2):
+    events=[{'type':'thread.started','thread_id':'raw-thread'},
+            {'type':'future.outer.event','marker':'RAW-ONLY caf\u00e9 \u03a9','turn':turn},
+            {'type':'item.completed','item':{'type':'future_tool_call','id':'unknown','marker':'UNKNOWN-ITEM','arguments':{'text':'preserve me'}}},
+            {'type':'item.started','item':{'type':'command_execution','id':'c1','command':'echo observed'}},
+            {'type':'item.completed','item':{'type':'command_execution','id':'c1','command':'echo observed','aggregated_output':'normal-prefix\n'+'L'*18000+'\nLONG-TAIL','exit_code':0}},
+            {'type':'item.completed','item':{'type':'agent_message','text':f'Reply {turn}.'}}]
+    streams.append('\r\n'.join(json.dumps(event,ensure_ascii=False) for event in events)+'\r\n\n')
+
+class WithoutRaw(real_agent):
+    def __init__(self,fixture,env,model,fixture_name='',raw_dir=None):
+        super().__init__(fixture,env,model,fixture_name)
+
+with tempfile.TemporaryDirectory() as folder:
+    base=pathlib.Path(folder)
+    r.now=lambda: 'fixed-time'
+    def build(sample,fixtures,bundle,real_home,work,host):
+        fixture=work/'project';home=work/'home'
+        fixture.mkdir();home.mkdir()
+        return fixture,home
+    r.build_fixture=build
+    sample=r.Sample(base/'sample.md','900-raw',{'fixture':'stub'},
+                    {'User':'Read the fixture.','Answer sheet':'Continue once.','Expected outcome':'Reply.','Must not':'Push.'},
+                    [r.parse_check('no-push')])
+    ctx={'codex_model':'','model':'','fixtures_dir':base,'bundle':base,'real_home':base,
+         'user_brief':'user','judge_brief':'judge','protocol_checks':'','user_host':'codex','user_model':'','judge_host':'codex','judge_model':''}
+    def exercise(name,agent_class=real_agent,scenario='normal'):
+        calls=[];helpers=[];judge_inputs=[];returned=[]
+        r.CodexAgent=agent_class
+        def fake(args,**kwargs):
+            calls.append((list(args),kwargs['cwd']))
+            if scenario=='cli-error':raise r.RunError('CLI nonzero: no stdout returned')
+            index=len(calls)-1
+            pathlib.Path(args[args.index('--output-last-message')+1]).write_text(f'Reply {index+1}.',encoding='utf-8')
+            (kwargs['cwd']/'changed.txt').write_text('agent wrote this\n',encoding='utf-8')
+            out=streams[index]
+            if scenario=='turn-failed':out+=json.dumps({'type':'turn.failed','error':{'message':'failed turn'}})+'\n'
+            returned.append(out)
+            return out
+        def helper(prompt,*args,**kwargs):
+            helpers.append(prompt)
+            assert 'RAW-ONLY' not in prompt and 'UNKNOWN-ITEM' not in prompt and 'LONG-TAIL' not in prompt
+            return 'Continue.' if len(helpers)==1 else r.END_MARK
+        def judge(*args):
+            judge_inputs.append(args[3:6])
+            assert all('RAW-ONLY' not in value and 'UNKNOWN-ITEM' not in value and 'LONG-TAIL' not in value for value in args[3:6])
+            return ledger
+        r.run_codex=fake;r.helper_call=helper;r.judge=judge
+        r.run_conversation=real_conversation
+        if scenario=='interrupt':
+            def interrupted(agent,*args):
+                agent.start();agent.send('first');raise KeyboardInterrupt()
+            r.run_conversation=interrupted
+        dest=base/name
+        if scenario=='persist-error':
+            dest.mkdir();(dest/'codex-raw').write_text('blocked by a file',encoding='utf-8')
+        try:
+            reasons=r.run_once(sample,1,dest,ctx,'codex')
+        except KeyboardInterrupt:
+            assert scenario=='interrupt'
+            reasons=json.loads((dest/'result.json').read_text())['reasons']
+        else:
+            assert scenario!='interrupt','interrupt was swallowed'
+        assert all(not fixture.exists() for _,fixture in calls),'disposable fixture retained'
+        return dest,calls,helpers,judge_inputs,returned,reasons
+
+    control=exercise('control',WithoutRaw)
+    observed=exercise('observed')
+    dest,calls,helpers,judges,returned,reasons=observed
+    assert reasons==[] and control[-1]==[],(reasons,control[-1])
+    raw_files=sorted((dest/'codex-raw').glob('*'))
+    assert [p.name for p in raw_files]==['turn-001.jsonl','turn-002.jsonl']
+    assert [p.read_bytes() for p in raw_files]==[text.encode('utf-8') for text in streams]
+    assert all(not p.is_relative_to(fixture) for p in raw_files for _,fixture in calls)
+    assert len(calls)==2 and calls[1][0][:3]==['exec','resume','raw-thread']
+    for name in ('transcript.jsonl','transcript.md','files.diff','checks.txt','ledger.md'):
+        assert (control[0]/name).read_bytes()==(dest/name).read_bytes(),name+' changed when raw capture was enabled'
+    assert control[2:4]==observed[2:4],'judge or simulated-user input changed'
+    def comparable(args):
+        result=list(args);result[result.index('--output-last-message')+1]='<temporary-message-file>'
+        return result
+    assert [comparable(args) for args,_ in control[1]]==[comparable(args) for args,_ in calls],'CLI configuration changed'
+    assert not (control[0]/'codex-raw').exists()
+    assert 'characters omitted' in (dest/'transcript.jsonl').read_text()
+    assert b'LONG-TAIL' in raw_files[0].read_bytes() and b'UNKNOWN-ITEM' in raw_files[0].read_bytes()
+
+    failed=exercise('failed',scenario='turn-failed')
+    assert (failed[0]/'codex-raw/turn-001.jsonl').read_bytes()==failed[4][0].encode('utf-8')
+    assert 'turn.failed' in failed[4][0] and any('failed turn' in reason for reason in failed[-1])
+    assert json.loads((failed[0]/'result.json').read_text())['passed'] is False
+    assert not (failed[0]/'codex-raw/turn-002.jsonl').exists()
+    interrupted=exercise('interrupted',scenario='interrupt')
+    assert (interrupted[0]/'codex-raw/turn-001.jsonl').read_bytes()==streams[0].encode('utf-8')
+    assert 'KeyboardInterrupt' in interrupted[-1][0]
+    assert json.loads((interrupted[0]/'result.json').read_text())['passed'] is False
+    blocked=exercise('blocked',scenario='persist-error')
+    assert any('codex raw stdout could not be saved at' in reason and 'turn-001.jsonl' in reason for reason in blocked[-1])
+    assert json.loads((blocked[0]/'result.json').read_text())['passed'] is False
+    assert len(blocked[1])==1 and blocked[2]==[],'raw persistence failure continued the conversation'
+    no_stdout=exercise('no-stdout',scenario='cli-error')
+    assert any('no stdout returned' in reason for reason in no_stdout[-1])
+    assert not (no_stdout[0]/'codex-raw').exists(),'raw output fabricated for a CLI call that returned none'
+    assert json.loads((no_stdout[0]/'result.json').read_text())['passed'] is False
+print('Verbatim raw start/resume streams, unknown events, pre-parse failure retention, artifact/input parity, interruptions and persistence errors verified.')
+PYRAW
+    assert_exit_eq "$?" 0 "RW01 passive raw Codex evidence preserves existing behavior and honest failures"
+}
+
 group_mcp() {
     echo "--- MCP (one stdio subprocess per protocol input; no model or release staging)"
     "$PY" - "$RUNNER" <<'PYMCP'
@@ -2486,6 +2605,7 @@ PYMCP
 }
 
 want EVIDENCE && group_evidence
+want RAW && group_raw
 want MCP && group_mcp
 want EXIT && group_exit
 want VALIDATE && group_validate

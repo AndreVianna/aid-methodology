@@ -373,6 +373,11 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
   `transcript.md`; the judge grades the replacement for the protocol checks and reads the withdrawn text for the
   Must-not items only (`protocol-checks.md`, "Messages the hook withdrew"); the simulated user sees the
   replacement only.
+  Main Codex turns also save `codex-raw/turn-NNN.jsonl`: the full returned stdout, in call order,
+  written before event parsing outside the fixture. Unknown events and long outputs remain available
+  there for diagnosis; these files are not fed to the judge or simulated user and do not prove an action
+  succeeded. Existing CLI nonzero/timeout errors return no stdout to this adapter, so they produce no
+  raw turn file. A raw-file write failure fails the conversation with its path and reason.
   The judge's ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
 - **Codex boundaries.** Codex agent fixtures also install the Codex AID profile, including `AGENTS.md`.
   Agent turns use a permission profile extending `:workspace`, overriding only the disposable fixture's
@@ -410,7 +415,7 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
 - **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
   `run.py` without calling a model: stub `claude` and `codex` commands are put first on `PATH`, and the suite builds its
   own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,
-  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES`, `VSAMPLES`, `CAP`, `CODEX`, `HELPERS`, `EVIDENCE`, `MCP`, `PROTO` and
+  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES`, `VSAMPLES`, `CAP`, `CODEX`, `HELPERS`, `EVIDENCE`, `RAW`, `MCP`, `PROTO` and
   `HOOK` (the hook log, the withdrawn marking and the dropped kill switch). The behaviours that
   `DIFF`, `JUDGE`, `ENV` and `END` guard each have a mutation (a throwaway copy of `run.py`, with that one
   behaviour broken) on which the same check must fail; `BRIEFS` runs the same test on throwaway copies of
@@ -418,6 +423,8 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
   `MCP` exercises the actual provider over stdio, rejects unknown tools and invalid arguments, checks
   fixture/start/resume scope and helper absence, and verifies ordered call/result capture without
   fabricating host-specific skill, edit or write events. `EVIDENCE` guards saved failed-run verdicts.
+  `RAW` checks verbatim start/resume streams, unknown-event retention, unchanged normalized artifacts
+  and judge/user inputs, plus failed turns, interruptions and raw-file persistence errors.
 
 ## CI Lanes and Where They Run
 

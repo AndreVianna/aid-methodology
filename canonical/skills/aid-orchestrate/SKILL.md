@@ -26,7 +26,10 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with sources.
    **Advance:** **CHAIN** → CHECK-READING when the request is not a project question; **HALT** when it is.
 2. **Check the reading** (`CHECK-READING`). `references/check-intent.md` steps 1 to 5 classify the request by its
-   observable effect, against the Knowledge Base and the code. **Advance:** **CHAIN** → CANCEL when it names a work
+   observable effect, against the Knowledge Base and the code. Take plausible alternative outcomes to SHOW-READING
+   for the user's choice before asking for symptom or implementation details; clarify first only when the possible
+   outcomes themselves cannot yet be identified.
+   **Advance:** **CHAIN** → CANCEL when it names a work
    to cancel; **CHAIN** → CLOSE when it names a work to close; otherwise **CHAIN** → SIZE-READING.
 3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth; with no Knowledge Base, offer Preparation too (section 5). **Advance:** **CHAIN** → SHOW-READING.
@@ -34,8 +37,7 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    that asks to start it (the reading never rides on a separate clarifying question), or alone when
    `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
    When CHECK-READING kept two plausible outcomes, this go-ahead offers both in plain words rather
-   than only confirming the preferred one. Decide between those outcomes before asking for symptom or implementation
-   details; clarify first only when the possible outcomes themselves cannot yet be identified. Explain why the recommendation fits the reported problem;
+   than only confirming the preferred one. Explain why the recommendation fits the reported problem;
    a workflow's requirement to ask permission is not the reason for choosing that reading.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead decides; an answer to a clarifying question never

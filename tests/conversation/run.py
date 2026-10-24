@@ -528,12 +528,14 @@ class CodexAgent:
     the CLI's default model in place. CODEX_HOME points at the throwaway HOME's .codex folder.
     """
 
-    def __init__(self, fixture: Path, env: dict, model: str, fixture_name: str = ""):
+    def __init__(self, fixture: Path, env: dict, model: str, fixture_name: str = "", raw_dir: Path | None = None):
         self.fixture = fixture
         self.env = env
         self.model = model
         self.session_id: str | None = None
         self.events: list[dict] = []
+        self.raw_dir = raw_dir
+        self.turn_number = 0
         # Test wiring stays outside the installed product's connector catalogue.
         self.fixture_mcp = ({"aid_test_trackers": {"command": sys.executable,
                             "args": [str(ROOT / "tests/conversation/support/tracker_mcp.py")]}}
@@ -542,9 +544,11 @@ class CodexAgent:
 
     def start(self) -> None:
         self.session_id = None
+        self.turn_number = 0
 
     def send(self, message: str) -> tuple[str, list[dict], list[dict]]:
         self.events = []
+        self.turn_number += 1
         with tempfile.TemporaryDirectory(prefix="aid-codex-turn-") as turn_dir:
             last_message = Path(turn_dir) / "last-message.txt"
             args = ["exec"]
@@ -566,6 +570,15 @@ class CodexAgent:
                 args += ["--model", self.model]
             args += ["--output-last-message", str(last_message), "-"]
             out = run_codex(args, cwd=self.fixture, env=self.env, stdin=message)
+            # Preserve the returned stream before parsing, including unknown events and full outputs.
+            # run_cli raises on CLI nonzero/timeout, so those calls have no returned stream to save.
+            if self.raw_dir is not None:
+                raw_path = self.raw_dir / f"turn-{self.turn_number:03d}.jsonl"
+                try:
+                    self.raw_dir.mkdir(parents=True, exist_ok=True)
+                    raw_path.write_bytes(out.encode("utf-8"))
+                except OSError as exc:
+                    raise RunError(f"codex raw stdout could not be saved at {raw_path}: {exc}") from exc
             thread_id = None
             tools: list[dict] = []
             seen: set[str] = set()
@@ -1355,7 +1368,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         refs_before = ref_shas(fixture)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
-        agent = (CodexAgent(fixture, agent_env, model, sample.meta["fixture"]) if host == "codex"
+        agent = (CodexAgent(fixture, agent_env, model, sample.meta["fixture"], run_dir / "codex-raw") if host == "codex"
                  else ADAPTERS[host](fixture, agent_env, model))
         try:
             run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env,

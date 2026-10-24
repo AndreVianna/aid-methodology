@@ -4,26 +4,46 @@
 Q166's known-issue exception; Q180, Q186 and Q189 require fresh success on every selected
 sample, three runs each. That exception cannot close the current gate.
 
-At the 2026-10-24T17:43Z evidence snapshot:
+At the 2026-10-24T20:06Z evidence snapshot:
 
-- Strict attempt 9 ended failed/incomplete after 18 passes, then `002-16` run 1 failed
-  EO-1 and PC-7. Its exact batch is `20261024T164859Z-codex-user-codex-judge-codex-474`.
-- The first focused research retry also failed. Its ordered capture proves the latest
-  instructions were loaded. A further presentation-versus-break transition conflict was
-  corrected; the research source review has three Fixed findings, no open findings, and
-  source-only grade A+. Native skill-step validation passes 101/0 on source SHA-256
-  `e844f2b0f74840369f97137fb973a222cf9bf4341bbf0760915489c8037ee253`.
-- Focused retry 2 is active: `20261024T174235Z-codex-user-codex-judge-codex-435`,
-  three runs of `002-16`. Its success alone cannot satisfy the full ten-sample gate.
-- Preparatory canonical rehearsal completed 177/178 suites successfully. The sole npm
-  test portability failure is repaired and independently reviewed; subsequent focused
-  execution passes all 22 migration checks across curl, npm and PyPI. Provisioned checks
-  also pass PyPI installer 78/0, visual fidelity 45/0, and KB export 26/0 including 14
-  actual browser assertions. These are preparatory results, not formal post-resync G0.
-- Final source/resync commits, installed-skill verification, live full G0/site checks,
-  scratch parity, executed coverage/removal audit, final baselines and current report
-  consolidation remain open. Installer CI must cover the final commit after the
-  maintainer's required push. No push or merge has been performed.
+- Strict attempt 11 ended failed/incomplete after 14 passes. `002-14` run 3 changed the
+  same-issue question subject while advancing its counter (PC-8). Its exact batch is
+  `20261024T184825Z-codex-user-codex-judge-codex-24029`. Independent inspection confirms
+  the existing Rule 8 and shortcut engine were loaded; no conflicting instruction or
+  source cause was established. A reviewed pre-send header comparison reinforces that
+  rule. Subsequent focused retries exposed premature symptom intake, an incorrect
+  answer flag and a prohibited retry after a failed write. Scope ordering and the local
+  answer recipe were corrected and reviewed, with an actual writer smoke check.
+  The latest focused batch, `20261024T195514Z-codex-user-codex-judge-codex-4849`, failed
+  its first run because recording order could not be proved: a Pending question exists
+  in the final diff without its write in the captured events. The parser discards
+  unrecognized host events and does not preserve raw stdout. Passive raw-event capture
+  is being implemented and tested before another diagnostic run; the missing event
+  class and chronology remain unknown. No model batch is active and no full gate passed.
+- At resync commit `d6cfb5f7bf0d2abc1f8a7061fe45bfbe0a945cce`, the official canonical
+  run passed all 178 suites with unchanged defaults. Full site testing passed all 50
+  files and 2,822 tests. Scratch generator/install parity passed with an empty tracked
+  diff and a separate raw-byte comparison of all 3,513 tracked files. Only four
+  platform-specific skip lines remain; native Windows evidence is still owed by CI.
+- All 87 current generated site outputs match the tested site run, were independently
+  verified and were committed as `c12a0716f343464343528c180aec794d5fd1829c`. That commit
+  changes no model instruction, installed payload or test input.
+- Official coverage collection executed all 178 suites. Actual supplementary cohorts
+  supply the previously missing quiet assertions, native-rg comparison and real
+  Playwright-absence checks. Their independently verified maximum-count union has
+  10,989 keys and 13,364 emissions across five actual passing datasets. The native
+  Windows remote suite passed 50/50 without skips after private runtime preparation.
+  An additive malformed-handle assertion exercises the real installed function and
+  preserves all 66 existing assertion lines. The reviewed label mappings and stale
+  target correction are integrated; the official comparison now passes with 21 rehomes
+  and no accepted removals used. Failed runs are excluded from the union. This comparison
+  covers the audited source and remote-test addition; final candidate collection and
+  coverage/cost baselines remain open as the evidence-capture change proceeds.
+- Source reviews are A+ source-only. The earlier research focused run was judged 3/3,
+  but its manual decision-ownership finding remains Pending until fresh `002-16`
+  evidence proves it. All 30 fresh successes, final candidate validation, report/grade,
+  baselines and exact-commit Installer CI remain required. The maintainer's push follows
+  completed local preparation. No push or merge has been performed.
 
 Exact current captures, review ledgers and provisioned-runtime evidence are under
 `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`; the work STATE records

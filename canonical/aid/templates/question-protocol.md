@@ -121,7 +121,9 @@ Or answer in your own words, ask me to explain, or skip this question.
   A question that changes nothing when skipped, such as a reopen or close menu, also uses the skip line.
 - **End-of-turn check.** Before you end a turn that waits on the user, the message has the first line
   with its importance, `Why I ask`, `My recommendation` and the right closing line, and its `--ask` record
-  ran first. A closing or follow-up question ("Your call", "which would you like?", "shall I go on?") is a
+  ran first. For a same-issue follow-up, compare its header with the previous displayed question: keep
+  that subject and advance its counter (Rule 8), including after a skill hand-off.
+  A closing or follow-up question ("Your call", "which would you like?", "shall I go on?") is a
   question like any other: the second and the last as much as the first. The exceptions are the break offer
   and the confirmations this protocol leaves unrecorded (recovery, cancel); a skill with no writer for its
   place records where Where each record lives says, or says it cannot.
@@ -199,8 +201,8 @@ of those records (`.aid/runtime/scripts/execute/writeback-state.sh`). A Knowledg
 written to the Knowledge Base state file instead, in the same states, until that file takes this shape.
 
 - **`--ask`** appends a `Pending` entry and prints its id. It runs **before** the question is shown.
-- **`--answer`** updates that entry with the state and the answer. It runs **right after** the
-  answer is given.
+- **`--answer`** updates that entry, for example `--answer --id <id> --state Answered --value '<reply>'`.
+  It runs **right after** the reply, with the same work, project or design target as the question.
 - **`--project`** points either mode at the project file `.aid/STATE.yml`, which is created from
   the project-state template the first time it is needed. Without `--project`, the target is the
   work the writer finds for the current directory, which is its own `STATE.yml`.

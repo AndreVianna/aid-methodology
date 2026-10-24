@@ -680,6 +680,33 @@ ABS8EOF
     _rc8b_ps=$?
     assert_exit_eq "$_rc8b_ps" 0 "T-8: PS dashboard stop nothing-running -> exit 0 (T-5 parity)"
     rm -f "$_o8b" "$_e8b"
+
+    # Invoke the exact installed function with a malformed handle; an empty-home
+    # dashboard stop returns before teardown and cannot establish this predicate.
+    _ps8_malformed="${TMP}/teardown-malformed.ps1"
+    cat > "$_ps8_malformed" <<'PS8MALFORMED'
+param([string]$AidSource)
+$ErrorActionPreference = 'Stop'
+$tokens = $null
+$parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($AidSource, [ref]$tokens, [ref]$parseErrors)
+if (@($parseErrors).Count -ne 0) { throw 'aid.ps1 parse failed' }
+$definitions = @($ast.FindAll({ param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'script:Invoke-AidRemoteTeardown'
+}, $true))
+if ($definitions.Count -ne 1) { throw 'Expected exactly one real teardown function' }
+. ([scriptblock]::Create($definitions[0].Extent.Text))
+$result = @(Invoke-AidRemoteTeardown -Handle 'malformed-handle')
+if ($result.Count -ne 1 -or $result[0] -isnot [int] -or $result[0] -ne 0) {
+    throw 'Malformed handle must return exactly integer zero'
+}
+exit 0
+PS8MALFORMED
+    AID_HOME="$H8_PS5" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "$_ps8_malformed" "${H8_PS5}/bin/aid.ps1"
+    _rc8_malformed_ps=$?
+    assert_exit_eq "$_rc8_malformed_ps" 0 "T-8: PS teardown malformed handle -> exit 0 (T-5 parity)"
 fi
 
 # Bash side for T-8: verify Bash expose clear-fail exit 10 (already verified in T-3;
