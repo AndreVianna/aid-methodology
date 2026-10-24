@@ -4,7 +4,7 @@
 Q166's known-issue exception; Q180, Q186 and Q189 require fresh success on every selected
 sample, three runs each. That exception cannot close the current gate.
 
-At the 2026-10-24T20:50Z evidence snapshot:
+At the 2026-10-24T21:22Z evidence snapshot:
 
 - Strict attempt 11 ended failed/incomplete after 14 passes. `002-14` run 3 changed the
   same-issue question subject while advancing its counter (PC-8). Its exact batch is
@@ -26,14 +26,35 @@ At the 2026-10-24T20:50Z evidence snapshot:
   approve a different final profile. The default adapter probe selected `gpt-6.1-sol`
   with no explicit effort value; no low-effort cause is established. No model batch is
   active and no full gate passed. Reviewed source is complete; further wording changes
-  are not justified solely by these execution failures. Host-contract diagnosis is
-  read-only while a stable source candidate is prepared for final local validation.
+  are not justified solely by these execution failures. Independent read-only host
+  diagnosis found no categorical instruction conflict. A bounded Codex guard proposal
+  is reviewed and awaits a future owner scope decision; no guard is implemented.
+- Reviewed recipe source `67a7882c` was resynced successfully as `34f54b726`.
+  The isolated resync changes only two runtime templates and their manifest hashes;
+  both installed templates equal canonical bytes. Exact-candidate formal validation
+  is running in a separate own-Git clone. Scratch generator/install parity has
+  already passed with all 3,513 raw files and modes unchanged, including the manifest.
+  Its official canonical run passed all 178 suites, exit 0, with unchanged timeouts;
+  all tracked files and modes remained unchanged afterward. Four platform skip
+  notices and 20 actual skip-placeholder labels remain explicit, requiring the appropriate
+  platform evidence. Current cost collection has all 645 keys, no new or removed keys, and 81 growing
+  metrics; its comparison exits 1. Always-on input decreases from 54,546 to 53,977
+  characters; per-skill, template and reference exposure still grows. Overlapping
+  exposure metrics are not summed as source bytes. Neither a tolerance waiver nor a baseline refresh
+  has been applied. Full site testing then passed all 50 files and 2,822 tests in a
+  separate clone. Its current 70 generated outputs were independently reviewed and
+  guard-integrated: every prior Windows byte matched the candidate, and every output
+  now matches the tested clone exactly. A report-only skip classifier incorrectly
+  included one actual passing normalizer test; its correction uses the existing log
+  and requires no suite rerun.
+  Official executed coverage collection is running separately. These component
+  passes do not close behavioral acceptance or overall G0.
 - At resync commit `d6cfb5f7bf0d2abc1f8a7061fe45bfbe0a945cce`, the official canonical
   run passed all 178 suites with unchanged defaults. Full site testing passed all 50
   files and 2,822 tests. Scratch generator/install parity passed with an empty tracked
   diff and a separate raw-byte comparison of all 3,513 tracked files. Only four
   platform-specific skip lines remain; native Windows evidence is still owed by CI.
-- All 87 current generated site outputs match the tested site run, were independently
+- All 87 generated site outputs from that earlier candidate match its tested site run, were independently
   verified and were committed as `c12a0716f343464343528c180aec794d5fd1829c`. That commit
   changes no model instruction, installed payload or test input.
 - Official coverage collection executed all 178 suites. Actual supplementary cohorts
@@ -46,7 +67,7 @@ At the 2026-10-24T20:50Z evidence snapshot:
   target correction are integrated; the official comparison now passes with 21 rehomes
   and no accepted removals used. Failed runs are excluded from the union. This comparison
   covers the audited source and remote-test addition; final candidate collection and
-  coverage/cost baselines remain open as the evidence-capture change proceeds.
+  coverage/cost baselines remain open.
 - Source reviews are A+ source-only. The earlier research focused run was judged 3/3,
   but its manual decision-ownership finding remains Pending until fresh `002-16`
   evidence proves it. All 30 fresh successes, final candidate validation, report/grade,
