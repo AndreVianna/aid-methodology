@@ -21,10 +21,12 @@ context, an optional authorized spike, verification, and a human-facing presenta
 - **Not a numbered pipeline phase**; it does not route to `/aid-execute`.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> INVESTIGATE (-> PROPOSE-SPIKE?) -> VERIFY
-(loop) -> PRESENT [human resolves] -> HANDOFF? -> DONE**.
+(loop) -> PRESENT -> HANDOFF [human resolves] -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
-Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
+Talking with the user: follow `.aid/runtime/templates/question-protocol.md`. In progress updates,
+explain a finding's effect on the user's data or workflow; keep technical mechanisms in the research report
+unless the user asks for them.
 
 ---
 
@@ -38,7 +40,9 @@ Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
 
 INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record.
 
-1. **Check the question.** Note whether the argument is empty. Do not ask here.
+1. **Check the question.** Identify the uncertainty to investigate: a comparison, behavior or
+   hypothesis. Naming a topic or saying it needs a decision does not supply that uncertainty.
+   If it is missing, do not invent one. Do not ask here.
 2. **Pick the path (question scope):**
    - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria
      ("Is lib X compatible with our Node 24 build?", "Postgres vs SQLite for use-case Y
@@ -52,7 +56,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`
    (main tree + every git worktree). Note whether any exist. Do not prompt here.
 
-**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
+**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the question is missing, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE].
 
 ---
 
@@ -60,8 +64,10 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 
 Ask one topic at a time, through the question protocol, in this order and only for what applies:
 
-1. **Empty argument** -> the bootstrapping question ("What do you want investigated?"). The
-   answer is the question; the path and complexity are then set from it.
+1. **Question missing** -> first ask "What question about {topic} would you like this research
+   to answer?" (or what to investigate when no topic is named). Do not substitute a constraint
+   question such as local versus shared use. The answer supplies the question; set the path
+   and complexity from it before asking any necessary scoping questions.
 2. **Guided path** -> the 2-3 scoping questions that narrow the question. Two kinds are not put to the user:
    - **An earlier answer settles it.** Record it with `--ask --design`, then close it at once with
      `--answer --design --state Assumed` and the reason (which answer settles it). Do not show it.
@@ -80,14 +86,13 @@ Record each of these questions in a design document before it is shown, and its 
 Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 
-- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`), with `--seed .aid/design/<slug>.md` on the gate's `--create` when INTAKE-ASK recorded any question (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record),
-  its saved step (`INVESTIGATE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
-  (`worktree-lifecycle.sh create <work-id> <name>`),
-  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
-  the writer, before it hands back: "`STATE.yml` was created by the gate;
-  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
-  set other keys through the writer." This skill drives no `phase`. Associate a git worktree only
-  if a spike is later authorized (PROPOSE-SPIKE).
+- **New work:** execute every step of the gate's `§ 3a`, passing the user's words, `aid-research`,
+  saved step `INVESTIGATE`, `--path lite`, a question-derived slug, and `--seed .aid/design/<slug>.md`
+  when intake recorded questions. The gate's `§ 3a` step 2 creates and enters the mandatory worktree
+  (`worktree-lifecycle.sh create <work-id> <name>`); step 4 creates the work folder there before
+  the writer creates `STATE.yml`. Complete the gate before advancing; this skill drives no `phase`.
+  Associate a git worktree for an optional spike only if later authorized (PROPOSE-SPIKE);
+  that separate spike workspace does not replace the mandatory work-level tree.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
 Every `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a
@@ -122,7 +127,7 @@ goes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.
 Present *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,
 never touching production), and *what it would learn*. Then ask the user to authorize or decline it
 as one approval question in the form of `.aid/runtime/templates/question-protocol.md`
-(`Research -- question 1 of 1 -- importance: medium`, **Why I ask**: a spike writes code, so it needs your
+(`{subject} -- question {n} of {m} -- importance: medium`, **Why I ask**: a spike writes code, so it needs your
 go-ahead, **My recommendation**, and the closing line `Or answer in your own words, or ask me to explain.`).
 Once the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the
 throwaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed
@@ -153,7 +158,7 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
    form of `.aid/runtime/templates/question-protocol.md`, never as a bare "your call":
 
    ```text
-   Research -- question 1 of 1 -- importance: high
+   {subject} -- question {n} of {m} -- importance: high
    Shall I fix {the open finding} and run one more review, or do you take the report as it stands with it noted?
    Why I ask: the review loop stopped after 3 cycles, so only you can say whether to go on.
    My recommendation: {the option that fits the finding's severity, and why}
@@ -162,7 +167,8 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
    Or answer in your own words, ask me to explain, or skip this question.
    ```
 
-   Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Research --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown. The work stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed run shows the open question first, records the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'`, and sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and dispatches nothing. On the first option it goes to INVESTIGATE for one more cycle; on the second it goes to PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.
+   Use the protocol's current subject and counter in the example above, including its break rule for
+   a new subject. Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<group subject>' --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown. The work stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed run shows the open question first, records the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'`, and sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and dispatches nothing. On the first option it goes to INVESTIGATE for one more cycle; on the second it goes to PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
@@ -170,15 +176,16 @@ or the Gaps note, is part of this step. Once it is done, record in the `--detail
 
 ---
 
-## State: PRESENT  (always a hard stop -- the user resolves)
+## State: PRESENT
 
-The hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:
+Present `RESEARCH.md` **clearly and simply**:
 the in-depth answer, conclusions (positive **and** negative), conflicts/contradictions
-**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and
-gaps are first-class, never buried under positives. The turn ends with the HANDOFF question below, in the form,
-never with an open line such as "your call".
+**with their reasons**, and gaps. Tell the user explicitly that the choice is theirs; do not
+resolve it for them. Negatives and gaps are first-class, never buried under positives.
+Continue to HANDOFF below; its required
+break, when due, takes precedence over ending this turn with a next-step question.
 
-**Advance:** ASK → [State: HANDOFF].
+**Advance:** CHAIN → [State: HANDOFF].
 
 ---
 
@@ -188,13 +195,20 @@ Offer the natural next steps as **printed suggestions**, each requiring the user
 record an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the
 KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on
 a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never
-auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the form of
-`.aid/runtime/templates/question-protocol.md` (`Research -- question 1 of 1 -- importance: low`, **Why I ask**,
-**My recommendation**, numbered options with the recommended one first, and the closing line). Record it with
-`writeback-state.sh --ask --category Research --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with
+auto-invoked; never a resolution. On entry, read the saved detail: after a break was offered,
+the user's continuation proceeds to the next-step question without repeating the report or break.
+Otherwise check whether the preceding question group is complete or the subject changes. If so,
+save HANDOFF with detail that the report was shown, the break is offered, and continuation asks
+the next-step question; pause the lifecycle for that break and end the turn with the protocol's
+break offer. The break has no question record. On continuation restore Running, then record and
+ask the next-step question. Do not rename a group to bypass the break. Otherwise retain the
+current subject and counter. Ask which step, if any, the user takes, in the form of
+`.aid/runtime/templates/question-protocol.md`, using its subject grouping and break rules rather than
+resetting the group for this step. Record it with
+`writeback-state.sh --ask --category '<group subject>' --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with
 `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked one is named in one plain line.
 
-**Advance:** ASK → [State: DONE].
+**Advance:** ASK → [State: HANDOFF] while the break awaits continuation; ASK → [State: DONE] once the next-step question is asked.
 
 ---
 

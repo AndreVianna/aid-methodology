@@ -53,7 +53,8 @@ Read stdout field 1 (the absolute path) and enter it using the host's **native s
   session.
 - **Any profile without such a primitive** (codex, cursor, copilot-cli, antigravity -- unless/until
   a host exposes one): **fall back** to operating with the resolved path as the working directory
-  for all subsequent file operations, and **surface that path to the user**:
+  for all subsequent file operations. Tell a plain-language user that an isolated workspace is open;
+  when the user asks for it or the conversation is technical, **surface that path to the user**:
   `Working in worktree: <path>`. Isolation still holds -- the work still happens on branch
   `<work-id>` in its own directory; only the ergonomics of the switch differ.
 - **`current` status (locate only):** the returned path is **already** the directory to operate

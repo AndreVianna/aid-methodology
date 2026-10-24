@@ -21,7 +21,7 @@ My recommendation: {the candidate and why, or the export if none was found}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both (`question-protocol.md` § Where each record lives). A skipped question ends the observation with the finding `no data source`; nothing is invented.
+Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both (`question-protocol.md` § Where each record lives). This applies to follow-ups too: record "I don't know" or a skip as `Skipped` before reporting a blocker or ending. A skipped question ends the observation with the finding `no data source`; nothing is invented.
 
 ▶ telemetry pull starting (~30 s–2 min per source per `.aid/runtime/templates/rough-time-hints.md`)
 For each data source, capture:

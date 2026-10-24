@@ -38,6 +38,10 @@ question: say what happens and what it means for them, not how the code does it.
 user cannot judge (a locking design, a file format, a library) is not asked at all: take the recommended option,
 record it `Assumed` with its reason, and confirm it in plain words with the next approval (Reviews and small
 decisions).
+When a required explanation cites a workflow rule, use its plain-language title as the link label,
+not an internal skill identifier or filename. The exact source path belongs in the link target.
+For a reproduction question, ask what the person did and what they saw. Request commands, logs or
+internal identifiers only when the user has shown that technical level or asks for those details.
 
 ### Rule 4 -- Always a recommendation
 
@@ -75,7 +79,10 @@ A break offer decides nothing and is not recorded.
 ### Rule 8 -- Follow-ups come at once
 
 A follow-up question comes straight after the question that raised it, inside the same group, so
-the user keeps track.
+the user keeps track. Keep that group's subject label and advance its question counter; do not reset
+to a newly named group for a clarification of the same issue.
+The counter belongs to the conversation's group, not the new skill: a follow-up discovered after
+`question 1 of 1` is shown as `question 2 of 2`, not another `question 1 of 1`.
 
 ### Rule 9 -- Skip what is already answered
 
@@ -106,10 +113,12 @@ Or answer in your own words, ask me to explain, or skip this question.
 - The first line gives the group subject, the question's place in its group and its importance.
 - Options appear only when two or more are valid, the recommended one first (Rule 5).
 - The form shows two closing lines. A plain question ends with the question line above. An approval ends with
-  the approval line, `Or answer in your own words, or ask me to explain.`, which has no skip. An approval is a yes
-  that lets the agent change, build, delete, publish or push something, or that approves a document or design. A
-  question that changes nothing when skipped, such as a reopen or close menu, is a plain question and ends with
-  the skip line.
+  the approval line, `Or answer in your own words, or ask me to explain.`, which has no skip. An approval authorizes
+  an operation (change, build, delete, publish or push) or approves a document or design.
+  A confirmation is a question's form, not its permission level: value inputs within an already requested
+  `aid-config` settings walk remain skippable, including confirming a current or suggested value. Skipping
+  leaves that setting unchanged. Overall setup and operation approvals remain non-skippable.
+  A question that changes nothing when skipped, such as a reopen or close menu, also uses the skip line.
 - **End-of-turn check.** Before you end a turn that waits on the user, the message has the first line
   with its importance, `Why I ask`, `My recommendation` and the right closing line, and its `--ask` record
   ran first. A closing or follow-up question ("Your call", "which would you like?", "shall I go on?") is a
@@ -236,11 +245,12 @@ follow the normal recording above.
 On start or resume, the open entries (`Pending` and `Skipped`) are offered first, in the usual groups.
 
 **An open entry is offered through the skill in its `asked_by`, and answered on the same id.** Run that skill
-(the Skill tool); do not answer the entry by hand or ask its question from outside the skill. The skill shows
+(by `skill-steps.md` § Starting a skill); do not answer the entry by hand or ask its question from outside the skill. The skill shows
 the question with the text recorded in the entry's `context` and `suggested`, unchanged, because the question-form
 check matches a shown question to its record by that text. When the user answers, update that same entry
-(`--answer --id <id>`): it changes from `Skipped` or `Pending` to `Answered`, and `answered_by` becomes the new
-user's name. Never write a new `--ask` entry for a question that is already open. The user can skip it again: it
+(`--answer --id <id>`): it changes from `Skipped` or `Pending` to `Answered`, and the writer resolves
+`answered_by` from `git config user.name`, or `--` when unset. A name stated in chat does not replace
+Git attribution or authorize changing Git configuration. Never write a new `--ask` entry for a question that is already open. The user can skip it again: it
 stays `Skipped`. When an answer to a project question needed no work, say so in one plain line: "This needed no work;
 it is recorded in the project's settings record."
 

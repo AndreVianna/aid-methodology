@@ -68,8 +68,9 @@ setting skipped in an earlier run is asked again on its own entry (see below).
 
 **When the project settles a value, ask a confirmation, not a menu** (question-protocol Rule 5.1). Only one
 option is valid then, so the question has no numbered options: "I'll keep `source_control` as `git`, because
-this folder is a git repository -- all right?" It keeps the form and the closing line, and its recommendation
-names the evidence. Settled means:
+this folder is a git repository -- all right?" This is a skippable value input, not an approval to run
+the setup: keep the question closing line with skip. Explain the observed fact in the recommendation at
+question-protocol Rule 3's technical level, for example "it already has working code" for `brownfield`. Settled means:
 
 - `source_control` is `git` when `git rev-parse --is-inside-work-tree` succeeds, `svn` when `.svn` is present,
   `mercurial` when `.hg` is present;
@@ -177,6 +178,10 @@ My recommendation: {the suggested value, and why}
 Or answer in your own words (type a value of your own), ask me to explain, or skip this question.
 ```
 
+Keeping a current value still needs a reason; "it is the current value" is not one. For progress
+updates, explain the trade-off: one minute gives frequent reassurance during long work, five minutes
+reduces interruptions, and zero disables periodic updates. Recommend the value that fits that preference.
+
 **Recording.** This skill keeps no work record, so each question it asks is recorded in the project
 file `.aid/STATE.yml` (`.aid/runtime/templates/question-protocol.md` § Where each record lives).
 Before the question is shown:
@@ -189,6 +194,8 @@ validation (Step 5) is a new question, recorded the same way. A non-zero exit st
 ### Step 5: Validate
 
 Per the Validation table below. If invalid: print the validation error + re-prompt (loop back to Step 4).
+Validate the value the user actually supplied. A vague duration such as "every few minutes" is not an
+integer: ask for a whole number in the same group; do not silently turn it into the recommended value.
 
 ### Step 6: Save in place
 

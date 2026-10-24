@@ -64,10 +64,13 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> unless the user's own words name **both** the data and the question, ask exactly one
    question first, in the form: what should I analyze, and what should the report answer. Do not
    open a work, announce that scoping is done or start reading before the user has answered it.
+   When neither is named, ask "Which data should I analyze, and what should the report answer?";
+   do not replace that with "Using the available data, what should it answer?", which assumes the source.
    - Its **Why I ask** says that the data and the question decide what the report can show.
    - Its **My recommendation** names the candidate data source(s) found on disk or in a connector and a
      likely question about them. One candidate file is a recommendation inside this question, never a
      reason to skip it: finding the file does not tell what the user wants answered.
+     Explain why that proposed analysis would help; keep the candidate source conditional until the reply.
    - When the user's words name only one of the two, the question asks for the other, still as one
      question. Ask nothing else about scope that the answer settles (metrics follow from the question).
    - Record it with `--ask --design` (a `## Questions` row, `Pending`) before it is shown, and the reply
@@ -167,7 +170,8 @@ or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket
 Never auto-invoked; never a resolution. Ask which one, if any, the user takes, as one question in the
 form of `.aid/runtime/templates/question-protocol.md` (`Report -- question 1 of 1 -- importance: low`,
 **Why I ask**, **My recommendation**, numbered options with the recommended one first, and the closing
-line). Record it with `writeback-state.sh --ask --category Report --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-report` before it is shown, and the reply with
+line). Give the recommendation's reason: when only a report was requested, keeping it one-time meets
+that request without committing the user to ongoing work. Record it with `writeback-state.sh --ask --category Report --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-report` before it is shown, and the reply with
 `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked suggestion is named in
 one plain line.
 

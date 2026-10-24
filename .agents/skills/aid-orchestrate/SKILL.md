@@ -31,8 +31,12 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
 3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth; with no Knowledge Base, offer Preparation too (section 5). **Advance:** **CHAIN** → SHOW-READING.
 4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, inside the go-ahead: one approval question
-   that asks to start it (clarifying questions come first, each alone; the reading never rides on one), or alone when
+   that asks to start it (the reading never rides on a separate clarifying question), or alone when
    `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
+   When CHECK-READING kept two plausible outcomes, this go-ahead offers both in plain words rather
+   than only confirming the preferred one. Decide between those outcomes before asking for symptom or implementation
+   details; clarify first only when the possible outcomes themselves cannot yet be identified. Explain why the recommendation fits the reported problem;
+   a workflow's requirement to ask permission is not the reason for choosing that reading.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead decides; an answer to a clarifying question never
    does. A reading that matches an action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`,
@@ -53,8 +57,8 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    the writer on a confirmed cancel. **Advance:** **HALT**.
 9. **Close a work** (`CLOSE`). `references/size-and-route.md` section 3. **Advance:** **HALT**.
 10. **Hand over** (`HAND-OVER`). Nothing more is asked. Start the first phase skill of a new work (`intent.phases`),
-    or a continued work's skill at its saved step (`references/start-or-resume.md` section 4), in this turn;
-    where the tool cannot, name its slash command. **Advance:** **PASS**.
+   or a continued work's skill at its saved step (`references/start-or-resume.md` section 4), in this turn,
+   by `.aid/runtime/templates/skill-steps.md` § Starting a skill. **Advance:** **PASS**.
 11. **During the work** (`DURING-WORK`). Load `references/external-sources.md` when a source is pulled in, applied
     or written back, and `references/feedback-routing.md` when feedback arrives; a re-route is said in one line
     and added to `intent.changes`. **Advance:** **CHAIN** → CHECK-READING when a new fact arrives; **HALT** when none does.

@@ -144,16 +144,14 @@ The gate performs the steps below in this order, and only then hands the new wor
    empty, surface the error and **STOP** -- do **not** fall through to allocate
    the new work on the current (possibly `master`) tree. On success, **enter**
    the resolved path per `.aid/runtime/templates/worktree-lifecycle.md § Step
-   2`: the executing agent invokes the host-native `EnterWorktree` tool where
-   available, else treats the resolved path as the working directory for all
-   subsequent file operations and surfaces it to the user (`Working in
-   worktree: <path>` -- FR4 fallback).
+   2`, which owns the native switch, working-directory fallback and user-facing notice.
 
 3. **Read the work's type** with `/aid-orchestrate`'s `references/check-intent.md`, from the user's words. The calling skill's own kind is only a hint (FR-4).
 
 4. **Create the folder, then scaffold `STATE.yml` through the writer**, inside the entered worktree. Create `.aid/works/<work-id>-<name>/` (reusing the `<work-id>` from step 1 -- do **not** re-derive it from the fresh worktree's own, still-empty `.aid/works/`), then make the work record in one locked write:
 
    ```bash
+   mkdir -p .aid/works/<work-id>-<name>
    bash .aid/runtime/scripts/execute/writeback-state.sh --create \
      --work-dir .aid/works/<work-id>-<name> \
      --reading <type from step 3> --request '<the user's words>' \
@@ -221,7 +219,7 @@ The gate allocates **nothing**. The work's record -- `intent.reading`, `active_s
 
    After one confirmed repair the record is complete and `--check` passes, so row 2 never fires twice for the same problem; the work continues at row 3. A saved step whose artifact is not on disk is found by the resumed skill's own validation and takes this same recovery path (`.aid/runtime/templates/skill-steps.md`, The work record).
 
-6. **Enter and run** (row 3, and row 2 after its repair): enter the located worktree per `.aid/runtime/templates/worktree-lifecycle.md § Step 2` -- invoke the host-native `EnterWorktree` tool where available, else treat the path as the working directory and surface it (`Working in worktree: <path>` -- FR4 fallback). Skip the enter only when `locate` printed `current`. Then run the skill the record names (`active_skill`, itself or another skill) at its saved `step`, under `.aid/runtime/templates/skill-steps.md`. There is no special case for a resume in the same invocation.
+6. **Enter and run** (row 3, and row 2 after its repair): enter the located worktree per `.aid/runtime/templates/worktree-lifecycle.md § Step 2`, including its working-directory fallback and user-facing notice. Skip the enter only when `locate` printed `current`. Then run the skill the record names (`active_skill`, itself or another skill) at its saved `step`, under `.aid/runtime/templates/skill-steps.md`. There is no special case for a resume in the same invocation.
 
 <!-- legacy-phase-map: begin -->
 

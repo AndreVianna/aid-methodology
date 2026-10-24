@@ -21,7 +21,7 @@ criteria, where `/aid-ask` answers a free-form question.
   `/aid-fix`'s job.
 
 State machine: **INTAKE (-> INTAKE-ASK?) -> ALLOCATE -> REVIEW -> VERIFY (loop) ->
-PRESENT-FINDINGS [human] -> PUBLISH (on approval) -> DONE**.
+PRESENT-FINDINGS [human] -> PUBLISH (record decision; deliver only on approval) -> DONE**.
 Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
 
 Talking with the user: follow `.aid/runtime/templates/question-protocol.md`.
@@ -210,16 +210,22 @@ user approves. Never ask "save this report?" first and show the text only when t
 Form: `Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without
 your approval, **My recommendation**, numbered options: approve and publish / edit the text / choose a
 different delivery / do not publish, and the approval closing line `Or answer in your own words, or ask me to explain.`
+Give the recommendation's reason too: when no destination was requested, recommend keeping the findings
+in the conversation because that delivers the requested review without creating an additional report.
 Record it with
 `writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with
-`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.
+`--answer --id Q<n> --state Answered --value '<the answer>' --applied-to 'publish'`.
 Nothing is written or posted to any target until they approve.
 
 **Advance:** ASK → [State: PUBLISH].
 
 ---
 
-## State: PUBLISH  (only on approval)
+## State: PUBLISH
+
+First record the user's reply on the approval's existing id with `--answer`, including a decline.
+A decline is `Answered` with the user's decision, not an unanswered question. Do this before the
+acknowledgment or DONE, even when there is nothing to publish.
 
 If the user did not approve publishing, nothing is posted or saved. The approval just given covers the exact
 text shown at PRESENT-FINDINGS and no other: any other write, save or post (a different target, edited text)
@@ -233,7 +239,9 @@ inline-comment suggestions) for code; inline notes for a document. **Graceful fa
 no catalogued connector / unknown target -> present the exact text for the human to paste; when the
 user must choose where it goes, ask that as one question in the same form, with the exact text in full in the
 same message, recorded with `--ask` before it is shown and `--answer` after, recommending the paste.
-Publishing is optional and never blocks DONE.
+Publishing itself is optional: declining it continues to DONE. The PRESENT-FINDINGS decision is still
+required when no external destination was named. Wait for that answer; do not skip the question or
+mark the work Completed in the turn that first presents the findings.
 
 When findings remain, end with one plain line that names `/aid-fix` as the way to fix them, for example
 "N issues found -- run `/aid-fix` to address them." It is a statement, not a question: it carries no
