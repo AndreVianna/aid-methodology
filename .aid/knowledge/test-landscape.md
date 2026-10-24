@@ -339,12 +339,16 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
 
 - **Run it by hand.** `python3 tests/conversation/run.py --feature 001` runs every sample in
   `tests/conversation/samples/feature-001/`. `--sample ID` runs one sample. `--hosts` names the tools;
-  Claude Code always runs, and the other tools run only when named (this build has an adapter for
-  Claude Code only). `--validate` parses the samples without running them. Exit codes: 0 every run
-  passes, 1 any failure, 2 invocation error.
+  only the named hosts run, with adapters for Claude Code and Codex. `--user-host` and `--judge-host`
+  independently select `claude-code` (the default) or `codex` for the simulated user and judge.
+  `--hosts codex --user-host codex --judge-host codex` needs no Claude executable or credits.
+  `--validate` parses the samples without running them. Exit codes: 0 every run passes, 1 any failure,
+  2 invocation error, an unavailable selected helper, or no available requested agent host.
 - **The model under test.** The agent under test runs on `claude-sonnet-5-5`, passed as `--model` on
-  every turn; the environment variable `AID_CONV_MODEL` names another model. Each run writes the model
-  it used to `model.txt` in its run folder. The agent's environment drops the parent session's identity
+  every Claude turn; `AID_CONV_MODEL` names another model. Codex uses its CLI default, or `AID_CODEX_MODEL`.
+  `--user-model` and `--judge-model` set the helper models independently; their defaults are the
+  provider's CLI default, or `AID_CODEX_MODEL` for Codex. Each run writes the requested agent model
+  to `model.txt` and all three providers and requested models to `providers.json`. The agent's environment drops the parent session's identity
   and wiring (a deny-list of session, account, ingress and remote variables); auth, provider, proxy and CA
   variables are kept, so the agent can still authenticate.
 - **Three runs per sample.** Each sample runs 3 times (`--runs`, default 3) and passes only if all 3
@@ -361,7 +365,8 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
   and no workflow under `.github/workflows/` invokes `tests/conversation/`. The suite runs on the
   maintainer's machine.
 - **Where it captures.** Each run writes `.aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/`,
-  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt`, `ledger.md` and `model.txt`, plus
+  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt`, `ledger.md`, `model.txt`, `providers.json` and
+  `result.json` (the exact pass flag and failure reasons), plus
   `hook.jsonl` when the question-form hook sent a message back. The runner sets `AID_QUESTION_HOOK_LOG` to
   that file (outside the fixture, so `files.diff` stays clean) and drops `AID_QUESTION_HOOK` from the agent's
   environment so a parent session cannot switch the hook off. A message the hook withdrew is marked in
@@ -369,6 +374,30 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
   Must-not items only (`protocol-checks.md`, "Messages the hook withdrew"); the simulated user sees the
   replacement only.
   The judge's ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
+- **Codex boundaries.** Codex agent fixtures also install the Codex AID profile, including `AGENTS.md`.
+  Agent turns use a permission profile extending `:workspace`, overriding only the disposable fixture's
+  `.git` protection so worktree creation can run. Initial and resumed turns repeat the profile and
+  automatic approval review. Other protected workspace paths retain their inherited restrictions.
+  The agent ignores user configuration and disables account apps and web search, so simulated
+  requests do not inherit account app integrations or user-configured MCP servers.
+  Only the `two-trackers` fixture gives the Codex main agent a closed, local stdio MCP server,
+  `tests/conversation/support/tracker_mcp.py` (`tool_definitions`, `serve`). Initial and resumed turns
+  configure its Jira and Linear ticket-read tools; valid reads return explicit unavailability without
+  contacting a tracker or inventing ticket fields. The provider accepts ticket IDs only and exposes
+  no writes, filesystem paths, account connections or authentication. Test wiring stays outside the
+  installed connector catalogue. Other fixtures and Claude's adapter receive no test MCP provider.
+  Codex helpers start fresh ephemeral read-only sessions in a separate empty directory, ignore user
+  configuration, disable shell, apps, multi-agent and web search, and fail if their event stream reports
+  tool use. Their copied authentication files are excluded from captures. Codex command events support
+  Bash and no-push checks; tools specific to another host remain `NOT RUN`. The judge receives ordered
+  messages, commands, command results, MCP calls/results and file changes, so question-recording order
+  and attempted tracker reads are observable. Started/completed MCP events produce one call and one
+  result per item ID, in observed order. The simulated user sees final agent messages only.
+  These results do not validate Claude's question-form Stop hook. Host and helper providers are part of
+  the run-folder name. Its `summary.json` records each result as it completes and marks the batch complete
+  only after every selected run. Repeating `--sample` selects an explicit subset.
+  `--fail-fast` stops at the first failed run and records an incomplete, failed batch; it cannot pass
+  until every selected sample completes all its requested runs successfully.
 - **What `files.diff` holds.** Every change the agent made in the fixture and in the throwaway `HOME`,
   git-ignored files included. A worktree the agent creates under the fixture's `.claude/worktrees/` is
   diffed file by file against the fixture's file of the same relative path, and a byte-identical file is
@@ -379,13 +408,16 @@ glob and declares its `# COVERS:` paths for `select-suites.sh`).
   truncated ...]` marker at each cut (at most 20; the rest are counted in one final `[... N more files
   truncated ...]` line). The judge is told that truncated content is not absent.
 - **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
-  `run.py` without calling a model: a stub `claude` is put first on `PATH`, and the suite builds its
+  `run.py` without calling a model: stub `claude` and `codex` commands are put first on `PATH`, and the suite builds its
   own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,
-  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES`, `VSAMPLES`, `CAP`, `CODEX`, `PROTO` and
+  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES`, `VSAMPLES`, `CAP`, `CODEX`, `HELPERS`, `EVIDENCE`, `MCP`, `PROTO` and
   `HOOK` (the hook log, the withdrawn marking and the dropped kill switch). The behaviours that
   `DIFF`, `JUDGE`, `ENV` and `END` guard each have a mutation (a throwaway copy of `run.py`, with that one
   behaviour broken) on which the same check must fail; `BRIEFS` runs the same test on throwaway copies of
   the two briefs. It skips with a notice when `python3` is absent.
+  `MCP` exercises the actual provider over stdio, rejects unknown tools and invalid arguments, checks
+  fixture/start/resume scope and helper absence, and verifies ordered call/result capture without
+  fabricating host-specific skill, edit or write events. `EVIDENCE` guards saved failed-run verdicts.
 
 ## CI Lanes and Where They Run
 

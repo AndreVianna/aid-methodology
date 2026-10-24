@@ -15,7 +15,7 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO HOOK
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE MCP PROTO HOOK
 #
 # Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
 # a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX PROTO HOOK"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX HELPERS EVIDENCE MCP PROTO HOOK"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -277,10 +277,47 @@ if argv[:2] == ["login", "status"]:
     raise SystemExit(0)
 if not argv or argv[0] != "exec":
     raise SystemExit("expected codex exec")
+if "--sandbox" in argv and "--approve-for-me" in argv:
+    raise SystemExit("--sandbox cannot be combined with --approve-for-me")
 last = argv[argv.index("--output-last-message") + 1]
+prompt = sys.stdin.read()
+system = next((argv[i + 1].split("=", 1)[1] for i, value in enumerate(argv[:-1])
+               if value == "-c" and argv[i + 1].startswith("developer_instructions=")), "")
+role = ("user" if "USER-BRIEF-MARK" in system else "judge") if "--ephemeral" in argv else "agent"
+log = os.environ["CODEX_STUB_LOG"]
+prior = []
+if os.path.exists(log):
+    with open(log, encoding="utf-8") as f:
+        prior = [json.loads(line) for line in f if line.strip()]
+count = sum(c.get("role") == role for c in prior) + 1
 with open(os.environ["CODEX_STUB_LOG"], "a", encoding="utf-8") as f:
     f.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME"),
+                        "role": role, "prompt": prompt, "system": system,
+                        "codex_home": os.environ.get("CODEX_HOME"),
+                        "aid_context": os.path.isfile("AGENTS.md"),
                         "auth_copied": os.path.isfile(os.path.join(os.environ.get("HOME", ""), ".codex", "auth.json"))}) + "\n")
+if role != "agent":
+    if os.environ.get("STUB_CODEX_HELPER_FAIL") == "1":
+        raise SystemExit("stub helper unavailable")
+    if role == "user":
+        mode = os.environ.get("STUB_USER", "end-after-one")
+        reply = "Keep going." if mode == "never" else (
+            "Second message from the persona." if mode == "two-turns" and count % 2 == 1 else "<<END>>")
+    else:
+        mode = os.environ.get("STUB_JUDGE", "clean")
+        status = "Pending" if mode == "pending" else "Fixed"
+        reply = ("The run looks fine." if mode == "no-table" else
+                 "| # | Severity | Status | Doc | Line | Description | Evidence |\n"
+                 "| --- | --- | --- | --- | --- | --- | --- |\n"
+                 f"| 1 | [HIGH] | {status} | transcript.md | 1 | Stub item | Stub evidence |")
+    with open(last, "w", encoding="utf-8") as f:
+        f.write("" if os.environ.get("STUB_CODEX_HELPER_EMPTY") == "1" else reply)
+    if os.environ.get("STUB_CODEX_HELPER_TURN_FAILED") == "1":
+        print(json.dumps({"type": "turn.failed", "error": {"message": "stub failed turn"}}))
+    if os.environ.get("STUB_CODEX_HELPER_TOOL") == "1":
+        print(json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}))
+    print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": reply}}))
+    raise SystemExit(0)
 if "resume" not in argv:
     with open("changed.txt", "w", encoding="utf-8") as f:
         f.write("hello from the stub\n")
@@ -294,6 +331,10 @@ with open(last, "w", encoding="utf-8") as f:
     f.write("Codex reply " + ("2" if "resume" in argv else "1"))
 if "resume" not in argv:
     print(json.dumps({"type": "thread.started", "thread_id": "stub-codex-thread"}))
+print(json.dumps({"type": "item.completed", "item": {"id": "command-" + str(count),
+                  "type": "command_execution", "command": "git status --short", "aggregated_output": "", "exit_code": 0}}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message",
+                  "text": "Codex reply " + ("2" if "resume" in argv else "1")}}))
 CODEXSTUB
 chmod +x "$BIN/codex"
 
@@ -1882,8 +1923,88 @@ PYHU
         $'        except ValueError:\n            raise\n        if not isinstance(obj, dict):\n            continue\n        text = next'
     hu_mutant reread offset 'return entries[seen:], max(seen, len(entries))' 'return entries, len(entries)'
     hu_mutant nomarker render 'out += [f"[{WITHDRAWN_MARK} -- missing: {missing}]", ""]' 'out += [""]'
-    hu_mutant userseeshidden user_view 'render_transcript_md(transcript, show_withdrawn=False)' 'render_transcript_md(transcript)'
+    hu_mutant userseeshidden user_view 'render_transcript_md(transcript, show_withdrawn=False, show_events=False)' 'render_transcript_md(transcript)'
     hu_mutant alwaysshow user_view $'        if show_withdrawn:\n            out += render_withdrawn' $'        if True:\n            out += render_withdrawn'
+}
+
+# ---------------------------------------------------------------- HELPERS
+group_helpers() {
+    echo "--- HELPERS"
+    local out dir calls
+    mkdir -p "$T/no-claude-bin" "$T/home/.codex"
+    ln -sf "$BIN/codex" "$T/no-claude-bin/codex"
+    printf '{"tokens": {"access_token": "AUTH-MARK-7731"}}\n' > "$T/home/.codex/auth.json"
+    # No Claude executable on PATH: all three roles must really run on Codex.
+    PATH="$T/no-claude-bin:/usr/bin:/bin" invoke helpers two-turns clean --hosts codex \
+        --user-host codex --judge-host codex --user-model user-test --judge-model judge-test \
+        --sample s-pass --runs 1
+    out="$T/log/helpers.out"
+    calls="$T/log/helpers.codex.jsonl"
+    dir="$(sed -n 's/^PASS codex s-pass run 1\/1 -> //p' "$out" | head -1)"
+    assert_exit_eq "$(cat "$T/log/helpers.rc")" 0 "HP01 Codex-only runs without a Claude executable"
+    assert_output_contains "$(cat "$out")" "PASS codex s-pass: 1/1 runs passed" "HP02 the Codex-only result passes"
+    assert_output_not_contains "$(cat "$out")" "PASS claude-code" "HP03 no Claude run is added"
+    "$PY" - "$calls" "$dir" > "$T/log/helpers.facts" <<'PYHELPERS'
+import json, pathlib, sys
+calls = [json.loads(line) for line in pathlib.Path(sys.argv[1]).read_text().splitlines()]
+agents = [c for c in calls if c["role"] == "agent"]
+users = [c for c in calls if c["role"] == "user"]
+judges = [c for c in calls if c["role"] == "judge"]
+helpers = users + judges
+def fact(name, value):
+    print(name + "=" + str(bool(value)))
+fact("roles", len(agents) == 2 and len(users) == 2 and len(judges) == 1)
+fact("isolated", all(pathlib.Path(c["cwd"]).name == "helper" and "resume" not in c["argv"] for c in helpers)
+     and len({c["home"] for c in helpers}) == len(helpers)
+     and not ({c["home"] for c in helpers} & {c["home"] for c in agents}))
+fact("restrained", all("--ephemeral" in c["argv"] and "--ignore-user-config" in c["argv"]
+     and c["argv"][c["argv"].index("--sandbox") + 1] == "read-only"
+     and all(flag in c["argv"] for flag in ("features.shell_tool=false", "features.apps=false",
+                                           "features.multi_agent=false", 'web_search="disabled"',
+                                           "project_doc_max_bytes=0")) for c in helpers))
+fact("models", all(c["argv"][c["argv"].index("--model") + 1] == "user-test" for c in users)
+     and judges[0]["argv"][judges[0]["argv"].index("--model") + 1] == "judge-test")
+fact("briefs", all("USER-BRIEF-MARK" in c["system"] and "## Answer sheet" in c["prompt"] for c in users)
+     and "JUDGE-BRIEF-MARK" in judges[0]["system"] and "## Expected outcome" in judges[0]["prompt"])
+fact("auth", all(c["auth_copied"] and c["codex_home"] == str(pathlib.Path(c["home"]) / ".codex") for c in helpers))
+fact("context", all(c["aid_context"] for c in agents))
+providers = json.loads((pathlib.Path(sys.argv[2]) / "providers.json").read_text())
+fact("providers", all(v["host"] == "codex" for v in providers.values())
+     and providers["user"]["model"] == "user-test" and providers["judge"]["model"] == "judge-test")
+PYHELPERS
+    local item
+    for item in roles isolated restrained models briefs auth context providers; do
+        assert_file_contains "$T/log/helpers.facts" "$item=True" "HP-$item Codex helpers preserve $item"
+    done
+    assert_output_not_contains "$(cat "$calls")" 'AUTH-MARK-7731' "HP04 no credential reaches a helper prompt"
+
+    invoke helper-pending end-after-one pending --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_exit_eq "$(cat "$T/log/helper-pending.rc")" 1 "HP05 a Codex judge Pending row fails the run"
+    invoke helper-no-table end-after-one no-table --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/helper-no-table.out")" 'judge: no 7-column ledger table' "HP06 a Codex judge needs a ledger"
+    STUB_CODEX_HELPER_TOOL=1 invoke helper-tool end-after-one clean --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/helper-tool.out")" 'codex helper attempted tool use' "HP07 a helper tool event fails the run"
+    STUB_CODEX_HELPER_FAIL=1 invoke helper-fail end-after-one clean --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/helper-fail.out")" 'stub helper unavailable' "HP08 helper CLI failures are retained"
+    STUB_CODEX_HELPER_EMPTY=1 invoke helper-empty end-after-one clean --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/helper-empty.out")" 'codex helper returned no text' "HP18 empty helper output fails the run"
+    STUB_CODEX_HELPER_TURN_FAILED=1 invoke helper-turn-failed end-after-one clean --hosts codex --user-host codex --judge-host codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/helper-turn-failed.out")" 'codex helper reported a failed turn' "HP19 a zero-exit failed turn fails the run"
+    invoke_no_codex helper-missing end-after-one clean --hosts claude-code --judge-host codex --sample s-pass --runs 1
+    assert_exit_eq "$(cat "$T/log/helper-missing.rc")" 2 "HP09 an unavailable selected helper is a setup error"
+    STUB_CODEX_SIGNED_IN=0 invoke helper-unsigned end-after-one clean --hosts claude-code --user-host codex --sample s-pass --runs 1
+    assert_exit_eq "$(cat "$T/log/helper-unsigned.rc")" 2 "HP10 a signed-out selected helper is a setup error"
+    STUB_CODEX_SIGNED_IN=0 invoke no-host end-after-one clean --hosts codex --sample s-pass --runs 1
+    assert_exit_eq "$(cat "$T/log/no-host.rc")" 2 "HP11 skipping every requested agent cannot report success"
+
+    invoke codex-judge end-after-one clean --sample s-pass --judge-host codex --runs 1
+    assert_exit_eq "$(cat "$T/log/codex-judge.rc")" 0 "HP12 Claude agent and user work with a Codex judge"
+    assert_file_contains "$T/log/codex-judge.jsonl" '"role": "user"' "HP13 the independently selected user stays Claude"
+    assert_file_contains "$T/log/codex-judge.codex.jsonl" '"role": "judge"' "HP14 the independently selected judge is Codex"
+    invoke codex-user end-after-one clean --sample s-pass --user-host codex --runs 1
+    assert_exit_eq "$(cat "$T/log/codex-user.rc")" 0 "HP15 Claude agent and judge work with a Codex user"
+    assert_file_contains "$T/log/codex-user.jsonl" '"role": "judge"' "HP16 the independently selected judge stays Claude"
+    assert_file_contains "$T/log/codex-user.codex.jsonl" '"role": "user"' "HP17 the independently selected user is Codex"
 }
 
 # ---------------------------------------------------------------- CODEX
@@ -1915,14 +2036,14 @@ group_codex() {
         "CX02 the Codex host is run through its registered adapter"
     assert_eq "$(wc -l < "$calls" | tr -d ' ')" 2 "CX03 Codex starts once and sends the second turn"
     assert_file_contains "$calls" '"resume", "stub-codex-thread"' "CX04 the second turn resumes the returned thread"
-    assert_file_contains "$calls" '"--sandbox", "workspace-write"' "CX05 Codex starts with the workspace-write sandbox"
-    assert_file_contains "$calls" '"--approve-for-me"' "CX06 Codex uses automatic workspace-write approval"
+    assert_output_not_contains "$(cat "$calls")" '"--sandbox"' "CX05 Codex does not combine conflicting sandbox and approval flags"
+    assert_file_contains "$calls" 'default_permissions' "CX06 Codex selects the scoped fixture permission profile"
     assert_file_contains "$dir/files.diff" 'hello from the stub' "CX07 Codex fixture edits appear in the capture"
     assert_file_contains "$dir/transcript.md" 'Codex reply 2' "CX08 the resumed turn enters the transcript"
     assert_file_contains "$dir/checks.txt" 'NOT RUN tool-called Skill aid-plan' \
         "CX09 tool checks Codex cannot answer are reported as not run"
-    assert_output_contains "$(cat "$out")" "PASS claude-code s-pass: 1/1 runs passed" \
-        "CX10 requiring Claude helpers keeps its agent run active beside Codex"
+    assert_output_not_contains "$(cat "$out")" "PASS claude-code" \
+        "CX10 Claude helpers do not add an unrequested Claude agent run"
 
     make_mutant codex-start 'args = ["exec"]' 'args = []'
     INVOKE_RUNNER="$MUT_PATH" invoke codex-start-mut two-turns clean --hosts codex --sample s-pass --runs 1
@@ -1942,7 +2063,7 @@ group_codex() {
         bash -c 'grep -q "hello from the stub" "$1"' _ "$capture_dir/files.diff"
 
     make_mutant codex-not-run \
-        'results.append((check["label"], None, "Codex output does not expose normalized tool calls"))' \
+        'results.append((check["label"], None, f"Codex does not expose the {args[0]} tool"))' \
         'results.append((check["label"], True, ""))'
     INVOKE_RUNNER="$MUT_PATH" invoke codex-check-mut two-turns clean --hosts codex --sample s-pass --runs 1
     local check_dir
@@ -1957,13 +2078,13 @@ group_codex() {
     expect_fail "CX15 removing the Codex adapter registration fails CX02" \
         bash -c 'grep -q "PASS codex s-pass: 1/1 runs passed" "$1"' _ "$T/log/codex-mut.out"
 
-    invoke_no_codex missing-codex end-after-one clean --hosts codex --sample s-pass --runs 1
+    invoke_no_codex missing-codex end-after-one clean --hosts claude-code,codex --sample s-pass --runs 1
     assert_output_contains "$(cat "$T/log/missing-codex.out")" \
         "NOTICE: codex CLI is not on PATH; codex host skipped" "CX16 a missing Codex CLI produces a NOTICE and skips the host"
     assert_output_contains "$(cat "$T/log/missing-codex.out")" "PASS claude-code s-pass: 1/1 runs passed" \
         "CX17 Claude Code continues to run when the Codex CLI is missing"
 
-    STUB_CODEX_SIGNED_IN=0 invoke unsigned-codex end-after-one clean --hosts codex --sample s-pass --runs 1
+    STUB_CODEX_SIGNED_IN=0 invoke unsigned-codex end-after-one clean --hosts claude-code,codex --sample s-pass --runs 1
     assert_output_contains "$(cat "$T/log/unsigned-codex.out")" \
         "NOTICE: codex is not signed in; codex host skipped" "CX18 an unsigned Codex CLI produces a NOTICE and is skipped"
     assert_output_contains "$(cat "$T/log/unsigned-codex.out")" "PASS claude-code s-pass: 1/1 runs passed" \
@@ -1971,24 +2092,24 @@ group_codex() {
 
     make_mutant codex-missing \
         'if shutil.which("codex") is None:' 'if False:'
-    INVOKE_RUNNER="$MUT_PATH" invoke_no_codex missing-mut end-after-one clean --hosts codex --sample s-pass --runs 1
+    INVOKE_RUNNER="$MUT_PATH" invoke_no_codex missing-mut end-after-one clean --hosts claude-code,codex --sample s-pass --runs 1
     expect_fail "CX20 omitting the missing-CLI check fails CX16" \
         bash -c 'grep -q "NOTICE: codex CLI is not on PATH; codex host skipped" "$1"' _ "$T/log/missing-mut.out"
     assert_exit_eq "$(cat "$T/log/missing-codex.rc")" 0 "CX21 a missing Codex CLI leaves Claude helpers and the run operational"
 
-    make_mutant codex-sandbox 'args += ["--sandbox", "workspace-write", "--approve-for-me"]' 'args += ["--approve-for-me"]'
+    make_mutant codex-sandbox 'args += ["--json"]' 'args += ["--json", "--sandbox", "workspace-write", "--approve-for-me"]'
     INVOKE_RUNNER="$MUT_PATH" invoke codex-sandbox-mut two-turns clean --hosts codex --sample s-pass --runs 1
-    expect_fail "CX22 removing the Codex sandbox flag fails CX05" \
-        has_text "$T/log/codex-sandbox-mut.codex.jsonl" '"--sandbox", "workspace-write"'
+    expect_fail "CX22 combining conflicting Codex flags fails the run" \
+        has_text "$T/log/codex-sandbox-mut.out" 'PASS codex s-pass: 1/1 runs passed'
 
-    make_mutant codex-approval 'args += ["--sandbox", "workspace-write", "--approve-for-me"]' 'args += ["--sandbox", "workspace-write"]'
+    make_mutant codex-approval '"-c", '\''default_permissions="aid_conversation"'\'',' '"-c", '\''default_permissions=":read-only"'\'','
     INVOKE_RUNNER="$MUT_PATH" invoke codex-approval-mut two-turns clean --hosts codex --sample s-pass --runs 1
     expect_fail "CX23 removing the Codex approval flag fails CX06" \
-        has_text "$T/log/codex-approval-mut.codex.jsonl" '"--approve-for-me"'
+        has_text "$T/log/codex-approval-mut.codex.jsonl" 'default_permissions=\"aid_conversation\"'
 
     make_mutant codex-signed-out \
         'if proc.returncode != 0 or not re.search(r"(?m)^\s*logged in(?:\s|$)", status):' 'if False:'
-    STUB_CODEX_SIGNED_IN=0 INVOKE_RUNNER="$MUT_PATH" invoke signed-out-mut end-after-one clean --hosts codex --sample s-pass --runs 1
+    STUB_CODEX_SIGNED_IN=0 INVOKE_RUNNER="$MUT_PATH" invoke signed-out-mut end-after-one clean --hosts claude-code,codex --sample s-pass --runs 1
     expect_fail "CX24 removing the signed-out check fails CX18" \
         has_text "$T/log/signed-out-mut.out" "NOTICE: codex is not signed in; codex host skipped"
 
@@ -2044,8 +2165,328 @@ group_codex() {
     }
     expect_fail "CX34 dropping the turn cap's name from the reason fails CX30" \
         cap_named_in "$T/log/codex-cap-msg-mut.out"
+
+    codex_resume_policy() {
+        "$PY" - "$1" <<'PYRESUME'
+import importlib.util, json, pathlib, sys, tempfile
+spec = importlib.util.spec_from_file_location("resume_runner", sys.argv[1])
+runner = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = runner
+spec.loader.exec_module(runner)
+calls = []
+def fake_codex(args, **kwargs):
+    calls.append(args)
+    pathlib.Path(args[args.index("--output-last-message") + 1]).write_text("reply")
+    return json.dumps({"type": "thread.started", "thread_id": "test-thread"})
+runner.run_codex = fake_codex
+with tempfile.TemporaryDirectory() as folder:
+    agent = runner.CodexAgent(pathlib.Path(folder), {"HOME": folder}, "")
+    agent.start()
+    agent.send("first")
+    agent.send("second")
+required = ('default_permissions="aid_conversation"', 'approval_policy="on-request"', 'approvals_reviewer="auto_review"',
+            'features.apps=false', 'web_search="disabled"', '--ignore-user-config')
+print("pass" if calls[1][:3] == ["exec", "resume", "test-thread"]
+      and all(all(value in call for value in required) for call in calls)
+      and all(any('".git"="write"' in value for value in call) for call in calls)
+      and all('--sandbox' not in call and '--approve-for-me' not in call for call in calls) else "fail")
+PYRESUME
+    }
+    assert_eq "$(codex_resume_policy "$RUNNER")" pass "CX35 resumed turns retain the workspace sandbox and automatic review"
+    make_mutant codex-resume-policy 'default_permissions="aid_conversation"' 'default_permissions=":read-only"'
+    assert_eq "$(codex_resume_policy "$MUT_PATH")" fail "CX36 changing the resumed policy fails CX35"
 }
 
+group_evidence() {
+    echo "--- EVIDENCE"
+    "$PY" - "$RUNNER" <<'PYEVIDENCE'
+import json, pathlib, runpy, subprocess, sys, tempfile
+r = runpy.run_path(__import__('sys').argv[1])
+send_globals = r['CodexAgent'].send.__globals__
+with tempfile.TemporaryDirectory() as folder:
+    base = pathlib.Path(folder)
+    (base/'reviewed_module.py').write_text('value = 1\n')
+    subprocess.run([sys.executable,'-c','import reviewed_module'],cwd=base,env=r['base_env'](base),check=True)
+    assert not (base/'__pycache__').exists(), 'read-only Python verification created source artifacts'
+    def fake(args, **kwargs):
+        assert all(value in args for value in ['features.apps=false','web_search="disabled"','--ignore-user-config'])
+        pathlib.Path(args[args.index('--output-last-message') + 1]).write_text('Question?')
+        return '\n'.join(json.dumps(e) for e in [
+            {'type':'thread.started','thread_id':'evidence-thread'},
+            {'type':'item.completed','item':{'type':'agent_message','text':'I will record this first.'}},
+            {'type':'item.started','item':{'type':'command_execution','id':'c1','command':'git push origin master'}},
+            {'type':'item.completed','item':{'type':'command_execution','id':'c1','command':'git push origin master','aggregated_output':'recorded Q1 Pending','exit_code':0}},
+            {'type':'item.completed','item':{'type':'agent_message','text':'Question?'}},
+        ])
+    send_globals['run_codex'] = fake
+    a = r['CodexAgent'](base, {'HOME': folder}, '')
+    text, tools, _ = a.send('first')
+    assert tools == [{'name':'Bash','target':'git push origin master'}], tools
+    assert [e['type'] for e in a.events] == ['message','command','command_result','message']
+    transcript = [{'turn':1,'role':'agent','text':text,'tools':tools,'events':a.events}]
+    rendered = r['render_transcript_md'](transcript)
+    assert rendered.index('I will record this first.') < rendered.index('git push') < rendered.index('recorded Q1 Pending') < rendered.index('Final reply:')
+    assert rendered.count('Question?') == 1
+    early_question = [dict(transcript[0], events=[{'type':'message','text':'Question?'}, *a.events])]
+    assert r['render_transcript_md'](early_question).count('Question?') == 2
+    hidden = r['render_transcript_md'](transcript, show_events=False)
+    assert 'recorded Q1 Pending' not in hidden
+    checks = r['run_checks']([{'verb':'no-push','args':[],'label':'no-push'}],base,set(),set(),tools,'codex')
+    assert checks[0][1] is False, checks
+    temporal = [r['parse_check']('no-new-dir-before-answer .aid/works')]
+    # Later work creation is allowed; a nested worktree created before the answer is not.
+    later={'.aid/works/work-001'}
+    assert r['run_checks'](temporal,base,set(),later,[],'codex',before_answer_dirs=(set(),set()))[0][1] is True
+    nested={'.claude/worktrees/work-001-test/.aid/works/work-001'}
+    assert r['run_checks'](temporal,base,set(),nested,[],'codex',before_answer_dirs=(set(),nested))[0][1] is False
+    assert r['run_checks'](temporal,base,set(),later,[],'codex')[0][1] is False
+    a.send('resume with the same isolation')
+    def failed(args, **kwargs):
+        return json.dumps({'type':'turn.failed','error':{'message':'test failure'}})
+    send_globals['run_codex'] = failed
+    try: a.send('second')
+    except r['RunError']: pass
+    else: raise AssertionError('failed agent turn accepted')
+    # A clean judge must not erase a conversation failure from the saved verdict.
+    g = r['run_once'].__globals__
+    project = base/'project';project.mkdir()
+    home=base/'home';home.mkdir()
+    g['build_fixture'] = lambda *args: (project,home)
+    g['capture'] = lambda *args: ({},set())
+    g['ref_shas'] = lambda *args: {}
+    def capped(*args): raise r['RunError']('turn cap')
+    g['run_conversation'] = capped
+    g['run_checks'] = lambda *args: []
+    g['judge'] = lambda *args: '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|'
+    sample=r['Sample'](base/'sample.md','900-evidence',{'fixture':'stub'},{},[])
+    ctx={'codex_model':'','model':'','fixtures_dir':base,'bundle':base,'real_home':base,'user_brief':'','judge_brief':'','protocol_checks':'','user_host':'codex','user_model':'','judge_host':'codex','judge_model':''}
+    reasons=r['run_once'](sample,1,base/'result',ctx,'codex')
+    saved=json.loads((base/'result/result.json').read_text())
+    assert reasons == ['conversation: turn cap'], reasons
+    assert saved['passed'] is False and saved['reasons'] == reasons
+    def interrupted(*args): raise KeyboardInterrupt()
+    g['run_conversation'] = interrupted
+    try: r['run_once'](sample,2,base/'interrupted',ctx,'codex')
+    except KeyboardInterrupt: pass
+    else: raise AssertionError('interrupt swallowed')
+    interrupted_result=json.loads((base/'interrupted/result.json').read_text())
+    assert interrupted_result['passed'] is False
+    assert 'KeyboardInterrupt' in interrupted_result['reasons'][0]
+    # Gate diagnostics may stop early, but cannot present an incomplete batch as passing.
+    g['stage_bundle'] = lambda *args: None
+    g['select_samples'] = lambda *args: [base/'sample.md']
+    g['load_sample'] = lambda *args: sample
+    g['shutil'].which = lambda *args: 'stub'
+    g['RUN_ROOT'] = base/'batches'
+    (base/'simulated-user.md').write_text('user')
+    (base/'judge.md').write_text('judge')
+    invoked=[]
+    def fail_once(sample,n,run_dir,ctx,host):
+        invoked.append(n);run_dir.mkdir(parents=True);return ['known failure']
+    g['run_once'] = fail_once
+    rc=r['main'](['--feature','900','--hosts','claude-code','--briefs-dir',str(base),'--runs','3','--fail-fast'])
+    assert rc == 1 and invoked == [1]
+    batch=json.loads(next((base/'batches').glob('*/summary.json')).read_text())
+    assert batch['completed'] is False and batch['passed'] is False and batch['stopped_early'] is True
+    assert batch['runs_per_sample'] == 3 and len(batch['results']) == 1
+print('Ordered messages, deduplicated commands, no-push detection, failed-turn handling and exact saved verdict verified.')
+PYEVIDENCE
+    assert_exit_eq "$?" 0 "EV01 ordered Codex evidence and failed conversation verdicts are preserved"
+}
+
+group_mcp() {
+    echo "--- MCP (one stdio subprocess per protocol input; no model or release staging)"
+    "$PY" - "$RUNNER" <<'PYMCP'
+import ast, importlib.util, json, pathlib, subprocess, sys, tempfile, tomllib
+
+runner_path = pathlib.Path(sys.argv[1])
+def load_runner(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+r = load_runner(runner_path, 'mcp_runner')
+server_path = r.ROOT / 'tests/conversation/support/tracker_mcp.py'
+imports = {node.module for node in ast.walk(ast.parse(server_path.read_text())) if isinstance(node, ast.ImportFrom)}
+imports |= {alias.name for node in ast.walk(ast.parse(server_path.read_text())) if isinstance(node, ast.Import) for alias in node.names}
+assert imports == {'__future__', 'json', 're', 'sys'}, imports
+
+def request(n, method, params=None):
+    result = {'jsonrpc':'2.0', 'id':n, 'method':method}
+    if params is not None: result['params'] = params
+    return result
+
+with tempfile.TemporaryDirectory() as folder:
+    base = pathlib.Path(folder)
+    for version in ('2025-11-25', '2024-11-05', 'future-version'):
+        inputs = [request(1,'tools/list'),
+                  request(2,'initialize',{'protocolVersion':version,'capabilities':{},'clientInfo':{'name':'offline-test','version':'1'}}),
+                  {'jsonrpc':'2.0','method':'notifications/initialized'}, request(3,'ping'), request(4,'tools/list'),
+                  request(5,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'}}),
+                  request(6,'tools/call',{'name':'linear_read_ticket','arguments':{'ticket_id':'LIN-7'}}),
+                  request(7,'tools/call',{'name':'write_ticket','arguments':{'ticket_id':'PROJ-42'}}),
+                  request(8,'tools/call',{'name':'jira_read_ticket','arguments':{}}),
+                  request(9,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42','path':'/tmp'}}),
+                  request(10,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'../../secret'}}),
+                  request(11,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':42}}),
+                  request(12,'tools/call',{'name':[],'arguments':{}}),
+                  request(13,'tools/call',[]), request(14,'resources/read',{'uri':'file:///tmp'}),
+                  request(15,'tools/list',{'cursor':'unexpected'}),
+                  request(16,'tools/list',{'_meta':{}}),
+                  request(17,'tools/list',{'_meta':{'progressToken':'list-17','test/client':{'trace':'opaque'}}}),
+                  request(18,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':{'progressToken':'read-18'}}),
+                  request(19,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':{'progressToken':0}}),
+                  request(20,'tools/list',{'_meta':[]}),
+                  request(21,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':None}),
+                  request(22,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':{'progressToken':True}}),
+                  request(23,'tools/list',{'_meta':{'progressToken':{}}}),
+                  request(24,'tools/list',{'_meta':{'progressToken':None}}),
+                  request(25,'tools/list',{'_meta':{'progressToken':1.5}}),
+                  request(26,'tools/list',{'_meta':'not-an-object'}),
+                  request(27,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':{},'path':'/tmp'}),
+                  request(28,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42','_meta':{}},'_meta':{}}),
+                  request(29,'tools/list',{'_meta':{},'cursor':'unexpected'}),
+                  request(30,'tools/call',{'name':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'},'_meta':{'progressToken':1.0}}),
+                  '{"jsonrpc":"2.0","id":31,"method":"tools/call","params":{"name":"jira_read_ticket","arguments":{"ticket_id":"PROJ-42"},"_meta":{"progressToken":2e3}}}',
+                  '{"jsonrpc":"2.0","id":32,"method":"tools/list","params":{"_meta":{"progressToken":1e309}}}',
+                  {'jsonrpc':'2.0','method':'unknown-notification'}, [], request([], 'tools/list')]
+        payload = '\n'.join(row if isinstance(row,str) else json.dumps(row) for row in inputs) + '\n{broken-json\n'
+        proc = subprocess.run([sys.executable,str(server_path)],input=payload,cwd=base,
+                              capture_output=True,text=True,timeout=10)
+        assert proc.returncode == 0 and proc.stderr == '', (proc.returncode,proc.stderr)
+        responses = [json.loads(line) for line in proc.stdout.splitlines()]
+        assert all(row['jsonrpc'] == '2.0' for row in responses)
+        numbered = {row['id']:row for row in responses if row['id'] is not None}
+        assert len(responses) == 35 and len(numbered) == 32, responses
+        assert numbered[1]['error']['code'] == -32600
+        assert numbered[2]['result']['protocolVersion'] == ('2025-11-25' if version == 'future-version' else version)
+        assert numbered[2]['result']['capabilities'] == {'tools':{}}
+        assert numbered[3]['result'] == {}
+        tools = numbered[4]['result']['tools']
+        assert {tool['name'] for tool in tools} == {'jira_read_ticket','linear_read_ticket'}
+        for tool in tools:
+            assert tool['description'].endswith('(isolated test tracker).')
+            assert 'unavailable' not in json.dumps(tool).lower()
+            assert tool['annotations'] == {'readOnlyHint':True,'destructiveHint':False,'idempotentHint':True,'openWorldHint':False}
+            assert tool['inputSchema']['required'] == ['ticket_id']
+            assert set(tool['inputSchema']['properties']) == {'ticket_id'}
+            assert tool['inputSchema']['additionalProperties'] is False
+        jira_error = numbered[5]['result']
+        assert jira_error == {'content':[{'type':'text','text':'Jira is unavailable. Ticket PROJ-42 could not be read.'}],'isError':True}
+        assert numbered[6]['result']['isError'] is True
+        assert numbered[6]['result']['content'][0]['text'] == 'Linear is unavailable. Ticket LIN-7 could not be read.'
+        assert all(numbered[n]['error']['code'] == -32602 for n in (*range(7,14),15))
+        assert numbered[14]['error']['code'] == -32601
+        assert numbered[16]['result']['tools'] == tools and numbered[17]['result']['tools'] == tools
+        assert numbered[18]['result'] == jira_error and numbered[19]['result'] == jira_error
+        assert numbered[30]['result'] == jira_error and numbered[31]['result'] == jira_error
+        assert numbered[32]['error']['code'] == -32602
+        assert all(numbered[n]['error']['code'] == -32602 for n in range(20,30))
+        assert [row['error']['code'] for row in responses[-3:]] == [-32600,-32600,-32700]
+        assert list(base.iterdir()) == [], 'fixture provider wrote state'
+
+    def exercise_scope(module):
+        calls = []
+        def fake(args, **kwargs):
+            calls.append(args)
+            if '--output-last-message' not in args:
+                return json.dumps({'type':'assistant','session_id':'claude-thread','message':{'content':[{'type':'text','text':'final-only'}]}})
+            pathlib.Path(args[args.index('--output-last-message')+1]).write_text('final-only')
+            return json.dumps({'type':'thread.started','thread_id':'mcp-thread'})
+        module.run_codex = fake
+        module.run_claude = fake
+        def fixture(sample, fixtures, bundle, real_home, work, host):
+            project=work/'project'; home=work/'home'
+            project.mkdir(); home.mkdir()
+            return project,home
+        module.build_fixture = fixture
+        module.capture = lambda *args: ({},set())
+        module.ref_shas = lambda *args: {}
+        def conversation(agent, *args):
+            agent.start(); agent.send('first'); agent.send('resume')
+        module.run_conversation = conversation
+        module.judge = lambda *args: '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|'
+        ctx={'codex_model':'','model':'','fixtures_dir':base,'bundle':base,'real_home':base,'user_brief':'','judge_brief':'','protocol_checks':'','user_host':'codex','user_model':'','judge_host':'codex','judge_model':''}
+        for host, fixture_name in [('codex','two-trackers'),('codex','stub'),('claude-code','two-trackers')]:
+            sample=module.Sample(base/'sample.md','900-mcp',{'fixture':fixture_name},{},[])
+            before=len(calls)
+            assert module.run_once(sample,1,base/(module.__name__+host+fixture_name),ctx,host) == []
+            turns=calls[before:]
+            assert len(turns)==2
+            if host=='codex': assert turns[1][:3] == ['exec','resume','mcp-thread']
+            for args in turns:
+                overrides=[value for value in args if value.startswith('mcp_servers=')]
+                if host=='codex' and fixture_name=='two-trackers':
+                    assert len(overrides)==1, args
+                    config=tomllib.loads(overrides[0])['mcp_servers']
+                    assert config == {'aid_test_trackers':{'command':sys.executable,'args':[str(server_path)]}},config
+                else: assert not overrides,args
+        for host in ('codex','claude-code'):
+            module.helper_call('prompt','brief',cwd=base,env={'HOME':str(base)},host=host)
+            assert not any(value.startswith('mcp_servers=') for value in calls[-1])
+            if host=='codex': assert '--ignore-user-config' in calls[-1] and 'features.apps=false' in calls[-1]
+    exercise_scope(r)
+    # An absence check must fail if the scope guard is broadened to every fixture.
+    mutant_source = runner_path.read_text().replace('if fixture_name == "two-trackers" else {}','if True else {}')
+    assert mutant_source != runner_path.read_text()
+    mutant_path=base/'scope-mutant.py'; mutant_path.write_text(mutant_source)
+    mutant=load_runner(mutant_path,'mcp_scope_mutant'); mutant.ROOT=r.ROOT
+    try: exercise_scope(mutant)
+    except AssertionError: pass
+    else: raise AssertionError('fixture-scope negative control accepted an always-on provider')
+
+    def fake_events(args, **kwargs):
+        pathlib.Path(args[args.index('--output-last-message')+1]).write_text('Final reply text')
+        item={'type':'mcp_tool_call','id':'m1','server':'aid_test_trackers','tool':'jira_read_ticket','arguments':{'ticket_id':'PROJ-42'}}
+        completed=dict(item,status='completed',result=jira_error,error=None)
+        return '\n'.join(json.dumps(event) for event in [
+            {'type':'thread.started','thread_id':'ordered'},
+            {'type':'item.completed','item':{'type':'agent_message','text':'Before read'}},
+            {'type':'item.started','item':item}, {'type':'item.started','item':item},
+            {'type':'item.completed','item':{'type':'command_execution','id':'c1','command':'echo observed','aggregated_output':'command output','exit_code':0}},
+            {'type':'item.completed','item':completed}, {'type':'item.completed','item':completed},
+            {'type':'item.completed','item':{'type':'mcp_tool_call','id':'m2','server':'aid_test_trackers','tool':'linear_read_ticket','arguments':{'ticket_id':'LIN-7'},'status':'failed','result':None,'error':{'message':'transport unavailable'}}},
+            {'type':'item.completed','item':{'type':'agent_message','text':'Final reply text'}}])
+    r.run_codex=fake_events
+    agent=r.CodexAgent(base,{'HOME':str(base)},'','two-trackers')
+    text,tools,withdrawn=agent.send('read')
+    assert [e['type'] for e in agent.events] == ['message','mcp_call','command','command_result','mcp_result','mcp_call','mcp_result','message']
+    assert [tool['name'] for tool in tools] == ['mcp__aid_test_trackers__jira_read_ticket','Bash','mcp__aid_test_trackers__linear_read_ticket']
+    assert json.loads(tools[0]['target']) == {'ticket_id':'PROJ-42'}
+    assert agent.events[4]['result'] == jira_error and agent.events[6]['error'] == {'message':'transport unavailable'}
+    transcript=[{'role':'agent','turn':1,'text':text,'tools':tools,'events':agent.events}]
+    rendered=r.render_transcript_md(transcript)
+    markers=['Before read','MCP call: mcp__aid_test_trackers__jira_read_ticket','Command:', 'command output','MCP result: mcp__aid_test_trackers__jira_read_ticket','Jira is unavailable.','MCP call: mcp__aid_test_trackers__linear_read_ticket','transport unavailable','Final reply:']
+    assert [rendered.index(m) for m in markers] == sorted(rendered.index(m) for m in markers)
+    assert rendered.count('MCP call: mcp__aid_test_trackers__jira_read_ticket') == 1
+    assert rendered.count('MCP result: mcp__aid_test_trackers__jira_read_ticket') == 1
+    assert r.render_transcript_md(transcript,show_events=False).strip().endswith('Final reply text')
+    assert 'PROJ-42' not in r.render_transcript_md(transcript,show_events=False)
+    checks=[r.parse_check('tool-called Skill aid-read-ticket'),r.parse_check('tool-called Edit *'),r.parse_check('tool-called Write *')]
+    assert all(result[1] is None for result in r.run_checks(checks,base,set(),set(),tools,'codex'))
+    # A helper remains tool-free even if its CLI unexpectedly emits an MCP call.
+    try: r.helper_call('prompt','brief',cwd=base,env={'HOME':str(base)},host='codex')
+    except r.RunError as exc: assert 'attempted tool use: mcp_tool_call' in str(exc)
+    else: raise AssertionError('helper accepted an MCP tool event')
+    # A missing provider yields no observed read: a text-only reply cannot manufacture evidence.
+    def no_provider(args, **kwargs):
+        pathlib.Path(args[args.index('--output-last-message')+1]).write_text('No tracker is available')
+        return json.dumps({'type':'thread.started','thread_id':'no-provider'})
+    r.run_codex=no_provider
+    unconnected=r.CodexAgent(base,{'HOME':str(base)},'')
+    missing_text,missing_tools,_=unconnected.send('read')
+    assert not unconnected.fixture_mcp and missing_tools == [] and unconnected.events == []
+    missing_view=r.render_transcript_md([{'role':'agent','turn':1,'text':missing_text,'tools':missing_tools,'events':unconnected.events}])
+    assert 'MCP call:' not in missing_view and 'MCP result:' not in missing_view
+print('Real stdio negotiation/read errors, closed tool set, main-agent fixture scope, helper absence and ordered MCP lifecycle verified.')
+PYMCP
+    assert_exit_eq "$?" 0 "MC01 closed fixture MCP scope and ordered evidence are preserved"
+}
+
+want EVIDENCE && group_evidence
+want MCP && group_mcp
 want EXIT && group_exit
 want VALIDATE && group_validate
 want CAPTURE && group_capture
@@ -2062,6 +2503,7 @@ want SAMPLES && group_samples
 want VSAMPLES && group_vsamples
 want CAP && group_cap
 want CODEX && group_codex
+want HELPERS && group_helpers
 want PROTO && group_protocol
 want HOOK && group_hook
 

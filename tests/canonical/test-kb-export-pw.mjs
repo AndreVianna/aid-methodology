@@ -6,7 +6,6 @@
 // PLAYWRIGHT_BROWSERS_PATH resolution).
 //
 // Args:   <html-file>        absolute path to a kb.html to test
-// Env:    PW_PACKAGE_DIR     directory containing node_modules/playwright
 //
 // Tests:
 //   PW30  Both export buttons present and visible (light theme); correct labels.
@@ -30,13 +29,7 @@ if (args.length < 1) {
 const htmlFile = path.resolve(args[0]);
 const url = 'file://' + htmlFile;
 
-const pwPkgDir = process.env.PW_PACKAGE_DIR;
-if (!pwPkgDir) {
-    console.error('ERROR: PW_PACKAGE_DIR env var not set');
-    process.exit(2);
-}
-
-const { chromium } = await import(`file://${pwPkgDir}/node_modules/playwright/index.mjs`);
+const { chromium } = await import('playwright');
 
 let PASS = 0;
 let FAIL = 0;

@@ -182,15 +182,20 @@ fi
 # RMS-NPM: npm pack + npm i -g (postinstall migrates eagerly)
 # ===========================================================================
 echo "=== RMS-NPM: npm pack + global install -> postinstall migrates ==="
-if ! command -v npm >/dev/null 2>&1; then
+NPM_CMD="$(command -v npm || true)"
+NODE_CMD="$(command -v node || true)"
+if [[ -z "${NPM_CMD}" ]]; then
     echo "SKIP (RMS-NPM): npm not found."
 else
+    # Keep the selected toolchain available after clearing the caller's environment.
+    NPM_PATH="$(dirname "${NPM_CMD}"):${BASEPATH}"
+    [[ -z "${NODE_CMD}" ]] || NPM_PATH="$(dirname "${NODE_CMD}"):${NPM_PATH}"
     NH="${TMP}/npm-home"; NP="${TMP}/npm-prefix"; mkdir -p "${NH}" "${NP}"
     NTGZ_DIR="${TMP}/npm-pack"; mkdir -p "${NTGZ_DIR}"
-    if ( cd "${REPO_ROOT}/packages/npm" && npm pack --pack-destination "${NTGZ_DIR}" ) >/dev/null 2>&1; then
+    if ( cd "${REPO_ROOT}/packages/npm" && "${NPM_CMD}" pack --pack-destination "${NTGZ_DIR}" ) >/dev/null 2>&1; then
         NTGZ="$(ls "${NTGZ_DIR}"/aid-installer-*.tgz 2>/dev/null | head -1)"
-        if [[ -n "${NTGZ}" ]] && env -i HOME="${NH}" PATH="${BASEPATH}" \
-              npm_config_prefix="${NP}" AID_MIGRATE_YES=1 npm i -g "${NTGZ}" >/dev/null 2>&1; then
+        if [[ -n "${NTGZ}" ]] && env -i HOME="${NH}" PATH="${NPM_PATH}" \
+              npm_config_prefix="${NP}" AID_MIGRATE_YES=1 "${NPM_CMD}" i -g "${NTGZ}" >/dev/null 2>&1; then
             pass "RMS-NPM-01 npm pack + global install succeeded"
             # Locate the installed bin/aid (npm global install places it in ${NP}/bin or ${NP}/lib/node_modules).
             _NPM_AID_BIN="$(find "${NP}" -name aid -type f 2>/dev/null | head -1)"

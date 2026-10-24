@@ -1526,33 +1526,28 @@ describe('V9 — the residual guard throws, and stays narrow', () => {
     });
   }
 
-  it('the five corpus `then` blocks leave NO residue at all', () => {
-    // AC: "Post-fix, the five ` then ` blocks (aid-test, aid-design, aid-prototype,
-    // aid-report, aid-research) leave no residue at all." That is a claim about the
-    // real corpus, so a fixture cannot discharge it — this reads the actual files.
-    //
-    // The count is DERIVED, not asserted as a literal (REQUIREMENTS §8): the test
-    // discovers which skills contain a `then` block rather than hard-coding five, so
-    // it keeps working if the corpus gains or loses one.
+  it('every remaining corpus `then` block leaves NO residue', () => {
+    // Explicit separator fixtures above cover the grammar even when the current
+    // skills use separate transitions and no longer contain any `then` blocks.
     const dirs = readdirSync(CANONICAL_SKILLS, { withFileTypes: true })
       .filter((e) => e.isDirectory())
       .map((e) => e.name);
 
     const withThen = [];
+    let advanceLines = 0;
     for (const dir of dirs) {
       const file = join(CANONICAL_SKILLS, dir, 'SKILL.md');
       if (!existsSync(file)) continue;
       const lines = readFileSync(file, 'utf8').split(/\r?\n/);
       for (let i = 0; i < lines.length; i++) {
         if (!/\*\*Advance:\*\*/.test(lines[i])) continue;
+        advanceLines++;
         if (!/\bthen\b/i.test(lines[i])) continue;
         withThen.push({ dir, line: i + 1, lines, file: `canonical/skills/${dir}/SKILL.md` });
       }
     }
 
-    // Non-vacuity: the corpus really does contain `then` blocks, so a clean result
-    // means they were parsed rather than never found.
-    expect(withThen.length).toBeGreaterThan(0);
+    expect(advanceLines).toBeGreaterThan(0);
 
     for (const { dir, line, lines, file } of withThen) {
       const { blockText } = extractAdvanceBlock(lines, line - 1);

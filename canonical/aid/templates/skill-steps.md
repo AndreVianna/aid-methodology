@@ -15,6 +15,16 @@ detection from its artifacts. No skill restates how to move; it cites this file 
 Questions are asked through `.aid/runtime/templates/question-protocol.md` (FR-17). Only the main
 conversation asks the user; a sub-agent records its open questions and lists them in its report.
 
+## Starting a skill
+
+Use the host's skill invocation facility when it provides one. On Codex and other hosts that activate
+skills by reading instructions, read the installed `.agents/skills/<skill>/SKILL.md` in full, then load
+the references for the step being entered. Fresh entry, the saved step on resume and PASS/CALL target
+steps still follow Starting and resuming below; activation never resets the work record. This is skill activation; inventing a workflow
+from the skill's name or description is not. All state writes, reviews and approvals still apply.
+A missing dedicated `Skill` tool alone does not require a user handoff. Hand off only when the installed
+skill cannot be loaded or a capability required by its next step is genuinely unavailable; say which one.
+
 ## The step table
 
 Each skill has one table of its steps, with these columns:
@@ -96,8 +106,7 @@ Every step runs these six parts, in this order.
 4. **`PASS`.** If the approvals table requires an approval at this depth at this point, `ASK` it
    first. Then run
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns no --phase <phase>`,
-   and start that skill in the same turn. Where a tool cannot start a skill itself, name the command
-   to run instead.
+   and start that skill in the same turn, by Starting a skill above.
 5. **`CALL`.** Bring the detail up to date with what is done, with `--step`. Then run
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns yes`. The called skill
    runs as usual. The phase does not change.
@@ -287,9 +296,8 @@ Approvals are asked by the main conversation, at the moments below. The depth is
 | The final result | approve | approve |
 
 - **An approval cannot be skipped (Q160).** It stays open, and its step stays paused, until the
-  user approves or declines. An approval is a yes that lets the agent change, build, delete, publish
-  or push something, or that approves a document or design. A question that changes nothing when
-  skipped, such as a reopen or close menu, is a plain question and may be skipped.
+  user approves or declines. Classify approvals and skippable value confirmations by
+  `question-protocol.md` § One question.
 - **Coinciding approvals are one approval (M11).** Approvals that fall at the same moment are one
   approval. On a work with one delivery, the delivery, whole-build and final-result approvals are
   one.

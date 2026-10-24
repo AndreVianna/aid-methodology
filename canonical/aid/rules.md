@@ -87,7 +87,7 @@ Read `.aid/connectors/INDEX.md`.
   `/aid-orchestrate` first, before any question and before you read the work's files; it asks the one confirmation question, and no project file
   changes until the user agrees. A finished work is only reported: no reopen, no old questions.
 - The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its
-  phases; nothing runs by hand: run skills by slash command or the Skill tool. Your reading treats the user's words as a hint: check it against the
+  phases; start skills by `skill-steps.md` § Starting a skill, loading their instructions before acting. Your reading treats the user's words as a hint: check it against the
   KB and the code, then show it with its reason in one line, in the first question or approval (then wait) or in the one-line start (then go on).
 - CI closes each work: `/aid-orchestrate` marks it `Completed` once all its tasks are `Done`, or when nothing was to land. Definition runs only when
   the problem must be shaped; release, deploy, monitoring are works of their own.
@@ -106,6 +106,9 @@ Every question to the user follows `.aid/runtime/templates/question-protocol.md`
 - Write for the lower technical level: when the user writes in plain words, keep file paths, code names and technical
   walkthroughs out of every message; say what happens and what it means for them, unless they ask for more. A technical choice
   they cannot judge is not asked: take your recommendation, record it `Assumed` with its reason, and confirm it with the next approval.
+  Skill announcements use their plain-language purpose, not identifiers such as `aid-orchestrate`; workflow phases use
+  ordinary verbs such as work out the details, plan, build and check. Exact identifiers remain in records and link targets.
+  A skill hand-off does not reset a question group: a clarification of the same issue keeps the previous subject and counter.
 - Record it before you show it, `Pending`, where the protocol's "Where each record lives" says (for a
   work, `writeback-state.sh --ask`), and record the reply with `--answer`. Before a work exists we are in
   the design stage: every question asked then, with its answer, is recorded in a design document under
@@ -124,9 +127,8 @@ My recommendation: {the answer you propose, and why}
 Or answer in your own words, ask me to explain, or skip this question.
 ```
 
-- An approval ends with the other closing line, `Or answer in your own words, or ask me to explain.`, with no skip. An approval is a yes
-  that lets the agent change, build, delete, publish or push something, or that approves a document or design. A question that changes
-  nothing when skipped, such as a reopen or close menu, is a plain question and ends with the skip line.
+- An approval ends with `Or answer in your own words, or ask me to explain.`, with no skip. Classify approvals and
+  skippable value confirmations by `question-protocol.md` § One question; a confirmation's wording alone does not decide.
 - List options only when two or more are valid, the recommended one first; with one valid option, ask
   for a confirmation instead. An approval cannot be skipped.
 - Before you end a turn that waits on the user, check the message: the first line with its importance, `Why I ask`,

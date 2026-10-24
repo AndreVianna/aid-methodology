@@ -49,14 +49,13 @@ one fires, and whether anything outside a session can start a turn in it — is 
 knowledge with no representation in this repository. Consult these before designing or
 reviewing anything that depends on host lifecycle behaviour.
 
-**Coverage is partial, and the gaps are load-bearing.** Four of the five hosts are
-catalogued below: Claude Code (its hooks reference and CLI reference), Cursor, GitHub Copilot
-CLI, and Antigravity. **Codex is not**: it has simply not been researched. For Claude Code,
-only the hook contract and the settings sources the table lists are catalogued; treat any
-other Claude Code harness claim as unsourced until a published reference is added.
+**Coverage is partial, and the gaps are load-bearing.** Codex coverage below concerns skill activation,
+not its hook or session lifecycle. For Claude Code, only the hook contract and settings sources listed
+are catalogued; treat other harness claims as unsourced until a published reference is added.
 
 | Source | URL | What it answers | Accessed |
 |---|---|---|---|
+| OpenAI skill activation | https://learn.chatgpt.com/docs/build-skills under How ChatGPT and Codex use skills | Codex can select skills implicitly, reads their full SKILL.md when selected, and discovers repository skills under .agents/skills; explicit CLI selection uses /skills or a dollar-prefixed skill mention. A dedicated Skill tool is not required for instruction loading. | 2026-10-24 |
 | Claude Code hooks reference | https://code.claude.com/docs/en/hooks | The `Stop` event (runs when the main agent finishes; a sub-agent fires `SubagentStop`); its stdin JSON (`session_id`, `transcript_path`, `cwd`, `stop_hook_active`, `last_assistant_message`); the block shape (exit 0 with `{"decision": "block", "reason": "..."}`, after which Claude continues, capped at 8 consecutive continuations); the transcript file is written asynchronously and may lag the final message; `.claude/settings.json` is the committable project scope and `.claude/settings.local.json` the per-machine one; `${CLAUDE_PROJECT_DIR}` is substituted in a command; a `-p` run treats the folder as trusted, so project hooks run; shell-form commands run in Git Bash on Windows, or in PowerShell without it | 2026-10-21 |
 | Claude Code CLI reference | https://code.claude.com/docs/en/cli-reference | `--setting-sources` takes `user`, `project` and `local` as separate sources, so `--setting-sources project` loads `.claude/settings.json` and not `.claude/settings.local.json` | 2026-10-21 |
 | GitHub Copilot hooks reference | https://docs.github.com/en/copilot/reference/hooks-reference | The 14 hook events and when each fires; `agentStop` can force a further turn; **no idle hook exists and no external process can inject into a session** | 2026-08-09 |

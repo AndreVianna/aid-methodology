@@ -1439,6 +1439,11 @@ GitHub Releases page into one directory, then install with `aid add <tool> --fro
 network required after the initial download. All channels deliver the same persistent
 `aid` CLI; once bootstrapped, use `aid add <tool>` inside any project.
 
+For Claude Code, `aid add claude-code` also writes one entry, the AID Stop hook, into the project's
+`.claude/settings.json`, so commit that file with the rest of the install. Your own settings and hooks
+are kept, the entry is recorded in the manifest, and `aid remove` takes it out. Set
+`AID_QUESTION_HOOK=off` to turn the hook off for a session.
+
 ### Starting with an Existing Project (Brownfield)
 
 1. Run `/aid-config` to initialize the workspace (once per project).

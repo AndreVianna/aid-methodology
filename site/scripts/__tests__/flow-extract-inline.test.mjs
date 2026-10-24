@@ -733,13 +733,12 @@ describe('aid-review — 8 inline states, loop-back, ASK hard stop, DONE exit', 
     expect(pf.kind).toBe('step');
   });
 
-  it('VERIFY has the loop-back edge to REVIEW and is an exit (the circuit-breaker HALT case)', () => {
-    // Mutant: body scan misses the REVIEW back-reference → VERIFY has no loop-back out.
-    // VERIFY's line ends the run on the circuit-breaker, so the node kind is `exit`, which
-    // takes precedence over `loop-back`; the loop-back is still drawn as an edge.
+  it('VERIFY keeps the REVIEW loop and waits on its ASK self-transition at the circuit-breaker', () => {
     const verify = chart.nodes.find((n) => n.name === 'VERIFY');
     const review = chart.nodes.find((n) => n.name === 'REVIEW');
-    expect(verify.kind).toBe('exit');
+    expect(verify.kind).toBe('decision');
+    expect(verify.terminal).toBeNull();
+    expect(chart.edges.some((e) => e.from === verify.id && e.to === verify.id && e.advanceType === 'ASK')).toBe(true);
     expect(chart.edges.some((e) => e.from === verify.id && e.to === review.id && e.kind === 'loop-back')).toBe(true);
   });
 

@@ -10,6 +10,10 @@ The prompt gives you five parts, and a sixth when the sample covers a question r
 
 - `transcript.md`: the conversation. Each agent turn lists the tools the agent called, with the names and
   target paths of those calls.
+  Codex turns also show observed messages, commands, command results and file changes in chronological
+  order before the final reply. Use that sequence to verify writes before questions and outcomes after
+  answers. The trailing Tool calls line is a summary, not a second execution. A failed command is an
+  attempt, not evidence that its intended write succeeded.
   A message the host's question hook sent back appears quoted under `[Withdrawn by the question-form hook -- missing: ...]`,
   followed by the agent's replacement. The simulated user saw the replacement only. Judge every Expected-outcome item on
   the replacement. Read the withdrawn text as well for the Must-not items about what the assistant did or offered

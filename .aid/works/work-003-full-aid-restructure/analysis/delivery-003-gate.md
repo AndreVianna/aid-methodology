@@ -1,4 +1,36 @@
-# Delivery-003 gate run
+# Delivery-003 gate status
+
+**Current outcome: not passed. Delivery grade: Pending.** The historical approval below used
+Q166's known-issue exception; Q180, Q186 and Q189 require fresh success on every selected
+sample, three runs each. That exception cannot close the current gate.
+
+At the 2026-10-24T17:43Z evidence snapshot:
+
+- Strict attempt 9 ended failed/incomplete after 18 passes, then `002-16` run 1 failed
+  EO-1 and PC-7. Its exact batch is `20261024T164859Z-codex-user-codex-judge-codex-474`.
+- The first focused research retry also failed. Its ordered capture proves the latest
+  instructions were loaded. A further presentation-versus-break transition conflict was
+  corrected; the research source review has three Fixed findings, no open findings, and
+  source-only grade A+. Native skill-step validation passes 101/0 on source SHA-256
+  `e844f2b0f74840369f97137fb973a222cf9bf4341bbf0760915489c8037ee253`.
+- Focused retry 2 is active: `20261024T174235Z-codex-user-codex-judge-codex-435`,
+  three runs of `002-16`. Its success alone cannot satisfy the full ten-sample gate.
+- Preparatory canonical rehearsal completed 177/178 suites successfully. The sole npm
+  test portability failure is repaired and independently reviewed; subsequent focused
+  execution passes all 22 migration checks across curl, npm and PyPI. Provisioned checks
+  also pass PyPI installer 78/0, visual fidelity 45/0, and KB export 26/0 including 14
+  actual browser assertions. These are preparatory results, not formal post-resync G0.
+- Final source/resync commits, installed-skill verification, live full G0/site checks,
+  scratch parity, executed coverage/removal audit, final baselines and current report
+  consolidation remain open. Installer CI must cover the final commit after the
+  maintainer's required push. No push or merge has been performed.
+
+Exact current captures, review ledgers and provisioned-runtime evidence are under
+`.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`; the work STATE records
+the current step. The historical `002-14` routing success did not prove successful tracking
+setup or repair: the agent omitted the required directory creation and truthfully halted.
+
+## Historical gate report — superseded for current closure
 
 Run on `work-003` after the resync that followed the gate fix round (`a3dbfe25`, `delivery-003: resync after
 the gate fix round`), from the freshly installed skills (`/reload-skills` run by the maintainer). The first

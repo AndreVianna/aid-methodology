@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-17T19:10:35Z'
+updated: '2026-10-24T18:14:33Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -547,6 +547,10 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: 'Initial scaffold by aid-describe (FIRST-RUN)'
+  - date: '2026-10-23'
+    event: 'Record repaired'
+    grade: --
+    notes: 'active_skill aid-execute -> aid-execute; step -- -> DELIVERY-GATE; intent.reading -- -> refactor'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -2184,3 +2188,7 @@ qa:
     answer: '2 (maintainer): keep Q180 (3/3 on all 9), more rounds, each with a full 9x3 check'
     answered_by: 'Claude'
     applied_to: --
+intent:
+  reading: refactor
+step: DELIVERY-GATE
+step_detail: 'Independent focused3 audit retained LOW behavioral EO4 omission despite automated3of3: final source now explicitly tells user choice is theirs, narrow correction peer-verified, fresh full10x3 required including manual ownership evidence. Existing source reviews consolidated (35rows=34Fixed+014OOS), grade.sh A+ source-only; no new broad review. Preparing final reviewed source commit and isolated delivery resync before fresh strict gate per PLAN/Q150, so final installed bytes are exercised. Whitespace check passed. Delivery grade stays Pending; no model active, no push/merge authorized/performed.'

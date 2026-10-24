@@ -43,6 +43,9 @@ the user typed no `<tool>` or `<type>`:
 1. Show it as the question in the form, with the text recorded in the entry's `context` and `suggested`,
    word for word, because the question-form check matches a shown question to its record by that text.
    Do not reword it, and do not write a new `--ask` for it.
+   When a yes authorizes adding or changing the connector, it is an approval: use
+   `Or answer in your own words, or ask me to explain.` and offer no skip option, even when the
+   existing entry is `Skipped`. Its saved state does not change the approval's form.
 2. The reply updates that same entry: `writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped>
    --value '<the answer>' --applied-to '<what the entry says>'`. Never answer it by hand, and never leave it
    `Skipped` while recording a new entry for the same question.
@@ -151,6 +154,16 @@ open is never asked again with `--ask`: Step 0a answers it by its id.
 out, and do not ask again. An offer to set up a connector, made before this skill is started, is a go-ahead
 question like any other (`question-protocol.md` § One question); its subject is `Connections`, and it is
 recorded with `--project --ask` and `--project --answer`, as above.
+
+**Unavailable host connection.** State what is unavailable without promising access. If progress needs
+the user to enable or install a connection, that request is a question by meaning: use the full form,
+importance label and project question record before showing it, then record the reply. Never end with
+an unrecorded imperative such as "Please enable your connection." Give only setup steps supported by
+observed host controls; when those controls are unknown, ask for the needed information in the same
+group instead of inventing steps. A factual blocker that needs no reply is not a question.
+When the user has authorized setup and the tool and type are known, still write the local descriptor
+and index: cataloguing the intended host connection does not claim that sign-in or live access works.
+Say what was recorded and where, and mark live access unverified when no host connection is exposed.
 
 Hold the resolved `auth_method` in `$NEW_AUTH` (forced `none` for `mcp`/`ssh`/`cli`, chosen for
 `api` only) — Step 5b's decision procedure compares `$TYPE`/`$NEW_AUTH` (this run's result) against

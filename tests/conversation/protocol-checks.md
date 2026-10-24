@@ -106,6 +106,10 @@ differently:
      `(type a value of your own)`). An approval (a yes that lets the agent change, build, delete, publish or push
      something, or that approves a document or design) offers own words and an explanation and no skip; the usual
      form is `Or answer in your own words, or ask me to explain.`
+     Value questions within an already requested `aid-config` settings walk, including confirming a
+     current or suggested value, remain skippable as that skill specifies; they collect input rather
+     than authorize a new operation. Overall setup, build, connector-operation and publication approvals
+     still offer no skip. Mentioning a value does not make an operation approval skippable.
    - Evidence: `transcript.md`, the numbered options and the closing line of each question.
 
 6. **Grouped by subject, most important first, in groups of 3 to 5.** Questions come in groups by subject,
@@ -118,6 +122,7 @@ differently:
    next subject, for example "That's all on {subject}. Take a break, or go on to {next}?". A break offer
    decides nothing; an answer to it is not a question answer.
    A break is not offered after the last group. The check applies only when the subject changes between groups.
+   A configured final group that re-offers skipped settings is another group: its preceding break is valid.
    - Evidence: `transcript.md`, the agent turn that ends a group before a change of subject.
 
 8. **Follow-ups come at once.** A follow-up question comes straight after the question that raised it, inside
@@ -131,10 +136,15 @@ differently:
      `state: Assumed` and its reason.
 
 10. **Every question and answer is recorded.** Each question is written to the record as `Pending` before it is
-    shown: the record write appears in `transcript.md` before the question turn. Its outcome is written right
+    shown: chronological evidence shows a successful write, or a successful readback of the actual record
+    with matching id, question, recommendation and Pending state before its first presentation.
+    A readback can establish order when the original write occurred in a child session; a final diff alone
+    or an unsuccessful command cannot. Its outcome is written right
     after the answer, with `answered_by` set; `answered_by: --` is valid when the session has no git name,
     and does not fail. A skipped question is recorded `Skipped`, stays open, and can be
-    resumed later by the same user or another one. A question shown with no record write, or an answer with no
+    resumed later by the same user or another one. Re-offering an existing Pending or Skipped question uses its existing
+    id; it need not be written Pending again or appended a second time. Its new answer updates that id.
+    A question shown without the required pre-presentation record evidence, or an answer with no
     outcome written, fails. The exception above for an existing work's recovery and cancel confirmations applies to those only. A ticket skill has no
     shell and so no writer: a question it asks is recorded nowhere, and this check does not apply to it
     (see "Where each record lives" in the question protocol).
@@ -143,7 +153,9 @@ differently:
       `answered_by`).
 
 11. **Importance label.** Each question carries one importance label, `High`, `Medium` or `Low` (written in
-    lower case in the question's first line, as "importance: high", and as `impact:` in the record). The most
+    lower case in the question's first line, as "importance: high", and as `impact:` in a work or project YAML record).
+    A pre-work design document uses the protocol's six-column Questions table, which has no impact column;
+    judge the importance of those questions from the transcript. The most
     important question of a group comes first. The label `Required` is retired and fails.
     - Evidence: `transcript.md`, the first line of each question; `files.diff`, the `impact` value of each
       record entry.

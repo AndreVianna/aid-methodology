@@ -1546,7 +1546,8 @@ assert_eq "$(pshh_sha "$PSHH_T/$PSHH_SETTINGS")" "$PSHH_BEFORE" "PSHH-13 and the
 assert_eq "$(find "$PSHH_T/.claude" -maxdepth 1 \( -name '*.tmp' -o -name '.settings.tmp.*' \) | wc -l | tr -d ' ')" 0 "PSHH-13 and its temp file is removed"
 # A real failure, where the platform can force one: a read-only directory (root ignores the mode).
 if [[ "$(id -u)" != 0 ]]; then
-    PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude"; printf '{"x": 1}\n' > "$PSHH_T/$PSHH_SETTINGS"
+    # Keep payload directories writable so only publication beside settings.json is denied.
+    PSHH_T=$(pshh_target); mkdir -p "$PSHH_T/.claude/agents" "$PSHH_T/.claude/skills"; printf '{"x": 1}\n' > "$PSHH_T/$PSHH_SETTINGS"
     PSHH_BEFORE=$(pshh_sha "$PSHH_T/$PSHH_SETTINGS"); chmod a-w "$PSHH_T/.claude"
     run_aid_ps1 "$PSHH_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PSHH_T"
     chmod u+w "$PSHH_T/.claude"

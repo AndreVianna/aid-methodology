@@ -65,6 +65,11 @@ Record one of three outcomes:
 - `several plausible` -- two rows fit; keep the best two.
 - `none` -- no row fits, or the request is broad.
 
+A fault report does not by itself settle whether the user wants a repair or only findings. When both
+are plausible, keep both readings for SHOW-READING; do not silently turn "look into it" into permission
+to change code. Show the two outcomes in plain words, the recommended one first, with the observed
+problem as the reason for that recommendation.
+
 ## 5. Hand the reading on
 
 Pass the reading, the observable effect that supports it, the matched row (if any) and the

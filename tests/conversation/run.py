@@ -7,19 +7,24 @@ Standard library only. Runs on demand; never part of run-all.sh or CI.
 
 Usage:
   python3 tests/conversation/run.py --feature NNN [--sample ID] [--hosts claude-code,...]
-      [--runs 3] [--samples-dir DIR] [--fixtures-dir DIR] [--briefs-dir DIR]
+      [--runs 3] [--user-host claude-code|codex] [--judge-host claude-code|codex]
+      [--user-model MODEL] [--judge-model MODEL]
+      [--samples-dir DIR] [--fixtures-dir DIR] [--briefs-dir DIR]
   python3 tests/conversation/run.py --feature NNN [--sample ID] --validate
 
 Exit codes:
   0  every run passes (--validate: every selected sample parses)
   1  any failure (a run failed, or --validate or a malformed sample found an error)
   2  invocation error (bad arguments, unknown sample or host, missing briefs or protocol-checks.md
-     for a sample that covers AC-8 or AC-28, no claude)
+     for a sample that covers AC-8 or AC-28, unavailable helper CLI or no available agent host)
 
 Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding transcript.jsonl,
 transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger), model.txt (the model the
 agent under test ran with) and hook.jsonl (see below; absent when the hook sent nothing back).
 The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
+providers.json records the host and requested model of the agent, simulated user and judge.
+Only the requested --hosts run; the helpers never add an agent host. A Codex-only run is:
+  python3 tests/conversation/run.py --feature 002 --hosts codex --user-host codex --judge-host codex
 
 Question-form hook: the installed Claude Code Stop hook checks a message that waits on the user and, when
 it falls short, sends it back, so the agent shows a replacement. The runner sets AID_QUESTION_HOOK_LOG to
@@ -58,6 +63,7 @@ Checks grammar (one per line; a leading "- " and surrounding backticks are ignor
   contains PATH TEXT           the file PATH contains TEXT (TEXT is the rest of the line; one
                                pair of matching quotes around it is removed)
   no-new-dir PATH              no directory is created at PATH or directly inside it
+  no-new-dir-before-answer PATH  the first agent turn creates no such directory, including in a worktree
   no-push                      no Bash call runs git push
   tool-called NAME [GLOB]      the transcript has a call to tool NAME whose target matches GLOB
   tool-not-called NAME [GLOB]  the transcript has no such call
@@ -75,14 +81,20 @@ list built-in tool names, so the check used the CLI's own text. Its model-invoke
 `"name":"Skill"` with the skill name as the target, so Skill is confirmed. It refers to "the Task
 tool" with a `subagent_type` input, so Task is confirmed, but the same text also says "Agent/Task
 tool": a newer alias may exist, and a live run should confirm the name in use.
-Simulated user and judge: `claude -p --tools "" --safe-mode --strict-mcp-config --system-prompt
+Simulated user and judge default to `claude -p --tools "" --safe-mode --strict-mcp-config --system-prompt
 <brief>` from an empty temporary folder, the prompt on stdin.
-Driver (Codex): the first turn is `codex exec --json --model <model, when set> --sandbox workspace-write
---approve-for-me --output-last-message <file> -` in the fixture, the prompt on stdin; the thread id comes
-from the thread.started event, and each later turn is `codex exec resume <thread-id>` with --json,
---model and --output-last-message only (the resume help lists no sandbox or approval option). Codex
-output is not normalized to tool calls, so the tool-call checks read NOT RUN on that host.
+Driver (Codex): `codex exec --json --output-last-message <file> -` starts the thread; later turns use
+`codex exec resume <thread-id>`. Both select an isolated fixture permission profile extending :workspace
+and overriding only its .git protection, with automatic approval review. The model is optional.
+Command events support Bash and no-push checks; other host-specific tools remain NOT RUN. Ordered
+messages, commands, MCP calls/results and file-change events precede each final reply for the judge.
+Only the Codex main agent with the two-trackers fixture gets a local, read-only test MCP provider;
+it returns explicit unavailability, never remote ticket data. Initial and resumed turns configure it.
 Limits: 12 user turns (the run fails when no <<END>> comes within them); 1800 s per claude or codex call.
+Codex helpers use fresh, ephemeral read-only sessions outside the fixture, with user config ignored,
+shell, apps, multi-agent and web search disabled. A tool-use event fails the helper call. --user-host
+and --judge-host select them independently; their model flags default to the host's CLI default
+(AID_CODEX_MODEL when set for Codex). No helper resumes the agent's thread.
 Other hosts: a start/send/read adapter per host (ADAPTERS). Claude Code and Codex have adapters;
 hosts without an adapter are skipped with a NOTICE.
 """
@@ -123,7 +135,7 @@ REQUIRED_KEYS = ("id", "covers", "fixture")
 PROTOCOL_CHECKS = "protocol-checks.md"  # the judge's checklist for the question protocol, in the briefs folder
 PROTOCOL_COVERS_RE = re.compile(r"\bAC-(8|28)\b")  # the criteria whose samples the judge checks against it
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
-CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called", "ref-unchanged")
+CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-new-dir-before-answer", "no-push", "tool-called", "tool-not-called", "ref-unchanged")
 # the credential files under HOME, never recorded in files.diff: the known credential file names, and private
 # key or certificate files by extension (a note whose name merely says token or secret is kept)
 CREDENTIAL_RE = re.compile(r"(?i)^(\.credentials\.json|\.netrc|\.npmrc|\.pypirc|\.git-credentials|\.env|id_(rsa|dsa|ecdsa|ed25519)|.+\.(pem|key|p12|pfx))$")
@@ -221,7 +233,7 @@ def parse_check(line: str) -> dict:
     args = rest.split()
     if verb not in CHECK_VERBS:
         raise ValueError(f"unknown check {line.strip()!r}")
-    if verb in ("exists", "absent", "no-new-dir"):
+    if verb in ("exists", "absent", "no-new-dir", "no-new-dir-before-answer"):
         if len(args) != 1:
             raise ValueError(f"{verb} takes one PATH: {line.strip()!r}")
         return {"verb": verb, "args": args, "label": f"{verb} {args[0]}"}
@@ -458,6 +470,12 @@ def run_codex(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
     return run_cli("codex", args, cwd=cwd, env=env, stdin=stdin)
 
 
+def bounded_text(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit] + f"\n[... {len(text) - limit} characters omitted ...]"
+
+
 class ClaudeCodeAgent:
     """start/send/read adapter for the agent under test: one `claude -p` call per turn."""
 
@@ -510,46 +528,94 @@ class CodexAgent:
     the CLI's default model in place. CODEX_HOME points at the throwaway HOME's .codex folder.
     """
 
-    def __init__(self, fixture: Path, env: dict, model: str):
+    def __init__(self, fixture: Path, env: dict, model: str, fixture_name: str = ""):
         self.fixture = fixture
         self.env = env
         self.model = model
         self.session_id: str | None = None
+        self.events: list[dict] = []
+        # Test wiring stays outside the installed product's connector catalogue.
+        self.fixture_mcp = ({"aid_test_trackers": {"command": sys.executable,
+                            "args": [str(ROOT / "tests/conversation/support/tracker_mcp.py")]}}
+                            if fixture_name == "two-trackers" else {})
         self.env["CODEX_HOME"] = str(Path(self.env["HOME"]) / ".codex")
 
     def start(self) -> None:
         self.session_id = None
 
     def send(self, message: str) -> tuple[str, list[dict], list[dict]]:
-        # Options as `codex exec --help` lists them: --json, --model, --sandbox, --approve-for-me and
-        # --output-last-message; the prompt is read from stdin ("-").
+        self.events = []
         with tempfile.TemporaryDirectory(prefix="aid-codex-turn-") as turn_dir:
             last_message = Path(turn_dir) / "last-message.txt"
             args = ["exec"]
             if self.session_id:
                 args += ["resume", self.session_id]
+            # Allow Git writes only in disposable fixture metadata. Keep the workspace profile's
+            # other protections, and repeat the profile on resume. A single TOML object avoids
+            # the CLI override parser splitting quoted dotted keys such as ".git".
+            args += ["-c", 'permissions={aid_conversation={extends=":workspace",filesystem={":workspace_roots"={".git"="write"}}}}',
+                     "-c", 'default_permissions="aid_conversation"',
+                     "-c", 'approval_policy="on-request"', "-c", 'approvals_reviewer="auto_review"',
+                     "-c", "features.apps=false", "-c", 'web_search="disabled"', "--ignore-user-config"]
             args += ["--json"]
+            if self.fixture_mcp:
+                server = self.fixture_mcp["aid_test_trackers"]
+                args += ["-c", "mcp_servers={aid_test_trackers={command=" + json.dumps(server["command"]) +
+                         ",args=" + json.dumps(server["args"]) + "}}"]
             if self.model:
                 args += ["--model", self.model]
-            if not self.session_id:
-                # The resume subcommand's help (`codex exec resume --help`) lists only --json, --model
-                # and --output-last-message: the usage is "codex exec resume [OPTIONS] [SESSION_ID]
-                # [PROMPT]", and it shows no --sandbox and no --approve-for-me. So the resumed turn is
-                # not given them, and runs under the CLI's own sandbox and approval defaults, which may
-                # differ from the start turn's; a live run has not confirmed which. The start help
-                # describes --sandbox as the policy for model-generated shell commands and does not say
-                # it confines reads, so the fixture is not a read boundary.
-                args += ["--sandbox", "workspace-write", "--approve-for-me"]
             args += ["--output-last-message", str(last_message), "-"]
             out = run_codex(args, cwd=self.fixture, env=self.env, stdin=message)
             thread_id = None
+            tools: list[dict] = []
+            seen: set[str] = set()
+            completed_mcp: set[str] = set()
             for line in out.splitlines():
                 try:
                     event = json.loads(line)
                 except ValueError:
                     continue
-                if isinstance(event, dict) and event.get("type") == "thread.started":
+                if not isinstance(event, dict):
+                    continue
+                kind = event.get("type")
+                if kind == "thread.started":
                     thread_id = event.get("thread_id")
+                elif kind in ("error", "turn.failed"):
+                    raise RunError("codex agent reported a failed turn: " + str(event.get("error") or event.get("message") or "")[:500])
+                elif kind in ("item.started", "item.completed"):
+                    item = event.get("item") or {}
+                    item_type = item.get("type")
+                    if item_type == "command_execution":
+                        command = item.get("command", "")
+                        key = str(item.get("id") or command)
+                        if key not in seen:
+                            seen.add(key)
+                            tools.append({"name": "Bash", "target": command})
+                            self.events.append({"type": "command", "command": command})
+                        if kind == "item.completed":
+                            output = item.get("aggregated_output") or ""
+                            self.events.append({"type": "command_result", "exit_code": item.get("exit_code"),
+                                                "output": bounded_text(output, 16000)})
+                    elif item_type == "mcp_tool_call":
+                        server, tool = item.get("server", ""), item.get("tool", "")
+                        arguments = item.get("arguments", {})
+                        key = "mcp:" + str(item.get("id") or json.dumps([server, tool, arguments], sort_keys=True))
+                        name = f"mcp__{server}__{tool}"
+                        if key not in seen:
+                            seen.add(key)
+                            tools.append({"name": name, "target": json.dumps(arguments, sort_keys=True)})
+                            self.events.append({"type": "mcp_call", "id": item.get("id"), "name": name,
+                                                "server": server, "tool": tool, "arguments": arguments})
+                        if kind == "item.completed" and key not in completed_mcp:
+                            completed_mcp.add(key)
+                            self.events.append({"type": "mcp_result", "id": item.get("id"), "name": name,
+                                                "status": item.get("status"), "result": item.get("result"),
+                                                "error": item.get("error")})
+                    elif kind == "item.completed" and item_type == "agent_message":
+                        self.events.append({"type": "message", "text": item.get("text", "")})
+                    elif kind == "item.completed" and item_type == "file_change":
+                        self.events.append({"type": "file_change", "changes": item.get("changes", []),
+                                            "status": item.get("status")})
             if thread_id and not self.session_id:
                 self.session_id = str(thread_id)
             if not self.session_id:
@@ -558,7 +624,9 @@ class CodexAgent:
                 text = last_message.read_text(encoding="utf-8").strip()
             except OSError:
                 text = ""
-            return text, [], []  # Codex JSON output is not normalized to the runner's tool-call schema; it has no hook.
+            if not text:
+                raise RunError("codex agent returned no final message")
+            return text, tools, []  # Codex has no Claude question-form Stop hook.
 
     @staticmethod
     def available() -> tuple[bool, str]:
@@ -581,8 +649,52 @@ class CodexAgent:
 ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent, "codex": CodexAgent}
 
 
-def helper_call(prompt: str, system: str, *, cwd: Path, env: dict) -> str:
-    """One text-only claude call: the simulated user and the judge (no tools, no MCP, safe mode)."""
+def helper_call(prompt: str, system: str, *, cwd: Path, env: dict,
+                host: str = "claude-code", model: str = "") -> str:
+    """One independent text-only helper call, using the selected host."""
+    if host == "codex":
+        helper_env = dict(env)
+        with tempfile.TemporaryDirectory(prefix="aid-codex-helper-") as turn_dir:
+            helper_home = Path(turn_dir) / "home"
+            helper_codex = helper_home / ".codex"
+            helper_codex.mkdir(parents=True)
+            auth = Path(env["HOME"]) / ".codex/auth.json"
+            if auth.is_file():
+                shutil.copy2(auth, helper_codex / "auth.json")
+            helper_env["HOME"] = str(helper_home)
+            helper_env["CODEX_HOME"] = str(helper_codex)
+            last_message = Path(turn_dir) / "last-message.txt"
+            args = ["exec", "--json", "--ephemeral", "--ignore-user-config", "--ignore-rules",
+                    "--skip-git-repo-check", "--sandbox", "read-only",
+                    "-c", "features.shell_tool=false", "-c", "features.apps=false",
+                    "-c", "features.multi_agent=false", "-c", 'web_search="disabled"',
+                    "-c", "project_doc_max_bytes=0",
+                    "-c", "developer_instructions=" + json.dumps(
+                        "Respond using only the supplied text. Do not use tools or inspect files.\n\n" + system)]
+            if model:
+                args += ["--model", model]
+            args += ["--output-last-message", str(last_message), "-"]
+            out = run_codex(args, cwd=cwd, env=helper_env, stdin=prompt)
+            for line in out.splitlines():
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                if event.get("type") in ("error", "turn.failed"):
+                    raise RunError("codex helper reported a failed turn")
+                if event.get("type") in ("item.started", "item.completed", "item.updated"):
+                    item_type = (event.get("item") or {}).get("type")
+                    if item_type not in ("agent_message", "reasoning"):
+                        raise RunError(f"codex helper attempted tool use: {item_type}")
+            try:
+                reply = last_message.read_text(encoding="utf-8").strip()
+            except OSError:
+                reply = ""
+            if not reply:
+                raise RunError("codex helper returned no text")
+            return reply
     args = [
         "-p",
         "--output-format", "text",
@@ -591,6 +703,8 @@ def helper_call(prompt: str, system: str, *, cwd: Path, env: dict) -> str:
         "--strict-mcp-config",
         "--system-prompt", system,
     ]
+    if model:
+        args += ["--model", model]
     out = run_claude(args, cwd=cwd, env=env, stdin=prompt)
     return read_stream(out)[1]
 
@@ -605,6 +719,7 @@ def base_env(home: Path) -> dict:
         if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)
     }
     env["HOME"] = str(home)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"  # inspecting/running Python must not add files under src/ or tests/
     env["AID_NO_UPDATE_CHECK"] = "1"
     return env
 
@@ -628,7 +743,8 @@ def stage_bundle(dest: Path) -> None:
         raise UsageError(f"staging the AID bundle failed: {(proc.stderr or proc.stdout).strip()[-400:]}")
 
 
-def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: Path, work: Path) -> tuple[Path, Path]:
+def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: Path, work: Path,
+                  host: str = "claude-code") -> tuple[Path, Path]:
     source = fixtures_dir / sample.meta["fixture"]
     if not source.is_dir():
         raise RunError(f"fixture folder not found: {source}")
@@ -658,6 +774,14 @@ def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: P
     )
     if proc.returncode != 0:
         raise RunError("AID install into the fixture failed: " + (proc.stdout + proc.stderr).strip()[-400:])
+    if host == "codex":
+        proc = subprocess.run(
+            ["bash", str(ROOT / "bin/aid"), "add", "codex", "--target", str(fixture), "--from-bundle", str(bundle)],
+            cwd=fixture, env=env, capture_output=True, text=True, timeout=TURN_TIMEOUT,
+        )
+        if proc.returncode != 0:
+            raise RunError("Codex AID install into the fixture failed: " +
+                           (proc.stdout + proc.stderr).strip()[-400:])
     git_in(fixture, "init", "-q")
     git_in(fixture, "add", "-A")
     git_in(fixture, "commit", "-q", "--allow-empty", "-m", "fixture baseline")
@@ -994,14 +1118,14 @@ def ref_shas(fixture: Path) -> dict[str, str]:
     return refs
 
 
-def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict], host: str = "claude-code", refs_before: dict[str, str] | None = None, refs_after: dict[str, str] | None = None):
+def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict], host: str = "claude-code", refs_before: dict[str, str] | None = None, refs_after: dict[str, str] | None = None, before_answer_dirs: tuple[set[str], set[str]] | None = None):
     results: list[tuple[str, bool | None, str]] = []
     refs_before = refs_before or {}
     refs_after = refs_after or {}
     for check in checks:
         verb, args = check["verb"], check["args"]
-        if host == "codex" and verb in ("no-push", "tool-called", "tool-not-called"):
-            results.append((check["label"], None, "Codex output does not expose normalized tool calls"))
+        if host == "codex" and verb in ("tool-called", "tool-not-called") and args[0] != "Bash":
+            results.append((check["label"], None, f"Codex does not expose the {args[0]} tool"))
             continue
         try:
             if verb in ("exists", "absent", "contains"):
@@ -1014,10 +1138,14 @@ def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_af
                 text = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else None
                 ok = text is not None and args[1] in text
                 detail = "" if ok else ("no such file" if text is None else "text not found")
-            elif verb == "no-new-dir":
+            elif verb in ("no-new-dir", "no-new-dir-before-answer"):
                 target = args[0].rstrip("/")
-                bad = [d for d in sorted(dirs_after - dirs_before) if d == target or os.path.dirname(d) == target]
+                before, after = (dirs_before, dirs_after) if verb == "no-new-dir" else (before_answer_dirs or (set(), set()))
+                bad = [d for d in sorted(after - before) if d == target or os.path.dirname(d) == target
+                       or (verb == "no-new-dir-before-answer" and ("/" + target + "/") in ("/" + d + "/"))]
                 ok, detail = not bad, "" if not bad else "created: " + ", ".join(bad)
+                if verb == "no-new-dir-before-answer" and before_answer_dirs is None:
+                    ok, detail = False, "no pre-answer directory capture"
             elif verb == "ref-unchanged":
                 name = refs_before.get("HEAD", "") if args[0] == "default" else args[0]
                 before_sha = refs_before.get(name) if name else None
@@ -1069,7 +1197,7 @@ def render_withdrawn(withdrawn: list[dict]) -> list[str]:
     return out
 
 
-def render_transcript_md(transcript: list[dict], show_withdrawn: bool = True) -> str:
+def render_transcript_md(transcript: list[dict], show_withdrawn: bool = True, show_events: bool = True) -> str:
     """transcript.md. A message the hook withdrew is shown (show_withdrawn) before the replacement; the
     simulated user is given the transcript without it, because it never saw it."""
     out = ["# Transcript", ""]
@@ -1078,8 +1206,27 @@ def render_transcript_md(transcript: list[dict], show_withdrawn: bool = True) ->
         out += [f"## Turn {entry['turn']} -- {who}", ""]
         if show_withdrawn:
             out += render_withdrawn(entry.get("withdrawn") or [])
+        if show_events and entry.get("events"):
+            out += ["Observed Codex events, in order (before the final reply):", ""]
+            for index, event in enumerate(entry["events"]):
+                if event["type"] == "message":
+                    terminal_duplicate = index == len(entry["events"]) - 1 and event["text"].strip() == entry["text"].strip()
+                    if not terminal_duplicate:
+                        out += ["Agent message:", event["text"], ""]
+                elif event["type"] == "command":
+                    out += ["Command:", "```text", event["command"], "```", ""]
+                elif event["type"] == "command_result":
+                    out += [f"Command result (exit {event['exit_code']}):", "```text", event["output"], "```", ""]
+                elif event["type"] == "mcp_call":
+                    out += [f"MCP call: {event['name']}", "```json", json.dumps(event["arguments"], ensure_ascii=False), "```", ""]
+                elif event["type"] == "mcp_result":
+                    out += [f"MCP result: {event['name']}", "```json", json.dumps(
+                        {key: event.get(key) for key in ("status", "result", "error")}, ensure_ascii=False), "```", ""]
+                else:
+                    out += ["File-change event: " + json.dumps(event), ""]
+            out += ["Final reply:", ""]
         out += [entry["text"] or "(empty)", ""]
-        if entry["tools"]:
+        if show_events and entry["tools"]:
             calls = ", ".join(f"{t['name']}({t['target']})" for t in entry["tools"])
             out += [f"Tool calls: {calls}", ""]
     return "\n".join(out) + "\n"
@@ -1089,27 +1236,34 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def ask_user(brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict) -> str:
+def ask_user(brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict,
+             host: str = "claude-code", model: str = "") -> str:
     prompt = (
         f"{END_FIRST_RULE}\n\n"
         f"## Persona (from the sample)\n\n{sample.sections['User']}\n\n"
         f"## Answer sheet\n\n{sample.sections['Answer sheet']}\n\n"
-        f"## Transcript so far\n\n{render_transcript_md(transcript, show_withdrawn=False)}\n"
+        f"## Transcript so far\n\n{render_transcript_md(transcript, show_withdrawn=False, show_events=False)}\n"
         f"Write the simulated user's next message, or {END_MARK} if the sheet has nothing left to say "
         "or the agent has finished.\n"
     )
-    reply = helper_call(prompt, brief, cwd=scratch, env=env)
+    reply = helper_call(prompt, brief, cwd=scratch, env=env, host=host, model=model)
     return reply or "I don't know."
 
 
-def run_conversation(agent, brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict) -> None:
+def run_conversation(agent, brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict,
+                     user_host: str = "claude-code", user_model: str = "") -> None:
     message = opening_message(sample)
     agent.start()
+    needs_before_answer = any(c["verb"] == "no-new-dir-before-answer" for c in sample.checks)
+    first_dirs = snapshot(agent.fixture, fixture_skip)[1] if needs_before_answer else set()
     for turn in range(1, TURN_CAP + 1):
         transcript.append({"turn": turn, "role": "user", "text": message, "tools": [], "ts": now()})
         reply, tools, withdrawn = agent.send(message)
-        transcript.append({"turn": turn, "role": "agent", "text": reply, "tools": tools, "withdrawn": withdrawn, "ts": now()})
-        nxt = ask_user(brief, sample, transcript, scratch, env)
+        if turn == 1 and needs_before_answer:
+            agent.before_answer_dirs = (first_dirs, snapshot(agent.fixture, fixture_skip)[1])
+        transcript.append({"turn": turn, "role": "agent", "text": reply, "tools": tools, "withdrawn": withdrawn,
+                           "events": getattr(agent, "events", []), "ts": now()})
+        nxt = ask_user(brief, sample, transcript, scratch, env, user_host, user_model)
         if END_MARK in nxt:
             return
         message = nxt
@@ -1129,7 +1283,8 @@ def installed_reviewer_body(fixture: Path) -> str:
 
 
 def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, diff: str,
-          checks_txt: str, helper_dir: Path, env: dict, protocol: str | None) -> str:
+          checks_txt: str, helper_dir: Path, env: dict, protocol: str | None,
+          host: str = "claude-code", model: str = "") -> str:
     """protocol is the text of protocol-checks.md, or None when the sample does not cover AC-8 or AC-28."""
     system = installed_reviewer_body(fixture) + "\n\n" + judge_brief
     protocol_part = "" if protocol is None else f"## protocol-checks.md\n\n{protocol}\n\n"
@@ -1141,7 +1296,7 @@ def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, d
         f"## Expected outcome\n\n{sample.sections['Expected outcome']}\n\n"
         f"## Must not\n\n{sample.sections['Must not']}\n"
     )
-    return helper_call(prompt, system, cwd=helper_dir, env=env)
+    return helper_call(prompt, system, cwd=helper_dir, env=env, host=host, model=model)
 
 
 def ledger_status(text: str) -> tuple[bool, int]:
@@ -1188,7 +1343,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
     diff = ""
     ledger = ""
     try:
-        fixture, home = build_fixture(sample, ctx["fixtures_dir"], ctx["bundle"], ctx["real_home"], work)
+        fixture, home = build_fixture(sample, ctx["fixtures_dir"], ctx["bundle"], ctx["real_home"], work, host)
         env = base_env(home)
         fixture_bin = fixture / "bin"
         agent_env = dict(env)
@@ -1200,9 +1355,11 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         refs_before = ref_shas(fixture)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
-        agent = ADAPTERS[host](fixture, agent_env, model)
+        agent = (CodexAgent(fixture, agent_env, model, sample.meta["fixture"]) if host == "codex"
+                 else ADAPTERS[host](fixture, agent_env, model))
         try:
-            run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env)
+            run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env,
+                             ctx["user_host"], ctx["user_model"])
         except RunError as exc:
             reasons.append(f"conversation: {exc}")
         after, dirs_after = capture(fixture, home)
@@ -1210,14 +1367,15 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         chunks = diff_chunks(before, after)
         diff = "".join(text for _, text in chunks)
         tools = [t for e in transcript if e["role"] == "agent" for t in e["tools"]]
-        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools, host, refs_before, refs_after)
+        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools, host, refs_before, refs_after,
+                             getattr(agent, "before_answer_dirs", None))
         checks_txt = render_checks(results)
         reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if ok is False]
         transcript_md = render_transcript_md(transcript)
         try:
             protocol = ctx["protocol_checks"] if needs_protocol_checks(sample) else None
             ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, judge_view(chunks),
-                           checks_txt, helper_dir, env, protocol)
+                           checks_txt, helper_dir, env, protocol, ctx["judge_host"], ctx["judge_model"])
             has_table, pending = ledger_status(ledger)
             if not has_table:
                 reasons.append("judge: no 7-column ledger table in the output")
@@ -1230,6 +1388,9 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
             reasons.append(f"judge: {exc}")
     except (RunError, OSError) as exc:
         reasons.append(f"setup: {exc}")
+    except BaseException as exc:
+        reasons.append(f"execution aborted: {type(exc).__name__}: {exc}")
+        raise
     finally:
         (run_dir / "transcript.jsonl").write_text(
             "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in transcript), encoding="utf-8"
@@ -1239,6 +1400,15 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "clau
         (run_dir / "checks.txt").write_text(checks_txt, encoding="utf-8")
         (run_dir / "ledger.md").write_text(ledger.rstrip("\n") + "\n" if ledger else "", encoding="utf-8")
         (run_dir / "model.txt").write_text((model or "Codex CLI default") + "\n", encoding="utf-8")
+        providers = {
+            "agent": {"host": host, "model": model or "CLI default"},
+            "user": {"host": ctx["user_host"], "model": ctx["user_model"] or "CLI default"},
+            "judge": {"host": ctx["judge_host"], "model": ctx["judge_model"] or "CLI default"},
+        }
+        (run_dir / "providers.json").write_text(json.dumps(providers, indent=2) + "\n", encoding="utf-8")
+        (run_dir / "result.json").write_text(json.dumps({"sample": sample.id, "run": n, "host": host,
+                                                         "passed": not reasons, "reasons": reasons,
+                                                         "finished_at": now()}, indent=2) + "\n", encoding="utf-8")
         shutil.rmtree(work, ignore_errors=True)
     return reasons
 
@@ -1259,9 +1429,16 @@ def parse_hosts(raw: str) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Conversation test suite (NFR-T).")
     parser.add_argument("--feature", required=True, help="three-digit feature number, for example 001")
-    parser.add_argument("--sample", help="one sample id; default every sample of the feature")
+    parser.add_argument("--sample", action="append", help="sample id; repeat for a subset; default every sample of the feature")
     parser.add_argument("--hosts", default=",".join(DEFAULT_HOSTS), help="comma-separated hosts")
+    parser.add_argument("--user-host", choices=tuple(ADAPTERS), default="claude-code",
+                        help="simulated user provider (default claude-code)")
+    parser.add_argument("--judge-host", choices=tuple(ADAPTERS), default="claude-code",
+                        help="judge provider (default claude-code)")
+    parser.add_argument("--user-model", help="simulated user model (default: provider CLI default, or AID_CODEX_MODEL)")
+    parser.add_argument("--judge-model", help="judge model (default: provider CLI default, or AID_CODEX_MODEL)")
     parser.add_argument("--runs", type=int, default=3, help="runs per sample (default 3)")
+    parser.add_argument("--fail-fast", action="store_true", help="stop on the first failed run; an interrupted batch never passes")
     parser.add_argument("--samples-dir", type=Path, default=DEFAULT_SAMPLES_DIR)
     parser.add_argument("--fixtures-dir", type=Path, default=DEFAULT_FIXTURES_DIR)
     parser.add_argument("--briefs-dir", type=Path, default=DEFAULT_BRIEFS_DIR,
@@ -1275,7 +1452,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.runs < 1:
             raise UsageError("--runs must be at least 1")
         hosts = parse_hosts(args.hosts)
-        files = select_samples(args.samples_dir, args.feature, args.sample)
+        files = list(dict.fromkeys(path for sample in (args.sample or [None])
+                                   for path in select_samples(args.samples_dir, args.feature, sample)))
     except UsageError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -1300,12 +1478,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"FAIL malformed sample: {error}")
         return 1
 
-    if "claude-code" not in hosts:
-        print("NOTICE: claude-code is required for the simulated user and judge; it runs too")
-        hosts.insert(0, "claude-code")
-    if shutil.which("claude") is None:
+    if "claude-code" in (*hosts, args.user_host, args.judge_host) and shutil.which("claude") is None:
         print("error: the claude CLI is not on PATH", file=sys.stderr)
         return 2
+    if "codex" in (args.user_host, args.judge_host):
+        available, reason = CodexAgent.available()
+        if not available:
+            print(f"error: {reason}; required for the selected helper provider", file=sys.stderr)
+            return 2
     try:
         user_brief = (args.briefs_dir / "simulated-user.md").read_text(encoding="utf-8")
         judge_brief = (args.briefs_dir / "judge.md").read_text(encoding="utf-8")
@@ -1338,8 +1518,13 @@ def main(argv: list[str] | None = None) -> int:
             "protocol_checks": protocol_checks,
             "model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,
             "codex_model": os.environ.get("AID_CODEX_MODEL") or "",  # empty: the Codex CLI's default model
+            "user_host": args.user_host,
+            "judge_host": args.judge_host,
+            "user_model": args.user_model or (os.environ.get("AID_CODEX_MODEL", "") if args.user_host == "codex" else ""),
+            "judge_model": args.judge_model or (os.environ.get("AID_CODEX_MODEL", "") if args.judge_host == "codex" else ""),
         }
         any_failed = False
+        ran_host = False
         for host in hosts:
             if host not in ADAPTERS:
                 print(f"NOTICE: no non-interactive adapter for host {host}; skipped")
@@ -1349,12 +1534,18 @@ def main(argv: list[str] | None = None) -> int:
                 if not available:
                     print(f"NOTICE: {reason}; codex host skipped")
                     continue
-            run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{host}-{os.getpid()}"
+            ran_host = True
+            run_id = (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") +
+                      f"-{host}-user-{args.user_host}-judge-{args.judge_host}-{os.getpid()}")
+            summary = {"host": host, "samples": [sample.id for sample in samples], "runs_per_sample": args.runs,
+                       "started_at": now(), "completed": False, "results": []}
             for sample in samples:
                 failed_runs = 0
                 for n in range(1, args.runs + 1):
                     run_dir = RUN_ROOT / run_id / sample.id / f"run-{n}"
                     reasons = run_once(sample, n, run_dir, ctx, host)
+                    summary["results"].append({"sample": sample.id, "run": n, "passed": not reasons, "reasons": reasons})
+                    (RUN_ROOT / run_id / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
                     if reasons:
                         failed_runs += 1
                         print(f"FAIL {host} {sample.id} run {n}/{args.runs} -> {run_dir}")
@@ -1362,9 +1553,19 @@ def main(argv: list[str] | None = None) -> int:
                             print(f"    {reason}")
                     else:
                         print(f"PASS {host} {sample.id} run {n}/{args.runs} -> {run_dir}")
+                    if reasons and args.fail_fast:
+                        summary.update(stopped_early=True, passed=False, finished_at=now())
+                        (RUN_ROOT / run_id / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+                        print("Stopping after the first failed run (--fail-fast).")
+                        return 1
                 verdict = "PASS" if failed_runs == 0 else "FAIL"
                 print(f"{verdict} {host} {sample.id}: {args.runs - failed_runs}/{args.runs} runs passed")
                 any_failed = any_failed or failed_runs > 0
+            summary.update(completed=True, finished_at=now(), passed=all(r["passed"] for r in summary["results"]))
+            (RUN_ROOT / run_id / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        if not ran_host:
+            print("error: no requested test host is available", file=sys.stderr)
+            return 2
         return 1 if any_failed else 0
     finally:
         shutil.rmtree(work_root, ignore_errors=True)

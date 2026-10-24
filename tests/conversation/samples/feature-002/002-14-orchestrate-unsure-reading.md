@@ -22,7 +22,7 @@ Persona: the maintainer of the notes tool. Not sure whether the problem needs a 
 ## Expected outcome
 
 - The assistant does not guess silently between the two readings. Its first message shows its reading, with its reason, in one question, with the recommended choice first and a free-text answer possible.
-- The assistant opens no work and changes no file before the user answers.
+- The assistant opens no work and changes no product or Knowledge Base file before the user answers; the required Pending design-question record is allowed.
 - The question has an importance label and a recommendation.
 - After the user answers, the assistant goes on with the way the user chose.
 
@@ -35,6 +35,6 @@ Persona: the maintainer of the notes tool. Not sure whether the problem needs a 
 
 ## Checks
 
-- no-new-dir .aid/works
+- no-new-dir-before-answer .aid/works
 - tool-called Skill aid-orchestrate
 - no-push

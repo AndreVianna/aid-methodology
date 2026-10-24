@@ -2325,10 +2325,10 @@ describe('AC-4 corpus fixture — aid-review (inline-states)', () => {
     expect(_lb).toBeDefined();
   });
 
-  it('VERIFY.kind === exit (circuit-breaker HALT case), not decision', () => {
-    // VERIFY has a branch forward, a loop-back backward and a HALT case for the circuit-breaker;
-    // an ending node is an exit, and the loop-back stays drawn as an edge (previous test).
-    expect(_rvVerify.kind).toBe('exit');
+  it('VERIFY remains a decision with an ASK self-transition, not a terminal exit', () => {
+    expect(_rvVerify.kind).toBe('decision');
+    expect(_rvVerify.terminal).toBeNull();
+    expect(_rvChart.edges.some((e) => e.from === _rvVerify.id && e.to === _rvVerify.id && e.advanceType === 'ASK')).toBe(true);
   });
 
   it('PRESENT-FINDINGS.kind === step (one ASK target; the decline path lives in PUBLISH)', () => {

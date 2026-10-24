@@ -387,7 +387,8 @@ assert_exit_zero "$RC" "HH-12 remove over a directory succeeds"
 # --- HH-13 a write that fails leaves the original file exactly as it was ----------------------------
 # Read-only directory: the temp file cannot be created. (root ignores the mode, so the case is skipped as root.)
 if [[ "$(id -u)" != 0 ]]; then
-    T="$(new_target hh13)"; mkdir -p "${T}/.claude"; printf '{"x": 1}\n' > "${T}/${SETTINGS}"
+    # Keep payload directories writable so only publication beside settings.json is denied.
+    T="$(new_target hh13)"; mkdir -p "${T}/.claude/agents" "${T}/.claude/skills"; printf '{"x": 1}\n' > "${T}/${SETTINGS}"
     BEFORE="$(sha_of "${T}/${SETTINGS}")"; chmod a-w "${T}/.claude"
     OUT="$(run_aid add claude-code --from-bundle "$BUNDLE" --target "$T" 2>&1)"; RC=$?
     chmod u+w "${T}/.claude"
