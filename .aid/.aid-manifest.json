@@ -568,7 +568,7 @@
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "35dd8f7683939fcef6728dd633ccdcabad9c2454d29b0f9552450ff182f331b7"
+          "sha256": "cd14090198d58b5ca0ed9c9225696b7b863fdb71ff944d8a9761d5dd7020cb31"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
@@ -1362,7 +1362,7 @@
         },
         {
           "path": "templates/question-protocol.md",
-          "sha256": "e695662ba30a62403c108891f041414f96bf3ef65da1f8e1d108be3dfc772b7f"
+          "sha256": "5773794d1259cc7ecde77dca6aa687637bf503a35437310bf4244d775f2ff382"
         },
         {
           "path": "templates/requirements.md",
