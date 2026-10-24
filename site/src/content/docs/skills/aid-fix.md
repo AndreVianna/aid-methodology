@@ -90,11 +90,11 @@ Bind **VERB=`fix`**, **ARTIFACT="" (bare verb)**, then run the shared engine at 
 
 <a id="fragment-n3"></a>**3 · `CONTINUATION`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L177" wrap
+~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L175" wrap
 ### 3b. CONTINUATION -> the work's record decides where it resumes
 ~~~~
 
-[Source: `canonical/aid/templates/work-initiation-gate.md#L177`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L177)
+[Source: `canonical/aid/templates/work-initiation-gate.md#L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L175)
 
 <a id="fragment-n4"></a>**4 · `CAPTURE`** — Collapses the Describe work. · _step_
 

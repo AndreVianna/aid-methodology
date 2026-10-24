@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 37,
-        "endLine": 39,
+        "startLine": 39,
+        "endLine": 41,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 37,
-        "endLine": 55,
+        "startLine": 39,
+        "endLine": 59,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record.\n\n1. **Check the question.** Note whether the argument is empty. Do not ask here.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> narrow\n     it first in INTAKE-ASK (2-3 scoping questions), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE\n\nINTAKE and INTAKE-ASK run before the work record exists, so they save no steps (`skill-steps.md`, § Before a work exists). Their questions are recorded in a design document under `.aid/design/`, not in a work record.\n\n1. **Check the question.** Identify the uncertainty to investigate: a comparison, behavior or\n   hypothesis. Naming a topic or saying it needs a decision does not supply that uncertainty.\n   If it is missing, do not invent one. Do not ask here.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> narrow\n     it first in INTAKE-ASK (2-3 scoping questions), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Check for works.** Run `bash .aid/runtime/scripts/works/enumerate-works.sh`\n   (main tree + every git worktree). Note whether any exist. Do not prompt here.\n\n**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the question is missing, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -36,17 +36,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 59,
-        "endLine": 61,
+        "startLine": 63,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:"
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 59,
-        "endLine": 70,
+        "startLine": 63,
+        "endLine": 80,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (\"What do you want investigated?\"). The\n   answer is the question; the path and complexity are then set from it.\n2. **Guided path** -> the 2-3 scoping questions that narrow the question.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\nRecord each of these questions in a design document before it is shown, and its reply after it, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.\n\n**Advance:** ASK → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Question missing** -> first ask \"What question about {topic} would you like this research\n   to answer?\" (or what to investigate when no topic is named). Do not substitute a constraint\n   question such as local versus shared use. The answer supplies the question; set the path\n   and complexity from it before asking any necessary scoping questions.\n2. **Guided path** -> the 2-3 scoping questions that narrow the question. Two kinds are not put to the user:\n   - **An earlier answer settles it.** Record it with `--ask --design`, then close it at once with\n     `--answer --design --state Assumed` and the reason (which answer settles it). Do not show it.\n   - **The user cannot answer it** (\"I don't know\"). Close it `Assumed` the same way, with the assumption\n     the research makes and why. The report names that assumption under its Gaps.\n3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.\n\nRecord each of these questions in a design document before it is shown, and its reply after it, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {
@@ -58,17 +58,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 74,
-        "endLine": 77,
+        "startLine": 84,
+        "endLine": 87,
         "sourceKind": "skill",
         "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 74,
-        "endLine": 92,
+        "startLine": 84,
+        "endLine": 101,
         "sourceKind": "skill",
-        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`), with `--seed .aid/design/<slug>.md` on the gate's `--create` when INTAKE-ASK recorded any question (the gate adds it to the work's `sources:` and copies its `## Questions` into the work's record),\n  its saved step (`INVESTIGATE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. Associate a git worktree only\n  if a spike is later authorized (PROPOSE-SPIKE).\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a\nresume finds them in the record.\n\n**Advance:** CHAIN → [State: INVESTIGATE]."
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** execute every step of the gate's `§ 3a`, passing the user's words, `aid-research`,\n  saved step `INVESTIGATE`, `--path lite`, a question-derived slug, and `--seed .aid/design/<slug>.md`\n  when intake recorded questions. The gate's `§ 3a` step 2 creates and enters the mandatory worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`); step 4 creates the work folder there before\n  the writer creates `STATE.yml`. Complete the gate before advancing; this skill drives no `phase`.\n  Associate a git worktree for an optional spike only if later authorized (PROPOSE-SPIKE);\n  that separate spike workspace does not replace the mandatory work-level tree.\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a\nresume finds them in the record.\n\n**Advance:** CHAIN → [State: INVESTIGATE]."
       }
     },
     {
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 96,
-        "endLine": 99,
+        "startLine": 105,
+        "endLine": 108,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:"
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 96,
-        "endLine": 112,
+        "startLine": 105,
+        "endLine": 121,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:\n\n- **Two-tier grounding (enforced):** read the KB (`.aid/knowledge/`) + the project source\n  as the **authoritative** base; enrich with external/web sources as needed, **cited with\n  URL + access date**. Every project claim cites a KB doc or `file:line`; every external\n  claim cites a URL+date.\n- It writes a structured `RESEARCH.md` into the work folder (see [Response shape](#response-shape)).\n\n**Spike escalation (conditional, human-authorized).** Default is **analytical-with-\nhandoff** -- no code is written. If the researcher determines a gap genuinely cannot be\nclosed on paper, it returns a **spike proposal** instead of a final answer; the step then\ngoes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.\n\n**Advance:** CHAIN → [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN → [State: VERIFY]."
       }
@@ -102,17 +102,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 116,
-        "endLine": 122,
+        "startLine": 125,
+        "endLine": 134,
         "sourceKind": "skill",
-        "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Ask the user to authorize or decline it.\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section."
+        "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Then ask the user to authorize or decline it\nas one approval question in the form of `.aid/runtime/templates/question-protocol.md`\n(`{subject} -- question {n} of {m} -- importance: medium`, **Why I ask**: a spike writes code, so it needs your\ngo-ahead, **My recommendation**, and the closing line `Or answer in your own words, or ask me to explain.`).\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 116,
-        "endLine": 127,
+        "startLine": 125,
+        "endLine": 139,
         "sourceKind": "skill",
-        "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Ask the user to authorize or decline it.\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section.\n\nThe question pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. The write that follows the answer, the spike\nor the Gaps note, is part of this step. Once it is done, record in the `--detail` what was decided.\n\n**Advance:** CHAIN → [State: VERIFY]."
+        "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Then ask the user to authorize or decline it\nas one approval question in the form of `.aid/runtime/templates/question-protocol.md`\n(`{subject} -- question {n} of {m} -- importance: medium`, **Why I ask**: a spike writes code, so it needs your\ngo-ahead, **My recommendation**, and the closing line `Or answer in your own words, or ask me to explain.`).\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section.\n\nThe question pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. The write that follows the answer, the spike\nor the Gaps note, is part of this step. Once it is done, record in the `--detail` what was decided.\n\n**Advance:** CHAIN → [State: VERIFY]."
       }
     },
     {
@@ -120,46 +120,43 @@
       "order": 6,
       "name": "VERIFY",
       "label": "who reviews the researcher",
-      "kind": "exit",
-      "terminal": {
-        "advanceType": "HALT",
-        "handoff": "when the circuit-breaker has blocked the work"
-      },
+      "kind": "decision",
+      "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 131,
-        "endLine": 145,
+        "startLine": 143,
+        "endLine": 158,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,\n   surface it, and the run ends."
+        "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set the lifecycle to `Blocked` through the writer,\n   and name the open finding in plain words. Then ask the one question that unblocks the work, in the\n   form of `.aid/runtime/templates/question-protocol.md`, never as a bare \"your call\":"
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 131,
-        "endLine": 149,
+        "startLine": 143,
+        "endLine": 175,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,\n   surface it, and the run ends.\n\n(Single grade -- the response *is* the deliverable; there is no separate target artifact.)\n\n**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set the lifecycle to `Blocked` through the writer,\n   and name the open finding in plain words. Then ask the one question that unblocks the work, in the\n   form of `.aid/runtime/templates/question-protocol.md`, never as a bare \"your call\":\n\n   ```text\n   {subject} -- question {n} of {m} -- importance: high\n   Shall I fix {the open finding} and run one more review, or do you take the report as it stands with it noted?\n   Why I ask: the review loop stopped after 3 cycles, so only you can say whether to go on.\n   My recommendation: {the option that fits the finding's severity, and why}\n     1. Fix it and run one more review (recommended)\n     2. Take the report as it stands, with the finding noted under Gaps\n   Or answer in your own words, ask me to explain, or skip this question.\n   ```\n\n   Use the protocol's current subject and counter in the example above, including its break rule for\n   a new subject. Record it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category '<group subject>' --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown. The work stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work, not in this run: the resumed run shows the open question first, records the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'research report'`, and sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer before anything else, and dispatches nothing. On the first option it goes to INVESTIGATE for one more cycle; on the second it goes to PRESENT, naming the finding under Gaps. A skipped question leaves the work `Blocked`.\n\n(Single grade -- the response *is* the deliverable; there is no separate target artifact.)\n\n**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
       "id": "n7",
       "order": 7,
       "name": "PRESENT",
-      "label": "always a hard stop -- the user resolves",
+      "label": "PRESENT",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 153,
-        "endLine": 158,
+        "startLine": 179,
+        "endLine": 186,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives."
+        "excerpt": "## State: PRESENT\n\nPresent `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Tell the user explicitly that the choice is theirs; do not\nresolve it for them. Negatives and gaps are first-class, never buried under positives.\nContinue to HANDOFF below; its required\nbreak, when due, takes precedence over ending this turn with a next-step question."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 153,
-        "endLine": 160,
+        "startLine": 179,
+        "endLine": 188,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives.\n\n**Advance:** ASK → [State: HANDOFF]."
+        "excerpt": "## State: PRESENT\n\nPresent `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Tell the user explicitly that the choice is theirs; do not\nresolve it for them. Negatives and gaps are first-class, never buried under positives.\nContinue to HANDOFF below; its required\nbreak, when due, takes precedence over ending this turn with a next-step question.\n\n**Advance:** CHAIN → [State: HANDOFF]."
       }
     },
     {
@@ -167,21 +164,21 @@
       "order": 8,
       "name": "HANDOFF",
       "label": "optional; printed suggestions only",
-      "kind": "step",
+      "kind": "decision",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 164,
-        "endLine": 171,
+        "startLine": 192,
+        "endLine": 209,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. On entry, read the saved detail: after a break was offered,\nthe user's continuation proceeds to the next-step question without repeating the report or break.\nOtherwise check whether the preceding question group is complete or the subject changes. If so,\nsave HANDOFF with detail that the report was shown, the break is offered, and continuation asks\nthe next-step question; pause the lifecycle for that break and end the turn with the protocol's\nbreak offer. The break has no question record. On continuation restore Running, then record and\nask the next-step question. Do not rename a group to bypass the break. Otherwise retain the\ncurrent subject and counter. Ask which step, if any, the user takes, in the form of\n`.aid/runtime/templates/question-protocol.md`, using its subject grouping and break rules rather than\nresetting the group for this step. Record it with\n`writeback-state.sh --ask --category '<group subject>' --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with\n`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked one is named in one plain line."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 164,
-        "endLine": 173,
+        "startLine": 192,
+        "endLine": 211,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line.\n\n**Advance:** ASK → [State: DONE]."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. On entry, read the saved detail: after a break was offered,\nthe user's continuation proceeds to the next-step question without repeating the report or break.\nOtherwise check whether the preceding question group is complete or the subject changes. If so,\nsave HANDOFF with detail that the report was shown, the break is offered, and continuation asks\nthe next-step question; pause the lifecycle for that break and end the turn with the protocol's\nbreak offer. The break has no question record. On continuation restore Running, then record and\nask the next-step question. Do not rename a group to bypass the break. Otherwise retain the\ncurrent subject and counter. Ask which step, if any, the user takes, in the form of\n`.aid/runtime/templates/question-protocol.md`, using its subject grouping and break rules rather than\nresetting the group for this step. Record it with\n`writeback-state.sh --ask --category '<group subject>' --impact Low --context '<the question>' --suggested '<the recommendation>' --asked-by aid-research` before it is shown, and the reply with\n`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>'`; a picked one is named in one plain line.\n\n**Advance:** ASK → [State: HANDOFF] while the break awaits continuation; ASK → [State: DONE] once the next-step question is asked."
       }
     },
     {
@@ -196,15 +193,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 177,
-        "endLine": 179,
+        "startLine": 215,
+        "endLine": 217,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 177,
-        "endLine": 181,
+        "startLine": 215,
+        "endLine": 219,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.\n\n**Advance:** HALT."
       }
@@ -215,14 +212,14 @@
       "from": "n1",
       "to": "n2",
       "kind": "branch",
-      "condition": "when any of these holds: the argument is empty, the path is Guided, works exist",
+      "condition": "when any of these holds: the question is missing, the path is Guided, works…",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 55,
-        "endLine": 55,
+        "startLine": 59,
+        "endLine": 59,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
+        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the question is missing, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -233,10 +230,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 55,
-        "endLine": 55,
+        "startLine": 59,
+        "endLine": 59,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the argument is empty, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
+        "excerpt": "**Advance:** CHAIN → [State: INTAKE-ASK] when any of these holds: the question is missing, the path is Guided, works exist; otherwise CHAIN → [State: ALLOCATE]."
       }
     },
     {
@@ -247,8 +244,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 70,
-        "endLine": 70,
+        "startLine": 80,
+        "endLine": 80,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: ALLOCATE]."
       }
@@ -261,8 +258,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 92,
-        "endLine": 92,
+        "startLine": 101,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: INVESTIGATE]."
       }
@@ -275,8 +272,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 112,
-        "endLine": 112,
+        "startLine": 121,
+        "endLine": 121,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN → [State: VERIFY]."
       }
@@ -289,8 +286,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 112,
-        "endLine": 112,
+        "startLine": 121,
+        "endLine": 121,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: PROPOSE-SPIKE] when the researcher returned a spike proposal; otherwise CHAIN → [State: VERIFY]."
       }
@@ -303,8 +300,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 139,
+        "endLine": 139,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: VERIFY]."
       }
@@ -313,14 +310,28 @@
       "from": "n6",
       "to": "n4",
       "kind": "loop-back",
-      "condition": "when it is not clean and fewer than 3 cycles have run",
+      "condition": "when the answer read on re-entry chose the report as it stands; when it is not…",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 149,
-        "endLine": 149,
+        "startLine": 175,
+        "endLine": 175,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n6",
+      "kind": "branch",
+      "condition": "when the answer read on re-entry chose one more cycle; when the circuit-breaker…",
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-research/SKILL.md",
+        "startLine": 175,
+        "endLine": 175,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
@@ -331,10 +342,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 149,
-        "endLine": 149,
+        "startLine": 175,
+        "endLine": 175,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT] when the grade is clean, or when the answer read on re-entry chose the report as it stands; CHAIN → [State: INVESTIGATE] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
@@ -342,27 +353,41 @@
       "to": "n8",
       "kind": "sequence",
       "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-research/SKILL.md",
+        "startLine": 188,
+        "endLine": 188,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN → [State: HANDOFF]."
+      }
+    },
+    {
+      "from": "n8",
+      "to": "n8",
+      "kind": "branch",
+      "condition": "while the break awaits continuation",
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 160,
-        "endLine": 160,
+        "startLine": 211,
+        "endLine": 211,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK → [State: HANDOFF]."
+        "excerpt": "**Advance:** ASK → [State: HANDOFF] while the break awaits continuation; ASK → [State: DONE] once the next-step question is asked."
       }
     },
     {
       "from": "n8",
       "to": "n9",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "once the next-step question is asked",
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 173,
-        "endLine": 173,
+        "startLine": 211,
+        "endLine": 211,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK → [State: DONE]."
+        "excerpt": "**Advance:** ASK → [State: HANDOFF] while the break awaits continuation; ASK → [State: DONE] once the next-step question is asked."
       }
     }
   ],
@@ -370,7 +395,6 @@
     "n1"
   ],
   "exits": [
-    "n6",
     "n9"
   ],
   "sources": [

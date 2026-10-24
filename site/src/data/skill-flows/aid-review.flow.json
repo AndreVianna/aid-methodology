@@ -46,7 +46,7 @@
         "startLine": 98,
         "endLine": 109,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path\n   is then picked from it.\n2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it.\n3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.\n\nRecord each of these questions in a design document before it is shown, and its reply after it, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.\n\n**Advance:** ASK → [State: ALLOCATE]."
+        "excerpt": "## State: INTAKE-ASK  (only when a question must be put)\n\nAsk one topic at a time, through the question protocol, in this order and only for what applies:\n\n1. **Empty argument** -> the bootstrapping question (Step 1). The answer is the target; the path\n   is then picked from it.\n2. **Guided path** -> present the plan (Step 2) and ask the user to confirm or correct it, as one go-ahead question in the form, with the approval closing line `Or answer in your own words, or ask me to explain.`\n3. **Works exist** -> the gate's single new-vs-continuation question with the enumerated list.\n\nRecord each of these questions in a design document before it is shown, and its reply after it, as the gate's \"Recording the questions asked before a work exists\" says (`.aid/runtime/templates/work-initiation-gate.md`): `--ask --design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` first, then `--answer --design` on the same file with the id the writer printed; once the subject is known, `--rename-design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md --to .aid/design/<slug>.md`, the slug being the one ALLOCATE gives the work.\n\n**Advance:** ASK → [State: ALLOCATE]."
       }
     },
     {
@@ -98,11 +98,8 @@
       "order": 5,
       "name": "VERIFY",
       "label": "who reviews the reviewer",
-      "kind": "exit",
-      "terminal": {
-        "advanceType": "HALT",
-        "handoff": "when the circuit-breaker has blocked the work"
-      },
+      "kind": "decision",
+      "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
         "startLine": 159,
@@ -113,9 +110,9 @@
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
         "startLine": 159,
-        "endLine": 179,
+        "endLine": 188,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (who reviews the reviewer)\n\nPurpose: ensure the review is grounded, correct, and complete before the human sees it.\n\n1. **Mechanical grounding check** (no dispatch): reject any finding row whose `Evidence`\n   cell is empty -- an ungrounded finding never reaches the human.\n2. **Adversarial verification** -- dispatch a *second* `aid-reviewer` in a clean context\n   (never sees the first reviewer's reasoning) to independently check each finding\n   against KB + source: flag ungrounded / hallucinated / mis-severity findings, and any\n   material **gap** (a real issue the first pass missed). It writes a review-quality\n   ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the review:** `bash .aid/runtime/scripts/grade.sh --explain <verify-ledger>`.\n   If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded\n   findings, add missed ones). **Circuit-breaker: 3 cycles** -> write\n   `.aid/works/{work}/IMPEDIMENT-review.md`, set the lifecycle to `Blocked` through the writer\n   (`--pipeline --field Lifecycle --value Blocked`), and surface it instead of looping.\n\nNote: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for\nthe presentation as information only -- it does NOT drive a fix loop here.\n\n**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "## State: VERIFY  (who reviews the reviewer)\n\nPurpose: ensure the review is grounded, correct, and complete before the human sees it.\n\n1. **Mechanical grounding check** (no dispatch): reject any finding row whose `Evidence`\n   cell is empty -- an ungrounded finding never reaches the human.\n2. **Adversarial verification** -- dispatch a *second* `aid-reviewer` in a clean context\n   (never sees the first reviewer's reasoning) to independently check each finding\n   against KB + source: flag ungrounded / hallucinated / mis-severity findings, and any\n   material **gap** (a real issue the first pass missed). It writes a review-quality\n   ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the review:** `bash .aid/runtime/scripts/grade.sh --explain <verify-ledger>`.\n   If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded\n   findings, add missed ones). **Circuit-breaker: 3 cycles** -> write\n   `.aid/works/{work}/IMPEDIMENT-review.md`, set the lifecycle to `Blocked` through the writer\n   (`--pipeline --field Lifecycle --value Blocked`), and name the open finding in plain words instead of\n   looping. Then ask one question, in the form of `.aid/runtime/templates/question-protocol.md`\n   (`Review -- question 1 of 1 -- importance: high`, **Why I ask**: the verify loop stopped after 3 cycles,\n   **My recommendation**, numbered options: one more review cycle / present the findings as they stand with\n   the open one noted, and the question closing line), recorded with `--ask` before it is shown. The work\n   stays `Blocked` and this run ends on the question. Its answer is applied when the user resumes the work,\n   not in this run: the resumed run shows the open question first, records the reply with `--answer`, and\n   sets the lifecycle back to `Running` through the writer. VERIFY is entered again, reads that answer\n   before anything else, and dispatches nothing. One more cycle goes to REVIEW, the other option to\n   PRESENT-FINDINGS. A skipped question leaves the work `Blocked`.\n\nNote: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for\nthe presentation as information only -- it does NOT drive a fix loop here.\n\n**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean, or when the answer read on re-entry chose the findings as they stand; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
@@ -127,39 +124,39 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 183,
-        "endLine": 185,
+        "startLine": 192,
+        "endLine": 194,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:"
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 183,
-        "endLine": 201,
+        "startLine": 192,
+        "endLine": 220,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations**, and a **printed suggestion** to act: \"N issues found -- run\n  `/aid-fix` (or `/aid-update`) to address them\" (review never starts the fix itself);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP and ask one decision question in the form of `.aid/runtime/templates/question-protocol.md`\n(`Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without your approval,\n**My recommendation**, numbered options: approve and publish / edit the text / choose a different\ndelivery / do not publish, and the closing line). Record it with\n`writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with\n`--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'publish'`.\nNothing is posted to any external target until they approve.\n\n**Advance:** ASK → [State: PUBLISH]."
+        "excerpt": "## State: PRESENT-FINDINGS  (always a hard stop -- human final say)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present:\n\n- the **target grade** (from `grade.sh` on the review ledger) -- informational;\n- the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;\n- **recommendations** on the findings (review never starts the fix itself; PUBLISH ends with the one\n  plain line that names `/aid-fix`);\n- the **proposed delivery action + the exact comment/notes text** that would be posted.\n\nThen STOP. The stop is one approval question in the form of `.aid/runtime/templates/question-protocol.md`,\nnever a free sentence such as \"do you want me to publish?\". It comes in the same message as the exact\ntext it would post, shown in full above the question, with a plain line that nothing is posted until you\napprove. This holds for every approval to write, save, publish or post the review's report, whatever the\ntarget (a PR or ticket comment, notes in a document, or a findings report saved in the work folder). A\nsummary table, a list of findings or a description of the text is not the text: show the report exactly as\nit will be written, in full, in that same message, and say that nothing is written or posted until the\nuser approves. Never ask \"save this report?\" first and show the text only when the user asks.\nForm: `Review -- question 1 of 1 -- importance: high`, **Why I ask**: nothing is posted without\nyour approval, **My recommendation**, numbered options: approve and publish / edit the text / choose a\ndifferent delivery / do not publish, and the approval closing line `Or answer in your own words, or ask me to explain.`\nGive the recommendation's reason too: when no destination was requested, recommend keeping the findings\nin the conversation because that delivers the requested review without creating an additional report.\nRecord it with\n`writeback-state.sh --ask --category Review --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-review` before it is shown, and the reply with\n`--answer --id Q<n> --state Answered --value '<the answer>' --applied-to 'publish'`.\nNothing is written or posted to any target until they approve.\n\n**Advance:** ASK → [State: PUBLISH]."
       }
     },
     {
       "id": "n7",
       "order": 7,
       "name": "PUBLISH",
-      "label": "only on approval",
+      "label": "PUBLISH",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 205,
-        "endLine": 217,
+        "startLine": 224,
+        "endLine": 228,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste; when the\nuser must choose where it goes, ask that as one question in the same form, recorded with `--ask` before\nit is shown and `--answer` after, recommending the paste.\nPublishing is optional and never blocks DONE."
+        "excerpt": "## State: PUBLISH\n\nFirst record the user's reply on the approval's existing id with `--answer`, including a decline.\nA decline is `Answered` with the user's decision, not an unanswered question. Do this before the\nacknowledgment or DONE, even when there is nothing to publish."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 205,
-        "endLine": 219,
+        "startLine": 224,
+        "endLine": 250,
         "sourceKind": "skill",
-        "excerpt": "## State: PUBLISH  (only on approval)\n\nIf the user did not approve publishing, nothing is posted: the step goes on to DONE. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste; when the\nuser must choose where it goes, ask that as one question in the same form, recorded with `--ask` before\nit is shown and `--answer` after, recommending the paste.\nPublishing is optional and never blocks DONE.\n\n**Advance:** CHAIN → [State: DONE]."
+        "excerpt": "## State: PUBLISH\n\nFirst record the user's reply on the approval's existing id with `--answer`, including a decline.\nA decline is `Answered` with the user's decision, not an unanswered question. Do this before the\nacknowledgment or DONE, even when there is nothing to publish.\n\nIf the user did not approve publishing, nothing is posted or saved. The approval just given covers the exact\ntext shown at PRESENT-FINDINGS and no other: any other write, save or post (a different target, edited text)\nis asked again with its exact text in full, as there. Otherwise\ndeliver by the method appropriate to the target, chosen by judgment (not a hardcoded\nenum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment\n[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at\nPRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again\nat its own CONFIRM before posting); a findings report in the work folder (+ optional\ninline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /\nno catalogued connector / unknown target -> present the exact text for the human to paste; when the\nuser must choose where it goes, ask that as one question in the same form, with the exact text in full in the\nsame message, recorded with `--ask` before it is shown and `--answer` after, recommending the paste.\nPublishing itself is optional: declining it continues to DONE. The PRESENT-FINDINGS decision is still\nrequired when no external destination was named. Wait for that answer; do not skip the question or\nmark the work Completed in the turn that first presents the findings.\n\nWhen findings remain, end with one plain line that names `/aid-fix` as the way to fix them, for example\n\"N issues found -- run `/aid-fix` to address them.\" It is a statement, not a question: it carries no\nrecommendation to fix and no option, and this skill changes nothing itself.\n\n**Advance:** CHAIN → [State: DONE]."
       }
     },
     {
@@ -174,15 +171,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 223,
-        "endLine": 225,
+        "startLine": 254,
+        "endLine": 256,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 223,
-        "endLine": 227,
+        "startLine": 254,
+        "endLine": 258,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.\n\n**Advance:** HALT."
       }
@@ -263,14 +260,28 @@
       "from": "n5",
       "to": "n4",
       "kind": "loop-back",
-      "condition": "when it is not clean and fewer than 3 cycles have run",
+      "condition": "when the answer read on re-entry chose the findings as they stand; when it is…",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 179,
-        "endLine": 179,
+        "startLine": 188,
+        "endLine": 188,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean, or when the answer read on re-entry chose the findings as they stand; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n5",
+      "kind": "branch",
+      "condition": "when the answer read on re-entry chose one more cycle; when the circuit-breaker…",
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-review/SKILL.md",
+        "startLine": 188,
+        "endLine": 188,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean, or when the answer read on re-entry chose the findings as they stand; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
@@ -281,10 +292,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 179,
-        "endLine": 179,
+        "startLine": 188,
+        "endLine": 188,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run; HALT when the circuit-breaker has blocked the work."
+        "excerpt": "**Advance:** CHAIN → [State: PRESENT-FINDINGS] when the grade is clean, or when the answer read on re-entry chose the findings as they stand; CHAIN → [State: REVIEW] when it is not clean and fewer than 3 cycles have run, or when the answer read on re-entry chose one more cycle; ASK → [State: VERIFY] when the circuit-breaker has blocked the work (the question above stays open)."
       }
     },
     {
@@ -295,8 +306,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 201,
-        "endLine": 201,
+        "startLine": 220,
+        "endLine": 220,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK → [State: PUBLISH]."
       }
@@ -309,8 +320,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 219,
-        "endLine": 219,
+        "startLine": 250,
+        "endLine": 250,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → [State: DONE]."
       }
@@ -320,7 +331,6 @@
     "n1"
   ],
   "exits": [
-    "n5",
     "n8"
   ],
   "sources": [

@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 190,
-        "endLine": 190,
+        "startLine": 187,
+        "endLine": 187,
         "sourceKind": "skill",
         "excerpt": "| OBSERVE | `references/state-observe.md` | `aid-researcher` | CHAIN → CLASSIFY |"
       },
       "detail": {
         "file": "canonical/skills/aid-monitor/references/state-observe.md",
         "startLine": 1,
-        "endLine": 51,
+        "endLine": 49,
         "sourceKind": "worker",
-        "excerpt": "# State: OBSERVE\n\nNo prior run context; pull telemetry signals and correlate against baselines.\n\n### Step 1: Observe\n\nPull data from configured sources. Scope the observation window:\n- **Post-deploy:** last deploy → now\n- **Scheduled:** last monitor run → now\n- **On-demand:** user-specified window\n\n**No data source available.** When no configured source can be reached (none catalogued, or every pull\nfailed), do not list what is needed. Ask ONE question, in the form of\n`.aid/runtime/templates/question-protocol.md`, in plain text:\n\n```text\nMonitoring -- question 1 of 1 -- importance: high\nWhich data source should I observe: {the closest candidate found in `.aid/connectors/INDEX.md` or the host tool}, or an export you give me?\nWhy I ask: there is no data to observe without a source.\nMy recommendation: {the candidate and why, or the export if none was found}\n  1. {the candidate} (recommended)\n  2. An export or log you provide\nOr answer in your own words, ask me to explain, or skip this question.\n```\n\nRecord it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after. A skipped question ends the observation with the finding `no data source`; nothing is invented.\n\n▶ telemetry pull starting (~30 s–2 min per source per `.aid/runtime/templates/rough-time-hints.md`)\nFor each data source, capture:\n- Raw signals (errors, latency spikes, failures, ticket clusters)\n- Metadata (timestamps, affected users/endpoints, frequency)\n- Trends vs. baseline (is this new? worsening? stable?)\n✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}\n\n▶ anomaly detection starting (~10–30 s)\n**Anomaly detection — compare to baseline:**\n- Error rate changes (new error types, rate spikes)\n- Performance degradation (latency, throughput)\n- Test instability (new flaky tests, persistent failures)\n- Behavioral anomalies (unexpected patterns in usage or data)\n\n**Correlation — connect signals:**\n- \"Error spike started 23 min after deploy of package-002\"\n- \"Performance drop coincides with new region traffic\"\n- Correlation narrows investigation scope — don't just list, connect.\n\nUse KB to filter: known conditions, expected variation, already-documented issues.\n✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}\n\n**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline).\n"
+        "excerpt": "# State: OBSERVE\n\nNo prior run context; pull telemetry signals and correlate against baselines.\n\n### Step 1: Observe\n\nPull data from configured sources. Scope the observation window:\n- **Post-deploy:** last deploy → now\n- **Scheduled:** last monitor run → now\n- **On-demand:** user-specified window\n\n**No data source available (none catalogued, or every pull failed): you MUST ask this question before the run ends.** Do not list what is needed, do not end the turn without it, and do not leave an open request for a pointer, a log or a finding number. It is one question, in the form of `.aid/runtime/templates/question-protocol.md`, in plain text:\n\n```text\nMonitoring -- question 1 of 1 -- importance: high\nWhich data source should I observe: {the closest candidate found in `.aid/connectors/INDEX.md` or the host tool}, or an export you give me?\nWhy I ask: there is no data to observe without a source.\nMy recommendation: {the candidate and why, or the export if none was found}\n  1. {the candidate} (recommended)\n  2. An export or log you provide\nOr answer in your own words, ask me to explain, or skip this question.\n```\n\nRecord it with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Monitoring --impact High --context '<the question>' --suggested '<the recommendation>' --asked-by aid-monitor` before it is shown (it prints the id), and the reply with `--answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'data source'` right after; with no work open, add `--design .aid/design/untitled-<YYYYMMDD-HHMMSS>.md` to both (`question-protocol.md` § Where each record lives). This applies to follow-ups too: record \"I don't know\" or a skip as `Skipped` before reporting a blocker or ending. A skipped question ends the observation with the finding `no data source`; nothing is invented.\n\n▶ telemetry pull starting (~30 s–2 min per source per `.aid/runtime/templates/rough-time-hints.md`)\nFor each data source, capture:\n- Raw signals (errors, latency spikes, failures, ticket clusters)\n- Metadata (timestamps, affected users/endpoints, frequency)\n- Trends vs. baseline (is this new? worsening? stable?)\n✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}\n\n▶ anomaly detection starting (~10–30 s)\n**Anomaly detection — compare to baseline:**\n- Error rate changes (new error types, rate spikes)\n- Performance degradation (latency, throughput)\n- Test instability (new flaky tests, persistent failures)\n- Behavioral anomalies (unexpected patterns in usage or data)\n\n**Correlation — connect signals:**\n- \"Error spike started 23 min after deploy of package-002\"\n- \"Performance drop coincides with new region traffic\"\n- Correlation narrows investigation scope — don't just list, connect.\n\nUse KB to filter: known conditions, expected variation, already-documented issues.\n✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}\n\n**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline).\n"
       }
     },
     {
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 191,
-        "endLine": 191,
+        "startLine": 188,
+        "endLine": 188,
         "sourceKind": "skill",
         "excerpt": "| CLASSIFY | `references/state-classify.md` | `aid-researcher` | CHAIN → ROUTE |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 192,
-        "endLine": 192,
+        "startLine": 189,
+        "endLine": 189,
         "sourceKind": "skill",
         "excerpt": "| ROUTE | `references/state-route.md` | `inline` (main conversation) | HALT |"
       },
@@ -71,7 +71,7 @@
         "startLine": 1,
         "endLine": 74,
         "sourceKind": "worker",
-        "excerpt": "# State: ROUTE\n\nAll findings are classified; propose and execute routing actions per finding classification.\nROUTE runs inline in the main conversation: no sub-agent. Each bug and change request goes back as a plain request.\n\n### Step 4: Propose Actions\n\nPresent findings to the user with proposed routing:\n\n```\n📊 Monitor Report — work-001 (since 2026-03-20)\n\nFinding 1: [CRITICAL] [BUG] Null currency causes 500 error\n  Evidence: 342 errors in 48h, payment module, started after package-002\n  Root cause: PaymentService.Process() missing null validation\n  Patch scope: PaymentService.cs + PaymentServiceTests.cs\n  → Proposed: Fix request\n\nFinding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone\n  Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC\n  → Proposed: New-work request\n\nFinding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint\n  Evidence: 3 occurrences in 7 days, all self-resolved < 30s\n  → Proposed: Document, no action\n\n```\n\nThen ask one approval question in the question form (`.aid/runtime/templates/question-protocol.md`),\nrecorded with `--ask` before it is shown, the reply with `--answer`:\n\n```text\nRouting -- question 1 of 1 -- importance: high\nShall I route the findings as proposed above?\nWhy I ask: routing sends each finding back as a request, so you approve it first.\nMy recommendation: yes -- each route follows the finding's classification and evidence.\n  1. Approve all routes (recommended)\n  2. Adjust the routing for specific findings\nOr answer in your own words, ask me to explain, or decline.\n```\n\n### Step 5: Act\n\nFor each approved finding:\n\n**BUG → fix request:**\n- Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)\n- Hand the diagnosis — root cause, patch scope, test requirements — back as a fix request, in plain words, through `rules.md` § Handling a request. The intake sizes it as a bug fix with a clear problem, which runs Specification → Planning → Building → CI (`/aid-orchestrate` `references/size-and-route.md` § 1), and the diagnosis goes with it so nothing is investigated twice. Missing details are asked in Specification. (→ optional `aid-deploy`)\n\n**CHANGE REQUEST → new-work request:**\n- Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).\n- Hand the desired change and its evidence back as a new-work request, in plain words, through `rules.md` § Handling a request. The intake (`/aid-orchestrate`) checks the reading against the Knowledge Base and the code, sizes the work and picks its phases.\n\n**INFRASTRUCTURE → escalate:**\n- Document in the monitor run summary with recommended ops action\n- Not in AID's scope — the user handles this\n\n**NO ACTION → close:**\n- Document justification in the monitor run summary → Resolved Findings list\n\n**Update known-issues.md** if findings reveal new known issues affecting other features.\n\n### Step 6: Update State\n\nPrint monitor run summary: date, window, finding count, routing summary.\n\nIf a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:\nconsider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,\nnever auto-invoked; silent (no output) if no issue-tracker connector is catalogued.\n\nThe approval question of Step 4 pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. Steps 5 and 6 run once the user has approved or adjusted the routes. The fix and new-work requests of Step 5 go back to `/aid-orchestrate`, the intake, as plain requests.\n\n**Advance:** **HALT**.\n"
+        "excerpt": "# State: ROUTE\n\nAll findings are classified; propose and execute routing actions per finding classification.\nROUTE runs inline in the main conversation: no sub-agent. Each bug and change request goes back as a plain request.\n\n### Step 4: Propose Actions\n\nPresent findings to the user with proposed routing:\n\n```\n📊 Monitor Report — work-001 (since 2026-03-20)\n\nFinding 1: [CRITICAL] [BUG] Null currency causes 500 error\n  Evidence: 342 errors in 48h, payment module, started after package-002\n  Root cause: PaymentService.Process() missing null validation\n  Patch scope: PaymentService.cs + PaymentServiceTests.cs\n  → Proposed: Fix request\n\nFinding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone\n  Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC\n  → Proposed: New-work request\n\nFinding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint\n  Evidence: 3 occurrences in 7 days, all self-resolved < 30s\n  → Proposed: Document, no action\n\n```\n\nThen ask one approval question in the question form (`.aid/runtime/templates/question-protocol.md`),\nrecorded with `--ask` before it is shown, the reply with `--answer`:\n\n```text\nRouting -- question 1 of 1 -- importance: high\nShall I route the findings as proposed above?\nWhy I ask: routing sends each finding back as a request, so you approve it first.\nMy recommendation: yes -- each route follows the finding's classification and evidence.\n  1. Approve all routes (recommended)\n  2. Adjust the routing for specific findings\nOr answer in your own words, or ask me to explain.\n```\n\n### Step 5: Act\n\nFor each approved finding:\n\n**BUG → fix request:**\n- Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)\n- Hand the diagnosis — root cause, patch scope, test requirements — back as a fix request, in plain words, through `rules.md` § Handling a request. The intake sizes it as a bug fix with a clear problem, which runs Specification → Planning → Building → CI (`/aid-orchestrate` `references/size-and-route.md` § 1), and the diagnosis goes with it so nothing is investigated twice. Missing details are asked in Specification. (→ optional `aid-deploy`)\n\n**CHANGE REQUEST → new-work request:**\n- Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).\n- Hand the desired change and its evidence back as a new-work request, in plain words, through `rules.md` § Handling a request. The intake (`/aid-orchestrate`) checks the reading against the Knowledge Base and the code, sizes the work and picks its phases.\n\n**INFRASTRUCTURE → escalate:**\n- Document in the monitor run summary with recommended ops action\n- Not in AID's scope — the user handles this\n\n**NO ACTION → close:**\n- Document justification in the monitor run summary → Resolved Findings list\n\n**Update known-issues.md** if findings reveal new known issues affecting other features.\n\n### Step 6: Update State\n\nPrint monitor run summary: date, window, finding count, routing summary.\n\nIf a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:\nconsider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,\nnever auto-invoked; silent (no output) if no issue-tracker connector is catalogued.\n\nThe approval question of Step 4 pauses this step where it stands, as `.aid/runtime/templates/skill-steps.md` part 3 sets: the step stays saved, `--step` brings its `--detail` up to date with what is done and which question is open, `--ask` records the question, and `--pipeline` sets the lifecycle `Paused-Awaiting-Input` and the pause reason before the question is asked. Once it is answered, `--answer` records the answer and `--pipeline` sets the lifecycle back to `Running`. Steps 5 and 6 run once the user has approved or adjusted the routes. The fix and new-work requests of Step 5 go back to `/aid-orchestrate`, the intake, as plain requests.\n\n**Advance:** **HALT**.\n"
       }
     },
     {
@@ -86,8 +86,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 193,
-        "endLine": 193,
+        "startLine": 190,
+        "endLine": 190,
         "sourceKind": "skill",
         "excerpt": "| DONE | _(inline — see Re-run below)_ | `inline` | CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise |"
       },
@@ -103,8 +103,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-monitor/references/state-observe.md",
-        "startLine": 50,
-        "endLine": 50,
+        "startLine": 48,
+        "endLine": 48,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline)."
       }
@@ -131,8 +131,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",
-        "startLine": 193,
-        "endLine": 193,
+        "startLine": 190,
+        "endLine": 190,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → OBSERVE when the user asks for a new observation; HALT otherwise"
       }

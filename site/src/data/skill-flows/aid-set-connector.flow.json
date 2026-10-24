@@ -8,8 +8,8 @@
     {
       "id": "n1",
       "order": 1,
-      "name": "STEP-0",
-      "label": "Validate arguments",
+      "name": "STEP-0A",
+      "label": "Offer an open connection question first",
       "kind": "entry",
       "terminal": null,
       "provenance": {
@@ -17,31 +17,31 @@
         "startLine": 36,
         "endLine": 36,
         "sourceKind": "skill",
-        "excerpt": "### Step 0: Validate arguments"
+        "excerpt": "### Step 0a: Offer an open connection question first"
       },
       "detail": null
     },
     {
       "id": "n2",
       "order": 2,
-      "name": "STEP-1",
-      "label": "Resolve <tool> → descriptor stem; read the preset catalog",
+      "name": "STEP-0",
+      "label": "Validate arguments",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 62,
-        "endLine": 62,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
-        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
+        "excerpt": "### Step 0: Validate arguments"
       },
       "detail": null
     },
     {
       "id": "n3",
       "order": 3,
-      "name": "STEP-2",
-      "label": "Branch on <type> — ask the config question-set",
+      "name": "STEP-1",
+      "label": "Resolve <tool> → descriptor stem; read the preset catalog",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -49,61 +49,77 @@
         "startLine": 87,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
+        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
       },
       "detail": null
     },
     {
       "id": "n4",
       "order": 4,
-      "name": "STEP-3",
-      "label": "Classify — ADD vs UPDATE (single stem only)",
+      "name": "STEP-2",
+      "label": "Branch on <type> — ask the config question-set",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 112,
+        "endLine": 112,
         "sourceKind": "skill",
-        "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
+        "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
       },
       "detail": null
     },
     {
       "id": "n5",
       "order": 5,
-      "name": "STEP-4",
-      "label": "Ensure the .secrets/ gitignore precondition — BEFORE any…",
+      "name": "STEP-3",
+      "label": "Classify — ADD vs UPDATE (single stem only)",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 152,
-        "endLine": 152,
+        "startLine": 177,
+        "endLine": 177,
         "sourceKind": "skill",
-        "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
+        "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       },
       "detail": null
     },
     {
       "id": "n6",
       "order": 6,
-      "name": "STEP-5",
-      "label": "Author the descriptor + reconcile the secret (set-skill…",
+      "name": "STEP-4",
+      "label": "Ensure the .secrets/ gitignore precondition — BEFORE any…",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 199,
+        "endLine": 199,
         "sourceKind": "skill",
-        "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
+        "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       },
       "detail": null
     },
     {
       "id": "n7",
       "order": 7,
+      "name": "STEP-5",
+      "label": "Author the descriptor + reconcile the secret (set-skill…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-set-connector/SKILL.md",
+        "startLine": 221,
+        "endLine": 221,
+        "sourceKind": "skill",
+        "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
+      },
+      "detail": null
+    },
+    {
+      "id": "n8",
+      "order": 8,
       "name": "STEP-6",
       "label": "Single-stem reconcile → rebuild INDEX.md",
       "kind": "exit",
@@ -113,8 +129,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 218,
-        "endLine": 218,
+        "startLine": 265,
+        "endLine": 265,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       },
@@ -130,10 +146,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 62,
-        "endLine": 62,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
-        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
+        "excerpt": "### Step 0: Validate arguments"
       }
     },
     {
@@ -147,7 +163,7 @@
         "startLine": 87,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
+        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
       }
     },
     {
@@ -158,10 +174,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 112,
+        "endLine": 112,
         "sourceKind": "skill",
-        "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
+        "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
       }
     },
     {
@@ -172,10 +188,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 152,
-        "endLine": 152,
+        "startLine": 177,
+        "endLine": 177,
         "sourceKind": "skill",
-        "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
+        "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       }
     },
     {
@@ -186,10 +202,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 199,
+        "endLine": 199,
         "sourceKind": "skill",
-        "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
+        "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       }
     },
     {
@@ -200,8 +216,22 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 218,
-        "endLine": 218,
+        "startLine": 221,
+        "endLine": 221,
+        "sourceKind": "skill",
+        "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-set-connector/SKILL.md",
+        "startLine": 265,
+        "endLine": 265,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       }
@@ -211,7 +241,7 @@
     "n1"
   ],
   "exits": [
-    "n7"
+    "n8"
   ],
   "sources": [
     "canonical/skills/aid-set-connector/SKILL.md"
