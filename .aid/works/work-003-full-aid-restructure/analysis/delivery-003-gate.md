@@ -1,10 +1,12 @@
 # Delivery-003 gate status
 
-**Current outcome: not passed. Delivery grade: Pending.** Q180, Q186 and Q189
-require all ten selected conversation samples to succeed three times each. The
-historical Q166 known-issue exception below cannot close this gate.
+**Current outcome: not passed. Delivery grade: Pending.** Q192 (2026-10-24) moves the gate to Claude Code:
+the ten selected samples must each pass three times, with the agent, the simulated user and the judge on
+Claude Code (Q180, Q186 and Q189 keep the 3-of-3 bar and a full check per round). The Codex batch below is
+known issue KI-008, re-checked at delivery-014. The historical Q166 known-issue exception cannot close this
+gate.
 
-At the 2026-10-24T21:40Z evidence snapshot:
+Codex evidence at the 2026-10-24T21:40Z snapshot:
 
 - The last strict batch failed/incomplete after 14 passes. Later focused runs
   exposed real scope-ordering, record/display and failed-write retry violations.

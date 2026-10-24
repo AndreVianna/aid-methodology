@@ -93,3 +93,13 @@
 - **See also:** backlog item W7-14 (hooks): a pre-approval guard that blocks source edits until the user agrees is the mechanical fix for the compliance-bound cases. The samples' edit guards see only the Edit and Write tool calls of the main agent, not edits made through the shell or by a dispatched sub-agent, so "no edit before approval" is judged, not checked mechanically, until a pre-approval hook exists (backlog W7-14).
 - **Gate run (after the resync):** 22 of 48 runs pass; 001-04, 001-05, 001-06, 001-12 and 001-16 pass 3 of 3. 001-03 (3/3 to 1/3) and 001-15 (3/3 to 2/3) fell back, and 001-09 fell to 0/3. Per-sample results in `analysis/delivery-001-gate.md` (work folder). 001-03's new failure asks the workflow approval and the clarifying question in one turn.
 - **Status:** Open. Re-checked at the full integration run at delivery-014's gate. Does not block delivery-001 (Q149).
+
+## KI-008: Feature 002 samples do not yet pass on the Codex host
+
+- **Type:** Gap
+- **Severity:** Medium
+- **Affects:** Feature 002 — Questions in One Form, Recorded
+- **Source:** `tests/conversation/run.py` Codex adapter; `analysis/delivery-003-gate.md` (work folder) § Delivery-003 gate status
+- **Description:** The strict Codex batch (ten samples, three runs, agent, simulated user and judge on Codex) has never passed: real failures remain in scope ordering, a missing record folder, a retried failed write, and a shown question that differs from its record. A Codex hook cannot guard these in the runner, because every run starts in a fresh untrusted folder and Codex skips untrusted project hooks. Under Q192 the delivery-003 gate is decided on Claude Code instead.
+- **See also:** Q190, Q191, Q192; `analysis/delivery-003-codex-guard-proposal.md` (work folder)
+- **Status:** Open. Re-checked at the full integration run at delivery-014's gate. Does not block delivery-003 (Q192).
