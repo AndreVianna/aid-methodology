@@ -55,6 +55,27 @@ Claude Code handoff. That pause supersedes active execution, not Q190's scope
 approval. See `analysis/claude-code-handoff.md` under **Owner instruction and stop
 boundary**; delivery-003 and the strict acceptance bar remain open.
 
+### Claude Code resumption (2026-10-24)
+
+**Q190 step 1, offline finding: a project hook cannot run in the unchanged acceptance runs.** The official
+hooks contract (<https://learn.chatgpt.com/docs/hooks>, read 2026-10-24) says project-local hooks "load only
+when the project `.codex/` layer is trusted", and that a hook is skipped until its current hash is trusted
+through `/hooks` or `--dangerously-bypass-hook-trust`. The runner's Codex adapter
+(`tests/conversation/run.py`) starts every run in a fresh fixture with `--ignore-user-config` and no trust
+flag. The proposal forbids bypassing or preseeding trust, and the acceptance profile stays unchanged, so an
+installed AID hook would be skipped in all 30 runs. This is read from the contract and the runner, not
+measured: one Codex call in a fresh untrusted fixture would measure it. Until then nothing is integrated.
+
+**Claude-host re-run of the nine samples, after fix round 5 (`5aa44139d`), on the maintainer's machine.**
+Supplementary evidence only: the summary lines and open ledger rows were pasted into the session; the raw
+logs stay on that machine.
+
+| Sample | Result | Failure |
+|---|---|---|
+| 002-01, 002-02, 002-03, 002-04, 002-18, 002-19 | 3/3 each | |
+| 002-14, 002-16 | 2/3 each | Not a judgement: the agent or judge call stopped on the account's weekly usage limit (HTTP 429) |
+| 002-17 | 2/3 | Run 2, EO-2: findings not listed most serious first (a Medium after two Lows). `aid-review` already asks for severity-ranked findings, so no source change |
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.

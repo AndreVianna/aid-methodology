@@ -118,9 +118,9 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-24T23:13:45Z'
+updated: '2026-10-24T23:20:46Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Owner requested pause for weekly usage; save and push current branch, then hand off to Claude Code'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -2201,7 +2201,18 @@ qa:
     applied_to: 'Approved bounded Codex-native safeguard feasibility, then only proven integration under unchanged strict30 acceptance; no argument rewriting, failed-writer repair/retry, hidden evidence, push or merge'
     covers: 'analysis/delivery-003-codex-guard-proposal.md Proposed work; exact-host feasibility then only proven checks; original events retained; default profile and strict10x3 unchanged; no automatic writer repair/retry, no push/merge'
     commit: '390582cbd8dc329c8c0d6af1abd5444fbda33424'
+  - id: Q191
+    category: 'Delivery safeguards'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'May I use one small Codex call to check whether a Codex hook can run in the test setup?'
+    suggested: '1: one small Codex call in a fresh test folder; if the hook is skipped there, as the docs say, the safeguard plan stops for this gate'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Paused per owner weekly-limit request; save push succeeded to origin/work-003 through a1cbd25005c1ffa82c44abfb7cb9a52e7b1eeb86 (prior remote86b797a1e). Full tracked Claude handoff analysis/claude-code-handoff.md plus19-file noncredential evidence packet published. Native TUI closed, disposable auth removed, all agents completed, automation deleted, no new tests/models. Q190 approved scope retained but execution and Codex budget paused; strict30/CI/delivery completion unclaimed. Final bookkeeping receipt commit to be pushed, then no more work until owner/Claude resumes.'
+step_detail: 'Q190 step 1 offline: Codex hook trust vs the unchanged acceptance profile; record the Claude-host 9x3 re-run'
