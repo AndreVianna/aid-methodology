@@ -2212,6 +2212,17 @@ qa:
     answer: --
     answered_by: --
     applied_to: --
+  - id: Q192
+    category: 'Delivery safeguards'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'Which test setup should decide whether delivery-003 passes, now that we are back in Claude Code?'
+    suggested: '1: Claude runs all three roles, 10 samples x 3 runs; the Codex result becomes a known issue re-checked at delivery-014'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
