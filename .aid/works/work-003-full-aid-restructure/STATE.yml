@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-24T21:39:27Z'
+updated: '2026-10-24T21:40:49Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Delivery-003 local preparation complete; awaiting owner decision on bounded Codex safeguards under unchanged strict30 gate'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -2188,7 +2188,19 @@ qa:
     answer: '2 (maintainer): keep Q180 (3/3 on all 9), more rounds, each with a full 9x3 check'
     answered_by: 'Claude'
     applied_to: --
+  - id: Q190
+    category: 'Delivery safeguards'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'May I test automatic safeguards in Codex and add only checks proven to enforce the existing rules?'
+    suggested: 'Yes—approve the reviewed bounded plan: prove the host behavior first, preserve the original evidence, and keep all 30 fresh passes mandatory.'
+    answer: --
+    answered_by: --
+    applied_to: --
+    covers: 'analysis/delivery-003-codex-guard-proposal.md Proposed work; exact-host feasibility then only proven checks; original events retained; default profile and strict10x3 unchanged; no automatic writer repair/retry, no push/merge'
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Final independent postcopy verification complete: all4 live baselines exact reviewed captures; originals preserved, rehome/accepted-removal policies unchanged. Current report header verified accurate, Pending delivery and historical costdiff1/81growth retained. Local preparation complete at measured34f54 plus tested generated0af outputs, with canonical178/site2822/parity3513/MAX4coverage11135/13542 passes and baseline refresh; no behavioral or overallG0/CI pass. Committing4 baselines plus report/STATE, then one owner scope question required by interpreted Q183/Q189 boundary. No guard work or push/merge.'
+step_detail: 'Q190 recorded Pending before presentation, exact question/recommendation retained; pipeline Paused-Awaiting-Input for owner Codex guard scope decision. All authorized local preparation concrete and committed fcea6852e: canonical178/site2822/parity3513/actual MAX4 coverage and4 baseline refresh, historical costdiff1 remains explicit. Strict30/actual workflow and future InstallerCI still open; no guard implementation or push/merge. Deleted finish-delivery-003-gate heartbeat successfully because progress now genuinely requires owner reply, preventing repeated wakeups while this approval is pending. Resume by answering sameQ190 through writer, not duplicating it.'
