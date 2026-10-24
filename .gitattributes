@@ -8,6 +8,11 @@
 *.sh   text eol=lf
 *.mjs  text eol=lf
 *.py   text eol=lf
+# Shared payloads are copied and hashed verbatim; match their installed LF policy.
+# Auto detection preserves binary assets within these trees.
+canonical/aid/**    text=auto eol=lf
+canonical/skills/** text=auto eol=lf
+bin/aid text eol=lf
 # Markdown must be LF too: build-kb-index.sh's awk frontmatter parser chokes on
 # CRLF on Linux (intent: blocks parse as "no intent declared"), which broke the
 # kb-hygiene CI check.

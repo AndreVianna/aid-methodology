@@ -421,9 +421,8 @@ run_bash "$HTMLOUT" "$TMP/external-script.html"
 assert_output_contains "$OUT" "S2. Offline render [FAIL]" "PV07a-default an external <script src> fails S2"
 
 # ===========================================================================
-# DEGRADE -- PV19: the C-5 degradation paths. Playwright is genuinely absent
-# in this environment -- the real "Playwright unavailable" SKIP branch is
-# exercised directly (not simulated).
+# DEGRADE -- PV19: exercise the real missing-artifact and missing-Playwright paths.
+# An empty nearest package directory prevents fallback to an ancestor's Playwright.
 # ===========================================================================
 echo ""
 echo "=== DEGRADE (PV19) ==="
@@ -432,13 +431,21 @@ run_node "$VISUALS" "$TMP/does-not-exist.html"
 assert_output_contains "$OUT" "SKIP -- html file not found" "PV19a missing artifact: SKIP with remediation"
 assert_exit_eq "$RC" 0 "PV19a-rc ...and exits 0 (the run continues, per C-5)"
 
-run_node "$VISUALS" "$TMP/gh/summary.html"
+PV19_DIR="$TMP/no-playwright"
+mkdir -p "$PV19_DIR/node_modules/playwright"
+cp "$VISUALS" "$PV19_DIR/validate-visuals.mjs"
+if ! (cd "$PV19_DIR" && node --input-type=module -e \
+    "import('playwright').then(() => process.exit(1), error => process.exit(error.code === 'ERR_MODULE_NOT_FOUND' ? 0 : 2))"); then
+    echo "ERROR: PV19 fixture did not isolate the unavailable Playwright dependency" >&2
+    exit 1
+fi
+run_node "$PV19_DIR/validate-visuals.mjs" "$TMP/gh/summary.html"
 assert_output_contains "$OUT" "SKIP -- Playwright is not installed" "PV19d Playwright genuinely unavailable: SKIP with install remediation (real code path, not simulated)"
 assert_exit_eq "$RC" 0 "PV19d-rc ...and exits 0"
 
 echo "  NEEDS CI: PV16 (non-empty collected-set positive), PV17's dynamic"
 echo "  empty-collection behaviour, and PV18's dynamic T2-overlap proof all"
-echo "  require a real Chromium render. Not reachable here (Playwright not installed)."
+echo "  require a real Chromium render; this suite's guards below are static."
 
 # ===========================================================================
 # STATIC -- PV18 (partial) / PV20: source-level absence proofs, no subject
