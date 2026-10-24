@@ -1,0 +1,798 @@
+{
+  "commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "direct_skip_lines": [
+    {
+      "line": 237,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "SKIP (PS server-spawn): Start-Process -WindowStyle Hidden not supported on this platform (Linux PS)."
+    },
+    {
+      "line": 273,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  SKIP (PS server-spawn PAR005-N03..N05): Start-Process WindowStyle not supported on Linux PS."
+    },
+    {
+      "line": 3244,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  SKIP (PS T-8 server-spawn): Start-Process WindowStyle unsupported on Linux PS."
+    },
+    {
+      "line": 13849,
+      "suite": "tests/canonical/test-release-install-e2e.sh",
+      "text": "--- E2E12: SKIP (PowerShell Fetch-Tarball direct probe runs on the Windows CI runner only; Linux fail-closed coverage = E2E11 bash + E2E07 source) ---"
+    }
+  ],
+  "skipped_assertion_placeholders": [
+    {
+      "line": 241,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M03 PS1 dashboard start python [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 242,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M04 PS1 start python: URL printed [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 243,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M05 Bash<->PS1 exit code parity: start python [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 246,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M08 PS1 second start -> exit 8 [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 247,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M09 PS1 second start: 'already running' message [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 248,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M10 Bash<->PS1 exit code parity: second start [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 251,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M13 PS1 dashboard stop -> exit 0 [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 252,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M14 PS1 stop: 'dashboard stopped.' message [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 253,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M15 Bash<->PS1 exit code parity: stop [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 274,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N03 PS1 --remote no mechanism -> exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 275,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N04 PS1 --remote no mechanism: NOT exposed message [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 276,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 690,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-A07 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball in lib/AidInstallCore.psm1 -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 697,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-B06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 739,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-G06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 744,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-H05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 749,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 3246,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T1-parity expose exit 0 [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 3247,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T1-parity handle shape [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 3248,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T3-parity start --remote exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
+    }
+  ],
+  "all_mentions": [
+    {
+      "line": 237,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "SKIP (PS server-spawn): Start-Process -WindowStyle Hidden not supported on this platform (Linux PS)."
+    },
+    {
+      "line": 238,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  T-1/T-3/T-4 PS server-spawn parity skipped; T-5/T-7 usage/error parity still runs."
+    },
+    {
+      "line": 241,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M03 PS1 dashboard start python [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 242,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M04 PS1 start python: URL printed [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 243,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M05 Bash<->PS1 exit code parity: start python [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 246,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M08 PS1 second start -> exit 8 [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 247,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M09 PS1 second start: 'already running' message [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 248,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M10 Bash<->PS1 exit code parity: second start [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 251,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M13 PS1 dashboard stop -> exit 0 [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 252,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M14 PS1 stop: 'dashboard stopped.' message [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 253,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR023-M15 Bash<->PS1 exit code parity: stop [SKIPPED: Linux PS: Start-Process WindowStyle unsupported]"
+    },
+    {
+      "line": 273,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  SKIP (PS server-spawn PAR005-N03..N05): Start-Process WindowStyle not supported on Linux PS."
+    },
+    {
+      "line": 274,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N03 PS1 --remote no mechanism -> exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 275,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N04 PS1 --remote no mechanism: NOT exposed message [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 276,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 690,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-A07 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball in lib/AidInstallCore.psm1 -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 697,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-B06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 698,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-C01 Bash: 2 bare (fail) + 1 missing-.aid (skip) -> exit 1 (exit 1)"
+    },
+    {
+      "line": 699,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-C02 AC7: Bash missing-.aid project skipped (non-fatal)"
+    },
+    {
+      "line": 703,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-C06 PS1: 2 bare (fail) + 1 missing-.aid (skip) -> exit 1 (exit 1)"
+    },
+    {
+      "line": 704,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-C07 AC7: PS1 missing-.aid project skipped (non-fatal)"
+    },
+    {
+      "line": 708,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-C11 AC8: Bash<->PS1 exit code parity (continue-on-error + skip)"
+    },
+    {
+      "line": 739,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-G06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 744,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-H05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 745,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I01 AC7: Bash 'update all' (1 skip + 1 genuinely-updating project) -> exit 0 (exit 0)"
+    },
+    {
+      "line": 746,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I02 AC7: missing-.aid project skipped (non-fatal)"
+    },
+    {
+      "line": 747,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I03 AC5/AC7: summary shows updated >= 1 AND skipped = 1 in the same run"
+    },
+    {
+      "line": 748,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I04 AC7: the remaining (non-skipped) project genuinely updated to the pinned version"
+    },
+    {
+      "line": 749,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR100-I05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+    },
+    {
+      "line": 825,
+      "suite": "tests/canonical/test-aid-cli-parity.sh",
+      "text": "  PASS: PAR019-A20 Bash: permission-denied dir skipped + scan continued (NFR-1) -- proven by A02's exact-set match"
+    },
+    {
+      "line": 3244,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  SKIP (PS T-8 server-spawn): Start-Process WindowStyle unsupported on Linux PS."
+    },
+    {
+      "line": 3246,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T1-parity expose exit 0 [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 3247,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T1-parity handle shape [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 3248,
+      "suite": "tests/canonical/test-aid-remote.sh",
+      "text": "  PASS: T-8: PS-T3-parity start --remote exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
+    },
+    {
+      "line": 4273,
+      "suite": "tests/canonical/test-chat-node-core.sh",
+      "text": "  PASS: CO17 a gap older than the grace period releases the successor and records the skip"
+    },
+    {
+      "line": 4278,
+      "suite": "tests/canonical/test-chat-node-core.sh",
+      "text": "  PASS: CO23 a predecessor arriving after a grace skip is not released, not stalling, and reported as discarded"
+    },
+    {
+      "line": 4917,
+      "suite": "tests/canonical/test-connector-consumption-linkage.sh",
+      "text": "  PASS: CL07 the terminal case (no ticket in the list) is documented as a silent skip"
+    },
+    {
+      "line": 4936,
+      "suite": "tests/canonical/test-connector-consumption-linkage.sh",
+      "text": "  PASS: CL45 non-ticket entries are skipped; the ticket entry after them is picked"
+    },
+    {
+      "line": 5162,
+      "suite": "tests/canonical/test-connector-skills-structural.sh",
+      "text": "  PASS: ST22a state-elicit.md E2 marker table documents SKIPPED"
+    },
+    {
+      "line": 5254,
+      "suite": "tests/canonical/test-contrast-check.sh",
+      "text": "  PASS: CC07 unresolvable vars skipped \u2192 exit 0 (exit 0)"
+    },
+    {
+      "line": 5255,
+      "suite": "tests/canonical/test-contrast-check.sh",
+      "text": "  PASS: CC07b reports skipped pairs"
+    },
+    {
+      "line": 5412,
+      "suite": "tests/canonical/test-conversation-runner.sh",
+      "text": "  PASS: NP06 a no-push that does not skip a long option's operand fails NP05"
+    },
+    {
+      "line": 5479,
+      "suite": "tests/canonical/test-conversation-runner.sh",
+      "text": "  PASS: CX18 an unsigned Codex CLI produces a NOTICE and is skipped"
+    },
+    {
+      "line": 5670,
+      "suite": "tests/canonical/test-coverage-parity.sh",
+      "text": "  PASS: CPG08 ID-prefixed label + [SKIPPED] shim collapse to one key (count 2)"
+    },
+    {
+      "line": 5827,
+      "suite": "tests/canonical/test-cutover-no-dangling.sh",
+      "text": "  PASS: CND13 sanity: the unrelated aid-discover heading-format example still exists (exclusion is narrow, not a blanket skip)"
+    },
+    {
+      "line": 7012,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] When work_dir is not passed, IMPEDIMENT scan is skipped (no crash). ... ok"
+    },
+    {
+      "line": 7256,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Confirm that the producer either exists or the round-trip tests are skipped. ... ok"
+    },
+    {
+      "line": 7932,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Degradation mode 6: kb_baseline absent -> skip. ... ok"
+    },
+    {
+      "line": 7934,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] No resolvable branch in non-git dir -> skip. ... ok"
+    },
+    {
+      "line": 7936,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Degradation: baseline tip_date absent -> skip. ... ok"
+    },
+    {
+      "line": 7938,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Degradation mode 2: branch doesn't exist -> git log fails -> skip. ... ok"
+    },
+    {
+      "line": 7940,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Degradation mode 1: not a git repo -> git fails -> skip. ... ok"
+    },
+    {
+      "line": 7942,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Degradation mode 5: unparseable baseline tip_date -> skip. ... ok"
+    },
+    {
+      "line": 7991,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] kb_baseline absent -> skip freshness -> approved deterministically. ... ok"
+    },
+    {
+      "line": 7993,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] Not a git repo -> git_freshness_check returns 'skip' -> approved. ... ok"
+    },
+    {
+      "line": 8015,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] FF-A3 + FF-A2: baseline present but not a git repo -> skip -> approved. ... ok"
+    },
+    {
+      "line": 8193,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "[unittest] A '#'-led heading is a full-line comment (skipped, no warning); a ... ok"
+    },
+    {
+      "line": 8252,
+      "suite": "tests/canonical/test-dashboard-reader.sh",
+      "text": "  Tests skipped: 0 (counted as passed; the key survives the skip)"
+    },
+    {
+      "line": 8668,
+      "suite": "tests/canonical/test-describe-full-only.sh",
+      "text": "  PASS: DFO21 fixture 'one section Partial' -> D1 opener SKIPPED (fire-once already consumed)"
+    },
+    {
+      "line": 9072,
+      "suite": "tests/canonical/test-doc-set-read.sh",
+      "text": "  PASS: T10b no non-.md filename rows in resolved TSV (fragments are skipped)"
+    },
+    {
+      "line": 10202,
+      "suite": "tests/canonical/test-f010-governance-guards.sh",
+      "text": "  PASS: G06 state-kb-delta.md contains the 'No doc is skipped' AC1 invariant"
+    },
+    {
+      "line": 10283,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL01 pre-migration soft-skip -- exit 0 (exit 0)"
+    },
+    {
+      "line": 10284,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL01 pre-migration soft-skip -- no FM-MISSING"
+    },
+    {
+      "line": 10285,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL01 pre-migration soft-skip -- no FM-INVALID"
+    },
+    {
+      "line": 10286,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL02 meta skip -- exit 0 (exit 0)"
+    },
+    {
+      "line": 10287,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL02 meta skip -- no findings"
+    },
+    {
+      "line": 10288,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL03 generated skip -- exit 0 (exit 0)"
+    },
+    {
+      "line": 10289,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL03 generated skip -- no findings"
+    },
+    {
+      "line": 10334,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL19b AID KB -- the lint printed a checked-count (18 checked, 5 skipped, 0 findings)"
+    },
+    {
+      "line": 10337,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL19c all-skipped root -- lint still exits 0 (this is the hazard) (exit 0)"
+    },
+    {
+      "line": 10338,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL19c all-skipped root -- checked 0 docs, so exit 0 means nothing"
+    },
+    {
+      "line": 10343,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL20b promoted doc pre-migration soft-skip -- exit 0 (exit 0)"
+    },
+    {
+      "line": 10344,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL20b promoted doc pre-migration soft-skip -- no FM-MISSING"
+    },
+    {
+      "line": 10345,
+      "suite": "tests/canonical/test-frontmatter-lint.sh",
+      "text": "  PASS: FL20b promoted doc pre-migration soft-skip -- no FM-INVALID"
+    },
+    {
+      "line": 10456,
+      "suite": "tests/canonical/test-grade-summary.sh",
+      "text": "=== AC5f: html-skeleton.html has skip-link (a11y, shell-consistency) ==="
+    },
+    {
+      "line": 10457,
+      "suite": "tests/canonical/test-grade-summary.sh",
+      "text": "  PASS: AC5f: html-skeleton.html has skip-link"
+    },
+    {
+      "line": 10634,
+      "suite": "tests/canonical/test-guardrails-d012.sh",
+      "text": "=== 5b-e: html-skeleton.html has skip-link (a11y) ==="
+    },
+    {
+      "line": 10635,
+      "suite": "tests/canonical/test-guardrails-d012.sh",
+      "text": "  PASS: 5b-e html-skeleton.html has skip-link (a11y)"
+    },
+    {
+      "line": 11126,
+      "suite": "tests/canonical/test-housekeep-state.sh",
+      "text": "--- Unit 13: --resume row 4 \u2014 KB skipped, Summary = \u2014 \u2192 SUMMARY-DELTA"
+    },
+    {
+      "line": 11127,
+      "suite": "tests/canonical/test-housekeep-state.sh",
+      "text": "  PASS: T13 resume row4 skipped+dash"
+    },
+    {
+      "line": 11130,
+      "suite": "tests/canonical/test-housekeep-state.sh",
+      "text": "--- Unit 15: --resume row 5 \u2014 KB+Summary skipped, Cleanup = stalled \u2192 CLEANUP"
+    },
+    {
+      "line": 11132,
+      "suite": "tests/canonical/test-housekeep-state.sh",
+      "text": "--- Unit 16: --resume row 6 \u2014 all passed/skipped, State = DONE \u2192 DONE"
+    },
+    {
+      "line": 11199,
+      "suite": "tests/canonical/test-housekeep-workfolder-safety.sh",
+      "text": "=== Unit 10: gh absent \u2192 SKIP gh-PR path (ancestry fallback used) ==="
+    },
+    {
+      "line": 11398,
+      "suite": "tests/canonical/test-install-provisioning.sh",
+      "text": "  PASS: CP2c nothing skipped (skip-on-diff removed)"
+    },
+    {
+      "line": 11654,
+      "suite": "tests/canonical/test-kb-forward-authored-marker.sh",
+      "text": "  PASS: FL02 forward-authored missing objective -- exit nonzero (not skipped) (exit 1)"
+    },
+    {
+      "line": 11655,
+      "suite": "tests/canonical/test-kb-forward-authored-marker.sh",
+      "text": "  PASS: FL02 forward-authored missing objective -- [FM-MISSING] emitted (linted, not skipped)"
+    },
+    {
+      "line": 11829,
+      "suite": "tests/canonical/test-kb-scanner-scope.sh",
+      "text": "  PASS: task-016 build-project-index.sh install-tree skip list contains .agents"
+    },
+    {
+      "line": 11830,
+      "suite": "tests/canonical/test-kb-scanner-scope.sh",
+      "text": "  PASS: task-016 harvest-coined-terms.sh install-tree skip list contains .agents"
+    },
+    {
+      "line": 12266,
+      "suite": "tests/canonical/test-migrate-kb-frontmatter.sh",
+      "text": "=== MF01: scope selection (in-scope vs skipped) ==="
+    },
+    {
+      "line": 12273,
+      "suite": "tests/canonical/test-migrate-kb-frontmatter.sh",
+      "text": "  PASS: MF01-07 meta.md skipped -- absent from worksheet"
+    },
+    {
+      "line": 12274,
+      "suite": "tests/canonical/test-migrate-kb-frontmatter.sh",
+      "text": "  PASS: MF01-08 generated.md skipped -- absent from worksheet"
+    },
+    {
+      "line": 12334,
+      "suite": "tests/canonical/test-migrate-kb-frontmatter.sh",
+      "text": "=== MF11: intent: retire ordering (degrade-safe -- empty objective/summary skipped) ==="
+    },
+    {
+      "line": 12335,
+      "suite": "tests/canonical/test-migrate-kb-frontmatter.sh",
+      "text": "  PASS: MF11-01 --apply with empty objective/summary exits 0 (degrade-safe skip) (exit 0)"
+    },
+    {
+      "line": 13158,
+      "suite": "tests/canonical/test-question-form-hook.sh",
+      "text": "  PASS: QF-25a a go-ahead with the skip closing line blocks"
+    },
+    {
+      "line": 13160,
+      "suite": "tests/canonical/test-question-form-hook.sh",
+      "text": "  PASS: QF-25c a plain question keeps the skip closing line"
+    },
+    {
+      "line": 13188,
+      "suite": "tests/canonical/test-question-form-hook.sh",
+      "text": "  PASS: QF-13a a skipped question offered again with the same text passes"
+    },
+    {
+      "line": 13247,
+      "suite": "tests/canonical/test-question-form-hook.sh",
+      "text": "  PASS: QF-23d a re-offered skipped question with the same text still passes"
+    },
+    {
+      "line": 13248,
+      "suite": "tests/canonical/test-question-form-hook.sh",
+      "text": "  PASS: QF-23e a new question under a category that holds a Skipped entry blocks"
+    },
+    {
+      "line": 13395,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06-pre Q9 SKIPPED -- entire registry tree byte-for-byte unchanged (hash-of-hashes over every file)"
+    },
+    {
+      "line": 13396,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06a Q9 SKIPPED -- aid-managed descriptor (api) present and unchanged"
+    },
+    {
+      "line": 13397,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06b Q9 SKIPPED -- aid-managed secret (.secrets/api) present and unchanged"
+    },
+    {
+      "line": 13398,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06c Q9 SKIPPED -- tool-managed descriptor (mcp-tool) present and unchanged"
+    },
+    {
+      "line": 13399,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06d Q9 SKIPPED -- persisted set P unchanged (no purge, no delete)"
+    },
+    {
+      "line": 13400,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06e Q9 SKIPPED -- INDEX.md sha256 unchanged (not rebuilt)"
+    },
+    {
+      "line": 13401,
+      "suite": "tests/canonical/test-reconcile-scenarios.sh",
+      "text": "  PASS: RS06f contrast -- DECLARED-EMPTY over the SAME starting registry removes every descriptor (SKIPPED preserves, DECLARED-EMPTY empties)"
+    },
+    {
+      "line": 13849,
+      "suite": "tests/canonical/test-release-install-e2e.sh",
+      "text": "--- E2E12: SKIP (PowerShell Fetch-Tarball direct probe runs on the Windows CI runner only; Linux fail-closed coverage = E2E11 bash + E2E07 source) ---"
+    },
+    {
+      "line": 14838,
+      "suite": "tests/canonical/test-skill-steps.sh",
+      "text": "  PASS: SS-15 (b) aid-report: one candidate file is a recommendation, never a reason to skip the question"
+    },
+    {
+      "line": 14853,
+      "suite": "tests/canonical/test-skill-steps.sh",
+      "text": "  PASS: SS-15 (f) rules.md: setup skills skip /aid-orchestrate and open no work"
+    },
+    {
+      "line": 14858,
+      "suite": "tests/canonical/test-skill-steps.sh",
+      "text": "  PASS: SS-15 (f) aid-config re-asks a skipped setting with its recorded text"
+    },
+    {
+      "line": 15427,
+      "suite": "tests/canonical/test-ticket-retirement-structural.sh",
+      "text": "  PASS: T077 consumption-protocol.md: the terminal silent-skip case is retained"
+    },
+    {
+      "line": 15442,
+      "suite": "tests/canonical/test-ticket-retirement-structural.sh",
+      "text": "  PASS: T092 aid-describe state-first-run.md: silent-skip on no-connector/no-ticket_ref is documented"
+    },
+    {
+      "line": 15447,
+      "suite": "tests/canonical/test-ticket-retirement-structural.sh",
+      "text": "  PASS: T097 aid-specify state-initialize.md: silent-skip on no-connector/no-ticket_ref is documented"
+    },
+    {
+      "line": 15448,
+      "suite": "tests/canonical/test-ticket-retirement-structural.sh",
+      "text": "  PASS: T098 shortcut-engine.md Step 4b: silent-skip on no-connector/no-ticket_ref is documented"
+    },
+    {
+      "line": 15747,
+      "suite": "tests/canonical/test-validator-behavior.sh",
+      "text": "  PASS: PV19a missing artifact: SKIP with remediation"
+    },
+    {
+      "line": 15749,
+      "suite": "tests/canonical/test-validator-behavior.sh",
+      "text": "  PASS: PV19d Playwright genuinely unavailable: SKIP with install remediation (real code path, not simulated)"
+    },
+    {
+      "line": 15786,
+      "suite": "tests/canonical/test-version-sync.sh",
+      "text": "  PASS: VS04 output includes SKIP notice for missing manifests"
+    },
+    {
+      "line": 15822,
+      "suite": "tests/canonical/test-version-sync.sh",
+      "text": "  PASS: WF06d pypi-publish runs (CLI beta) regardless of github-release skip state"
+    },
+    {
+      "line": 15844,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "=== VF05: missing html file -> SKIP exit 0 (not a hard error) ==="
+    },
+    {
+      "line": 15845,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "  PASS: VF05 missing html -> exit 0 (graceful SKIP) (exit 0)"
+    },
+    {
+      "line": 15846,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "  PASS: VF05b missing html -> SKIP message"
+    },
+    {
+      "line": 15877,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "=== VF20: when Playwright not installed -> exit 0 with SKIP message ==="
+    },
+    {
+      "line": 15878,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "  (Playwright available -- skip the degradation test; see VF30+ for Playwright tests)"
+    },
+    {
+      "line": 15879,
+      "suite": "tests/canonical/test-visual-fidelity.sh",
+      "text": "  PASS: VF20 Playwright available in this environment -- SKIP path not testable here"
+    },
+    {
+      "line": 16234,
+      "suite": "tests/canonical/test-worktree-lifecycle.sh",
+      "text": "  PASS: I1: guard emits the skip note on stderr"
+    },
+    {
+      "line": 16236,
+      "suite": "tests/canonical/test-worktree-lifecycle.sh",
+      "text": "  PASS: I1: untracked-marker.txt NOT moved into the target (mv skipped -- no overwrite)"
+    },
+    {
+      "line": 17459,
+      "suite": "tests/canonical/test-writeback-state.sh",
+      "text": "  PASS: 30h: --answer Skipped exits 0"
+    },
+    {
+      "line": 17460,
+      "suite": "tests/canonical/test-writeback-state.sh",
+      "text": "  PASS: 30h: Skipped sets the state"
+    },
+    {
+      "line": 17461,
+      "suite": "tests/canonical/test-writeback-state.sh",
+      "text": "  PASS: 30h: Skipped without --value leaves the answer --"
+    },
+    {
+      "line": 17471,
+      "suite": "tests/canonical/test-writeback-state.sh",
+      "text": "  PASS: 30h: --answer with a state outside Answered | Skipped | Assumed exits 4"
+    },
+    {
+      "line": 17559,
+      "suite": "tests/canonical/test-writeback-state.sh",
+      "text": "  PASS: 32b: --answer --design Skipped exits 0"
+    }
+  ],
+  "WF01_pass_lines": [
+    "  PASS: WF01 release.yml is valid YAML (exit 0)",
+    "  PASS: WF01 yaml.safe_load returns without error"
+  ],
+  "both_WF01_pass": true,
+  "no_skip_is_promoted_to_executed_coverage": true,
+  "mode_changes_count": 0,
+  "raw_body_changes": [],
+  "actual_passing_assertions_containing_literal_skip_text": [
+    {
+      "line": 5670,
+      "suite": "tests/canonical/test-coverage-parity.sh",
+      "text": "  PASS: CPG08 ID-prefixed label + [SKIPPED] shim collapse to one key (count 2)"
+    }
+  ],
+  "placeholder_classification_rule": "Runtime shim requires [SKIPPED: reason] or [SKIPPED (host): reason]; a literal [SKIPPED] discussed by a normalizer test is not a runtime skip.",
+  "classification_before_sha256": "42f460bc77d7a8d8b36e51f9110292d5c5427693b43968b421c24e61f208acab",
+  "exact_existing_log_sha256": "145b73537ab2968b13c542e69bb227937d14e4855bed99cee090bd7b9aa99e6b",
+  "metadata_only_correction_no_suite_rerun": true
+}

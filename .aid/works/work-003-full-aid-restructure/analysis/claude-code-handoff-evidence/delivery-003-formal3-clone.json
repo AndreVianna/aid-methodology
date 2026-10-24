@@ -1,0 +1,190 @@
+{
+  "commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "source_url": "file:///mnt/c/Projects/AID",
+  "branch": "work-003",
+  "clone_command": [
+    "git",
+    "-c",
+    "core.autocrlf=false",
+    "clone",
+    "--no-local",
+    "--no-hardlinks",
+    "--depth",
+    "1",
+    "--branch",
+    "work-003",
+    "file:///mnt/c/Projects/AID",
+    "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/repo"
+  ],
+  "own_git": true,
+  "shared_alternates": false,
+  "no_hardlinks": true,
+  "depth": 1,
+  "base": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0",
+  "repo": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/repo",
+  "captured_utc": "2026-10-24T21:06:28.325478+00:00",
+  "files": 3513,
+  "manifest_sha256": "2276943e503dbaebf35b5e0fbc6190295fbac7dc1bf149df1eaf9aa5441fe9c6",
+  "workingtree_clean_before_dependencies": true,
+  "environment": {
+    "POWERSHELL_TELEMETRY_OPTOUT": "1",
+    "LD_LIBRARY_PATH": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/browser-libraries/usr/lib/x86_64-linux-gnu",
+    "PIP_NO_INDEX": "1",
+    "AID_TEST_JOBS": "4",
+    "GIT_CEILING_DIRECTORIES": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0",
+    "npm_config_cache": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/npm-cache",
+    "HOME": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/home",
+    "AID_COVERAGE_JOBS": "4",
+    "PIP_CACHE_DIR": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/pip-cache",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/ms-playwright",
+    "ALSA_CONFIG_PATH": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/browser-libraries/usr/share/alsa/alsa.conf",
+    "AID_NO_UPDATE_CHECK": "1",
+    "TMPDIR": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/tmp",
+    "LOCPATH": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/locales",
+    "PIP_FIND_LINKS": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/wheelhouse",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PATH": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/rg-bin:/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/build-venv/bin:/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/bin:/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/posix-bin:/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/node-bin:/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/tools/pwsh",
+    "VERBOSE": "1",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "versions": {
+    "bash": "GNU bash, version 5.3.9(1)-release (x86_64-pc-linux-gnu)",
+    "node": "v22.22.1",
+    "python3": "Python 3.11.17",
+    "pwsh": "PowerShell 7.6.8",
+    "gawk": "GNU Awk 5.3.2, API 4.0, PMA Avon 8-g1, (GNU MPFR 4.2.2, GNU MP 6.3.0)",
+    "npm": "11.12.0",
+    "rg": "ripgrep 15.2.0 (rev e89fff89ac)",
+    "pyyaml": "6.0.3"
+  },
+  "ceiling": {
+    "own_repo_exit": 0,
+    "own_repo_root": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/repo",
+    "empty_fixture_exit": 128
+  },
+  "no_node_probe": {
+    "exit": 9,
+    "version_exit": 0,
+    "node_resolves": null
+  },
+  "dependencies": {
+    "root_node_modules": "/home/andre/projects/aid/.aid/.temp/g0-rehearsal-33f91fbd29c5/repo/node_modules",
+    "site_node_modules": "/home/andre/projects/aid/.aid/.temp/site-gate-jhp5xy87/site/node_modules"
+  },
+  "coverage_api_finding": "No official run-all assertion-emission hook or collector log-import API; official collect will run separately without changing source.",
+  "raw_blob_and_mode_files_verified": 3513,
+  "manifest14": [
+    {
+      "path": "scripts/connectors/build-connectors-index.ps1",
+      "manifest_sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0",
+      "runtime_sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0",
+      "committed_runtime_sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0",
+      "canonical_sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0",
+      "all_equal": true
+    },
+    {
+      "path": "scripts/connectors/connector-registry.ps1",
+      "manifest_sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe",
+      "runtime_sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe",
+      "committed_runtime_sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe",
+      "canonical_sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe",
+      "all_equal": true
+    },
+    {
+      "path": "scripts/connectors/connector-secret.ps1",
+      "manifest_sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef",
+      "runtime_sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef",
+      "committed_runtime_sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef",
+      "canonical_sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef",
+      "all_equal": true
+    },
+    {
+      "path": "scripts/kb/coined-term-denylist.txt",
+      "manifest_sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec",
+      "runtime_sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec",
+      "committed_runtime_sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec",
+      "canonical_sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec",
+      "all_equal": true
+    },
+    {
+      "path": "scripts/migrate/migrate-work-hierarchy.ps1",
+      "manifest_sha256": "501215720a0232eb2110c04626489f7320b1ff3c35c3d8dc63d9bcf4303bba83",
+      "runtime_sha256": "501215720a0232eb2110c04626489f7320b1ff3c35c3d8dc63d9bcf4303bba83",
+      "committed_runtime_sha256": "501215720a0232eb2110c04626489f7320b1ff3c35c3d8dc63d9bcf4303bba83",
+      "canonical_sha256": "501215720a0232eb2110c04626489f7320b1ff3c35c3d8dc63d9bcf4303bba83",
+      "all_equal": true
+    },
+    {
+      "path": "scripts/summarize/assemble-3part.ps1",
+      "manifest_sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10",
+      "runtime_sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10",
+      "committed_runtime_sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10",
+      "canonical_sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10",
+      "all_equal": true
+    },
+    {
+      "path": "templates/delivery-state-template.yml",
+      "manifest_sha256": "789d927c725d8281807c64b6474f25b8af9c95b1d0c634b640f59334e5d49e32",
+      "runtime_sha256": "789d927c725d8281807c64b6474f25b8af9c95b1d0c634b640f59334e5d49e32",
+      "committed_runtime_sha256": "789d927c725d8281807c64b6474f25b8af9c95b1d0c634b640f59334e5d49e32",
+      "canonical_sha256": "789d927c725d8281807c64b6474f25b8af9c95b1d0c634b640f59334e5d49e32",
+      "all_equal": true
+    },
+    {
+      "path": "templates/knowledge-summary/component-css.css",
+      "manifest_sha256": "3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32",
+      "runtime_sha256": "3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32",
+      "committed_runtime_sha256": "3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32",
+      "canonical_sha256": "3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32",
+      "all_equal": true
+    },
+    {
+      "path": "templates/knowledge-summary/html-skeleton.html",
+      "manifest_sha256": "c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205",
+      "runtime_sha256": "c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205",
+      "committed_runtime_sha256": "c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205",
+      "canonical_sha256": "c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205",
+      "all_equal": true
+    },
+    {
+      "path": "templates/knowledge-summary/lightbox.js",
+      "manifest_sha256": "118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa",
+      "runtime_sha256": "118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa",
+      "committed_runtime_sha256": "118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa",
+      "canonical_sha256": "118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa",
+      "all_equal": true
+    },
+    {
+      "path": "templates/project-state-template.yml",
+      "manifest_sha256": "007d012cd8e9b1ffdde5e383e53e4812f664dabb67074f8a575d97d25e9836fe",
+      "runtime_sha256": "007d012cd8e9b1ffdde5e383e53e4812f664dabb67074f8a575d97d25e9836fe",
+      "committed_runtime_sha256": "007d012cd8e9b1ffdde5e383e53e4812f664dabb67074f8a575d97d25e9836fe",
+      "canonical_sha256": "007d012cd8e9b1ffdde5e383e53e4812f664dabb67074f8a575d97d25e9836fe",
+      "all_equal": true
+    },
+    {
+      "path": "templates/shortcut-catalog.yml",
+      "manifest_sha256": "1cf5d00344601ec9cdfdbcf0a54bb24feb01e6571088cea0f8d0a29f043df9fe",
+      "runtime_sha256": "1cf5d00344601ec9cdfdbcf0a54bb24feb01e6571088cea0f8d0a29f043df9fe",
+      "committed_runtime_sha256": "1cf5d00344601ec9cdfdbcf0a54bb24feb01e6571088cea0f8d0a29f043df9fe",
+      "canonical_sha256": "1cf5d00344601ec9cdfdbcf0a54bb24feb01e6571088cea0f8d0a29f043df9fe",
+      "all_equal": true
+    },
+    {
+      "path": "templates/task-state-template.yml",
+      "manifest_sha256": "fca3f404d020bba121587e6ac3de5f28e42739942262c736d5ecef417b46ecd1",
+      "runtime_sha256": "fca3f404d020bba121587e6ac3de5f28e42739942262c736d5ecef417b46ecd1",
+      "committed_runtime_sha256": "fca3f404d020bba121587e6ac3de5f28e42739942262c736d5ecef417b46ecd1",
+      "canonical_sha256": "fca3f404d020bba121587e6ac3de5f28e42739942262c736d5ecef417b46ecd1",
+      "all_equal": true
+    },
+    {
+      "path": "templates/work-state-template.yml",
+      "manifest_sha256": "77d1d347422a12cafa42b7870b05787a3fbcdccde1d08d1319bfdff65b38d34f",
+      "runtime_sha256": "77d1d347422a12cafa42b7870b05787a3fbcdccde1d08d1319bfdff65b38d34f",
+      "committed_runtime_sha256": "77d1d347422a12cafa42b7870b05787a3fbcdccde1d08d1319bfdff65b38d34f",
+      "canonical_sha256": "77d1d347422a12cafa42b7870b05787a3fbcdccde1d08d1319bfdff65b38d34f",
+      "all_equal": true
+    }
+  ]
+}

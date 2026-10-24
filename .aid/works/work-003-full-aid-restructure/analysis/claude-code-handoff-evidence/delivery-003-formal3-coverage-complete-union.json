@@ -1,0 +1,97 @@
+{
+  "commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "method": "MAX observed count per suite/key from4 exact-source actual datasets; never sum duplicates, never carry baseline or unexecuted keys",
+  "inputs": [
+    {
+      "dataset": "official-full178",
+      "path": "/mnt/c/Projects/AID/.aid/.temp/runner-codex-checks/delivery-003-formal3-coverage.tsv",
+      "sha256": "b44fade4a05afa595c2e282990c49bb6e17cc9b36413d6d179cbc16f15eaf363",
+      "keys": 11129,
+      "emissions": 13536
+    },
+    {
+      "dataset": "actual-pw-absent",
+      "path": "/mnt/c/Projects/AID/.aid/.temp/runner-codex-checks/delivery-003-formal3-cohort-pw-absent.tsv",
+      "sha256": "d068d8e0970bbb1cedadffa969709be6227be19a1346fbc9336f49e4afbaf24c",
+      "keys": 26,
+      "emissions": 26
+    },
+    {
+      "dataset": "actual-windows-remote",
+      "path": "/mnt/c/Projects/AID/.aid/.temp/runner-codex-checks/delivery-003-formal3-cohort-windows-remote.tsv",
+      "sha256": "d8c776669ed88cda5190ed66847b117d4faf1325a09bb7493e8644971c7c27b9",
+      "keys": 49,
+      "emissions": 50
+    },
+    {
+      "dataset": "actual-rg-absent",
+      "path": "/mnt/c/Projects/AID/.aid/.temp/runner-codex-checks/delivery-003-formal3-cohort-rg-absent.tsv",
+      "sha256": "3e82203dcffefb8840ffb297c30d58eebca5a9a9d8813e744c2a2a4ae227ba74",
+      "keys": 5,
+      "emissions": 5
+    }
+  ],
+  "keys": 11135,
+  "emissions": 13542,
+  "sha256": "c0e3aa5eb511f9f8a5041074eb940fa170fa27eafc93517018c6c8f706f4d1ed",
+  "official_diff_command": [
+    "bash",
+    "tests/coverage-parity.sh",
+    "diff",
+    "--baseline",
+    "tests/coverage-baseline.tsv",
+    "--after",
+    "/mnt/c/Projects/AID/.aid/.temp/runner-codex-checks/delivery-003-formal3-coverage-complete-union.tsv",
+    "--allow",
+    "tests/coverage-rehome-allowlist.tsv",
+    "--accept",
+    "tests/coverage-accepted-removals.tsv"
+  ],
+  "official_diff_exit": 0,
+  "diff_footer": "RESULT: PASS -- no net-removed coverage (excused re-homes: 21, accepted-removals: 0, net-adds: 1174)",
+  "completeness": [
+    {
+      "dataset": "official-full178",
+      "suite_logs": 178,
+      "raw_emissions": 13536,
+      "official_inventory_emissions": 13536,
+      "actual_normalized_multiset_equals_official": true,
+      "no_raw_FAIL_lines": true,
+      "no_nonzero_final_failed_summaries": true,
+      "index_file": "delivery-003-formal3-official-full178-log-index.json"
+    },
+    {
+      "dataset": "actual-pw-absent",
+      "suite_logs": 1,
+      "raw_emissions": 26,
+      "official_inventory_emissions": 26,
+      "actual_normalized_multiset_equals_official": true,
+      "no_raw_FAIL_lines": true,
+      "no_nonzero_final_failed_summaries": true,
+      "index_file": "delivery-003-formal3-actual-pw-absent-log-index.json"
+    },
+    {
+      "dataset": "actual-windows-remote",
+      "suite_logs": 1,
+      "raw_emissions": 50,
+      "official_inventory_emissions": 50,
+      "actual_normalized_multiset_equals_official": true,
+      "no_raw_FAIL_lines": true,
+      "no_nonzero_final_failed_summaries": true,
+      "index_file": "delivery-003-formal3-actual-windows-remote-log-index.json"
+    },
+    {
+      "dataset": "actual-rg-absent",
+      "suite_logs": 1,
+      "raw_emissions": 5,
+      "official_inventory_emissions": 5,
+      "actual_normalized_multiset_equals_official": true,
+      "no_raw_FAIL_lines": true,
+      "actual_suite_exit": 0
+    }
+  ],
+  "previous_MAX3_failure_preserved": "delivery-003-formal3-coverage-union.{json,tsv,provenance.json}; historical rg-absent fallback had no actual observation in initial3 environments. Extra required5-case cohort closed it with execution, not mapping/acceptance change.",
+  "no_repeated_full_log_audit_or_full_suite": true,
+  "baseline_or_live_declaration_writes": false,
+  "no_behavioral_or_overall_completion_claim": true
+}

@@ -1,0 +1,25 @@
+{
+  "commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "repo": "/home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/repo",
+  "runner_pid": 165168,
+  "kind": "official post-resync complete canonical validation on exact ownGit committed clone",
+  "command": [
+    "bash",
+    "tests/run-all.sh",
+    "--verbose"
+  ],
+  "started_utc": "2026-10-24T21:06:40.113452+00:00",
+  "suite_count": 178,
+  "jobs": 4,
+  "default_timeouts_unmodified": true,
+  "phase": "complete",
+  "run_all_pid": 165169,
+  "exit_code": 0,
+  "duration_seconds": 560.2,
+  "finished_utc": "2026-10-24T21:16:00.318103+00:00",
+  "suite_passed": 178,
+  "suite_failed": 0,
+  "failed_suites": [],
+  "completed_suite_markers": 178,
+  "aggregate_pass_footer": true
+}

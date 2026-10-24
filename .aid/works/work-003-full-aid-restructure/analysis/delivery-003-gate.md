@@ -46,13 +46,14 @@ At the 2026-10-24T21:40Z evidence snapshot:
   No push or merge has been performed. The native Windows remote cohort does not
   replace native installer CI.
 
-The next scope decision is the reviewed proposal in
-`analysis/delivery-003-codex-guard-proposal.md` under **Proposed work**. Q183 approved
-Claude-only integration and Q189 selected wording rounds rather than guard work;
-fresh Codex authorization is a scope interpretation of those decisions, not a
-literal ban on future hooks. No Codex guard has been implemented. Its feasibility
-must be proved without hiding original messages, retrying failed writes or changing
-the acceptance criteria. A refusal leaves delivery-003 open.
+Q190 was answered `1`, approving the reviewed proposal in
+`analysis/delivery-003-codex-guard-proposal.md` under **Proposed work**. The isolated
+native probe reached standard folder/hook trust review only; no behavioral prompt,
+hook event or enforcement result was obtained. No product guard is implemented.
+The owner then paused tasks to conserve weekly usage and requested a save push and
+Claude Code handoff. That pause supersedes active execution, not Q190's scope
+approval. See `analysis/claude-code-handoff.md` under **Owner instruction and stop
+boundary**; delivery-003 and the strict acceptance bar remain open.
 
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier

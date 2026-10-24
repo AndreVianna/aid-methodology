@@ -1,0 +1,116 @@
+[
+  {
+    "bytes": 10345,
+    "sha256": "b29a5dda6db504dd717195a478901c7c0180e85564794ace6335e4a701a597fd",
+    "name": "delivery-003-formal3-clone.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-clone.json"
+  },
+  {
+    "bytes": 738,
+    "sha256": "d5010c3cf773d42e147b710f96816488681485ba74917df383a2ba2741946338",
+    "name": "delivery-003-formal3-canonical.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-canonical.json"
+  },
+  {
+    "bytes": 31883,
+    "sha256": "918866b9a0b1753de14fd20c9fe0666a72a33f79b8243174c1332600a99bfa26",
+    "name": "delivery-003-formal3-skip-inventory.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-skip-inventory.json"
+  },
+  {
+    "bytes": 5728,
+    "sha256": "fc07fc0f9fda49455e79b04a80bcdaaf83c7a01166c10c5166cd1e3512f9c238",
+    "name": "delivery-003-formal3-site.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-site.json"
+  },
+  {
+    "bytes": 967,
+    "sha256": "d2f87fdf1cbd01fb3e1151507be830e9a51051c3823931781a522da88d12a39e",
+    "name": "delivery-003-formal3-parity.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-parity.json"
+  },
+  {
+    "bytes": 829,
+    "sha256": "7b6c8722466119558cb5007cb5a072a2bf54118dd554944eb96fe7f99bb7967b",
+    "name": "delivery-003-formal3-cost.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-cost.json"
+  },
+  {
+    "bytes": 1760,
+    "sha256": "bc025cb5384b7d766aa04324c9fa488bbd9aa375ecdc0fb50b6547864012d24f",
+    "name": "delivery-003-formal3-cost-attribution.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-cost-attribution.md"
+  },
+  {
+    "bytes": 3811,
+    "sha256": "19fb9e0e89cdc3495d353b6eb3e33516bf8018472059e961ed8f30b2cf8faa59",
+    "name": "delivery-003-formal3-coverage-complete-union.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-coverage-complete-union.json"
+  },
+  {
+    "bytes": 2365,
+    "sha256": "f8dc3553de37800d7c749f876aa6cd8a9914575964cea69217518fac39ff38a7",
+    "name": "delivery-003-formal3-baseline-integration.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-baseline-integration.json"
+  },
+  {
+    "bytes": 19503,
+    "sha256": "e2b7b02a10b2bad028e153bde530495bf4deeb21e61d599156354d840f319eb8",
+    "name": "delivery-003-site-integration-formal3.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-site-integration-formal3.json"
+  },
+  {
+    "bytes": 3175,
+    "sha256": "a1610bd099327fb496fad40ce1b90539c4eb7342313fa96f59285266e4ab910f",
+    "name": "delivery-003-host-contract-notes.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-host-contract-notes.md"
+  },
+  {
+    "bytes": 6635,
+    "sha256": "6001a7d2d457a9d078d8b3585cd88b9b2f8e06ebe92111f135eb3dd28d032996",
+    "name": "delivery-003-codex-guard-integration-notes.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-codex-guard-integration-notes.md"
+  },
+  {
+    "bytes": 1377,
+    "sha256": "31289290a348ed4637f285103c99e07d51bd11a923a16cbd621a07ebbce917b3",
+    "name": "delivery-003-native-hook-probe.json",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-native-hook-probe.json"
+  },
+  {
+    "bytes": 3776,
+    "sha256": "3e13520db4370f21d957602453489f6286fc6e57d3286b62868ab398399c6ccc",
+    "name": "prepare-codex-hook-probe.py",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\prepare-codex-hook-probe.py"
+  },
+  {
+    "bytes": 3876,
+    "sha256": "ced08a4038071c5f571a1a1c7c5cd95292303fc74152bdb78cd23437c063d7aa",
+    "name": "ledger-delivery-003-formal3-evidence.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\review-pending\\delivery-003-formal3-evidence.md"
+  },
+  {
+    "bytes": 19797,
+    "sha256": "493908fe4023a8c1cfc5e4cc1738b0d41da5ab0efe5d8a0e251f35c5f52787d3",
+    "name": "ledger-delivery-003-014-group-contract.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\review-pending\\delivery-003-014-group-contract.md"
+  },
+  {
+    "bytes": 1997,
+    "sha256": "0d6e5cc77879659eb526bc3230728e8b1083c0a87901ac6d1690e1eb2fc5b5c2",
+    "name": "ledger-delivery-003-research-focused-verdict.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\review-pending\\delivery-003-research-focused-verdict.md"
+  },
+  {
+    "bytes": 94,
+    "sha256": "29191442665f0e51ee1e3e175ede319169033eef48ea18b700c033d8262f9b30",
+    "name": "ledger-delivery-003-codex-guard-proposal.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\review-pending\\delivery-003-codex-guard-proposal.md"
+  },
+  {
+    "bytes": 94,
+    "sha256": "29191442665f0e51ee1e3e175ede319169033eef48ea18b700c033d8262f9b30",
+    "name": "ledger-delivery-003-raw-evidence-verification.md",
+    "source": "C:\\Projects\\AID\\.aid\\.temp\\review-pending\\delivery-003-raw-evidence-verification.md"
+  }
+]

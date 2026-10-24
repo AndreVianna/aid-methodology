@@ -1,0 +1,42 @@
+{
+  "input_equivalent_bookkeeping_commit": "0af277dce6eac7bce0b9b78d722abcb9ac0f0bc4",
+  "self_comparison_used_as_historical_pass": false,
+  "rehome_policy_sha256": "A99DB46A4105471F3A73D36A38CDF5217091F84832C6B5B3CFD956042B15D0DA",
+  "historical_always_on_delta_chars": -569,
+  "historical_cost_diff_exit": 1,
+  "tolerance_changed": false,
+  "measured_commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "historical_cost_growing_metrics": 81,
+  "files": [
+    {
+      "after_sha256": "2ebad37ad2f1ec4b1863b51ff65f95a955358594d041758b52914f5b9dd04696",
+      "before_sha256": "60e0083b2919f2d11c18b2b0f447fe038e086d4f2b49437d885e8a1ab0d27249",
+      "name": "cost-baseline.tsv",
+      "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-baseline-candidates\\cost-baseline.tsv",
+      "target": "C:\\Projects\\AID\\tests\\cost-baseline.tsv"
+    },
+    {
+      "after_sha256": "0112280e367ad0d3ae6db1d5fcb6ba57086dbdc44320d2219392da7ab88f3599",
+      "before_sha256": "cfa29711290e458d6c57c1ca1bf78a89c433f33b0a7df5ff1d26c8d96467c341",
+      "name": "cost-baseline.meta",
+      "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-baseline-candidates\\cost-baseline.meta",
+      "target": "C:\\Projects\\AID\\tests\\cost-baseline.meta"
+    },
+    {
+      "after_sha256": "c0e3aa5eb511f9f8a5041074eb940fa170fa27eafc93517018c6c8f706f4d1ed",
+      "before_sha256": "d8b1caab3f7c73f914a791ca412e3a96e3c20f038ab83d93e9e17ff048230a3b",
+      "name": "coverage-baseline.tsv",
+      "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-baseline-candidates\\coverage-baseline.tsv",
+      "target": "C:\\Projects\\AID\\tests\\coverage-baseline.tsv"
+    },
+    {
+      "after_sha256": "bfb9a1305ec8fdfbf0d0047531d3cce7378c4d8b8ae730f9fcf191ccd086c387",
+      "before_sha256": "924255cbfd712ff8b50ee1797d239bcde68f55030b5077bad883055ed69d81fc",
+      "name": "coverage-baseline.meta",
+      "source": "C:\\Projects\\AID\\.aid\\.temp\\runner-codex-checks\\delivery-003-formal3-baseline-candidates\\coverage-baseline.meta",
+      "target": "C:\\Projects\\AID\\tests\\coverage-baseline.meta"
+    }
+  ],
+  "accepted_removals_sha256": "1A0309CE8C6A0E5EF11F596F4AD6ED526E2819BEE0097C0F4AC1D38EDFE011BD",
+  "historical_coverage_diff_exit": 0
+}

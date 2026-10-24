@@ -1,0 +1,19 @@
+{
+  "purpose": "Q190 isolated feasibility; not acceptance evidence",
+  "base": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109",
+  "repo": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/repo",
+  "home": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/home",
+  "codex_home": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/home/.codex",
+  "handler": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/repo/.aid/runtime/scripts/hooks/aid-native-probe.py",
+  "handler_sha256": "3cbbd2c983b77c303e84295b4d87ed3266368953bcd6e3f6cad89523fed46af5",
+  "definition_sha256": "2738dd7b0d5ce431683358b531683741aee43c19279c6bfdd82467f1b1cb38e8",
+  "hook_trust_not_preseeded_or_bypassed": true,
+  "existing_auth_copied_privately_no_contents_recorded": true,
+  "environment": {
+    "HOME": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/home",
+    "CODEX_HOME": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109/home/.codex",
+    "PATH": "/home/andre/.local/bin:/usr/local/bin:/usr/bin:/bin",
+    "GIT_CEILING_DIRECTORIES": "/home/andre/projects/aid/.aid/.temp/native-hooks-32598dd89dd64cd2959c549638a6a109",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  }
+}

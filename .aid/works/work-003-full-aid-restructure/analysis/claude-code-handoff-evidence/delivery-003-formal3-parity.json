@@ -1,0 +1,32 @@
+{
+  "commit": "34f54b72619cede492f96fe10dffceaf482a32b6",
+  "repo": "/home/andre/projects/aid/.aid/.temp/g0-parity3-1d6e902388f3/repo",
+  "base": "/home/andre/projects/aid/.aid/.temp/g0-parity3-1d6e902388f3",
+  "clone_command": [
+    "git",
+    "-c",
+    "core.autocrlf=false",
+    "clone",
+    "--no-local",
+    "--no-hardlinks",
+    "--depth",
+    "1",
+    "file:///home/andre/projects/aid/.aid/.temp/g0-final3-962801e6eee0/repo",
+    "/home/andre/projects/aid/.aid/.temp/g0-parity3-1d6e902388f3/repo"
+  ],
+  "generator_command": [
+    "python3",
+    ".claude/skills/generate-profile/scripts/run_generator.py"
+  ],
+  "own_git": true,
+  "shared_alternates": false,
+  "generator_exit": 0,
+  "duration_seconds": 8.59,
+  "finished_utc": "2026-10-24T21:07:44.144674+00:00",
+  "tracked_git_diff_paths": [],
+  "direct_raw_files_checked": 3513,
+  "raw_changed_paths": [],
+  "mode_changed_paths": [],
+  "manifest_included": true,
+  "no_hash_or_timestamp_exclusions": true
+}
