@@ -4,7 +4,7 @@
 Q166's known-issue exception; Q180, Q186 and Q189 require fresh success on every selected
 sample, three runs each. That exception cannot close the current gate.
 
-At the 2026-10-24T20:06Z evidence snapshot:
+At the 2026-10-24T20:50Z evidence snapshot:
 
 - Strict attempt 11 ended failed/incomplete after 14 passes. `002-14` run 3 changed the
   same-issue question subject while advancing its counter (PC-8). Its exact batch is
@@ -14,12 +14,20 @@ At the 2026-10-24T20:06Z evidence snapshot:
   rule. Subsequent focused retries exposed premature symptom intake, an incorrect
   answer flag and a prohibited retry after a failed write. Scope ordering and the local
   answer recipe were corrected and reviewed, with an actual writer smoke check.
-  The latest focused batch, `20261024T195514Z-codex-user-codex-judge-codex-4849`, failed
-  its first run because recording order could not be proved: a Pending question exists
-  in the final diff without its write in the captured events. The parser discards
-  unrecognized host events and does not preserve raw stdout. Passive raw-event capture
-  is being implemented and tested before another diagnostic run; the missing event
-  class and chronology remain unknown. No model batch is active and no full gate passed.
+  An earlier batch failed because recording order could not be proved. Passive raw
+  capture is now implemented, independently reviewed and covered by the passing 279/0
+  offline regression. Subsequent raw traces establish actual write order; the older
+  missing chronology remains unrecoverable. The latest default-profile focused batch,
+  `20261024T202557Z-codex-user-codex-judge-codex-147593`, was judged 3/3, but its actual
+  audit rejects acceptance: two runs halted after omitting a required directory, and
+  one retried the failed write and omitted a recorded approval condition in its display.
+  A controlled same-source comparison using the existing model override for all three
+  Codex roles (`gpt-6-astra`) passed one trial then failed scope ordering. It does not
+  approve a different final profile. The default adapter probe selected `gpt-6.1-sol`
+  with no explicit effort value; no low-effort cause is established. No model batch is
+  active and no full gate passed. Reviewed source is complete; further wording changes
+  are not justified solely by these execution failures. Host-contract diagnosis is
+  read-only while a stable source candidate is prepared for final local validation.
 - At resync commit `d6cfb5f7bf0d2abc1f8a7061fe45bfbe0a945cce`, the official canonical
   run passed all 178 suites with unchanged defaults. Full site testing passed all 50
   files and 2,822 tests. Scratch generator/install parity passed with an empty tracked

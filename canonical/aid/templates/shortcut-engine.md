@@ -325,6 +325,7 @@ Allocate through the gate's § 3a (its steps 3 to 5), inside the entered worktre
 
 ```bash
 bash .aid/runtime/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
+mkdir -p .aid/works/<work-id>-<slug>
 bash .aid/runtime/scripts/execute/writeback-state.sh --create \
   --work-dir .aid/works/<work-id>-<slug> \
   --reading <type> --request '{description}' \
