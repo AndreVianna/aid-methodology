@@ -118,7 +118,7 @@ phase: Planning
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T21:56:16Z'
+updated: '2026-10-25T22:32:05Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Waiting for the user: Q206'
 # [W] set only when lifecycle = Blocked
@@ -2408,4 +2408,4 @@ intent:
       to: 'refactor'
       why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
 step: DELIVERY-GATE
-step_detail: 'Paused: full re-analysis of work-003 definition and plan (Q207), outside the methodology'
+step_detail: 'Re-analysis report delivered (analysis/work-003-full-reanalysis-report.md); waiting on the maintainer'
