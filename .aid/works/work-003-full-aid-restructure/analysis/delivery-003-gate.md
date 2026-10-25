@@ -128,6 +128,11 @@ One independent review (`delivery-003-gfix8-review.md`): 7 fixed, 1 accepted. Th
 approve this plan for building?", the plain-words rule opens the engine's state machine, and an answer that
 names a reading in the user's own words is the go-ahead.
 
+**Focused check under Q197, on `e7bb823e6`** (2026-10-25, batch `20261025T170731Z`): **not valid.** Five of six
+runs stopped on turn 1 because the login expired ("OAuth session expired and could not be refreshed"), so the
+agent and judge never ran. Each run copies `~/.claude/.credentials.json`; once the token expires, the copies race
+to renew it. The one judged run, 002-19 run 1, passed. To be re-run after a fresh login, one run at a time.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.

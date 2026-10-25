@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T17:01:11Z'
+updated: '2026-10-25T17:12:23Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2281,4 +2281,4 @@ qa:
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Q197: focused check 002-14 and 002-19 x3 on the maintainer machine'
+step_detail: 'Q197 focused check invalid (login expired in 5 of 6 runs); re-run after a fresh login, sequentially'
