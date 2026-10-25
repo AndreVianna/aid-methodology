@@ -568,7 +568,7 @@
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "52be767b50bc295d7bface2de603e4e5fd79cb4a940428cc09c1dd4d46f831cd"
+          "sha256": "3a365eda55e9fc915f407402a9e0347768b7b9687bb5fc17bcf7a500b17ae21e"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
@@ -962,7 +962,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "df9ef95cfbe5e9d18239059714474adf053cc2ba1ef11b2ce14746bba5bdf503"
+          "sha256": "b450bcb0c7bc4077c2b20eb68b2ce2db44d18613a7d8866627e10c15674caa98"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
