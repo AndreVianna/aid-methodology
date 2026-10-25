@@ -2226,14 +2226,14 @@ qa:
   - id: Q193
     category: 'Local checkouts'
     impact: Medium
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: --
     context: 'Who should reconcile the WSL folders unsaved edits with the pushed branch?'
     suggested: '1: run the reconcile prompt in Claude Code on the maintainer machine, started from /mnt/c/Projects/AID, because only a local session can see both folders'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '1'
+    answered_by: 'Andre Vianna'
+    applied_to: 'Owner prompt: Claude Code on the maintainer machine reconciles the WSL checkout edits on an isolated branch from origin/work-003, after a verified backup; original WSL checkout untouched; delivery-003 stays paused; no push without confirmation'
 intent:
   reading: refactor
 step: DELIVERY-GATE
