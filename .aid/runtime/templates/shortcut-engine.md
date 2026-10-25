@@ -83,6 +83,10 @@ to directly.
 
 ## State Machine
 
+Every message to the user, in every state, follows question-protocol Rule 3: to a user who writes in plain
+words it says what changes and what it means for them, with no ledger path, grade, file name, skill name or
+code unless they asked.
+
 | State | Detail | Worker | Advance |
 |---|---|---|---|
 | INTAKE | below | inline | CHAIN → CAPTURE |
@@ -935,16 +939,16 @@ GATE: Pass 1 (definition docs) {pass-1-grade}  ·  Pass 2 (task set) {pass-2-gra
 Nothing has executed. Review the documents above.
 ```
 
-That block is for a technical user. To a user who writes in plain words, every message of the run (progress,
-review results, the approval) gives a plain summary instead: what will change, why, and what they get. It
-keeps ledger paths, grades, file names, skill names and code out unless they asked; a technical choice they cannot judge is recorded `Assumed` and listed in
-plain words (`rules.md` § Asking the user).
+That block is for a technical user. A user who writes in plain words gets a plain summary instead (§ State
+Machine): what will change, why, and what they get; a technical choice they cannot judge is recorded
+`Assumed` and listed in plain words.
 
 ### Step 2: Record the approval, pause, and ask
 
 On a resume, read the step detail first. If it says the approval is already recorded as `Q<n>`, do
 not run `--ask` again: ask that open question first (Step 3). If it says the approval was given,
-tell the user to run `/aid-execute {name-or-work-id}` and end the run (**Advance** below, the
+tell the user that building is the next step (`/aid-execute {name-or-work-id}`, named to a technical user)
+and end the run (**Advance** below, the
 approve case).
 
 Otherwise record the approval before it is shown (`.aid/runtime/templates/question-protocol.md`; an
@@ -952,7 +956,7 @@ approval cannot be skipped, so it stays open until the user approves or declines
 the question's id, `Q<n>`:
 
 ```bash
-bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Do you approve this plan, so the build can start?" --suggested "Yes, once you have looked at the plan above"
+bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Do you approve this plan for building?" --suggested "Yes, once you have looked at it"
 ```
 
 Then keep the same step saved with the open question in its detail, and pause the pipeline:
@@ -979,7 +983,8 @@ pause reason). Then branch on the answer:
 - **Approved.** Save the detail so a resume does not ask twice:
   `--step --skill {name} --name APPROVAL-HALT --detail 'approved as Q<n>; next: /aid-execute {name-or-work-id}'`.
   The lifecycle stays `Running` so that `/aid-execute` can take the work up (it stops on any other
-  value). Tell the user to run `/aid-execute {name-or-work-id}`; this engine never starts it.
+  value). Tell the user that building is the next step (`/aid-execute {name-or-work-id}`, named to a technical
+  user); this engine never starts it.
 - **Declined, with a change to the requirements** (the user wants the work reshaped): CAPTURE runs
   again with the change the user asked for, and the later states follow, so GATE clears both passes
   again before a new approval is asked. CAPTURE saves its own step on entry.

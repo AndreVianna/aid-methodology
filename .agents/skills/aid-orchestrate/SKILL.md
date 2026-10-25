@@ -37,12 +37,13 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    that asks to start it (the reading never rides on a separate clarifying question), or alone when
    `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
    When CHECK-READING kept two plausible outcomes, this go-ahead offers both in plain words rather
-   than only confirming the preferred one, and it is the first question: a detail the code can answer
-   or that matters only after the choice (where, which file) is not asked before it. Explain why the recommendation fits the reported problem;
-   a workflow's requirement to ask permission is not the reason for choosing that reading.
+   than only confirming the preferred one, and it is the first question: a detail the code can answer or
+   that matters only after the choice is not asked before it. Explain why the recommendation fits the
+   reported problem; a workflow's requirement to ask permission is not the reason for choosing that reading.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead (an approval, no skip) decides, and a pick
-   among the readings it offers is that yes: no second approval follows. An answer to a clarifying question never decides.
+   among the readings it offers is that yes: no second approval follows. An answer to a clarifying question decides only
+   when it names a reading in the user's own words ("fix it in the code"); otherwise the go-ahead follows.
    A reading that matches an action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`,
    `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A correction goes back to the check.
    **Advance:** **CHAIN** → START-ACTION when the approved reading matches an action skill; **CHAIN** → FIND-OR-CREATE when it matches
