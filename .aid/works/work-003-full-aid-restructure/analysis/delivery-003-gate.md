@@ -106,9 +106,10 @@ pass; the bar is not met.**
 check before.
 
 **Fix round 7 (Q196, strict bar kept):** `aid-orchestrate` step 5 and `size-and-route.md` § 6 say a pick among
-the readings the go-ahead offers is its yes, with no second approval (002-14). The question-form hook blocks an
-`--ask` that records again a question already open (002-04). 002-17 (review done by hand) has no source cause:
-the start-at-once rule is clear, so nothing changed for it.
+the readings the go-ahead offers is its yes, with no second approval (002-14). A hook guard against recording an open question again (002-04)
+was built and then removed after review (`delivery-003-gfix7-review.md`): its similarity test blocked unrelated
+questions, and the 002-04 re-offer was reworded, so it would not have caught it. 002-04 and 002-17 (review done
+by hand) have no source cause: their rules are clear, so nothing else changed.
 
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier

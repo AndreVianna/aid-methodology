@@ -40,8 +40,9 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    than only confirming the preferred one. Explain why the recommendation fits the reported problem;
    a workflow's requirement to ask permission is not the reason for choosing that reading.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
-5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead decides, and a pick among the readings it
-   offers is that yes: no second approval follows. An answer to a clarifying question never decides. A reading that matches an action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`,
+5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead (an approval, no skip) decides, and a pick
+   among the readings it offers is that yes: no second approval follows. An answer to a clarifying question never decides.
+   A reading that matches an action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`,
    `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A correction goes back to the check.
    **Advance:** **CHAIN** → START-ACTION when the approved reading matches an action skill; **CHAIN** → FIND-OR-CREATE when it matches
    none; **CHAIN** → CHECK-READING when the user corrects it; **HALT** when the user declines.
