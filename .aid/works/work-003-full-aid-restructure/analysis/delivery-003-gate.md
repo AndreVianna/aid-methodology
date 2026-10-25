@@ -78,6 +78,15 @@ logs stay on that machine.
 | 002-14, 002-16 | 2/3 each | Not a judgement: the agent or judge call stopped on the account's weekly usage limit (HTTP 429) |
 | 002-17 | 2/3 | Run 2, EO-2: findings not listed most serious first (a Medium after two Lows). `aid-review` already asks for severity-ranked findings, so no source change |
 
+**Q192 full check, Claude Code for all three roles, on `c4537367a`** (2026-10-25, maintainer's machine, fresh
+clone `~/projects/aid-gate`, batch `20261025T020145Z`): **29 of 30 runs pass; the bar is not met.** The
+question-form hook ran: it blocked at least once in 17 of the 30 runs.
+
+| Sample | Result | Failure |
+|---|---|---|
+| 002-01, 002-02, 002-03, 002-04, 002-15, 002-16, 002-17, 002-18, 002-19 | 3/3 each | |
+| 002-14 | 2/3 | Run 3, PC-3 [HIGH]: for a user writing in plain words, the turn-2 reply explains file locking in code terms, and the approval asks "Approve the flattened work so /aid-execute can start?". The plain-words rule in `rules.md` § Asking the user already covers both, so the agent did not follow it |
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.

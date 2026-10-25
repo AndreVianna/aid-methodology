@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-24T23:32:58Z'
+updated: '2026-10-25T02:47:09Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2245,7 +2245,18 @@ qa:
     answer: '1'
     answered_by: 'Andre Vianna'
     applied_to: 'WSL checkout: fast-forward to the pushed work-003 and drop its 85 accounted-for edits (backup wsl-reconciliation-20261025T012453Z); keep all .aid/.temp test evidence until delivery-003 closes'
+  - id: Q195
+    category: 'Delivery-003 gate'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'One run of 30 failed, for using technical words with a plain-words user. How do we finish the gate?'
+    suggested: '1: a narrow fix in the question check only (it flags internal names in a question for a plain-words user), no skill text changed, then one more full 10x3 check'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Q192: full Claude Code check, 10 samples x 3 runs, on the maintainer machine from a fresh clone'
+step_detail: 'Q192 full Claude check 29/30: 002-14 run 3 PC-3 plain words; waiting on Q195'
