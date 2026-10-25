@@ -1,6 +1,7 @@
 # Plan -- Conversational AID Restructure
 
-All nine features ship as AID v4.0.0, in 14 deliveries built in order on the `work-003` branch.
+All ten features ship as AID v4.0.0, in 15 deliveries built in order on the `work-003` branch;
+delivery-015 is built right after delivery-003 (Q200).
 The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
 
 - Each delivery leaves the repository consistent, with the full suite green.
@@ -552,7 +553,7 @@ from the engine.
   - every asking skill has a sample or a `skill:` row;
   - every reviewer file has `### What to report`.
   (AC-8, AC-28, AC-37 no-banner clause, AC-40, AC-46)
-- [ ] Samples `002-01` to `002-04` and `002-14` to `002-19` each pass 3 of 3, and the judge applies `tests/conversation/protocol-checks.md` to each. (AC-8, AC-28)
+- [ ] Samples `002-01` to `002-04` and `002-14` to `002-19` each pass 3 of 3, and the judge applies `tests/conversation/protocol-checks.md` to each. (AC-8, AC-28) Run once, after delivery-015, for both deliveries (Q200).
 - [ ] Dashboard fixtures show the card lines for a work at each phase, during a call, and with a missing and an inconsistent record. Both readers pass parity, and SS-07 passes for `chat-node/`. (AC-41)
 - [ ] G0 passes.
 
@@ -602,10 +603,48 @@ wave 6: task-080
 wave 7: task-081
 ```
 
+### delivery-015: Lean instructions, kept lean by checks (Feature 010)
+- **What it delivers:** Instructions with no history, no copied sentences outside files a later delivery retires, a slimmer `rules.md` and fixed command runs as single calls, with ratchet checks that only let each measure go down.
+- **Features:** feature-010-lean-instructions
+- **Depends on:** delivery-003 (its tasks; both share one sample gate)
+- **Priority:** Must
+
+**Objective:** Stop the instruction surface from growing before more phase skills are rebuilt. Every
+later delivery must keep the ratchets green, so its rewrites shrink the files they touch.
+
+**Scope:**
+- `test-instruction-hygiene.sh` (IH-01 to IH-04) and `tests/instruction-hygiene-baseline.tsv`. (AC-47, AC-48, AC-49)
+- The history cleanup of every instruction file, the retired-by-012 files included. (AC-47)
+- Repeated sentences moved to one cited file, outside the files a later delivery retires. (AC-48)
+- `rules.md` at most 180 lines; files over 500 lines listed in the baseline. (AC-49)
+- Fixed command runs as one writer mode or script. (AC-50)
+- The root-cause fix rule in `state-delivery-gate.md`. (AC-51)
+- `authoring-conventions.md` G-17 and `test-landscape.md` point to the new suite.
+
+**Out of scope:** Rewriting files a later delivery retires (`shortcut-engine.md` and the action-kind wrappers in 012,
+the `aid-design-*` skills in 004) beyond their history cleanup.
+
+**Waves:**
+1. The suite and its baseline, recorded from the current tree; IH-01 fails until wave 2 lands.
+2. Three groups that do not depend on each other: the history cleanup; the repeats; `rules.md` and the command runs.
+3. The fix rule, the KB pointers, the baseline re-recorded at its lower counts, and the full suite.
+
+**Gate Criteria:**
+- [ ] `test-instruction-hygiene.sh` passes: zero history, no repeat outside the baseline, no file over its
+  budget or its recorded count. (AC-47, AC-48, AC-49)
+- [ ] Every changed command run is one call, and the suites that run it pass. (AC-50)
+- [ ] The fix rule is in `state-delivery-gate.md`, pinned by `test-skill-steps.sh`. (AC-51)
+- [ ] The delivery-003 sample gate passes on this delivery's resync.
+- [ ] G0 passes.
+
+### delivery-015 Execution Graph
+
+Written by `/aid-detail`.
+
 ### delivery-004: Shape an idea into a draft that survives
 - **What it delivers:** `/aid-brainstorm` talks an idea through as a conversation the user ends, keeping a living idea draft in the main folder that survives across sessions and works; a typed kind and the same kind in plain words reach the same rules; `/aid-describe`, `/aid-design` and every `/aid-design-<kind>` retire.
 - **Features:** feature-003-work-definition
-- **Depends on:** delivery-003
+- **Depends on:** delivery-015
 - **Priority:** Must
 
 **Objective:** Deliver the Definition phase on the new step rules and close the High known issue,

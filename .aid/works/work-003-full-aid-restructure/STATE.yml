@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T18:49:21Z'
+updated: '2026-10-25T20:39:47Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2303,15 +2303,31 @@ qa:
   - id: Q200
     category: 'Work direction'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Do you approve adding an instruction-hygiene delivery now, as the re-analysis proposes?'
     suggested: '1: yes; ratchet tests for history, repeats and size, the full history cleanup, a slimmer rules.md, the root-cause fix rule; then one full sample run closes delivery-003 and the new delivery'
+    answer: '1'
+    answered_by: 'Claude'
+    applied_to: 'Add an instruction-hygiene delivery before closing delivery-003: ratchet tests (history, repeats, size), full history cleanup of instructions, slimmer rules.md, root-cause fix rule, aid-design shared reference, scripts for fixed command sequences; one full sample run closes delivery-003 and the new delivery'
+  - id: Q201
+    category: 'Work direction'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'Do you approve the new requirements and plan for the instruction-hygiene delivery (Feature 010, delivery-015)?'
+    suggested: 'Yes: they turn the approved re-analysis into five checkable criteria and one delivery'
     answer: --
     answered_by: --
     applied_to: --
 intent:
   reading: refactor
+  changes:
+    - at: '2026-10-25T20:39:47Z'
+      from: 'refactor'
+      to: 'refactor'
+      why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
 step: DELIVERY-GATE
-step_detail: 'Q199 re-analysis written (analysis/work-003-reanalysis.md); waiting on Q200'
+step_detail: 'Q200: Feature 010 and delivery-015 written into REQUIREMENTS.md and PLAN.md; waiting on Q201 (approval), then /aid-detail delivery-015'

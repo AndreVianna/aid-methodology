@@ -23,7 +23,7 @@ load several times that.
 | Source | Size | Already scheduled? |
 |---|---|---|
 | History in instructions: task, feature, requirement, decision and work ids, and "retired / previously / added by" wording | 826 lines in 188 files (`shortcut-engine.md` 43, `elicitation-engine.md` 37, `state-kb-delta.md` 26) | No. A September commit (`627cdbdc4`) removed dated history from every prompt; nothing tests for it, so it came back, partly written by this work's own tasks |
-| The same sentence in several files | 200 sentences of 10+ words repeated across files (1,126 copies) and 1,047 near-identical pairs. Most sit in the 15 `aid-design-*` skills (about 85 shared sentences each) and the generated `aid-create-*` / `aid-update-*` wrappers | Partly: delivery-012 retires the shortcut engine and the action-kind wrappers. The `aid-design-*` family is not scheduled |
+| The same sentence in several files | 200 sentences of 10+ words repeated across files (1,126 copies) and 1,047 near-identical pairs. Most sit in the 15 `aid-design-*` skills (about 85 shared sentences each) and the generated `aid-create-*` / `aid-update-*` wrappers | Yes: delivery-004 retires every `aid-design-*` skill, and delivery-012 the shortcut engine and the action-kind wrappers |
 | Fixed steps written as prose | 35 code blocks of 2+ commands the agent must type in order (106 command lines), most in `aid-housekeep`, `shortcut-engine.md`, `aid-execute` | No |
 | Fix rounds that add rules | Gate fix rounds 1 to 9 of delivery-003 each added text; two were true root-cause changes (the jargon approval written into `shortcut-engine.md`, and a rule of mine that contradicted another) | No |
 
@@ -55,13 +55,12 @@ Insert one delivery now, before delivery-003 is closed: **instruction hygiene**.
 - **`rules.md` slimmed** to what every session needs.
 - **Fix rule for the gate:** a fix names the root cause first; a fix that adds lines states why no
   existing line could change instead; a review checks the whole file it touches.
-- **The `aid-design-*` repeats** move to one shared reference.
 - **Fixed command sequences** become one script call where a writer mode or a small script can carry
   them.
 
 Then one full sample run (10 samples, 3 runs) closes delivery-003 and the hygiene delivery together.
-Files that delivery-012 retires (`shortcut-engine.md`, the action-kind wrappers) get the history
-cleanup only, not a rewrite. Deliveries 004 to 014 keep their order, and their changes must keep the
+Files a later delivery retires (the `aid-design-*` skills in 004; `shortcut-engine.md` and the
+action-kind wrappers in 012) get the history cleanup only, not a rewrite. Deliveries 004 to 014 keep their order, and their changes must keep the
 ratchets green, so their rewrites shrink files instead of growing them.
 
 Moving delivery-011 and 012 (the retirements) earlier would remove the engine and about 60 wrapper

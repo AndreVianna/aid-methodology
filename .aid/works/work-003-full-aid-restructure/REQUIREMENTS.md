@@ -471,6 +471,15 @@ be built, a check that would fail on the real files, or something that contradic
 document or a decision the user made. Exact counts, word-for-word comparisons and wording or cosmetic
 points are **not findings**. This keeps review cycles short and every round meaningful.
 
+### FR-22 Lean instructions, kept lean by checks
+
+Every instruction the agent reads (skills, agents, shared templates, `rules.md`) holds only what it needs
+now. It names no task, feature, requirement, decision, question or work, and tells no history: git keeps
+history. No sentence is copied from another instruction file; shared text lives in one file the others cite.
+A fixed run of commands is one script call, not steps to retype. Each file stays within a line budget.
+Automatic checks keep all four true: a measure may only go down. A fix to the agent's behaviour names its
+root cause and changes it in place; a fix that adds lines says why no existing line could change instead.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -576,6 +585,11 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
 | AC-45 | After all features are built, one documentation pass (the tech-writer agent) rewrites the user documentation (`docs/`, `site/src/content/`, `README.md`) against the finished product; a pre-release check fails if any user document still names a retired skill or an old phase name. | Scope, M1 |
 | AC-46 | The reviewer agent, the shared review instructions and every review brief template carry the FR-21 "What to report" rule (only issues that affect the work; counts, word-for-word comparisons and cosmetic points are not findings); a static check fails if any of them lacks it. | FR-21 |
+| AC-47 | No instruction file names a task, feature, requirement, decision, question or work id, or carries a note on where a line came from ("added by task-...", "renamed from", "formerly"); placeholders such as `work-NNN` are not ids, and text on how old works are still read is behaviour, not history. A static check fails on any id or such note. | FR-22 |
+| AC-48 | A sentence of ten or more words appears in at most one instruction file, except files a later delivery retires, which may not gain one; a static check with a shrink-only baseline fails on a new repeat. | FR-22 |
+| AC-49 | `rules.md` is at most 180 lines, and every other instruction file at most 500; files over budget are listed in a shrink-only baseline that a static check enforces, and no file may grow past its recorded count. | FR-22 |
+| AC-50 | A sequence of two or more commands an instruction tells the agent to run in order, with no decision between them, is one script or writer call. | FR-22 |
+| AC-51 | The delivery gate's fix rule requires each behaviour fix to name its root cause and change it in place; a fix that adds lines states why, and its review checks the whole file it touches against G-17. | FR-22 |
 
 ### Skills, naming and constraints
 
@@ -6393,3 +6407,66 @@ integration suite** runs -- every sample of every feature, 3 runs of 3, plus Fea
 
 Domain readiness (Q107-Q110) answers no criterion of its own; it is checked by AS-03, AS-09, AS-10, DN-03, the
 `.aid/kinds/` cases of `test-shared-prune.sh` and `test-shared-remove.sh`, `009-18` and `009-19`.
+
+### Feature 010 — Lean Instructions, Kept Lean by Checks
+
+- **Priority:** Must
+- **Requirements:** §5 FR-22 (Q199, Q200)
+- **Criteria:** AC-47, AC-48, AC-49, AC-50, AC-51
+
+#### Description
+
+The agent reads about 45,000 lines of instructions across 300 files, and one skill can pull in over 7,000.
+Rules about history, repetition and size existed but nothing enforced them for instructions, so they eroded,
+and fixes kept adding text. This feature cleans the instructions and adds checks that only let each measure
+go down, so the cleanup holds and later deliveries shrink the files they touch.
+
+#### User Stories
+
+- As an AID maintainer, I want instructions free of history and repeats, so that the agent follows the rules that matter.
+- As an AID maintainer, I want a check to fail when an instruction grows or repeats itself, so that a cleanup never erodes again.
+
+#### Technical Specification
+
+Serves FR-22. "Instruction files" are every `canonical/**/*.md` file and `canonical/aid/rules.md`. Measures and
+their method are in `analysis/work-003-reanalysis.md` (work folder).
+
+##### 1. Files and layout
+
+| Action | File | Change |
+|---|---|---|
+| New | `tests/canonical/test-instruction-hygiene.sh` | Groups IH-01 history, IH-02 repeats, IH-03 size, IH-04 baseline only shrinks |
+| New | `tests/instruction-hygiene-baseline.tsv` | `path`, `measure`, `count`: the files over budget and the repeats allowed in files a later delivery retires; rows may only fall or go |
+| Edit | every instruction file with history | Each id or history line rewritten or cut so its rule stays (AC-47) |
+| Edit | instruction files with repeated sentences | Shared text kept in one file and cited, except files a later delivery retires (AC-48) |
+| Edit | `canonical/aid/rules.md` | At most 180 lines (AC-49) |
+| Edit | the multi-command blocks | One writer mode or script per fixed sequence (AC-50) |
+| Edit | `canonical/skills/aid-execute/references/state-delivery-gate.md` | The root-cause fix rule (AC-51) |
+| Edit | `.aid/knowledge/authoring-conventions.md`, `.aid/knowledge/test-landscape.md` | G-17 points to the check; the new suite |
+
+##### 2. The checks
+
+- **History (IH-01):** the id patterns `task-\d{3}`, `feature-\d{3}`, `Q\d{2,3}`, `(FR|NFR|AC)-\d+`, `D\d{2,3}` (runtime examples such as `D1` stay), `W\d+-\d+`,
+  `KI-\d{3}`, `work-\d{3}`, and the provenance phrases (`added (by|in) (task|feature|delivery)`, `renamed from`,
+  `formerly`, `retired in`). No baseline: zero occurrences. Other history wording is cleared by review in the cleanup.
+- **Repeats (IH-02):** sentences of ten or more words, lower-cased with punctuation dropped, outside code fences, found in
+  two or more instruction files. Only files a later delivery retires may hold one, each listed in the baseline.
+- **Size (IH-03):** line counts against the AC-49 budgets; a file over budget must be in the baseline at no more than its
+  recorded count.
+- **Shrink only (IH-04):** a baseline row may fall or go, never rise; a new file never enters it.
+
+##### 3. Risks
+
+- A cut that drops a rule. Each edited file is reviewed whole, and the suites that assert instruction text still pass.
+- Conversation behaviour shifts with the text. One full sample run (ten samples, three runs) closes delivery-003 and
+  delivery-015 together.
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-47 | The checks (history) | IH-01 |
+| AC-48 | The checks (repeats) | IH-02, IH-04 |
+| AC-49 | The checks (size) | IH-03, IH-04 |
+| AC-50 | Files and layout (multi-command blocks) | review of each changed block; the suites that run those commands |
+| AC-51 | Files and layout (`state-delivery-gate.md`) | `test-skill-steps.sh` needle |
