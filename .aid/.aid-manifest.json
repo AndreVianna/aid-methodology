@@ -1398,7 +1398,7 @@
         },
         {
           "path": "templates/shortcut-engine.md",
-          "sha256": "c7955d6052c901121d5cba05f404f4badff73726450b2192cc3bc80895345626"
+          "sha256": "850d17ea4014487d16f508a0dc3c88d7ba7c64d0a6da7ce1d52f483f3d416efb"
         },
         {
           "path": "templates/shortcut-scaffolding/analyze-report.md",

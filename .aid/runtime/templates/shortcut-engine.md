@@ -85,7 +85,8 @@ to directly.
 
 Every message to the user, in every state, follows question-protocol Rule 3: to a user who writes in plain
 words it says what changes and what it means for them, with no ledger path, grade, file name, skill name or
-code unless they asked.
+code unless they asked. What a worker or reviewer returns (its report, findings, grades) is for the record:
+such a user hears only its outcome, in a line or two of plain words.
 
 | State | Detail | Worker | Advance |
 |---|---|---|---|
