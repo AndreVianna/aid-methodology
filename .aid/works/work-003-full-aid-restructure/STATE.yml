@@ -112,13 +112,13 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T02:47:09Z'
+updated: '2026-10-25T02:58:04Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2248,15 +2248,15 @@ qa:
   - id: Q195
     category: 'Delivery-003 gate'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'One run of 30 failed, for using technical words with a plain-words user. How do we finish the gate?'
     suggested: '1: a narrow fix in the question check only (it flags internal names in a question for a plain-words user), no skill text changed, then one more full 10x3 check'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '1'
+    answered_by: 'Claude'
+    applied_to: 'Question-form hook flags an internal name in a shown question for a plain-words user; no skill text change; then one full 10x3 Claude check'
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Q192 full Claude check 29/30: 002-14 run 3 PC-3 plain words; waiting on Q195'
+step_detail: 'Gate fix round 6 (Q195): plain-words check in the question-form hook built, tests 129/129; independent review running'

@@ -26,6 +26,7 @@
 #   QF-26 R1 needs the --ask --context to be the question shown (double, single, $'..' quotes; unreadable passes)
 #   QF-27 a question shown in the form inside a code fence is still checked (the protocol's own example is fenced)
 #   QF-28 the block reason keeps the repeat line and never invites dropping a required question or a break offer
+#   QF-29 a question naming an internal identifier blocks when every user message is in plain words
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -749,6 +750,35 @@ mk_t "$TMP/t.jsonl" user "go" text "$GOOD"
 hook "$GOOD"; expect_block "QF-28a the reason keeps the repeat line and forbids dropping a question or a break offer" \
     "repeat everything this message told them" "Never drop a question your skill requires, or a break offer" "truly asks nothing"
 not_in_reason "QF-28b the old 'not waiting' escape is gone" "If you are not waiting on the user"
+
+# --- QF-29 plain words: no internal identifier in the question for a plain-words user -------------
+Q29='Approve the flattened work so /aid-execute can start?'
+JARGON="Build plan -- question 1 of 1 -- importance: high
+$Q29
+Why I ask: the build changes files.
+My recommendation: yes.
+$CLOSE_A"
+ASK29="${ASK26}'${Q29}' --suggested yes"
+mk_t "$TMP/t.jsonl" user "add two notes one right after the other" bash "$ASK29" text "$JARGON"
+hook "$JARGON"; expect_block "QF-29a a skill name in the question of a plain-words user blocks, naming it" \
+    "plain words in the question" "aid-execute" "--state Assumed"
+not_in_reason "QF-29a the record is not named when it matches" "the record ("
+for tech in 'the bug is in `notes.py`' 'run it with --force' '/aid-config' 'check notes.json' 'the save_note call'; do
+    mk_t "$TMP/t.jsonl" user "$tech" bash "$ASK29" text "$JARGON"
+    hook "$JARGON"; expect_pass "QF-29b a technical user message ($tech) passes"
+done
+mk_t "$TMP/t.jsonl" user "<command-name>/aid-execute</command-name>" bash "$ASK29" text "$JARGON"
+hook "$JARGON"; expect_pass "QF-29c a typed slash command makes the user technical"
+PROSE="I'll use aid-orchestrate and writeback-state.sh for this.
+
+$GOOD"
+mk_t "$TMP/t.jsonl" user "set up jira" bash "${ASK26}\"${Q26}\"" text "$PROSE"
+hook "$PROSE"; expect_pass "QF-29d an identifier outside the question is not checked"
+SCRIPTQ="${GOOD/Should AID reach your Jira through the connection your tool already has?/Shall I run writeback-state.sh in .aid/ now?}"
+mk_t "$TMP/t.jsonl" user "set up jira" bash "${ASK26}'Shall I run writeback-state.sh in .aid/ now?'" text "$SCRIPTQ"
+hook "$SCRIPTQ"; expect_block "QF-29e a script name and an .aid/ path are internal" "writeback-state.sh" ".aid/"
+mk_t "$TMP/t.jsonl" user "add notes" meta "AID question check: x \`y\`" bash "$ASK29" text "$JARGON"
+hook "$JARGON"; expect_block "QF-29f a meta entry does not make the user technical" "plain words in the question"
 
 # --- launcher/checker hygiene ---------------------------------------------------------------------
 if LC_ALL=C grep -qP '[^\x00-\x7F]' "$LAUNCHER" "$CHECKER"; then fail "HY-01 hook scripts must be ASCII-only"; else pass "HY-01 hook scripts are ASCII-only"; fi
