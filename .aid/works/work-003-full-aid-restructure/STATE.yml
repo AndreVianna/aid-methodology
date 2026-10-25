@@ -112,13 +112,13 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Execute
+phase: Planning
 # [W] aid-{skill} | none
-active_skill: aid-execute
+active_skill: aid-detail
 # [W]
-updated: '2026-10-25T20:39:47Z'
+updated: '2026-10-25T21:19:51Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2329,5 +2329,5 @@ intent:
       from: 'refactor'
       to: 'refactor'
       why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
-step: DELIVERY-GATE
-step_detail: 'Q200: Feature 010 and delivery-015 written into REQUIREMENTS.md and PLAN.md; waiting on Q201 (approval), then /aid-detail delivery-015'
+step: FIRST-RUN
+step_detail: 'delivery-015: proposing tasks (from task-373)'
