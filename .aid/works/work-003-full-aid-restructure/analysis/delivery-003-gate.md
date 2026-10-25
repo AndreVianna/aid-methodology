@@ -105,6 +105,11 @@ pass; the bar is not met.**
 002-14 failed in both full checks (once on plain words, once here); 002-04 and 002-17 passed 3 of 3 in the
 check before.
 
+**Fix round 7 (Q196, strict bar kept):** `aid-orchestrate` step 5 and `size-and-route.md` § 6 say a pick among
+the readings the go-ahead offers is its yes, with no second approval (002-14). The question-form hook blocks an
+`--ask` that records again a question already open (002-04). 002-17 (review done by hand) has no source cause:
+the start-at-once rule is clear, so nothing changed for it.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.

@@ -112,13 +112,13 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T03:58:29Z'
+updated: '2026-10-25T04:11:55Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2259,15 +2259,15 @@ qa:
   - id: Q196
     category: 'Delivery-003 gate'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Each full run fails 1 to 3 different runs at random. How should the gate be decided?'
     suggested: '1: fix sample 14, whose text makes the agent ask twice, run once more, then pass if no sample fails in two full runs in a row and no must-not rule is broken; the rest go to known issues for delivery-014'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '2'
+    answered_by: 'Claude'
+    applied_to: 'Keep Q180 strict bar: fix what can be fixed, full 10x3 checks until one run is 30/30'
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Full check after round 6: 27/30 (002-04, 002-14, 002-17 at 2/3); waiting on Q196'
+step_detail: 'Fix round 7 built (orchestrate pick is the yes; hook duplicate guard), tests 144/144; independent review next'

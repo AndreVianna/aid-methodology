@@ -28,6 +28,7 @@
 #   QF-28 the block reason keeps the repeat line and never invites dropping a required question or a break offer
 #   QF-29 a question naming an internal identifier blocks when every user message is in plain words
 #         (not for waived confirmations, ticket skills or a link target; no close without a record)
+#   QF-30 an --ask this turn that duplicates an older open entry of the same question blocks
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -800,6 +801,31 @@ QKIT='Should the first-aid-kit note stay in the list?'
 KITQ="${JARGON/$Q29/$QKIT}"
 mk_t "$TMP/t.jsonl" user "add notes" bash "${ASK26}'${QKIT}'" text "$KITQ"
 hook "$KITQ"; expect_pass "QF-29l an ordinary hyphenated word holding 'aid-' passes"
+
+# --- QF-30 a re-offer reuses the open entry's id; a new --ask for it is a duplicate -----------------
+qa30() {   # qa30 FILE ID|STATE|CONTEXT ...
+    local f="$1" row id st ctx; shift
+    { echo "qa:"; for row in "$@"; do
+        IFS='|' read -r id st ctx <<< "$row"
+        printf "  - id: %s\n    category: Connections\n    impact: High\n    state: %s\n    context: '%s'\n" "$id" "$st" "$ctx"
+      done; } > "$f"
+}
+ASK30="${ASK26}\"${Q26}\""
+qa30 "$PROJ/.aid/STATE.yml" "Q1|Skipped|$Q26" "Q2|Pending|$Q26"
+mk_t "$TMP/t.jsonl" user "carry on" bash "$ASK30" text "$GOOD"
+hook "$GOOD"; expect_block "QF-30a a new --ask of a skipped question blocks, naming the open id" "already open as Q1" "duplicate of the open entry"
+qa30 "$PROJ/.aid/STATE.yml" "Q1|Answered|$Q26" "Q2|Pending|$Q26"
+hook "$GOOD"; expect_pass "QF-30b an Answered earlier entry is not open, so a new --ask is not a duplicate"
+rm -f "$PROJ/.aid/STATE.yml"
+mkdir -p "$PROJ/.aid/works/work-001-x"
+W30="$PROJ/.aid/works/work-001-x/STATE.yml"
+qa30 "$W30" "Q1|Pending|Which output style do you want for the project reports?" "Q2|Pending|$Q26"
+printf 'tasks:\n  - id: task-001\n    state: Pending\n' >> "$W30"
+hook "$GOOD"; expect_pass "QF-30c the newest question is found by number, not by its place in the file"
+qa30 "$W30" "Q1|Pending|$Q26"
+mk_t "$TMP/t.jsonl" user "carry on" text "$GOOD"
+hook "$GOOD"; expect_pass "QF-30d a re-offer with no new --ask passes"
+rm -f "$W30"; rmdir "$PROJ/.aid/works/work-001-x" "$PROJ/.aid/works"
 
 # --- launcher/checker hygiene ---------------------------------------------------------------------
 if LC_ALL=C grep -qP '[^\x00-\x7F]' "$LAUNCHER" "$CHECKER"; then fail "HY-01 hook scripts must be ASCII-only"; else pass "HY-01 hook scripts are ASCII-only"; fi

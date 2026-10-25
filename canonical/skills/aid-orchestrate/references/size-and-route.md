@@ -76,7 +76,9 @@ confirmation question, and so does a reading that carries a Preparation offer (s
 answer. That confirmation is an approval (a yes lets the work start and change the project), so it ends with the
 approval closing line, `Or answer in your own words, or ask me to explain.`, never with a skip. The reading goes inside that
 go-ahead, never on a separate clarifying question. SHOW-READING decides when clarification must precede that
-go-ahead. An answer to a clarifying question is never a go-ahead, and no work is created before the yes. The approvals inside a listed skill's own run
+go-ahead. An answer to a clarifying question is never a go-ahead, and no work is created before the yes. A choice
+between readings is not a clarifying question: the go-ahead offers the readings as its options, and the pick is the
+yes, so no second approval follows. The approvals inside a listed skill's own run
 (aid-review's publish approval, aid-monitor's routing approval, anything that writes outside its own report
 or record) are unchanged.
 
