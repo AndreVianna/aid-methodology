@@ -2289,6 +2289,17 @@ qa:
     answer: --
     answered_by: --
     applied_to: --
+  - id: Q199
+    category: 'Work direction'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'How should we go on with work-003, given these process failures?'
+    suggested: '1: pause delivery-003 and re-analyse first: measure the instruction load, list the history, repeats and prose that should be scripts, add tests that stop them coming back, then bring a revised plan'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
