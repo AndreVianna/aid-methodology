@@ -7,8 +7,9 @@ Purpose:
     (first line with a lower-case importance, "Why I ask:", "My recommendation:", a closing
     line) and that the question was recorded first (a writeback-state.sh --ask call in this
     turn whose --context is the question shown, an edit of .aid/knowledge/STATE.md, or an open
-    entry whose question the message shows again). When every user message is in plain words,
-    the question itself must name no internal identifier (a skill name, a script, an .aid/ path).
+    entry whose question the message shows again), and that this turn's --ask did not duplicate an
+    open entry. When every user message is in plain words, the question itself must name no
+    internal identifier (a skill name, a script, an .aid/ path).
     A failing message is sent back once, with a short reason naming what is missing.
 
 Usage:
@@ -74,6 +75,8 @@ GO_AHEAD_RE = re.compile(
 M_RECORD = "the record (no writeback-state.sh --ask ran this turn)"
 M_RECORD_OTHER = "the record (the --ask this turn recorded another question than the one shown)"
 RECORD_ITEMS = (M_RECORD, M_RECORD_OTHER)
+M_DUPLICATE_KEY = "a single record"
+M_DUPLICATE = M_DUPLICATE_KEY + " (this question is already open as %s: offer it again on that id, never with a new --ask)"
 M_PLAIN_KEY = "plain words in the question"
 M_PLAIN = M_PLAIN_KEY + " (it names %s, but the user writes in plain words: say what happens instead)"
 # A user message with code-like text (a code span, a /command, a --flag, a skill name, a file name or
@@ -530,25 +533,32 @@ def same_question(question_text, context):
     return bool(shown) and len(shown & have) / float(len(shown | have)) >= OVERLAP_MIN
 
 
-def shows_open_entry(root, subject, message, question_text):
-    """R3: the message offers an open (Pending or Skipped) entry's question again.
+def open_matches(root, question_text, skip_newest=False):
+    """Ids of open (Pending or Skipped) entries whose question is the one shown (R3).
 
-    The entry's category never matches by itself: a different, older question under the same
-    category is not this question's record. The subject is kept in the signature for callers.
+    The entry's category never matches by itself. skip_newest leaves out the highest-numbered
+    question (Q<n> or D<n>) of each record, the one an --ask of this turn appended.
     """
     if not root or not norm(question_text):
-        return False
-    candidates = list(yaml_entries(os.path.join(root, ".aid", "STATE.yml")))
+        return []
+    records = [yaml_entries(os.path.join(root, ".aid", "STATE.yml"))]
     for path in sorted(glob.glob(os.path.join(root, ".aid", "works", "*", "STATE.yml"))):
-        candidates.extend(yaml_entries(path))
+        records.append(yaml_entries(path))
     for path in sorted(glob.glob(os.path.join(root, ".aid", "design", "*.md"))):
-        candidates.extend(design_entries(path))
-    for entry in candidates:
-        if str(entry.get("state", "")).strip().lower() not in OPEN_STATES:
-            continue
-        if same_question(question_text, entry.get("context", "")):
-            return True
-    return False
+        records.append(design_entries(path))
+    ids = []
+    for entries in records:
+        numbers = [int(e["id"][1:]) for e in entries if re.match(r"^[QD]\d+$", str(e.get("id", "")))]
+        newest = max(numbers) if skip_newest and numbers else None
+        for entry in entries:
+            eid = str(entry.get("id", ""))
+            if newest is not None and re.match(r"^[QD]%d$" % newest, eid):
+                continue
+            if str(entry.get("state", "")).strip().lower() in OPEN_STATES and same_question(
+                question_text, entry.get("context", "")
+            ):
+                ids.append(eid)
+    return ids
 
 
 # --------------------------------------------------------------------------- the check
@@ -614,6 +624,11 @@ def build_reason(missing):
         )
     else:
         reason += "Show it again in full, in the form of .aid/runtime/templates/question-protocol.md.\n"
+    if any(item.startswith(M_DUPLICATE_KEY) for item in missing):
+        reason += (
+            "Close the entry your --ask just added by its id as --state Assumed --value 'duplicate of the "
+            "open entry', then show the question with the open entry's recorded text and answer it on that id.\n"
+        )
     if any(item.startswith(M_PLAIN_KEY) for item in missing):
         reason += "Reword the question in plain words and record the new wording with --ask.\n"
         if not any(item in missing for item in RECORD_ITEMS):
@@ -683,9 +698,13 @@ def decide(event):
     waived = subject.lower() in WAIVED_SUBJECTS or last_skill(entries) in TICKET_SKILLS
     if not waived:
         cwd = event.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+        root = find_root(str(cwd))
         status = record_in_turn(current_turn(entries), question)
-        if status != "ok" and not shows_open_entry(find_root(str(cwd)), subject, message, question):
+        if status != "ok" and not open_matches(root, question):
             missing = missing + [M_RECORD_OTHER if status == "other" else M_RECORD]
+        older = open_matches(root, question, skip_newest=True) if status == "ok" else []
+        if older:
+            missing = missing + [M_DUPLICATE % ", ".join(older)]
         names = sorted(set(m.group(0) for m in INTERNAL_RE.finditer(LINK_TARGET_RE.sub("]", question))))
         if names and plain_user(entries):
             missing = missing + [M_PLAIN % ", ".join(names)]

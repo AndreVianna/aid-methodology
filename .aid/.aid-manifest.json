@@ -568,7 +568,7 @@
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "cd14090198d58b5ca0ed9c9225696b7b863fdb71ff944d8a9761d5dd7020cb31"
+          "sha256": "52be767b50bc295d7bface2de603e4e5fd79cb4a940428cc09c1dd4d46f831cd"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
@@ -584,7 +584,7 @@
         },
         {
           "path": "aid-orchestrate/references/size-and-route.md",
-          "sha256": "1015ff71bfd4403d053b3510cd44f19cf536e0afcd8715dbc055b926eb0a11d0"
+          "sha256": "f2cb0f33fe76481c65f861ad2f7cc8b3a83a335ee2efb3a786eb5ffc71ae1329"
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
@@ -962,7 +962,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "b450bcb0c7bc4077c2b20eb68b2ce2db44d18613a7d8866627e10c15674caa98"
+          "sha256": "df9ef95cfbe5e9d18239059714474adf053cc2ba1ef11b2ce14746bba5bdf503"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
