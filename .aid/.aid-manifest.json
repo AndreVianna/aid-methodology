@@ -961,8 +961,12 @@
           "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3"
         },
         {
+          "path": "scripts/hooks/__pycache__/aid-question-form.cpython-313.pyc",
+          "sha256": "274a3d6eed09898b7cb3f4cc281ea46dbcd5002136d3e85b92ae87560d47697b"
+        },
+        {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "dff3eceb28d8189f8b0585f8b72707534b335099037e8e8cf855c41e904b2498"
+          "sha256": "244152b0f1931d78ba803d7a4fd54cccb1411636336ed2b2d67b0da748285201"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",

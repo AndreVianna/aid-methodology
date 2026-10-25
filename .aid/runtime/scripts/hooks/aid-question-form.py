@@ -7,7 +7,8 @@ Purpose:
     (first line with a lower-case importance, "Why I ask:", "My recommendation:", a closing
     line) and that the question was recorded first (a writeback-state.sh --ask call in this
     turn whose --context is the question shown, an edit of .aid/knowledge/STATE.md, or an open
-    entry whose question the message shows again).
+    entry whose question the message shows again). When every user message is in plain words,
+    the question itself must name no internal identifier (a skill name, a script, an .aid/ path).
     A failing message is sent back once, with a short reason naming what is missing.
 
 Usage:
@@ -73,6 +74,11 @@ GO_AHEAD_RE = re.compile(
 M_RECORD = "the record (no writeback-state.sh --ask ran this turn)"
 M_RECORD_OTHER = "the record (the --ask this turn recorded another question than the one shown)"
 RECORD_ITEMS = (M_RECORD, M_RECORD_OTHER)
+M_PLAIN = "plain words in the question (it names %s, but the user writes in plain words: say what happens instead)"
+# A user message with code-like text (a code span, a /command, a --flag, a file name, snake_case) is
+# technical; a question names an internal identifier when it holds a skill name, a script or an .aid/ path.
+TECH_RE = re.compile(r"`|(?:^|[\s>(])/[a-z]|(?:^|\s)--[a-z]|\b[\w-]+\.(?:py|sh|ps1|md|json|ya?ml|toml|js|ts|cs)\b|\b[a-z]+_[a-z_]+\b")
+INTERNAL_RE = re.compile(r"\baid-[a-z]+(?:-[a-z]+)*\b|\b[\w-]+\.(?:sh|py|ps1)\b|\.aid/")
 
 
 # --------------------------------------------------------------------------- text helpers
@@ -252,6 +258,13 @@ def is_real_prompt(entry):
     return any(
         b.get("type") == "text" and str(b.get("text", "")).strip() for b in blocks_of(entry)
     )
+
+
+def plain_user(entries):
+    """True when the session's user messages hold no code-like text (hook feedback excluded)."""
+    texts = [text_of(e) for e in entries if is_real_prompt(e)]
+    texts = [t for t in texts if "AID question check:" not in t]
+    return bool(texts) and not any(TECH_RE.search(t) for t in texts)
 
 
 def last_assistant_text(entries):
@@ -597,6 +610,12 @@ def build_reason(missing):
         )
     else:
         reason += "Show it again in full, in the form of .aid/runtime/templates/question-protocol.md.\n"
+    if any(item.startswith(M_PLAIN.split("%")[0]) for item in missing):
+        reason += (
+            "Reword the question in plain words and record the new wording with --ask; close the entry "
+            "recorded for the old wording with --answer --state Assumed --value 'reworded in plain words' "
+            "(with the same --project or --design flag as its --ask).\n"
+        )
     reason += (
         "The user sees only your new message, not this one: repeat everything this message told them "
         "(results, what was recorded, whether a work was needed), then the question.\n"
@@ -661,6 +680,9 @@ def decide(event):
         status = record_in_turn(current_turn(entries), question)
         if status != "ok" and not shows_open_entry(find_root(str(cwd)), subject, message, question):
             missing = missing + [M_RECORD_OTHER if status == "other" else M_RECORD]
+    names = sorted(set(m.group(0) for m in INTERNAL_RE.finditer(question)))
+    if names and plain_user(entries):
+        missing = missing + [M_PLAIN % ", ".join(names)]
     if not missing:
         return None
 
