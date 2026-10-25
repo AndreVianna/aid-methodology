@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T18:47:29Z'
+updated: '2026-10-25T18:49:21Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2300,7 +2300,18 @@ qa:
     answer: '1'
     answered_by: 'Claude'
     applied_to: 'delivery-003 paused at its gate (Q198 waits); re-analysis: instruction load, history, repeats, prose that should be scripts, enforcement tests; then a revised plan for approval'
+  - id: Q200
+    category: 'Work direction'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'Do you approve adding an instruction-hygiene delivery now, as the re-analysis proposes?'
+    suggested: '1: yes; ratchet tests for history, repeats and size, the full history cleanup, a slimmer rules.md, the root-cause fix rule; then one full sample run closes delivery-003 and the new delivery'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Paused under Q199: re-analysis of instruction load, history, repeats and scriptable prose; Q198 waits'
+step_detail: 'Q199 re-analysis written (analysis/work-003-reanalysis.md); waiting on Q200'
