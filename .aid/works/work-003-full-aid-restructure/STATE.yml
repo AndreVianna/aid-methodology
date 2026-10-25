@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T16:55:57Z'
+updated: '2026-10-25T17:01:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2270,15 +2270,15 @@ qa:
   - id: Q197
     category: 'Delivery-003 gate'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Should the next check run only the samples the latest changes can reach?'
     suggested: '1: run only 002-14 and 002-19 (6 runs); the other 8 keep their 3/3 from the last full run, because nothing they load changed'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '1'
+    answered_by: 'Claude'
+    applied_to: 'Next check: 002-14 and 002-19, 3 runs each on e059ff21e; the other 8 samples keep 3/3 from the 13c206dd3 full run (nothing they load changed); the gate closes on both when all pass'
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Fix round 8 reviewed and fixed; next: full 10x3 Claude check on the maintainer machine'
+step_detail: 'Q197: focused check 002-14 and 002-19 x3 on the maintainer machine'
