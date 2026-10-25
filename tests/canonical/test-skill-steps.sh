@@ -803,7 +803,7 @@ run_ss15() {
     has "$cfg" "(g) aid-config: a value the user already stated is not asked" "A value the user already stated in their own words"
     has "canonical/skills/aid-monitor/SKILL.md" "(g) aid-monitor MUST ask the data-source question when it has no source" "the run MUST ask the one data-source question"
     has "canonical/skills/aid-monitor/references/state-observe.md" "(g) state-observe: no data source means the question is asked before the run ends" "you MUST ask this question before the run ends"
-    has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: a plain-words user gets a plain approval summary" "the approval message gives a plain"
+    has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: a plain-words user gets plain messages, the approval included" "every message of the run (progress,"
     group_end
 }
 

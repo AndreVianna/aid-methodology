@@ -935,9 +935,9 @@ GATE: Pass 1 (definition docs) {pass-1-grade}  ·  Pass 2 (task set) {pass-2-gra
 Nothing has executed. Review the documents above.
 ```
 
-That block is for a technical user. To a user who writes in plain words, the approval message gives a plain
-summary instead: what will change, why, and what they get. It keeps ledger paths, grades, file names and
-code out unless they asked; a technical choice they cannot judge is recorded `Assumed` and listed in
+That block is for a technical user. To a user who writes in plain words, every message of the run (progress,
+review results, the approval) gives a plain summary instead: what will change, why, and what they get. It
+keeps ledger paths, grades, file names, skill names and code out unless they asked; a technical choice they cannot judge is recorded `Assumed` and listed in
 plain words (`rules.md` § Asking the user).
 
 ### Step 2: Record the approval, pause, and ask
@@ -952,7 +952,7 @@ approval cannot be skipped, so it stays open until the user approves or declines
 the question's id, `Q<n>`:
 
 ```bash
-bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Approve the flattened work so /aid-execute can start?" --suggested "Yes, once you have reviewed the documents above"
+bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Do you approve this plan, so the build can start?" --suggested "Yes, once you have looked at the plan above"
 ```
 
 Then keep the same step saved with the open question in its detail, and pause the pipeline:

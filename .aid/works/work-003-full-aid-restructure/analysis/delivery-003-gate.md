@@ -111,6 +111,20 @@ was built and then removed after review (`delivery-003-gfix7-review.md`): its si
 questions, and the 002-04 re-offer was reworded, so it would not have caught it. 002-04 and 002-17 (review done
 by hand) have no source cause: their rules are clear, so nothing else changed.
 
+**Full check after fix round 7, on `13c206dd3`** (2026-10-25, batch `20261025T042422Z`): **27 of 30 runs
+pass; the bar is not met.** Nine samples pass 3 of 3; 002-14 fails all three runs:
+
+- EO-1 (runs 1, 2): the first question asks where the duplicates show, instead of offering the two readings.
+- PC-3 (all runs): the approval reads "Approve the flattened work so /aid-execute can start?". That text is
+  the `--context` written into `shortcut-engine.md` APPROVAL-HALT Step 2, so the agent copies it; the fix
+  run's progress and review output also reach the user in code terms.
+- PC-5, PC-9 (run 2): after the user said "fix it in the code", a go-ahead for the fix was asked again.
+
+**Fix round 8 (Q196):** the APPROVAL-HALT question is now plain ("Do you approve this plan, so the build can
+start?"); a plain-words user gets plain messages through the whole run, not only at the approval; when two
+readings stay plausible, the go-ahead offering both is the first question, and a detail the code can answer
+or that matters only after the choice is not asked before it.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.
