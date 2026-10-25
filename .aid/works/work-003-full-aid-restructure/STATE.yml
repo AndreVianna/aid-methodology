@@ -2267,6 +2267,17 @@ qa:
     answer: '2'
     answered_by: 'Claude'
     applied_to: 'Keep Q180 strict bar: fix what can be fixed, full 10x3 checks until one run is 30/30'
+  - id: Q197
+    category: 'Delivery-003 gate'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'Should the next check run only the samples the latest changes can reach?'
+    suggested: '1: run only 002-14 and 002-19 (6 runs); the other 8 keep their 3/3 from the last full run, because nothing they load changed'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
