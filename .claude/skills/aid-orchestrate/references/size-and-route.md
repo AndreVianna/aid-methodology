@@ -75,8 +75,8 @@ go-ahead question and no wait: the flow goes on to FIND-OR-CREATE. Every other s
 confirmation question, and so does a reading that carries a Preparation offer (section 5): it waits for the
 answer. That confirmation is an approval (a yes lets the work start and change the project), so it ends with the
 approval closing line, `Or answer in your own words, or ask me to explain.`, never with a skip. The reading goes inside that
-go-ahead, never on a separate clarifying question. SHOW-READING decides when clarification must precede that
-go-ahead. An answer to a clarifying question is never a go-ahead, and no work is created before the yes. A choice
+go-ahead, never on a separate clarifying question. Clarification precedes the go-ahead only when no reading
+can be shown without it. An answer to a clarifying question is never a go-ahead, and no work is created before the yes. A choice
 between readings is not a clarifying question: the go-ahead offers the readings as its options, and the pick is the
 yes, so no second approval follows. The approvals inside a listed skill's own run
 (aid-review's publish approval, aid-monitor's routing approval, anything that writes outside its own report

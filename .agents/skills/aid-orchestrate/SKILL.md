@@ -37,7 +37,8 @@ exists). A step that acts on an existing work (a continued work, CANCEL, CLOSE) 
    that asks to start it (the reading never rides on a separate clarifying question), or alone when
    `references/size-and-route.md` section 6 starts the skill at once. Otherwise wait; it is never a turn of its own.
    When CHECK-READING kept two plausible outcomes, this go-ahead offers both in plain words rather
-   than only confirming the preferred one. Explain why the recommendation fits the reported problem;
+   than only confirming the preferred one, and it is the first question: a detail the code can answer
+   or that matters only after the choice (where, which file) is not asked before it. Explain why the recommendation fits the reported problem;
    a workflow's requirement to ask permission is not the reason for choosing that reading.
    **Advance:** **CHAIN** → FIND-OR-CREATE when section 6 applies; otherwise **ASK** → ACTION-HANDOVER.
 5. **Read the answer** (`ACTION-HANDOVER`). Only a yes to the SHOW-READING go-ahead (an approval, no skip) decides, and a pick

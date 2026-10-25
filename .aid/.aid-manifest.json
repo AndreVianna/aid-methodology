@@ -568,7 +568,7 @@
         },
         {
           "path": "aid-orchestrate/SKILL.md",
-          "sha256": "3a365eda55e9fc915f407402a9e0347768b7b9687bb5fc17bcf7a500b17ae21e"
+          "sha256": "60fc775e6060ec4295a9b157774e1471867200ae4a63ed7ddaa6ed6992416a65"
         },
         {
           "path": "aid-orchestrate/references/check-intent.md",
@@ -584,7 +584,7 @@
         },
         {
           "path": "aid-orchestrate/references/size-and-route.md",
-          "sha256": "f2cb0f33fe76481c65f861ad2f7cc8b3a83a335ee2efb3a786eb5ffc71ae1329"
+          "sha256": "1c941ded888e9dd4d0185411d5e1c411cc090ee1260a67bd5bc7ae41e182829e"
         },
         {
           "path": "aid-orchestrate/references/start-or-resume.md",
@@ -1398,7 +1398,7 @@
         },
         {
           "path": "templates/shortcut-engine.md",
-          "sha256": "3e460149179046e82e94247c28c009cade4074586aad13aeca118ba888322f7a"
+          "sha256": "154a50144efc95a62a4d5f140d6ed02e8af7729835be72bf7cf7ab6ad328322c"
         },
         {
           "path": "templates/shortcut-scaffolding/analyze-report.md",
