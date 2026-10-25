@@ -2392,14 +2392,14 @@ qa:
   - id: Q208
     category: 'Work direction'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Is this the intent: AID feels like a conversation; the user says what they want, AID picks and scales the process, asks only what matters, one topic at a time, in plain words, and the user approves at the end?'
     suggested: 'Confirm, or correct what is missing; the re-analysis judges every requirement against it'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: 'Partly: the conversation is a consequence. The intent is AID faster, cheaper and less bureaucratic; users find every task slow, token-hungry, and forced through a long unnecessary process'
+    answered_by: 'Claude'
+    applied_to: 'Re-analysis judges every requirement by speed, token cost and process length'
 intent:
   reading: refactor
   changes:
