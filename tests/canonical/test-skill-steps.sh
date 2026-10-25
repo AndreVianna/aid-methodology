@@ -804,6 +804,7 @@ run_ss15() {
     has "canonical/skills/aid-monitor/SKILL.md" "(g) aid-monitor MUST ask the data-source question when it has no source" "the run MUST ask the one data-source question"
     has "canonical/skills/aid-monitor/references/state-observe.md" "(g) state-observe: no data source means the question is asked before the run ends" "you MUST ask this question before the run ends"
     has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: every message to a plain-words user is plain" "Every message to the user, in every state, follows question-protocol Rule 3"
+    has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: a worker's report reaches a plain-words user as its outcome only" "such a user hears only its outcome"
     has "canonical/aid/templates/shortcut-engine.md" "(g) shortcut-engine: the approval names no skill or internal term" "--context \"Do you approve this plan for building?\""
     has "canonical/skills/aid-orchestrate/SKILL.md" "(g) aid-orchestrate: two plausible readings are the first question" "and it is the first question"
     has "canonical/skills/aid-orchestrate/SKILL.md" "(g) aid-orchestrate: a pick among the readings is the yes" "a pick

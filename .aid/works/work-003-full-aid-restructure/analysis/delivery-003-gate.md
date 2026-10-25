@@ -133,6 +133,14 @@ runs stopped on turn 1 because the login expired ("OAuth session expired and cou
 agent and judge never ran. Each run copies `~/.claude/.credentials.json`; once the token expires, the copies race
 to renew it. The one judged run, 002-19 run 1, passed. To be re-run after a fresh login, one run at a time.
 
+**Focused check re-run after a fresh login, on `6b8cd7e3d`** (2026-10-25, batch `20261025T171431Z`, one sample
+at a time): 002-19 3/3; 002-14 2/3. Run 1, PC-3: the fix run's worker and reviewer output (code, review
+findings, grades) was relayed to a plain-words user.
+
+**Fix round 9 (Q196):** `shortcut-engine.md` § State Machine adds that what a worker or reviewer returns is for
+the record, and a plain-words user hears only its outcome in plain words. One sentence beside the rule the
+round 8 review placed there; no separate review.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.
