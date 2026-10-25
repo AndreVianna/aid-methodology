@@ -124,6 +124,9 @@ pass; the bar is not met.** Nine samples pass 3 of 3; 002-14 fails all three run
 start?"); a plain-words user gets plain messages through the whole run, not only at the approval; when two
 readings stay plausible, the go-ahead offering both is the first question, and a detail the code can answer
 or that matters only after the choice is not asked before it.
+One independent review (`delivery-003-gfix8-review.md`): 7 fixed, 1 accepted. The approval now reads "Do you
+approve this plan for building?", the plain-words rule opens the engine's state machine, and an answer that
+names a reading in the user's own words is the go-ahead.
 
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
