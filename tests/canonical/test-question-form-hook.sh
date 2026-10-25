@@ -27,6 +27,7 @@
 #   QF-27 a question shown in the form inside a code fence is still checked (the protocol's own example is fenced)
 #   QF-28 the block reason keeps the repeat line and never invites dropping a required question or a break offer
 #   QF-29 a question naming an internal identifier blocks when every user message is in plain words
+#         (not for waived confirmations, ticket skills or a link target; no close without a record)
 #
 # Usage:
 #   HOME="$(mktemp -d)" bash test-question-form-hook.sh [-v|--verbose]
@@ -761,9 +762,10 @@ $CLOSE_A"
 ASK29="${ASK26}'${Q29}' --suggested yes"
 mk_t "$TMP/t.jsonl" user "add two notes one right after the other" bash "$ASK29" text "$JARGON"
 hook "$JARGON"; expect_block "QF-29a a skill name in the question of a plain-words user blocks, naming it" \
-    "plain words in the question" "aid-execute" "--state Assumed"
+    "plain words in the question" "aid-execute" "--answer --id Q<n> or D<n>" "--state Assumed"
 not_in_reason "QF-29a the record is not named when it matches" "the record ("
-for tech in 'the bug is in `notes.py`' 'run it with --force' '/aid-config' 'check notes.json' 'the save_note call'; do
+for tech in 'the bug is in `notes.py`' 'run it with --force' '/aid-config' 'check notes.json' 'the save_note call' \
+    'try aid-execute' 'see src/notes' 'getUser() fails' 'open INDEX.MD'; do
     mk_t "$TMP/t.jsonl" user "$tech" bash "$ASK29" text "$JARGON"
     hook "$JARGON"; expect_pass "QF-29b a technical user message ($tech) passes"
 done
@@ -779,6 +781,25 @@ mk_t "$TMP/t.jsonl" user "set up jira" bash "${ASK26}'Shall I run writeback-stat
 hook "$SCRIPTQ"; expect_block "QF-29e a script name and an .aid/ path are internal" "writeback-state.sh" ".aid/"
 mk_t "$TMP/t.jsonl" user "add notes" meta "AID question check: x \`y\`" bash "$ASK29" text "$JARGON"
 hook "$JARGON"; expect_block "QF-29f a meta entry does not make the user technical" "plain words in the question"
+
+mk_t "$TMP/t.jsonl" user "add notes" user "Stop hook feedback: AID question check: x \`y\`" bash "$ASK29" text "$JARGON"
+hook "$JARGON"; expect_block "QF-29g hook feedback in a user entry does not make the user technical" "plain words in the question"
+RECOV="${JARGON/Build plan -- question 1 of 1/Recovery -- question 1 of 1}"
+mk_t "$TMP/t.jsonl" user "add notes" text "$RECOV"
+hook "$RECOV"; expect_pass "QF-29h a waived Recovery confirmation is not checked for plain words"
+mk_t "$TMP/t.jsonl" user "add notes" skill "aid-read-ticket" text "$JARGON"
+hook "$JARGON"; expect_pass "QF-29i a ticket skill's question is not checked for plain words"
+QLINK='May I follow [the asking rule](.aid/runtime/rules.md) for this?'
+LINKQ="${JARGON/$Q29/$QLINK}"
+mk_t "$TMP/t.jsonl" user "add notes" bash "${ASK26}'${QLINK}'" text "$LINKQ"
+hook "$LINKQ"; expect_pass "QF-29j a path in a link target is not an internal name in the question"
+mk_t "$TMP/t.jsonl" user "add notes" text "$JARGON"
+hook "$JARGON"; expect_block "QF-29k jargon with no record names both and gives no close instruction" "plain words in the question" "$M_RECORD"
+not_in_reason "QF-29k no close of an entry that does not exist" "Close the entry"
+QKIT='Should the first-aid-kit note stay in the list?'
+KITQ="${JARGON/$Q29/$QKIT}"
+mk_t "$TMP/t.jsonl" user "add notes" bash "${ASK26}'${QKIT}'" text "$KITQ"
+hook "$KITQ"; expect_pass "QF-29l an ordinary hyphenated word holding 'aid-' passes"
 
 # --- launcher/checker hygiene ---------------------------------------------------------------------
 if LC_ALL=C grep -qP '[^\x00-\x7F]' "$LAUNCHER" "$CHECKER"; then fail "HY-01 hook scripts must be ASCII-only"; else pass "HY-01 hook scripts are ASCII-only"; fi

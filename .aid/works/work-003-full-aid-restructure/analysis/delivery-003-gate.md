@@ -87,6 +87,11 @@ question-form hook ran: it blocked at least once in 17 of the 30 runs.
 | 002-01, 002-02, 002-03, 002-04, 002-15, 002-16, 002-17, 002-18, 002-19 | 3/3 each | |
 | 002-14 | 2/3 | Run 3, PC-3 [HIGH]: for a user writing in plain words, the turn-2 reply explains file locking in code terms, and the approval asks "Approve the flattened work so /aid-execute can start?". The plain-words rule in `rules.md` § Asking the user already covers both, so the agent did not follow it |
 
+**Fix round 6 (Q195):** the question-form hook sends back once a question that names a skill, a script or an
+`.aid/` path when every user message is in plain words; waived confirmations, ticket skills and link targets
+are exempt. No skill text changed. One independent review (`delivery-003-gfix6-review.md`): 7 fixed, 1
+accepted; `test-question-form-hook.sh` 140 of 140.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.

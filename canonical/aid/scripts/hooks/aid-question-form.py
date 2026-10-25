@@ -74,11 +74,15 @@ GO_AHEAD_RE = re.compile(
 M_RECORD = "the record (no writeback-state.sh --ask ran this turn)"
 M_RECORD_OTHER = "the record (the --ask this turn recorded another question than the one shown)"
 RECORD_ITEMS = (M_RECORD, M_RECORD_OTHER)
-M_PLAIN = "plain words in the question (it names %s, but the user writes in plain words: say what happens instead)"
-# A user message with code-like text (a code span, a /command, a --flag, a file name, snake_case) is
-# technical; a question names an internal identifier when it holds a skill name, a script or an .aid/ path.
-TECH_RE = re.compile(r"`|(?:^|[\s>(])/[a-z]|(?:^|\s)--[a-z]|\b[\w-]+\.(?:py|sh|ps1|md|json|ya?ml|toml|js|ts|cs)\b|\b[a-z]+_[a-z_]+\b")
-INTERNAL_RE = re.compile(r"\baid-[a-z]+(?:-[a-z]+)*\b|\b[\w-]+\.(?:sh|py|ps1)\b|\.aid/")
+M_PLAIN_KEY = "plain words in the question"
+M_PLAIN = M_PLAIN_KEY + " (it names %s, but the user writes in plain words: say what happens instead)"
+# A user message with code-like text (a code span, a /command, a --flag, a skill name, a file name or
+# path, snake_case, a call) is technical; a question names an internal identifier when it holds a skill
+# name, a script or an .aid/ path outside a link target.
+TECH_RE = re.compile(r"`|(?:^|[\s>(])/[a-z]|(?:^|\s)--[a-z]|(?<![\w-])aid-[a-z]|\w/\w|\w\(|\b[a-z]+_[a-z_]+\b"
+                     r"|\b[\w-]+\.(?i:py|sh|ps1|md|json|ya?ml|toml|js|ts|cs|html|txt|csv)\b")
+INTERNAL_RE = re.compile(r"(?<![\w-])aid-[a-z]+(?:-[a-z]+)*\b|\b[\w-]+\.(?:sh|py|ps1)\b|\.aid/")
+LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
 
 
 # --------------------------------------------------------------------------- text helpers
@@ -610,12 +614,14 @@ def build_reason(missing):
         )
     else:
         reason += "Show it again in full, in the form of .aid/runtime/templates/question-protocol.md.\n"
-    if any(item.startswith(M_PLAIN.split("%")[0]) for item in missing):
-        reason += (
-            "Reword the question in plain words and record the new wording with --ask; close the entry "
-            "recorded for the old wording with --answer --state Assumed --value 'reworded in plain words' "
-            "(with the same --project or --design flag as its --ask).\n"
-        )
+    if any(item.startswith(M_PLAIN_KEY) for item in missing):
+        reason += "Reword the question in plain words and record the new wording with --ask.\n"
+        if not any(item in missing for item in RECORD_ITEMS):
+            reason += (
+                "Close the entry that holds the old wording by its id (--answer --id Q<n> or D<n>, with the "
+                "same --project or --design flag) as --state Assumed --value 'withdrawn before it was shown; "
+                "reworded in plain words', so it is not offered again.\n"
+            )
     reason += (
         "The user sees only your new message, not this one: repeat everything this message told them "
         "(results, what was recorded, whether a work was needed), then the question.\n"
@@ -680,9 +686,9 @@ def decide(event):
         status = record_in_turn(current_turn(entries), question)
         if status != "ok" and not shows_open_entry(find_root(str(cwd)), subject, message, question):
             missing = missing + [M_RECORD_OTHER if status == "other" else M_RECORD]
-    names = sorted(set(m.group(0) for m in INTERNAL_RE.finditer(question)))
-    if names and plain_user(entries):
-        missing = missing + [M_PLAIN % ", ".join(names)]
+        names = sorted(set(m.group(0) for m in INTERNAL_RE.finditer(LINK_TARGET_RE.sub("]", question))))
+        if names and plain_user(entries):
+            missing = missing + [M_PLAIN % ", ".join(names)]
     if not missing:
         return None
 

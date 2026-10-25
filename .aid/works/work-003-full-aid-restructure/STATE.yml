@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T02:58:04Z'
+updated: '2026-10-25T03:02:48Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -2259,4 +2259,4 @@ qa:
 intent:
   reading: refactor
 step: DELIVERY-GATE
-step_detail: 'Gate fix round 6 (Q195): plain-words check in the question-form hook built, tests 129/129; independent review running'
+step_detail: 'Fix round 6 reviewed and fixed; next: full 10x3 Claude check on the maintainer machine'
