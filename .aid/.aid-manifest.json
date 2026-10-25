@@ -962,7 +962,7 @@
         },
         {
           "path": "scripts/hooks/aid-question-form.py",
-          "sha256": "244152b0f1931d78ba803d7a4fd54cccb1411636336ed2b2d67b0da748285201"
+          "sha256": "b450bcb0c7bc4077c2b20eb68b2ce2db44d18613a7d8866627e10c15674caa98"
         },
         {
           "path": "scripts/hooks/aid-question-form.sh",
