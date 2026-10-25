@@ -118,7 +118,7 @@ phase: Planning
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-25T21:53:19Z'
+updated: '2026-10-25T21:56:16Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Waiting for the user: Q206'
 # [W] set only when lifecycle = Blocked
@@ -2381,14 +2381,14 @@ qa:
   - id: Q207
     category: 'Work direction'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Which radically different way should work-003 take from here?'
     suggested: '1: rewrite instead of edit: each remaining feature written fresh to strict size budgets, old files deleted as replaced, 11 deliveries collapsed into 4 batches with no per-task ceremony, delivery-003 closed now with 002-14 as a known issue'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: 'None: the whole work is defined and planned wrongly; re-analyse everything and report, outside the AID methodology, delegated to agents'
+    answered_by: 'Claude'
+    applied_to: 'work-003 paused for a full re-analysis report'
 intent:
   reading: refactor
   changes:
@@ -2397,4 +2397,4 @@ intent:
       to: 'refactor'
       why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
 step: DELIVERY-GATE
-step_detail: 'Q206 rejected the delivery-015 breakdown as too slow; waiting on Q207 (new direction)'
+step_detail: 'Paused: full re-analysis of work-003 definition and plan (Q207), outside the methodology'
