@@ -92,6 +92,19 @@ question-form hook ran: it blocked at least once in 17 of the 30 runs.
 are exempt. No skill text changed. One independent review (`delivery-003-gfix6-review.md`): 7 fixed, 1
 accepted; `test-question-form-hook.sh` 140 of 140.
 
+**Full check after fix round 6, on `2e9bd6a24`** (2026-10-25, batch `20261025T030611Z`): **27 of 30 runs
+pass; the bar is not met.**
+
+| Sample | Result | Failure |
+|---|---|---|
+| 002-01, 002-02, 002-03, 002-15, 002-16, 002-18, 002-19 | 3/3 each | |
+| 002-04 | 2/3 | Run 2, PC-10: the skipped Q1 was re-offered under a new `--ask` (Q2) instead of its own id |
+| 002-14 | 2/3 | Run 3, EO-4 and PC-9: after the user picked "find the cause and fix it", a second go-ahead was asked. `aid-orchestrate/references/size-and-route.md` § 6 says an answer to a clarifying question is never a go-ahead, so a question whose options are the readings is followed by another approval; the sample expects the pick to decide |
+| 002-17 | 2/3 | Run 3, EO-3: the review was done by hand, without `/aid-review`, so the publish approval never came |
+
+002-14 failed in both full checks (once on plain words, once here); 002-04 and 002-17 passed 3 of 3 in the
+check before.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.
