@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Completed
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Planning
+phase: CI
 # [W] aid-{skill} | none
-active_skill: aid-execute
+active_skill: none
 # [W]
 updated: '2026-10-25T22:32:05Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Waiting for the user: Q206'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -2418,5 +2418,5 @@ intent:
       from: 'refactor'
       to: 'refactor'
       why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
-step: DELIVERY-GATE
-step_detail: 'Re-analysis report delivered (analysis/work-003-full-reanalysis-report.md); waiting on the maintainer'
+step: --
+step_detail: --
