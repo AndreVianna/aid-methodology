@@ -141,6 +141,11 @@ findings, grades) was relayed to a plain-words user.
 the record, and a plain-words user hears only its outcome in plain words. One sentence beside the rule the
 round 8 review placed there; no separate review.
 
+**Focused check after fix round 9, on `f79ec0c60`** (2026-10-25, batches `20261025T175530Z` and
+`20261025T180747Z`): 002-19 3/3; 002-14 2/3. Run 3, EO-1 and PC-5(b): the agent asked its own clarifying question
+before starting `/aid-orchestrate` (check: no `aid-orchestrate` call), and listed the recommended option second.
+Both rules are in place (`rules.md` § Handling a request; `question-protocol.md` Rule 5): a slip, not a missing rule.
+
 Current captures, component ledgers, preserved baselines and measurement provenance
 are under `.aid/.temp/runner-codex-checks/` and `.aid/.temp/review-pending/`. Earlier
 component runs and every failed model batch remain preserved as historical evidence.
