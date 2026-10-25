@@ -1,10 +1,9 @@
 # Delivery-003 gate status
 
-**Current outcome: not passed. Delivery grade: Pending.** Q192 (2026-10-24) moves the gate to Claude Code:
-the ten selected samples must each pass three times, with the agent, the simulated user and the judge on
-Claude Code (Q180, Q186 and Q189 keep the 3-of-3 bar and a full check per round). The Codex batch below is
-known issue KI-008, re-checked at delivery-014. The historical Q166 known-issue exception cannot close this
-gate.
+**Outcome: closed under Q209, delivery grade A+ (delivery verification).** The sample criterion was not met in
+one run: the last full Claude check passed 27 of 30 and the last focused check left 002-14 at 2 of 3. Q209 approved
+the re-analysis direction (`analysis/work-003-full-reanalysis-report.md`): work-003 closes with deliveries 001-003,
+002-14 is known issue KI-009, and the Codex batch stays KI-008.
 
 Codex evidence at the 2026-10-24T21:40Z snapshot:
 

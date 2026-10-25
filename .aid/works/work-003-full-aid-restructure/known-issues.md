@@ -103,3 +103,13 @@
 - **Description:** The strict Codex batch (ten samples, three runs, agent, simulated user and judge on Codex) has never passed: real failures remain in scope ordering, a missing record folder, a retried failed write, and a shown question that differs from its record. A Codex hook cannot guard these in the runner, because every run starts in a fresh untrusted folder and Codex skips untrusted project hooks. Under Q192 the delivery-003 gate is decided on Claude Code instead.
 - **See also:** Q190, Q191, Q192; `analysis/delivery-003-codex-guard-proposal.md` (work folder)
 - **Status:** Open. Re-checked at the full integration run at delivery-014's gate. Does not block delivery-003 (Q192).
+
+## KI-009: Sample 002-14 does not pass 3 of 3 on Claude Code
+
+- **Type:** Gap
+- **Severity:** Medium
+- **Affects:** Feature 002 — Clear, Step-by-Step Decisions
+- **Source:** `tests/conversation/samples/feature-002/002-14-orchestrate-unsure-reading.md`; `analysis/delivery-003-gate.md` (work folder)
+- **Description:** The longest gate flow (plain request, start a work, fix engine) passed 2 of 3 in the last focused check; its misses were agent slips against rules already in place (option order, technical words to a plain-words user, a clarifying question before the skill started).
+- **See also:** Q196, Q198, Q209; `analysis/work-003-full-reanalysis-report.md` (work folder)
+- **Status:** Open. Carried to the work that implements the re-analysis, whose testing replaces the all-pass gate.

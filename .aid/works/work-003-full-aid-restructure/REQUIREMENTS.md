@@ -3,6 +3,9 @@
 - **Name:** Conversational AID Restructure
 - **Description:** Restructure AID so the agent in the user's tool reads plain requests, runs only the phases each work needs, and brings decisions to the user one topic at a time, with a smaller, clearer skill set underneath.
 
+> **Closed under Q209.** Only Feature 001 and Feature 002 were built (deliveries 001-003). The rest is superseded
+> by `analysis/work-003-full-reanalysis-report.md`.
+
 ## 1. Objective
 
 Restructure AID -- what each skill does, what it produces, and how the skills are organized --

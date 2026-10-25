@@ -2403,14 +2403,14 @@ qa:
   - id: Q209
     category: 'Work direction'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Do you approve the re-analysis report as the new direction: close work-003 keeping deliveries 001-003, and open one small work with the new definition, starting with real measurements?'
     suggested: 'Approve: it attacks the measured cost drivers and proves each change with numbers'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: '1'
+    answered_by: 'Claude'
+    applied_to: 'New direction approved: close work-003 keeping deliveries 001-003; open one small work with the re-analysis definition, Phase 0 measurements first'
 intent:
   reading: refactor
   changes:

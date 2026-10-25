@@ -1,7 +1,8 @@
 # Plan -- Conversational AID Restructure
 
-All ten features ship as AID v4.0.0, in 15 deliveries built in order on the `work-003` branch;
-delivery-015 is built right after delivery-003 (Q200).
+**Closed under Q209.** Deliveries 001-003 were built; deliveries 004-015 were dropped before any of their tasks
+started, and their task folders removed (git history keeps them). The direction that replaces them is
+`analysis/work-003-full-reanalysis-report.md`. The stanzas below are kept as the record of the original plan.
 The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
 
 - Each delivery leaves the repository consistent, with the full suite green.
