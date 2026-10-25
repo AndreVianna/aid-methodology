@@ -2314,14 +2314,14 @@ qa:
   - id: Q201
     category: 'Work direction'
     impact: High
-    state: Pending
+    state: Answered
     asked_by: 'aid-execute'
     step: 'DELIVERY-GATE'
     context: 'Do you approve the new requirements and plan for the instruction-hygiene delivery (Feature 010, delivery-015)?'
     suggested: 'Yes: they turn the approved re-analysis into five checkable criteria and one delivery'
-    answer: --
-    answered_by: --
-    applied_to: --
+    answer: 'Approved'
+    answered_by: 'Claude'
+    applied_to: 'Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 approved; next /aid-detail delivery-015'
 intent:
   reading: refactor
   changes:
