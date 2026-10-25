@@ -2223,6 +2223,17 @@ qa:
     answer: '1'
     answered_by: 'Claude'
     applied_to: 'Gate acceptance host: Claude Code for agent, simulated user and judge, 10 samples x 3 runs; the Codex strict batch becomes a known issue re-checked at delivery-014'
+  - id: Q193
+    category: 'Local checkouts'
+    impact: Medium
+    state: Pending
+    asked_by: 'aid-execute'
+    step: --
+    context: 'Who should reconcile the WSL folders unsaved edits with the pushed branch?'
+    suggested: '1: run the reconcile prompt in Claude Code on the maintainer machine, started from /mnt/c/Projects/AID, because only a local session can see both folders'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
 step: DELIVERY-GATE
