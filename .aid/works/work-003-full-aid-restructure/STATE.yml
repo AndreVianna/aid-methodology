@@ -2389,6 +2389,17 @@ qa:
     answer: 'None: the whole work is defined and planned wrongly; re-analyse everything and report, outside the AID methodology, delegated to agents'
     answered_by: 'Claude'
     applied_to: 'work-003 paused for a full re-analysis report'
+  - id: Q208
+    category: 'Work direction'
+    impact: High
+    state: Pending
+    asked_by: 'aid-execute'
+    step: 'DELIVERY-GATE'
+    context: 'Is this the intent: AID feels like a conversation; the user says what they want, AID picks and scales the process, asks only what matters, one topic at a time, in plain words, and the user approves at the end?'
+    suggested: 'Confirm, or correct what is missing; the re-analysis judges every requirement against it'
+    answer: --
+    answered_by: --
+    applied_to: --
 intent:
   reading: refactor
   changes:
