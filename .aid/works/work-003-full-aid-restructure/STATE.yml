@@ -2234,6 +2234,17 @@ qa:
     answer: '1'
     answered_by: 'Andre Vianna'
     applied_to: 'Owner prompt: Claude Code on the maintainer machine reconciles the WSL checkout edits on an isolated branch from origin/work-003, after a verified backup; original WSL checkout untouched; delivery-003 stays paused; no push without confirmation'
+  - id: Q194
+    category: 'Local checkouts'
+    impact: Medium
+    state: Answered
+    asked_by: --
+    step: --
+    context: 'How should the WSL folder be cleaned up, now that all its edits are accounted for and backed up?'
+    suggested: '1: bring its code up to date with GitHub and drop the old edits, but keep its test evidence until delivery-003 is closed, because the work still points to that evidence'
+    answer: '1'
+    answered_by: 'Andre Vianna'
+    applied_to: 'WSL checkout: fast-forward to the pushed work-003 and drop its 85 accounted-for edits (backup wsl-reconciliation-20261025T012453Z); keep all .aid/.temp test evidence until delivery-003 closes'
 intent:
   reading: refactor
 step: DELIVERY-GATE
