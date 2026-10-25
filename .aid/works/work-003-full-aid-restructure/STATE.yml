@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Planning
 # [W] aid-{skill} | none
 active_skill: aid-detail
 # [W]
-updated: '2026-10-25T21:19:51Z'
+updated: '2026-10-25T21:34:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Waiting for the user: Q206'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -2322,6 +2322,62 @@ qa:
     answer: 'Approved'
     answered_by: 'Claude'
     applied_to: 'Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 approved; next /aid-detail delivery-015'
+  - id: Q202
+    category: 'Tasks'
+    impact: Medium
+    state: Assumed
+    asked_by: 'aid-detail'
+    step: 'FIRST-RUN'
+    context: 'Do the four generated doorways that delivery-011 makes hand-authored (aid-create, aid-update, aid-fix, aid-refactor) count as files a later delivery retires for repeats?'
+    suggested: 'Yes: delivery-011 replaces their generated form, so their shared builder text gets baseline rows instead of a rewrite of all 34 doorways'
+    answer: 'Yes: delivery-011 replaces their generated form, so their shared builder text gets baseline rows instead of a rewrite of all 34 doorways'
+    answered_by: 'Claude'
+    applied_to: 'delivery-015 task breakdown'
+  - id: Q203
+    category: 'Tasks'
+    impact: Medium
+    state: Assumed
+    asked_by: 'aid-detail'
+    step: 'FIRST-RUN'
+    context: 'Which files count as files a later delivery retires?'
+    suggested: 'Every file the plan retires in deliveries 004 to 014, as AC-48 says; history is cleaned everywhere, only repeats may stay in soon-deleted text'
+    answer: 'Every file the plan retires in deliveries 004 to 014, as AC-48 says; history is cleaned everywhere, only repeats may stay in soon-deleted text'
+    answered_by: 'Claude'
+    applied_to: 'delivery-015 task breakdown'
+  - id: Q204
+    category: 'Tasks'
+    impact: Medium
+    state: Assumed
+    asked_by: 'aid-detail'
+    step: 'FIRST-RUN'
+    context: 'What does IH-04 compare the baseline against?'
+    suggested: 'The working tree against HEAD, and each commit of the baseline against its parent when history is available; the suite says when it had none'
+    answer: 'The working tree against HEAD, and each commit of the baseline against its parent when history is available; the suite says when it had none'
+    answered_by: 'Claude'
+    applied_to: 'delivery-015 task breakdown'
+  - id: Q205
+    category: 'Tasks'
+    impact: Low
+    state: Assumed
+    asked_by: 'aid-detail'
+    step: 'FIRST-RUN'
+    context: 'Should the hygiene suite join the feature-branch CI lane?'
+    suggested: 'Yes: one entry in the bash-harness SUITES list of installer-tests.yml, in task-373'
+    answer: 'Yes: one entry in the bash-harness SUITES list of installer-tests.yml, in task-373'
+    answered_by: 'Claude'
+    applied_to: 'delivery-015 task breakdown'
+  - id: Q206
+    category: 'Approval'
+    impact: High
+    state: Pending
+    asked_by: 'aid-detail'
+    step: 'FIRST-RUN'
+    context: 'Is this task breakdown for delivery-015 right (type, size, scope, dependencies, acceptance criteria)?'
+    suggested: 'Approve'
+    answer: --
+    answered_by: --
+    applied_to: --
+    covers: 'the task breakdown of delivery-015; Assumed Q202-Q205'
 intent:
   reading: refactor
   changes:
@@ -2330,4 +2386,4 @@ intent:
       to: 'refactor'
       why: 'Q200: Feature 010 (FR-22, AC-47 to AC-51) and delivery-015 added; built right after delivery-003, which closes with it on one sample gate'
 step: FIRST-RUN
-step_detail: 'delivery-015: proposing tasks (from task-373)'
+step_detail: 'delivery-015 proposal (task-373 to task-390) awaits approval Q206'
