@@ -321,7 +321,7 @@ qa:
     category: Scope
     impact: High
     state: Pending
-    context: 'Proposal to keep the result and simplify the process: context first; a size and risk test; a direct lane for small work; for big work one goal card, acceptance tests first by a separate agent, one plan of milestones, milestone reviews by evidence class with one fix round; one state file; hard rules as hooks. Built beside today''s skills and proven on the tags and site benchmarks before the old phase skills retire. Approve it as the goal of the next step?'
+    context: 'Proposal to keep the result and simplify the process: context first; a size and risk test; a direct lane for small work; for big work one goal card, acceptance tests first by a separate agent, one plan of milestones, milestone reviews by evidence class with one fix round; one state file; hard rules as hooks. Built beside today''s skills as one entry skill (aid-change) with lane references, three agents (builder, test writer, reviewer) and scripts for the mechanics, reviews at two checkpoints with the proof rule, and proven on the tags and site benchmarks before the old phase skills retire. Approve it as the goal of the next step?'
     suggested: 'Approve; build it as one step (steps 2 and 3 together), beside the current skills'
     answer: ''
     applied_to: ''
