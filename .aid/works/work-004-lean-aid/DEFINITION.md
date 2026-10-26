@@ -7,6 +7,18 @@ Sources: six independent analyses (definition, plan, testing, task cost, feasibi
 agent skills, Claude Code's own test tooling) and one independent check that re-measured every key number. Marks:
 **[V]** verified by the check, **[E]** estimate with a stated basis.
 
+## 0. Why AID exists (maintainer, 2026-10-26)
+
+1. **Brownfield context.** A project's existing information, constraints, standards, documentation and
+   requirements, which a plain prompt to a coding agent ignores: spec-driven development extended with a
+   Knowledge Base.
+2. **Staying on track in complex work.** Many features, several deliveries, hundreds of atomic tasks, all traced to
+   the requirements.
+3. **Agents reviewing agents.** Catching drift, hallucination, gaps and over-engineering in another agent's output.
+
+These add overhead by design. The redesign keeps all three and makes each proportional to the task, instead of
+applying them at full strength to everything.
+
 ## 1. Verdict
 
 Work-003 aims at the wrong target. It reorganizes AID's names, phases and documents and adds new capabilities, but
