@@ -301,19 +301,27 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q5
+    category: Plan
+    impact: High
+    state: Pending
+    context: 'Do you approve STEP-1.md, the foundation goal card: about 5k always-loaded tokens instead of 20k, rules loaded once, about 10 listed skills, a project card and a merge-blocking hook, within about one day?'
+    suggested: 'Approve: the skill list is most of the measured overhead, and every criterion is checkable'
+    answer: --
+    applied_to: --
   - id: Q4
     category: Design
     impact: High
-    state: Pending
+    state: Answered
     context: 'Do you approve DESIGN.md as the lean-AID design: evidence over opinion, a direct lane for small tasks, a planned lane with a goal card, tests first and bounded review, and project rules as checks?'
     suggested: 'Approve: it answers the three needs with mechanisms that converge, and each step is proven by measurement'
-    answer: --
-    applied_to: --
+    answer: '1'
+    applied_to: 'DESIGN.md approved; build order: foundation, direct lane, planned lane, benchmark'
   - id: Q3
     category: Measurement
     impact: High
-    state: Pending
+    state: Answered
     context: 'Is this enough measuring to set the baseline and start the changes?'
     suggested: '3: first measure a larger feature with and without AID, graded by hidden acceptance tests, to learn whether the heavy process pays off at all before redesigning it'
-    answer: --
-    applied_to: --
+    answer: '3 (through Q4)'
+    applied_to: 'The benchmark of DESIGN.md section D on this repo replaces more runs of the old skill path'
