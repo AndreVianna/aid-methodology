@@ -312,11 +312,11 @@ qa:
   - id: Q13
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'The maintainer proposed a real complex test: rework the product site (site/, served at aid.casuloailabs.com) to match the current skills and processes, with modern, professional diagrams and layout, accessible to every level; the site''s machinery (11,289 lines of generators, 30,917 lines of tests for 9,090 lines of pages) is simplified to what a static site needs. How should it run?'
     suggested: 'Run it twice from the same start, plain and through AID, grade both on the same checks, and let the maintainer keep the better result'
-    answer: ''
-    applied_to: ''
+    answer: '1'
+    applied_to: 'site rework benchmark, plain and AID'
   - id: Q12
     category: Scope
     impact: High
