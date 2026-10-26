@@ -7,18 +7,14 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "sync:docs": "node scripts/sync-docs.mjs",
-    "gen:reference": "node scripts/gen-reference.mjs",
-    "gen:skills": "node scripts/gen-skills.mjs",
-    "fetch:release": "node scripts/fetch-release-data.mjs",
-    "prebuild": "npm run sync:docs && npm run gen:reference && npm run gen:skills && npm run fetch:release",
-    "predev": "npm run sync:docs && npm run gen:reference && npm run gen:skills && npm run fetch:release",
+    "facts": "node scripts/gen-facts.mjs",
+    "facts:check": "node scripts/gen-facts.mjs --check",
     "build": "astro build",
     "dev": "astro dev",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "test": "vitest run"
+    "test": "npm run build && vitest run"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.3",
