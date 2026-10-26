@@ -1,0 +1,79 @@
+---
+/** D2: full path and shortcut path. Drawing and text equivalent carry the same steps. */
+import Diagram from '../Diagram.astro';
+const id = 'two-paths';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={560}
+  title="Full path and shortcut path"
+  desc="Both paths end at /aid-execute. The full path runs Describe, Define, Specify, Plan and Detail as separate phases with your approval after each. The shortcut engine runs CAPTURE, SPEC, PLAN and DETAIL in one run, grades every document at GATE, and stops once for your approval."
+  caption="The two ways from an idea to /aid-execute.">
+  <rect class="dg-node dg-optional" x="96" y="8" width="208" height="32" rx="6" />
+  <text class="dg-label" x="200" y="29" text-anchor="middle">/aid-triage (optional)</text>
+  <path class="dg-edge dg-optional" d="M128 40 V72" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M272 40 V72" marker-end={arrow} />
+  <text class="dg-note" x="200" y="62" text-anchor="middle">suggests one</text>
+
+  <rect class="dg-group" x="8" y="72" width="184" height="424" rx="6" />
+  <text class="dg-label" x="100" y="92" text-anchor="middle">Full path</text>
+  <text class="dg-note" x="100" y="110" text-anchor="middle">you approve each phase</text>
+  <rect class="dg-group" x="208" y="72" width="184" height="424" rx="6" />
+  <text class="dg-label" x="300" y="92" text-anchor="middle">Shortcut path</text>
+  <text class="dg-note" x="300" y="110" text-anchor="middle">you approve once</text>
+
+  <rect class="dg-node dg-accent" x="24" y="120" width="152" height="32" rx="6" />
+  <text class="dg-label" x="100" y="141" text-anchor="middle">/aid-describe</text>
+  <path class="dg-edge" d="M100 152 V176" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="24" y="176" width="152" height="32" rx="6" />
+  <text class="dg-label" x="100" y="197" text-anchor="middle">/aid-define</text>
+  <path class="dg-edge" d="M100 208 V232" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="24" y="232" width="152" height="32" rx="6" />
+  <text class="dg-label" x="100" y="253" text-anchor="middle">/aid-specify</text>
+  <path class="dg-edge" d="M100 264 V288" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="24" y="288" width="152" height="32" rx="6" />
+  <text class="dg-label" x="100" y="309" text-anchor="middle">/aid-plan</text>
+  <path class="dg-edge" d="M100 320 V344" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="24" y="344" width="152" height="32" rx="6" />
+  <text class="dg-label" x="100" y="365" text-anchor="middle">/aid-detail</text>
+
+  <rect class="dg-node" x="224" y="120" width="152" height="88" rx="6" />
+  <text class="dg-label" x="300" y="169" text-anchor="middle">CAPTURE</text>
+  <path class="dg-edge" d="M300 208 V232" marker-end={arrow} />
+  <rect class="dg-node" x="224" y="232" width="152" height="32" rx="6" />
+  <text class="dg-label" x="300" y="253" text-anchor="middle">SPEC</text>
+  <path class="dg-edge" d="M300 264 V288" marker-end={arrow} />
+  <rect class="dg-node" x="224" y="288" width="152" height="32" rx="6" />
+  <text class="dg-label" x="300" y="309" text-anchor="middle">PLAN</text>
+  <path class="dg-edge" d="M300 320 V344" marker-end={arrow} />
+  <rect class="dg-node" x="224" y="344" width="152" height="32" rx="6" />
+  <text class="dg-label" x="300" y="365" text-anchor="middle">DETAIL</text>
+  <path class="dg-edge" d="M300 376 V400" marker-end={arrow} />
+  <rect class="dg-node" x="224" y="400" width="152" height="32" rx="6" />
+  <text class="dg-label" x="300" y="421" text-anchor="middle">GATE</text>
+  <path class="dg-edge" d="M300 432 V456" marker-end={arrow} />
+  <rect class="dg-node" x="224" y="456" width="152" height="32" rx="6" />
+  <text class="dg-label" x="300" y="477" text-anchor="middle">APPROVAL-HALT</text>
+
+  <path class="dg-edge" d="M100 376 V520" marker-end={arrow} />
+  <path class="dg-edge" d="M300 488 V520" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="24" y="520" width="352" height="32" rx="6" />
+  <text class="dg-label" x="200" y="541" text-anchor="middle">/aid-execute</text>
+
+  <table slot="text">
+    <thead>
+      <tr><th scope="col">Step</th><th scope="col">Full path</th><th scope="col">Shortcut path</th></tr>
+    </thead>
+    <tbody>
+      <tr><th scope="row">Use it for</th><td>broad, new or unclear work</td><td>one known change</td></tr>
+      <tr><th scope="row">Start with</th><td><code>/aid-describe</code></td><td>a shortcut, <code>/aid-&lt;verb&gt;[-&lt;artifact&gt;]</code></td></tr>
+      <tr><th scope="row">Requirements</th><td><code>/aid-describe</code>, then <code>/aid-define</code></td><td>CAPTURE</td></tr>
+      <tr><th scope="row">Specification</th><td><code>/aid-specify</code></td><td>SPEC</td></tr>
+      <tr><th scope="row">Plan</th><td><code>/aid-plan</code></td><td>PLAN</td></tr>
+      <tr><th scope="row">Tasks</th><td><code>/aid-detail</code></td><td>DETAIL</td></tr>
+      <tr><th scope="row">Quality check</th><td>each phase is reviewed and graded</td><td>GATE grades every document</td></tr>
+      <tr><th scope="row">Your approval</th><td>after every phase</td><td>once, at APPROVAL-HALT</td></tr>
+      <tr><th scope="row">Then</th><td><code>/aid-execute</code></td><td><code>/aid-execute</code></td></tr>
+    </tbody>
+  </table>
+  <p slot="text">Not sure which path fits? <code>/aid-triage</code> suggests one and writes nothing.</p>
+</Diagram>

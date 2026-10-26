@@ -3,59 +3,12 @@ title: 'The pipeline'
 description: 'The AID pipeline: the phases, the three doors in, and what each phase produces.'
 ---
 
+import Pipeline from '../../../components/diagrams/Pipeline.astro';
+import TwoPaths from '../../../components/diagrams/TwoPaths.astro';
+
 ## 1. The Pipeline
 
-```mermaid
-flowchart TB
-    classDef prep    fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef def     fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef map     fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef exe     fill:#166534,stroke:#166534,color:#ffffff
-    classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
-    classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
-    classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
-    classDef entry   fill:#92400E,stroke:#92400E,color:#ffffff
-
-    subgraph GE[" Entry · choose your door "]
-        direction LR
-        SC["aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
-        TR["aid-triage<br/>not sure? suggest-only"]:::entry
-    end
-    TR -. suggests .-> SC
-
-    subgraph GS[" Support "]
-        Init["aid-config<br/>setup · once"]:::aux
-    end
-    subgraph G1[" Knowledge Base Maintenance "]
-        Disc["1 · aid-discover<br/>brownfield"]:::prep
-        Sum["aid-summarize<br/>optional"]:::aux
-        HK["aid-housekeep<br/>on-demand · KB refresh"]:::offpipe
-    end
-    subgraph G2[" Definition "]
-        Desc["2a · aid-describe<br/>full path only"]:::def
-        Def["2b · aid-define<br/>decompose features"]:::def
-        Spec["3 · aid-specify<br/>full path only"]:::def
-        Plan["4 · aid-plan<br/>full path only"]:::map
-        Det["5 · aid-detail<br/>full path only"]:::map
-    end
-    subgraph G4[" Execution "]
-        Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
-    end
-
-    Dep["aid-deploy<br/>shortcut path"]:::delopt
-    Mon["aid-monitor<br/>shortcut path"]:::delopt
-
-    TR -. suggests .-> Desc
-    Init --> Disc --> Desc --> Def --> Spec --> Plan --> Det --> Exe
-    SC --> ENG["shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]:::def
-    ENG --> Exe
-    Exe -. "on demand" .-> Dep
-    Exe -. "on demand" .-> Mon
-    Exe -. "when finished" .-> HK
-    Mon -. "bug" .-> SC
-    Mon -. "change request" .-> TR
-    HK  -. "targeted KB refresh" .-> Disc
-```
+<Pipeline />
 
 *37 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb> [<kind>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional shortcut paths in the Definition group. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-ask` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
@@ -296,36 +249,7 @@ The lite path is no longer produced by `aid-describe` — it has its own entry. 
 
 **Not sure which shortcut fits — or whether this needs the full path at all?** Run `/aid-triage` first. It is a stateless, write-free, suggest-only router (`INTAKE → CLASSIFY → SUGGEST → HALT`): describe the work in one sentence, and it infers the work-type and scope, then suggests exactly one next step — a matching canonical shortcut for a known, single-target change, or the full path (`/aid-describe`) for anything broad, multi-activity, or ambiguous — and stops. It writes nothing: no interview, no scaffold, no work folder, no `STATE.md`. The conservative default routes anything short of a confident single match to the full path.
 
-```mermaid
-flowchart LR
-    classDef def   fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef exe   fill:#166534,stroke:#166534,color:#ffffff
-    classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
-
-    Tr["/aid-triage<br/>describe the work → suggest one door"]:::lite
-
-    subgraph FullPath[" Full path "]
-        direction LR
-        F1["/aid-describe + /aid-define<br/>REQUIREMENTS + feature SPEC stubs"]:::def
-        F2["/aid-specify"]:::def
-        F3["/aid-plan"]:::def
-        F4["/aid-detail"]:::def
-    end
-    subgraph ShortcutPath[" Shortcut engine (lite path) "]
-        direction LR
-        L1["CAPTURE<br/>(Describe)"]:::lite
-        L2["SPEC<br/>(Define + Specify)"]:::lite
-        L3["PLAN<br/>(Plan)"]:::lite
-        L4["DETAIL<br/>(Detail)"]:::lite
-        L5["GATE<br/>mechanical grading"]:::lite
-    end
-    Exec["/aid-execute"]:::exe
-
-    Tr -- "broad / multi-target / ambiguous" --> F1
-    F1 --> F2 --> F3 --> F4 --> Exec
-    Tr -- "known, single-target change" --> L1
-    L1 --> L2 --> L3 --> L4 --> L5 -- "APPROVAL-HALT" --> Exec
-```
+<TwoPaths />
 
 *The three doors from §1, focused on what happens after you choose one. `/aid-triage` only ever suggests one of the two branches below — it never runs anything itself; you type the suggested command. A direct-entry shortcut skips both `/aid-triage` and `/aid-describe`, going straight into the shortcut engine's own INTAKE. Every engine state maps to one or more collapsed full-path phases; GATE is the sole quality checkpoint before the human approval halt — there is no per-phase Propose/Discuss/Write/Review loop on this side, and no recipe matching anywhere.*
 

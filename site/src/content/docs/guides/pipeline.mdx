@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import TaskLoop from '../../../components/diagrams/TaskLoop.astro';
 
 ## Before you start
 
@@ -21,31 +22,7 @@ duplicate that depth; it points you at the right command and artifact for each s
 
 ## The pipeline at a glance
 
-```mermaid
-flowchart TD
-    subgraph Entry["Choose your entry"]
-        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
-        TR["/aid-triage<br/>— not sure? (suggest-only)"]
-        DS["/aid-describe<br/>— broad / new project"]
-    end
-    TR -. suggests .-> SC
-    TR -. suggests .-> DS
-
-    CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
-    DISC --> DS
-
-    SC --> ENG["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]
-    ENG --> HALT{{"Approval halt"}}
-
-    DS --> DEF["/aid-define"] --> SPC["/aid-specify"] --> PLN["/aid-plan"] --> DTL["/aid-detail"]
-    DTL --> HALT
-
-    HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
-    EXE -. "optional separate path" .-> DEP["/aid-deploy"]
-    DEP -. optional .-> MON["/aid-monitor"]
-    MON -. "bug → /aid-fix" .-> SC
-    MON -. "change request → /aid-triage" .-> TR
-```
+The full diagram, with a text version of every step, is on the [pipeline concept page](/concepts/pipeline/).
 
 The diagram shows three ways in: a **shortcut** if you already know your change, `/aid-triage`
 if you're not sure, or `/aid-describe` for broad or new-project work. `/aid-config` bootstraps
@@ -200,6 +177,8 @@ dependency order; the skill warns you if a dependency is not yet complete.
   description="Every AID skill, one card each — grouped by skill group and verb family."
   href="/skills/"
 />
+
+<TaskLoop />
 
 ## Delivering: deploy and monitor (optional)
 
