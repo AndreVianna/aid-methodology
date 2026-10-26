@@ -50,7 +50,7 @@ SCENARIOS = {
 }
 REPLY = "Yes, go ahead. Take your recommendation for anything else."
 # When AID ends a turn naming the next phase command, that command is sent instead of REPLY.
-PHASES = re.compile(r"/aid-(?:define|specify|plan|detail|execute)\b")
+PHASES = re.compile(r"/aid-(?:define|specify|plan|detail|execute)\b(?: [\w./-]+)?")
 TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 TIMEOUT = int(os.environ.get("AID_MEASURE_TIMEOUT", "7200"))  # seconds per claude call
 
@@ -130,6 +130,10 @@ def asks(text: str) -> bool:
     return "?" in tail(text) or "ask me to explain" in tail(text) or next_phase(text) is not None
 
 
+def locations(project: Path) -> list[Path]:
+    return [project, *sorted((project / ".claude/worktrees").glob("*/"))]
+
+
 def grade(loc: Path, scenario: str, work: Path, env: dict) -> dict:
     root = run(["git", "rev-list", "--max-parents=0", "HEAD"], loc, env).stdout.split()
     diff = run(["git", "diff", "--name-only", *root[:1], "--", "src", "tests"], loc, env).stdout.split()
@@ -172,14 +176,17 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
         print(f"  turn {rec['user_turns']}: ${rec['cost_usd']:.2f} so far, {round(time.time() - start)}s, "
               f"{rec['dispatches']} dispatches; last line: {text.strip().splitlines()[-1][:100] if text.strip() else '-'}",
               file=sys.stderr, flush=True)
-        if r.get("is_error") or not asks(text):
+        # A complex run goes on until the hidden check passes: AID often ends a phase without a question.
+        done = (any(grade(loc, scenario, work, env)["hidden_pass"] for loc in locations(project))
+                if scenario.startswith("complex") else not asks(text))
+        if r.get("is_error") or done:
             break
         phase = next_phase(text)
         message = phase if phase and phase != message else REPLY
     rec["seconds"] = round(time.time() - start, 1)
     # AID may build in a git worktree of its own inside the project; grade every copy, keep the best.
     best = None
-    for loc in [project, *sorted((project / ".claude/worktrees").glob("*/"))]:
+    for loc in locations(project):
         g = grade(loc, scenario, work, env)
         if best is None or (g["hidden_pass"], g["code_files_changed"]) > (best["hidden_pass"], best["code_files_changed"]):
             best = dict(g, graded_at=str(loc.relative_to(project)))
