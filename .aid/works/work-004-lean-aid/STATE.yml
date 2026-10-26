@@ -312,11 +312,11 @@ qa:
   - id: Q11
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'How should we see how AID handles a complex task today (the full pipeline, which step 1 did not change)?'
     suggested: 'Add a complex scenario with hidden checks to measure.py, test-drive it here on the cheap model, then the maintainer runs it once with AID and once without on the real model'
-    answer: ''
-    applied_to: ''
+    answer: '1'
+    applied_to: 'tests/measure/ complex scenario'
   - id: Q10
     category: Approval
     impact: High

@@ -9,7 +9,7 @@ Purpose:
     request, before any work: the context that is always loaded, free of the session's own choices.
 
 Usage:
-    python3 tests/measure/measure.py [--scenario fix|feature] [--no-aid] [--runs N] [--turns N] [--model M]
+    python3 tests/measure/measure.py [--scenario NAME] [--no-aid] [--runs N] [--turns N] [--model M]
     python3 tests/measure/measure.py --report FILE.jsonl...   (medians per scenario, with and without AID)
     Needs the claude CLI logged in. With CLAUDE_CODE_OAUTH_TOKEN set (from `claude setup-token`) every run uses
     it; otherwise ~/.claude/.credentials.json is copied into each run's private home, and a long run can let
@@ -25,6 +25,7 @@ Exit codes:
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -35,14 +36,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "tests/measure/fixture"
 HIDDEN = ROOT / "tests/measure/hidden"
+COMPLEX = ("Add tags to notes. `notes tag ID TAG` adds a tag to a note and `notes untag ID TAG` removes it; tagging "
+           "a note that does not exist fails. `notes list --tag TAG` lists only the notes with that tag. `notes tags` "
+           "prints one line per tag, the tag and the number of notes that have it separated by a tab, sorted by tag. "
+           "Notes files written before this change must keep working.")
 SCENARIOS = {
     "fix": "Some notes in the list come out twice. Can you fix it?",
     "feature": "Add an option to list the notes newest first.",
     "fix-skill": "/aid-fix Some notes in the list come out twice.",
     "feature-skill": "/aid-create Add an option to list the notes newest first.",
+    "complex": COMPLEX,
+    "complex-skill": "/aid-describe " + COMPLEX,
 }
 REPLY = "Yes, go ahead. Take your recommendation for anything else."
-EXECUTE = "/aid-execute"  # sent instead of REPLY when AID tells the user to start the build with it
+# When AID ends a turn naming the next phase command, that command is sent instead of REPLY.
+PHASES = re.compile(r"/aid-(?:define|specify|plan|detail|execute)\b")
 TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 TIMEOUT = int(os.environ.get("AID_MEASURE_TIMEOUT", "7200"))  # seconds per claude call
 
@@ -109,9 +117,30 @@ def turn(project: Path, env: dict, model: str, message: str, session: str | None
     return t
 
 
+def tail(text: str) -> str:
+    return "\n".join(text.strip().splitlines()[-6:])
+
+
+def next_phase(text: str) -> str | None:
+    found = PHASES.findall(tail(text))
+    return found[-1] if found else None
+
+
 def asks(text: str) -> bool:
-    tail = "\n".join(text.strip().splitlines()[-6:])
-    return "?" in tail or "ask me to explain" in tail or EXECUTE in tail
+    return "?" in tail(text) or "ask me to explain" in tail(text) or next_phase(text) is not None
+
+
+def grade(loc: Path, scenario: str, work: Path, env: dict) -> dict:
+    root = run(["git", "rev-list", "--max-parents=0", "HEAD"], loc, env).stdout.split()
+    diff = run(["git", "diff", "--name-only", *root[:1], "--", "src", "tests"], loc, env).stdout.split()
+    new = run(["git", "ls-files", "--others", "--exclude-standard", "--", "src", "tests"], loc, env).stdout.split()
+    changed = sorted(set(diff + new))
+    tests = run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-q"], loc,
+                dict(env, PYTHONPATH=str(loc / "src")))
+    check = run([sys.executable, str(HIDDEN / f"check_{scenario.split('-')[0]}.py"), str(loc)], work, env)
+    return {"code_files_changed": len(changed), "test_files_changed": sum(f.startswith("tests/") for f in changed),
+            "tests_pass": tests.returncode == 0, "hidden_pass": check.returncode == 0,
+            "hidden_detail": (check.stdout + check.stderr).strip()[-200:]}
 
 
 def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> dict:
@@ -145,17 +174,16 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
               file=sys.stderr, flush=True)
         if r.get("is_error") or not asks(text):
             break
-        message = EXECUTE if EXECUTE in text and EXECUTE not in message else REPLY
+        phase = next_phase(text)
+        message = phase if phase and phase != message else REPLY
     rec["seconds"] = round(time.time() - start, 1)
-    changed = run(["git", "status", "--porcelain", "--", "src", "tests"], project, env).stdout.splitlines()
-    rec["code_files_changed"] = len(changed)
-    rec["test_files_changed"] = sum(" tests/" in f" {line[3:]}" for line in changed)
-    tests = run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-q"], project,
-                dict(env, PYTHONPATH=str(project / "src")))
-    rec["tests_pass"] = tests.returncode == 0
-    check = run([sys.executable, str(HIDDEN / f"check_{scenario.split('-')[0]}.py"), str(project)], work, env)
-    rec["hidden_pass"] = check.returncode == 0
-    rec["hidden_detail"] = (check.stdout + check.stderr).strip()[-200:]
+    # AID may build in a git worktree of its own inside the project; grade every copy, keep the best.
+    best = None
+    for loc in [project, *sorted((project / ".claude/worktrees").glob("*/"))]:
+        g = grade(loc, scenario, work, env)
+        if best is None or (g["hidden_pass"], g["code_files_changed"]) > (best["hidden_pass"], best["code_files_changed"]):
+            best = dict(g, graded_at=str(loc.relative_to(project)))
+    rec.update(best)
     rec["finished_asking"] = not asks(text)
     rec["last_message"] = text[-300:]
     rec["run_folder"] = str(work)
@@ -191,12 +219,15 @@ def main() -> int:
     ap.add_argument("--scenario", choices=sorted(SCENARIOS), default="fix")
     ap.add_argument("--no-aid", action="store_true", help="measure the same request with no AID installed")
     ap.add_argument("--runs", type=int, default=3)
-    ap.add_argument("--turns", type=int, default=10, help="user turns before giving up (default 10)")
+    ap.add_argument("--turns", type=int, default=None,
+                    help="user turns before giving up (default 10; 60 for the complex scenarios)")
     ap.add_argument("--model", default=os.environ.get("AID_MEASURE_MODEL", "claude-sonnet-5-5"))
     ap.add_argument("--report", nargs="+", metavar="FILE", help="print medians from earlier runs' JSON lines")
     a = ap.parse_args()
     if a.report:
         return report(a.report)
+    if a.turns is None:
+        a.turns = 60 if a.scenario.startswith("complex") else 10
     bundle = Path(tempfile.mkdtemp(prefix="aid-bundle-"))
     if not a.no_aid:
         out = subprocess.run(["bash", "-c", 'source tests/lib/bundle.sh && aid_test_stage_bundle "$1"', "_",
