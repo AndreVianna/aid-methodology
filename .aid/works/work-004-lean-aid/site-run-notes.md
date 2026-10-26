@@ -27,6 +27,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 22:16-22:48 | execute, delivery 1: tasks 1-3 done, task 4 cut off | $86.97 | the last turn alone cost $22.29 with 19 helper agents |
 | 22:48-23:00 | resumed (my driver stopped it wrongly); task 4 done | $86.97+ | delivery 1 = 4 tasks: a facts script plus a test helper and a test suite |
 | 23:00-23:16 | delivery 1 gate passed (grade A); delivery 2 started, task 5 done | n/a mid-turn | the gate's recorded timestamp is 2026-10-27T01:00:00Z, two hours in the future: an invented value in the state file |
+| 23:16-23:32 | delivery 2: tasks 6-8 done (page cut-over with redirects, a shared diagram component, three pipeline diagrams) | n/a mid-turn | pace about 3 tasks per 15 min; 8 of 49 done |
 
 ## AID run: red tape observed so far
 
