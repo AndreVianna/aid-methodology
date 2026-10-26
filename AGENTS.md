@@ -19,7 +19,7 @@ Invalid first actions: a plain-text answer, a search, any other tool.
 Valid first action: Read `.aid/runtime/rules.md`.
 
 Summary:
-- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
+- Read the project card `.aid/knowledge/PROJECT.md` first, when the project has one; open `.aid/knowledge/INDEX.md` only to find a specific document.
 - Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
 - Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately, `/aid-execute` included.
 - Work folders (`.aid/works/`) are transient: nothing permanent may depend on them; `.aid/knowledge/**` never names a work id or path.

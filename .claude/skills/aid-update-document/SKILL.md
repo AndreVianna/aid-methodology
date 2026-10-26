@@ -1,7 +1,7 @@
 ---
 name: aid-update-document
 description: >
-  Revise or extend an existing document against the current source. Use when a document
+  Revise or extend an existing non-KB document against the current source. Use when it
   drifted.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<document + change> -- which existing document to update, and how"

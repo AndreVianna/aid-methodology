@@ -1,8 +1,8 @@
 ---
 name: aid-create-data-model
 description: >
-  Create a new data model/entity with its schema migration. Use when the target is known;
-  plans only.
+  Create a new data model/entity with its schema migration. Plans the work; /aid-execute
+  builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to create; runs straight to a graded flattened Lite work"
 ---

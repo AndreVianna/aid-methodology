@@ -1,8 +1,7 @@
 ---
 name: aid-update-integration
 description: >
-  Update an existing external-service integration. Use when the target is known; plans
-  only.
+  Update an existing external-service integration. Plans the work; /aid-execute builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

@@ -1,7 +1,7 @@
 ---
 name: aid-create-stack
 description: >
-  Write the technology-stack document from a ready seed. Use when none exists yet.
+  Write the technology-stack KB document from a ready seed. Use when none exists yet.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the stack seed to realize"
 ---

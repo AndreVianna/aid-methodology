@@ -1,7 +1,7 @@
 ---
 name: aid-update-api
 description: >
-  Update an existing API endpoint or middleware. Use when the target is known; plans only.
+  Update an existing API endpoint or middleware. Plans the work; /aid-execute builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

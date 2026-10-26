@@ -1,7 +1,7 @@
 ---
 name: aid-update
 description: >
-  Change an existing code artifact's behavior. Use when the target is known; plans only.
+  Change an existing code artifact's behavior. Plans the work; /aid-execute builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

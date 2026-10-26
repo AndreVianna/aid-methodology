@@ -1,8 +1,8 @@
 ---
 name: aid-document
 description: >
-  Write a how-to, reference, explanation or status report in one pass. Use when no named
-  genre fits.
+  Write a how-to, reference, explanation or status report, outside the KB. Use when no
+  named genre fits.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to document"
 ---

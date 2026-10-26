@@ -1,8 +1,7 @@
 ---
 name: aid-refactor
 description: >
-  Restructure code without changing its behavior. Use when the target is known; plans
-  only.
+  Restructure code without changing its behavior. Plans the work; /aid-execute builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to refactor; runs straight to a graded flattened Lite work"
 ---

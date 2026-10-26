@@ -1,8 +1,8 @@
 ---
 name: aid-create-document
 description: >
-  Write any document in one pass, choosing its format and structure. Use when you need one
-  now.
+  Write any non-KB document in one pass, choosing its format and structure. Use when you
+  need one now.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)"
 ---

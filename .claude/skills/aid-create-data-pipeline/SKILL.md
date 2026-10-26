@@ -1,8 +1,8 @@
 ---
 name: aid-create-data-pipeline
 description: >
-  Create a data pipeline (source, transform, sink, schedule). Use when the target is
-  known; plans only.
+  Create a data pipeline (source, transform, sink, schedule). Plans the work; /aid-execute
+  builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to create; runs straight to a graded flattened Lite work"
 ---
