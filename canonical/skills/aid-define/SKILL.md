@@ -1,13 +1,7 @@
 ---
 name: aid-define
 description: >
-  Decompose approved requirements into discrete features, each recorded as a
-  `### Feature NNN` section of REQUIREMENTS.md § 11 that cites the `AC-N` criteria it
-  claims. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md
-  and the work needs splitting into features before any one of them is specified. It
-  turns each functional requirement into a feature, then validates the requirements and
-  the feature boundaries against the Knowledge Base and the codebase, and halts ready
-  for `/aid-specify`.
+  Split approved requirements into features. Use after the requirements are approved.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---

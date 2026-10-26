@@ -1,9 +1,7 @@
 ---
 name: aid-plan
 description: >
-  Sequence feature SPECs into deliverables -- each one a functional MVP that builds on the
-  previous. Strategy, not tactics. Use when feature SPECs are complete and you need a
-  delivery roadmap.
+  Group specified features into deliveries. Use after the specifications are approved.
 allowed-tools: Read Glob Grep Write Edit Bash Shell Terminal
 argument-hint: "work-001 (required if multiple works)  [--reset] clear PLAN.md and restart"
 ---

@@ -206,7 +206,7 @@ assert_eq "$create_btn" "$sharedref_btn" "T52 create's confirm button row is byt
 # T53-T63  Grammar matrix.
 # ===========================================================================
 assert_wrapped_contains "$READ_SKILL" "the token contains a \`:\` → split on the **first** \`:\`" "T53 aid-read-ticket PARSE-ARGS splits stem:id on the first colon"
-assert_wrapped_contains "$UPDATE_SKILL" "closed enum \`description | comment | status\`" "T54 aid-update-ticket <part> is the closed enum {description,comment,status}"
+assert_wrapped_contains "$UPDATE_SKILL" "**closed enum** \`description | comment | status\`" "T54 aid-update-ticket <part> is the closed enum {description,comment,status}"
 assert_wrapped_contains "$UPDATE_SKILL" "rejected with the same usage line above" "T55 aid-update-ticket rejects an out-of-enum <part> with the usage line"
 assert_wrapped_contains "$UPDATE_SKILL" "re-parsed** for flags or further structure" "T56 aid-update-ticket <content> is taken verbatim, never re-parsed"
 assert_file_contains "$CREATE_SKILL" "bare-leading-token connector heuristic" "T57 aid-create-ticket documents it has no bare-leading-token connector heuristic"

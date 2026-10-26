@@ -102,6 +102,11 @@
 #   intent        (required, string) -- a one-line human-readable summary of what this
 #                 shortcut does.
 #
+#   summary       (optional, string) -- a shorter form of `intent` (about 60 characters) for the
+#                 generated doorway's frontmatter `description`, which the host loads into
+#                 every session. The builder uses it when present and falls back to `intent`;
+#                 give a row one only when its `intent` is long. `intent` is unchanged.
+#
 #   repurpose     (optional, boolean, default `false`) -- `true` for rows whose
 #                 `SKILL.md` is hand-authored rather than generated. The maintainer
 #                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
@@ -141,6 +146,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G6
     intent: "Diagnose and correct a defect, regression, incident, or vulnerability."
+    summary: "Diagnose and correct a defect or regression."
 
   # --- G4: Create family (feature-006, task-015) -- 23 canonical rows (19 in this
   # section; aid-create-test in G7, aid-create-document and aid-create-diagram in G8,
@@ -152,6 +158,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Create a new internal code artifact (module, interface, type) from scratch."
+    summary: "Create a new internal module, interface or type."
   - name: aid-create-api
     verb: create
     artifact: api
@@ -159,6 +166,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Create an API endpoint / middleware (contract, handler, validation)."
+    summary: "Create an API endpoint or middleware."
   - name: aid-create-ui
     verb: create
     artifact: ui
@@ -324,6 +332,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G5
     intent: "Update an existing internal code artifact's behavior under new acceptance criteria."
+    summary: "Change an existing code artifact's behavior."
   - name: aid-update-api
     verb: update
     artifact: api
@@ -331,6 +340,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G5
     intent: "Update an existing API endpoint / middleware's contract or behavior."
+    summary: "Update an existing API endpoint or middleware."
   - name: aid-update-ui
     verb: update
     artifact: ui
@@ -359,6 +369,7 @@ shortcuts:
     default_type: MIGRATE
     group: G5
     intent: "Update an existing data model/entity's schema, with forward+rollback migration."
+    summary: "Update an existing data model and its schema migration."
   - name: aid-update-data-pipeline
     verb: update
     artifact: data-pipeline
@@ -366,6 +377,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G5
     intent: "Update an existing data pipeline's source, transform, sink, or schedule."
+    summary: "Update an existing data pipeline."
   - name: aid-update-messaging
     verb: update
     artifact: messaging
@@ -408,6 +420,7 @@ shortcuts:
     default_type: REFACTOR
     group: G5
     intent: "Restructure or optimize code without changing behavior (rename, restructure, or improve performance)."
+    summary: "Restructure code without changing its behavior."
 
   # --- G5: Remove + Deprecate + Migrate -- 3 rows: aid-remove, aid-deprecate, aid-migrate.
   # Bare verbs, no artifact suffixes. Non-schema data/dependency/platform migration;
@@ -420,6 +433,7 @@ shortcuts:
     default_type: REFACTOR
     group: G5
     intent: "Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs."
+    summary: "Remove code, a feature or a dependency and its uses."
   - name: aid-deprecate
     verb: deprecate
     artifact: ""
@@ -427,6 +441,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G5
     intent: "Deprecate an existing artifact/API: mark deprecated, add warnings and a migration path, without deleting yet."
+    summary: "Mark something deprecated, with a migration path."
   - name: aid-migrate
     verb: migrate
     artifact: ""
@@ -434,6 +449,7 @@ shortcuts:
     default_type: MIGRATE
     group: G5
     intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model)."
+    summary: "Migrate data, a dependency or a platform, with rollback."
   - name: aid-update-architecture
     verb: update
     artifact: architecture
@@ -482,6 +498,7 @@ shortcuts:
     default_type: TEST
     group: G7
     intent: "Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB."
+    summary: "Write new tests, each tracing to an acceptance criterion."
   - name: aid-update-test
     verb: update
     artifact: test
@@ -860,6 +877,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G11
     intent: "Build a durable dashboard / BI view, from its source through the visualization to how it is published and refreshed."
+    summary: "Build a durable dashboard or BI view."
   - name: aid-update-dashboard
     verb: update
     artifact: dashboard
@@ -867,6 +885,7 @@ shortcuts:
     default_type: IMPLEMENT
     group: G11
     intent: "Update an existing dashboard / BI view (source, visualization, or refresh cadence)."
+    summary: "Update an existing dashboard or BI view."
 
   # --- G11: Review + Research -- 2 rows: aid-review, aid-research. Bare verbs,
   # no artifact suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md

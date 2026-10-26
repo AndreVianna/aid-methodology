@@ -4,10 +4,9 @@ catalog (feature-003, work-001-lite-aid-skills).
 
 Reads canonical/aid/templates/shortcut-catalog.yml and emits/refreshes the thin-doorway
 canonical/skills/aid-<name>/SKILL.md directories, one per non-`repurpose` row. Each
-doorway carries minimal frontmatter (name == dir; description with the "State machine:"
-line delegating to the engine; allowed-tools; argument-hint) plus a short body that
-binds the row's {verb, artifact} and delegates to
-canonical/aid/templates/shortcut-engine.md.
+doorway carries minimal frontmatter (name == dir; a short description -- the row's `summary`, else its `intent`,
+plus a fixed when-to-use clause; allowed-tools; argument-hint) plus a short body that binds
+the row's {verb, artifact} and delegates to canonical/aid/templates/shortcut-engine.md.
 
 `repurpose: true` rows (60 total; re-derive with grep -c '^    repurpose: true$' on
 the catalog rather than trusting this figure) are SKIPPED -- they are hand-authored
@@ -66,6 +65,9 @@ _GENERATED_MARKER = (
     "from .aid/runtime/templates/shortcut-catalog.yml -- DO NOT EDIT BY HAND; edit the "
     "catalog row and re-run the helper, then the full run_generator.py. -->"
 )
+
+# The fixed "when to use" clause every generated doorway description ends with.
+_DESCRIPTION_WHEN = "Use when the target is known; plans only."
 
 _ALLOWED_TOOLS = "Read Glob Grep Bash Shell Terminal Write Edit Agent"
 
@@ -252,19 +254,12 @@ def render_doorway(row: dict) -> str:
     title = f"{verb} {artifact}".strip()
     artifact_bind = f"ARTIFACT=`{artifact}`" if artifact else 'ARTIFACT="" (bare verb)'
 
-    # The description leads with the row's own `intent` -- the user-facing outcome --
-    # then states WHEN to reach for the skill, which is the only thing an agent has to
-    # decide whether to load it at all. Engine mechanics (the {verb, artifact} bindings
-    # and the state sequence) live in the body below, never here.
-    # The trigger clause deliberately does NOT repeat the artifact: `intent` already names
-    # it in natural English ("an API endpoint / middleware"), whereas the raw catalog value
-    # would read as "which api to create". One template, no per-skill wording.
-    description = (
-        f"{intent} Use this skill when you already know what to {verb} and want it scoped, "
-        "specified, and broken into reviewable tasks in a single pass, with no requirements "
-        "interview. You approve the resulting plan before anything is built: this skill "
-        "plans and stops, so run `/aid-execute` to carry the plan out."
-    )
+    # The description is loaded into every session by the host, so it stays short: the
+    # row's one-line `summary` (falling back to `intent`) says what the skill does, and one
+    # fixed clause says when to use it. Engine mechanics (the {verb, artifact} bindings and
+    # the state sequence) live in the body below, never here.
+    what = row.get("summary") or intent
+    description = f"{what} {_DESCRIPTION_WHEN}"
 
     frontmatter = (
         "---\n"

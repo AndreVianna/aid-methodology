@@ -1,14 +1,8 @@
 ---
 name: aid-document-architecture
 description: >
-  Write an architecture write-up in one pass -- a system's components, boundaries, and
-  interactions, as C4 or arc42 views with Mermaid diagrams. Use this skill when you already
-  know the document you need is architecture write-up, and want it drafted now rather than
-  planned. It is grounded in, and accuracy-checked against, the Knowledge Base
-  (`.aid/knowledge/`) and the project source; aid-tech-writer produces it and aid-reviewer
-  verifies it. It resolves nothing: it drafts, you approve, and only then is the document
-  placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of
-  `/aid-create-document`, which defines its full behavior.
+  Write an architecture write-up (C4 or arc42) in one pass. Use when you know that is the
+  document you need.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<system/scope> -- what to document"
 ---

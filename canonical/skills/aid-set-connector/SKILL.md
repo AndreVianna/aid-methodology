@@ -1,14 +1,7 @@
 ---
 name: aid-set-connector
 description: >
-  Add or update one entry in the connector catalog. Use this skill when a project gains a
-  new external tool, or an existing connector's configuration changes, and you do not want
-  to re-run discovery for it. Naming a tool and a type creates its descriptor when absent,
-  or updates that same descriptor in place when present, including a change of connection
-  type. It asks the question set matching the type (mcp, api, ssh or cli), prefilled from
-  the preset catalog when the tool is a known preset, and you confirm or edit. It reconciles
-  that connector's secret and touches only that one stem: every other catalogued connector
-  is left byte-for-byte untouched. It never invokes `/aid-discover`.
+  Add or change a connector to a tracker or tool. Use when connecting a new external tool.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
 argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)"
 ---
