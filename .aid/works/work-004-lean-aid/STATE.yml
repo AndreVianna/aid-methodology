@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-10-26T00:16:22Z'
+updated: '2026-10-26T00:18:44Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -238,6 +238,10 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: 'Scaffolded from master; definition approved under work-003 Q209'
+  - date: '2026-10-26'
+    event: 'Phase 0 harness built'
+    grade: --
+    notes: 'tests/measure/measure.py; baseline runs pending on the maintainer machine'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
