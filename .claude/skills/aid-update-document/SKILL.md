@@ -1,13 +1,8 @@
 ---
 name: aid-update-document
 description: >
-  Revise or extend a document that already exists, in one pass. Use this skill when a
-  document has drifted from the code, is missing a section, or needs a correction -- and you
-  want the change drafted against the current source rather than written from memory. It
-  reads the existing document first, then edits it, grounded in and accuracy-checked against
-  the Knowledge Base (`.aid/knowledge/`) and the project source. It resolves nothing: it
-  drafts the change and shows you a diff, and only after you approve is it written back. It
-  never writes into `.aid/knowledge/` -- that is `/aid-update-kb`'s territory.
+  Revise or extend an existing document against the current source. Use when a document
+  drifted.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<document + change> -- which existing document to update, and how"
 ---

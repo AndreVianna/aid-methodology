@@ -1,14 +1,7 @@
 ---
 name: aid-design-document
 description: >
-  Develop a document design as a DESIGN SEED in `.aid/design/document.md` -- the document's
-  kind and structure, its audience, and its placement. Use this skill when a document's
-  angle, audience and shape are still being worked out, before it is drafted. Grounded in
-  the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production
-  code and NO KB document -- realize the seed into the written document with
-  `/aid-create-document` once it is ready. To write a general document now rather than
-  develop its direction as a seed, use `/aid-document`. Produced by the aid-architect agent
-  and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+  Design a document as a seed in .aid/design (no code). Use while its shape is still open.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the document to design (kind, structure, audience, placement)"
 ---

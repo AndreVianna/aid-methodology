@@ -1,13 +1,8 @@
 ---
 name: aid-update-kb
 description: >
-  Apply one targeted, human-confirmed change to the Knowledge Base. Use this skill when you
-  know what changed and which part of the KB should reflect it, and you want that edit and
-  nothing more. It works in its own worktree: it analyses how your instruction lands across
-  the KB, turns that into a minimal scope plan with an explicit list of what it will not
-  change, and pauses for your confirmation before any edit. Only the confirmed scope is
-  applied, it is reviewed against the four-mandate panel, and it commits only after you
-  approve a second time.
+  Apply one targeted, human-confirmed change to the Knowledge Base, in its own worktree.
+  Use when a fact changed and you want that edit and nothing more.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<what changed / what to update in the KB>"
 ---

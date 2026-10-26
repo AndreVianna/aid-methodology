@@ -19,11 +19,10 @@ Invalid first actions: a plain-text answer, a search, any other tool.
 Valid first action: Read `.aid/runtime/rules.md`.
 
 Summary:
-- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
-  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
-- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
-- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
 - Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately, `/aid-execute` included.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them; `.aid/knowledge/**` never names a work id or path.
 - Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
 - Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
 - Write only inside the project directory.

@@ -1,14 +1,8 @@
 ---
 name: aid-update-ticket
 description: >
-  Change exactly one part of an existing ticket in the project's issue tracker. Use this
-  skill when a ticket needs its description replaced, a comment added, or its status moved:
-  `part` is the closed enum `description | comment | status`, and one invocation touches one
-  of them. It resolves which tracker owns the ticket, loads whatever the named part needs,
-  composes the exact mutation, and shows it to you for confirmation before the single write.
-  A status target is checked against the tracker's available transitions when those can be
-  listed, and a mismatch stops before the confirmation gate. It never writes silently, and a
-  failed write never leaves a partial one.
+  Change one part of a ticket: description, comment or status. Use to update a tracker
+  ticket.
 allowed-tools: Read Glob Grep AskUserQuestion
 argument-hint: "<part> [<connector>:]<ticket-id> <content>"
 ---

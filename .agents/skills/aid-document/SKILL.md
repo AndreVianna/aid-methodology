@@ -1,14 +1,8 @@
 ---
 name: aid-document
 description: >
-  Write a general document in one pass -- a Diataxis how-to, reference page or explanation,
-  or a status or progress report. Use this skill when the document you need does not fall
-  into one of the named genres and you want it drafted now. It is grounded in, and accuracy-
-  checked against, the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-
-  writer produces it and aid-reviewer verifies it. It resolves nothing: it drafts, you
-  approve, and only then is the document placed. It never writes into `.aid/knowledge/`. A
-  thin kind-sibling of `/aid-create-document`, which defines its full behavior. To settle a
-  document's direction as a reusable design seed first, use `/aid-design-document`.
+  Write a how-to, reference, explanation or status report in one pass. Use when no named
+  genre fits.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to document"
 ---

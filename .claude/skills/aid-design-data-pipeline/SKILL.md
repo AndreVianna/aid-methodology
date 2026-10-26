@@ -1,13 +1,8 @@
 ---
 name: aid-design-data-pipeline
 description: >
-  Develop a data-pipeline design as a DESIGN SEED in `.aid/design/data-pipeline.md` -- the
-  source, the transform, the sink, and the schedule. Use this skill when where the data
-  comes from, what happens to it, and where it lands are still open questions. Grounded in
-  the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production
-  code and NO KB document -- realize the seed into the built pipeline with
-  `/aid-create-data-pipeline` once it is ready. Produced by the aid-architect agent and
-  independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+  Design a data pipeline as a seed in .aid/design (no code). Use while its shape is still
+  open.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the data pipeline to design (source, transform, sink, schedule)"
 ---

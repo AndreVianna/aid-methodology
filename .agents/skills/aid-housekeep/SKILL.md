@@ -1,15 +1,8 @@
 ---
 name: aid-housekeep
 description: >
-  Sweep the project back into a consistent state after work has landed. Use this skill when
-  the Knowledge Base has drifted from the code, the generated summary is stale, or work-area
-  artifacts have piled up. It runs three gated jobs in order: re-discovering KB docs that
-  changed since the last approval, regenerating the visual summary if the KB moved, and
-  clearing stale work-area artifacts. Forward-authored greenfield docs take the Conformance
-  Lane, which flags design-versus-as-built divergence for you to reconcile and never
-  overwrites the design itself. Each stage commits on its own branch and nothing is pushed;
-  a stalled run resumes where it stopped. This is the source-driven global reconcile -- for
-  a targeted, prompt-named delta use `/aid-update-kb`.
+  Re-sync a drifted Knowledge Base and summary and clear stale work artifacts. Use when
+  the project has drifted.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---

@@ -1,15 +1,8 @@
 ---
 name: aid-design-config
 description: >
-  Develop a configuration-option or feature-flag design as a DESIGN SEED in
-  `.aid/design/config.md` -- the option or flag, its default and scope, and how it is read.
-  Use this skill when a new option's shape, default and blast radius are still being worked
-  out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES
-  NO production code and NO KB document -- realize the seed into the built option with
-  `/aid-create-config` once it is ready. To design the technology stack itself rather than a
-  configuration option within it, use `/aid-design-stack` instead. Produced by the
-  aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  Design a config option as a seed in .aid/design (no code). Use while its shape is still
+  open.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the config option/flag to design (default, scope, how it is read)"
 ---

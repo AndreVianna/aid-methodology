@@ -1,14 +1,7 @@
 ---
 name: aid-document-decision
 description: >
-  Write an ADR in one pass -- an architecture decision record: the context, the decision
-  itself, the alternatives considered, and the consequences. Use this skill when you already
-  know the document you need is ADR, and want it drafted now rather than planned. It is
-  grounded in, and accuracy-checked against, the Knowledge Base (`.aid/knowledge/`) and the
-  project source; aid-tech-writer produces it and aid-reviewer verifies it. It resolves
-  nothing: it drafts, you approve, and only then is the document placed. It never writes
-  into `.aid/knowledge/`. A thin kind-sibling of `/aid-create-document`, which defines its
-  full behavior.
+  Write an ADR (decision record) in one pass. Use when you need one drafted now.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<decision> -- the decision to record"
 ---

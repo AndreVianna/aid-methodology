@@ -1,11 +1,8 @@
 ---
 name: aid-update-data-model
 description: >
-  Update an existing data model/entity's schema, with forward+rollback migration. Use this
-  skill when you already know what to update and want it scoped, specified, and broken
-  into reviewable tasks in a single pass, with no requirements interview. You approve the
-  resulting plan before anything is built: this skill plans and stops, so run `/aid-
-  execute` to carry the plan out.
+  Update an existing data model and its schema migration. Use when the target is known;
+  plans only.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

@@ -1,13 +1,8 @@
 ---
 name: aid-design-dashboard
 description: >
-  Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the
-  data source, the visualizations, and the refresh cadence. Use this skill when what a
-  dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base
-  (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB
-  document -- realize the seed into the built dashboard with `/aid-create-dashboard` once it
-  is ready. Produced by the aid-architect agent and independently verified by aid-reviewer
-  (full verify). Allocates a work-NNN folder.
+  Design a dashboard as a seed in .aid/design (no code). Use while its shape is still
+  open.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the dashboard to design (source, visualizations, refresh cadence)"
 ---

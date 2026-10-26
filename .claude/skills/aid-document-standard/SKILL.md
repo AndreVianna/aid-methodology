@@ -1,14 +1,7 @@
 ---
 name: aid-document-standard
 description: >
-  Write a standard in one pass -- a mandatory rule, stating the rule, its scope, how
-  compliance is enforced, and the exceptions. Use this skill when you already know the
-  document you need is standard, and want it drafted now rather than planned. It is grounded
-  in, and accuracy-checked against, the Knowledge Base (`.aid/knowledge/`) and the project
-  source; aid-tech-writer produces it and aid-reviewer verifies it. It resolves nothing: it
-  drafts, you approve, and only then is the document placed. It never writes into
-  `.aid/knowledge/`. A thin kind-sibling of `/aid-create-document`, which defines its full
-  behavior.
+  Write a standard (mandatory rule) in one pass. Use when you need one drafted now.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<rule> -- the standard"
 ---

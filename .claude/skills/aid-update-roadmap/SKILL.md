@@ -1,15 +1,7 @@
 ---
 name: aid-update-roadmap
 description: >
-  Revise roadmap.md's direction entries outside the ## MVP section -- add, revise or
-  supersede direction entries, and move an entry between horizon sections (## Now, ## Next,
-  ## Later). Use this skill when the roadmap already exists and something has moved between
-  horizons. Reads and consumes a roadmap seed when one is present in `.aid/design/`; never
-  requires one. Asks every run which previously created outputs to update alongside it -- no
-  stored list, no tracking metadata written. The ## MVP section belongs entirely to
-  `/aid-update-mvp` -- this skill never touches it and leaves the ## Contents MVP index
-  entry in place whether or not the section exists. When roadmap.md is absent, routes to
-  `/aid-create-roadmap` without writing anything.
+  Revise roadmap.md outside the MVP section. Use when something moved between horizons.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- what to revise (entries to add, update, supersede, or move)"
 ---

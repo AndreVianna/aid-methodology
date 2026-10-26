@@ -1,11 +1,8 @@
 ---
 name: aid-create-test
 description: >
-  Author new tests (unit/integration/e2e); each test traces to an acceptance criterion;
-  framework inferred from the KB. Use this skill when you already know what to create and
-  want it scoped, specified, and broken into reviewable tasks in a single pass, with no
-  requirements interview. You approve the resulting plan before anything is built: this
-  skill plans and stops, so run `/aid-execute` to carry the plan out.
+  Write new tests, each tracing to an acceptance criterion. Use when the target is known;
+  plans only.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to create; runs straight to a graded flattened Lite work"
 ---

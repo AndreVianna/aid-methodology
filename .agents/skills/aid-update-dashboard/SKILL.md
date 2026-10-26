@@ -1,11 +1,7 @@
 ---
 name: aid-update-dashboard
 description: >
-  Update an existing dashboard / BI view (source, visualization, or refresh cadence). Use
-  this skill when you already know what to update and want it scoped, specified, and
-  broken into reviewable tasks in a single pass, with no requirements interview. You
-  approve the resulting plan before anything is built: this skill plans and stops, so run
-  `/aid-execute` to carry the plan out.
+  Update an existing dashboard or BI view. Use when the target is known; plans only.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

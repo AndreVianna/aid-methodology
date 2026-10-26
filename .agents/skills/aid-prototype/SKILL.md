@@ -1,14 +1,8 @@
 ---
 name: aid-prototype
 description: >
-  Build a throwaway, low-fidelity model to test whether a direction actually works, before
-  anyone commits to building it properly. Use this skill when a decision hinges on something
-  you can only learn by trying it. The model is isolated and disposable -- it lives in the
-  work folder or an opt-in worktree and never touches production -- and it is deliberately
-  rough, so it gets a light verification rather than a polish grade. It resolves nothing: it
-  reports whether the direction holds and what was learned, and you decide. For a kept
-  design meant to inform the build rather than a throwaway, use `/aid-design` instead; the
-  real build is a separate `/aid-create` step.
+  Build a throwaway low-fidelity model to test a direction. Use before committing to a
+  full build.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)"
 ---

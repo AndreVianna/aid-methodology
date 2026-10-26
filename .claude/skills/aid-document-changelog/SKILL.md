@@ -1,13 +1,7 @@
 ---
 name: aid-document-changelog
 description: >
-  Write a changelog in one pass -- release notes grouped as Added, Changed, Fixed, Removed
-  and Security. Use this skill when you already know the document you need is changelog, and
-  want it drafted now rather than planned. It is grounded in, and accuracy-checked against,
-  the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-writer produces it
-  and aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and only then
-  is the document placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of
-  `/aid-create-document`, which defines its full behavior.
+  Write a changelog (release notes) in one pass. Use when you need one drafted now.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<version/changes> -- the changelog"
 ---

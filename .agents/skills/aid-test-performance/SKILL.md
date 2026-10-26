@@ -1,11 +1,8 @@
 ---
 name: aid-test-performance
 description: >
-  Run a performance verification against a threshold or SLO -- a benchmark, a load test, or
-  a stress test -- and report measured against target. Use this skill when you need to know
-  whether something is fast enough, and by how much. Read-only; it resolves nothing, and
-  findings hand off to `/aid-fix`. A thin kind-sibling of `/aid-test`, which defines its
-  full behavior.
+  Run a benchmark or load test against a threshold and report. Use to check whether it is
+  fast enough.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<target + threshold> -- the hot path/endpoint and the SLO to measure against"
 ---

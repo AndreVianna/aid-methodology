@@ -1,11 +1,10 @@
 ## Summary
 
 <!-- AID:SUMMARY:BEGIN -->
-- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
-  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
-- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
-- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
 - Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately, `/aid-execute` included.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them; `.aid/knowledge/**` never names a work id or path.
 - Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
 - Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
 - Write only inside the project directory.
@@ -13,103 +12,49 @@
 
 ## Tracking discipline (IMPERATIVE)
 
-Every project, task, and deliverable is tracked in a state file — the work's
-`.aid/works/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
-cross-phase process state). Keeping it current is **not optional**:
-
-- **ANY and ALL** changes to the state of a project, task, or deliverable —
-  status, phase, grade, review outcome, or artifacts produced — MUST be written
-  to the proper tracking file **IMMEDIATELY**, as part of the same action that
-  made the change. Untracked work is incomplete work.
-- This binds **EVERY agent, without exception** — whether invoked by a SKILL or
-  by a DIRECT PROMPT, and whether on the FULL or the LITE path.
-- If no tracking file exists for the work yet, **create it first** (from the
-  work-state template) before doing anything else.
-- **Task execution is the sharpest case of this rule.** During `/aid-execute`,
-  a task's `State` MUST be written the instant it changes — `In Progress` at
-  the start of EXECUTE, `In Review` before the reviewer is dispatched, and a
-  terminal value (`Done` / `Failed`) at the end (`Blocked` is a distinct,
-  orchestrator-assigned value for a DIFFERENT, downstream task that depends on
-  a failed one — never self-written by the task being executed). This binds
-  **whoever executes the task** — the main/orchestrator agent executing it
-  DIRECTLY (not only a dispatched sub-agent) MUST perform these writes itself,
-  at the same points, with **no exception and no bypass**. A task that sits
-  at `Pending` in the dashboard for its entire execution and then jumps
-  straight to `Done` is exactly the failure mode this rule exists to prevent.
-- **Work folders are transient.** `.aid/works/work-NNN-*/` holds disposable
-  per-work pipeline state and may be pruned once the work ships. No permanent
-  artifact — product code, shared source content (or its host render),
-  tests, docs, the Knowledge Base, or these context files — may depend on the
-  contents of a specific work folder: tests build their own fixtures, and the
-  KB never cites a work folder as a source. Pipeline skills/scripts that
-  create, read, or update work folders as live runtime state are exempt.
-- **Never name a work in the Knowledge Base.** `.aid/knowledge/**` must contain no
-  work id and no work-folder path — not `work-042`, not `.aid/works/work-042-*/`, not
-  "specified by work-042" or "added in work-042" — in prose, tables, headings, or
-  frontmatter. Two reasons, each sufficient: a work folder is pruned when its work
-  ships, so the cite is a dangling pointer by design; and the KB states only the
-  **current state of the project's sources**, whereas which work produced a change is
-  history. Cite the durable artifact the work left on disk instead. It follows that a
-  KB doc carries no `## Change Log` / `## Revision History` section and no `changelog:`
-  frontmatter field — git records per-doc history with author, date, and diff, at higher
-  fidelity and without drift. This binds `.aid/knowledge/` alone: skills, templates, and
-  pipeline scripts name works legitimately, because they operate on them.
+Every project, task and deliverable is tracked in a state file: the work's `.aid/works/work-NNN-*/STATE.yml`, plus
+`.aid/knowledge/STATE.md` for knowledge-base and cross-phase state. Keeping it current is **not optional**:
+- Write ANY change of status, phase, grade, review outcome or artifacts to that file **IMMEDIATELY**, in the same action. It binds
+  **EVERY agent** (skill or direct prompt, FULL or LITE path). No file yet: create it first, from the work-state template.
+- **Task execution is the sharpest case.** During `/aid-execute` write `State` the instant it changes: `In Progress` at the start of
+  EXECUTE, `In Review` before the reviewer is dispatched, `Done` / `Failed` at the end. Its executor, orchestrator included, writes
+  these itself. `Blocked` is the orchestrator's mark on a downstream task, never self-written (`task-state-template.yml`).
+- **Work folders are transient**: pruned once the work ships. No permanent artifact (code, shared source or its render, tests,
+  docs, the KB, context files) may depend on a specific work folder's contents; tests build their own fixtures. Pipeline
+  skills and scripts that use work folders as live state are exempt.
+- **Never name a work in the Knowledge Base.** `.aid/knowledge/**` holds no work id, no work-folder path and no
+  `## Change Log` / `changelog:`: cite the durable artifact the work left on disk (why: `authoring-conventions.md`
+  § No Work References). Skills, templates and scripts may name works.
 
 ## Knowledge Base
 
 This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
-- Read `.aid/knowledge/INDEX.md`.
-- Always consult relevant KB documents before making changes.
-- The KB is the single source of truth for architecture, conventions, and patterns.
+- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
+  Consult the relevant KB documents before making changes: the KB is the single source of truth for architecture, conventions and patterns.
 
 ## Connectors
 
 Read `.aid/connectors/INDEX.md`.
-
-- Connectors are catalogued via `aid-discover` (ELICIT) and can be added, updated, or removed on
-  demand — without re-running discovery — with `aid-set-connector` / `aid-unset-connector`.
-- Consumption is MCP-first (`.aid/runtime/templates/connectors/consumption-protocol.md`, shared by
-  all tools): scan the index, and for a `connection_type: mcp` connector, request the connection
-  from your host tool's own MCP/plugin — AID resolves nothing and stores no credential for it.
-- aid-managed consumption (`api` / `ssh` / `url` / `cli`) remains deferred; those descriptors exist
-  for discovery and audit only, not for live use.
+- Connectors are catalogued via `aid-discover` (ELICIT); change them on demand, without re-running discovery, with `aid-set-connector` / `aid-unset-connector`.
+- Consumption is MCP-first (`.aid/runtime/templates/connectors/consumption-protocol.md`): for a `connection_type: mcp`
+  connector, request the connection from your host tool's own MCP/plugin. AID resolves nothing and stores no credential.
+- aid-managed consumption (`api` / `ssh` / `url` / `cli`) is deferred: those descriptors serve discovery and audit only.
 
 ## Workflow
 
-- Every change should be traceable to a task or requirement.
-- Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute — the numbered sequence ends at Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional, separately-invoked Deliver paths, not steps in the sequence.
-- Produce verifiable artifacts at each phase.
-- Quality gates must pass before proceeding.
+- Every change traces to a task or requirement; each phase produces verifiable artifacts; quality gates pass before proceeding.
+- Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute; the sequence ends at
+  Execute. `aid-config` bootstraps before it; Deploy and Monitor are optional, separately invoked Deliver paths.
 
 ## Review criteria (before you write)
 
-Criteria are the writer's contract, not the reviewer's checklist. **Before authoring or
-editing any file, resolve its review criteria and comply** -- the reviewer is the backstop,
-not the enforcer:
-
-- Resolve three levels and satisfy the union: the **global** criteria and the criteria for
-  the file's **document type**, both in the type registry and criteria tables of
-  `.aid/knowledge/authoring-conventions.md`, plus anything the **file itself** declares in
-  its `review-criteria:` frontmatter. On a collision the most specific wins -- file over
-  type over global. A `kind: exclude` entry is as binding as a `validate` one: it names
-  what you must NOT add.
-- **Introducing or retiring a document type owes the KB a registry row.** Adding the first
-  file of a new type adds its row and its criteria in the same change; removing the last
-  file of a type removes the row. Every in-scope file must resolve to exactly one type.
-
-## Review output format (global)
-
-Any review output you produce — dispatched sub-agent, script validator, or
-ad-hoc user-prompted — uses the schema at
-`.aid/runtime/templates/reviewer-ledger-schema.md`. Write the ledger as a single
-markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
-shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
-Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
-No narrative or summary sections in the ledger.
+Criteria are the writer's contract; the reviewer is the backstop, not the enforcer. **Before authoring or editing any file, resolve
+its review criteria and comply**: the union of the global, document-type and file (`review-criteria:` frontmatter) criteria in
+`.aid/knowledge/authoring-conventions.md`; the most specific wins; a `kind: exclude` entry binds like a `validate` one (it names what
+not to add). Introducing or retiring a document type owes the KB a registry row; every in-scope file has exactly one type.
+Review output (sub-agent, script validator or ad-hoc) is the single 7-column table of `.aid/runtime/templates/reviewer-ledger-schema.md`,
+at `.aid/.temp/review-pending/<scope>.md`, with no narrative.
 
 ## Permissions
 
-- Read any file in the project
-- Write only within the project directory
-- Run build and test commands (Python, Bash, PowerShell)
-- Do NOT modify files outside the project root
+Read any file in the project; write only inside the project directory; run build and test commands (Python, Bash, PowerShell).
