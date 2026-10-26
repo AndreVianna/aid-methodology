@@ -306,6 +306,6 @@ qa:
     impact: High
     state: Pending
     context: 'Is this enough measuring to set the baseline and start the changes?'
-    suggested: '1: yes; the gap is about 100 times the cost and 60 times the time, and each heavy run costs about $24 or more without changing the decision'
+    suggested: '3: first measure a larger feature with and without AID, graded by hidden acceptance tests, to learn whether the heavy process pays off at all before redesigning it'
     answer: --
     applied_to: --
