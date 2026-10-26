@@ -9,7 +9,9 @@ Purpose:
 
 Usage:
     python3 tests/measure/measure.py [--scenario fix|feature] [--no-aid] [--runs N] [--turns N] [--model M]
-    Needs the claude CLI logged in (its ~/.claude/.credentials.json is copied into each run's private home).
+    Needs the claude CLI logged in. With CLAUDE_CODE_OAUTH_TOKEN set (from `claude setup-token`) every run uses
+    it; otherwise ~/.claude/.credentials.json is copied into each run's private home, and a long run can let
+    that login expire.
 
 Output:
     stdout: one JSON object per run.  stderr: progress and a summary line per run.
@@ -39,7 +41,7 @@ SCENARIOS = {
 REPLY = "Yes, go ahead. Take your recommendation for anything else."
 EXECUTE = "/aid-execute"  # sent instead of REPLY when AID tells the user to start the build with it
 TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
-TIMEOUT = 1800
+TIMEOUT = int(os.environ.get("AID_MEASURE_TIMEOUT", "7200"))  # seconds per claude call
 
 
 def run(cmd, cwd, env, stdin=None):
@@ -53,7 +55,7 @@ def setup(work: Path, aid: bool, bundle: Path) -> tuple[Path, dict]:
         shutil.rmtree(project / ".aid", ignore_errors=True)
     (home / ".claude").mkdir(parents=True)
     creds = Path.home() / ".claude/.credentials.json"
-    if creds.is_file():
+    if creds.is_file() and not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
         shutil.copy2(creds, home / ".claude/.credentials.json")
     env = dict(os.environ, HOME=str(home), AID_HOME=str(work / "aid-state"), AID_NO_UPDATE_CHECK="1",
                PYTHONDONTWRITEBYTECODE="1")
