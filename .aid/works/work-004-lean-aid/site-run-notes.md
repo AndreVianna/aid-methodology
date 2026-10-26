@@ -37,6 +37,19 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 - `review-cost.tsv` records one row, with zero bytes.
 - Delivery 4 plans "lean tests" after delivery 3 cuts the machinery: tests are cut and re-added in one work.
 
+## AID run: planning phase, analysed (site-run-analysis-planning.md)
+
+- Planning cost about $84 (7.3 times the plain run's whole job) and 3 h 13 min of active time; 42 helper runs
+  (24 writers, 18 reviewers); about 89,000 words of planning text.
+- 18 reviews and 8 fix runs found 98 problems. Only about 5 would have changed the published site. The rest: 25
+  checks or limits AID wrote for itself that could not run, 22 bookkeeping, 17 contradictions between its own
+  documents, 15 missing coverage, 11 wording, 8 wrong claims about the repo.
+- 11 helpers were cut off when the main agent ended a turn; 8-20% of helper spend was lost or redone.
+- 6 approvals, all answered "take your recommendation": no information gained. Describe asked no interview question.
+- Invented: numeric limits (300 lines, 60%, 150 KB), dropping release notes, removing copy buttons and the font.
+  Scope creep: KB updates, a "safety proof" feature. Weakened: skill pages cut to facts, their diagrams deleted rather
+  than redrawn. "Lean tests" re-add about 40 checks and two dependencies the requirements had listed for removal.
+
 ## Still to record
 
 - Execute: per-task cost and time, review cycles per task, findings by type, fix rounds, gates.
