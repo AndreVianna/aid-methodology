@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 34,
-        "endLine": 43,
+        "startLine": 29,
+        "endLine": 38,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What theme or\n   token set do you want to design -- its palette, type, spacing, and variants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-theme`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/theme.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 34,
-        "endLine": 45,
+        "startLine": 29,
+        "endLine": 40,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What theme or\n   token set do you want to design -- its palette, type, spacing, and variants?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-theme`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/theme.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 49,
-        "endLine": 57,
+        "startLine": 44,
+        "endLine": 52,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/theme.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the style-token set (color, type,\nspacing), the light/dark variants, and how components apply the tokens**; its\n`## Destination` names where the built theme lands. **Never writes `.aid/knowledge/` and\nnever writes production code** -- the `design` invariant (`design-lifecycle.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 49,
-        "endLine": 59,
+        "startLine": 44,
+        "endLine": 54,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/theme.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the style-token set (color, type,\nspacing), the light/dark variants, and how components apply the tokens**; its\n`## Destination` names where the built theme lands. **Never writes `.aid/knowledge/` and\nnever writes production code** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 63,
-        "endLine": 66,
+        "startLine": 58,
+        "endLine": 61,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 63,
-        "endLine": 68,
+        "startLine": 58,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 72,
-        "endLine": 75,
+        "startLine": 67,
+        "endLine": 70,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-theme`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 72,
-        "endLine": 77,
+        "startLine": 67,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-theme`).\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 81,
-        "endLine": 84,
+        "startLine": 76,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/theme.md`; consumption happens at `/aid-create-theme`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 81,
-        "endLine": 84,
+        "startLine": 76,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/theme.md`; consumption happens at `/aid-create-theme`."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 45,
-        "endLine": 45,
+        "startLine": 40,
+        "endLine": 40,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 59,
-        "endLine": 59,
+        "startLine": 54,
+        "endLine": 54,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 65,
-        "endLine": 65,
+        "startLine": 60,
+        "endLine": 60,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 68,
-        "endLine": 68,
+        "startLine": 63,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-theme/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 72,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

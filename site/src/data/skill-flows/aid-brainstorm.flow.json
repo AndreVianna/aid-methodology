@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 37,
-        "endLine": 50,
+        "startLine": 30,
+        "endLine": 43,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What problem\n   or theme do you want to explore?\") and wait. The subject may be fuzzy -- an unformed\n   problem is exactly this skill's case, so INTAKE never refuses an argument for not being\n   a question.\n2. **Confirm the seed slug.** Because `artifact` is empty, feature-002 §4's `<token>` =\n   `artifact` rule does not apply: derive a kebab-case `<slug>` from the subject and\n   **confirm it with the user**, then the seed is `.aid/design/<slug>.md`.\n3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where\n   `STATE.md` and the review gate live, even though the seed is the deliverable.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 37,
-        "endLine": 52,
+        "startLine": 30,
+        "endLine": 45,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What problem\n   or theme do you want to explore?\") and wait. The subject may be fuzzy -- an unformed\n   problem is exactly this skill's case, so INTAKE never refuses an argument for not being\n   a question.\n2. **Confirm the seed slug.** Because `artifact` is empty, feature-002 §4's `<token>` =\n   `artifact` rule does not apply: derive a kebab-case `<slug>` from the subject and\n   **confirm it with the user**, then the seed is `.aid/design/<slug>.md`.\n3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where\n   `STATE.md` and the review gate live, even though the seed is the deliverable.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 56,
-        "endLine": 64,
+        "startLine": 49,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/<slug>.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any prior seed.\nIt diverges -- framings, angles, prior art -- then converges to the candidate directions\nworth pursuing. The seed's `## Destination` is **optional** here: brainstorm has no fixed\ndestination until the user promotes the seed. **Never writes `.aid/knowledge/` and never\nwrites production code** -- the `design` invariant (`design-lifecycle.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 56,
-        "endLine": 66,
+        "startLine": 49,
+        "endLine": 59,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/<slug>.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any prior seed.\nIt diverges -- framings, angles, prior art -- then converges to the candidate directions\nworth pursuing. The seed's `## Destination` is **optional** here: brainstorm has no fixed\ndestination until the user promotes the seed. **Never writes `.aid/knowledge/` and never\nwrites production code** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 70,
-        "endLine": 73,
+        "startLine": 63,
+        "endLine": 66,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 70,
-        "endLine": 75,
+        "startLine": 63,
+        "endLine": 68,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 79,
-        "endLine": 83,
+        "startLine": 72,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 79,
-        "endLine": 85,
+        "startLine": 72,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose.\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 89,
-        "endLine": 92,
+        "startLine": 82,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 89,
-        "endLine": 92,
+        "startLine": 82,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 52,
-        "endLine": 52,
+        "startLine": 45,
+        "endLine": 45,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 66,
-        "endLine": 66,
+        "startLine": 59,
+        "endLine": 59,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 72,
-        "endLine": 72,
+        "startLine": 65,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 75,
-        "endLine": 75,
+        "startLine": 68,
+        "endLine": 68,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
-        "startLine": 85,
-        "endLine": 85,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

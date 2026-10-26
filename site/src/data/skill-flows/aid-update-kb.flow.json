@@ -17,8 +17,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 446,
-        "endLine": 446,
+        "startLine": 441,
+        "endLine": 441,
         "sourceKind": "skill",
         "excerpt": "| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or PAUSE-FOR-USER-ACTION if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |"
       },
@@ -42,8 +42,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 447,
-        "endLine": 447,
+        "startLine": 442,
+        "endLine": 442,
         "sourceKind": "skill",
         "excerpt": "| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- \"no update needed\") |"
       },
@@ -67,8 +67,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 448,
-        "endLine": 448,
+        "startLine": 443,
+        "endLine": 443,
         "sourceKind": "skill",
         "excerpt": "| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` CHAIN -> APPLY; `[2]` PAUSE-FOR-USER-ACTION -> SCOPE/ANALYZE; `[3]` HALT |"
       },
@@ -89,8 +89,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 449,
-        "endLine": 449,
+        "startLine": 444,
+        "endLine": 444,
         "sourceKind": "skill",
         "excerpt": "| APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |"
       },
@@ -114,8 +114,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 450,
-        "endLine": 450,
+        "startLine": 445,
+        "endLine": 445,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL |"
       },
@@ -139,8 +139,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 451,
-        "endLine": 451,
+        "startLine": 446,
+        "endLine": 446,
         "sourceKind": "skill",
         "excerpt": "| APPROVAL | `references/state-approval.md` | inline | `[1] Approved` -> CHAIN -> DONE; `[2] Additional consideration` -> PAUSE-FOR-USER-ACTION -> re-scope (CONFIRM/SCOPE) |"
       },
@@ -164,8 +164,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 452,
-        "endLine": 452,
+        "startLine": 447,
+        "endLine": 447,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state) |"
       },
@@ -215,8 +215,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 448,
-        "endLine": 448,
+        "startLine": 443,
+        "endLine": 443,
         "sourceKind": "skill",
         "excerpt": "**Advance:** `[1]` CHAIN -> APPLY; `[2]` PAUSE-FOR-USER-ACTION -> SCOPE/ANALYZE; `[3]` HALT"
       }
@@ -271,8 +271,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 450,
-        "endLine": 450,
+        "startLine": 445,
+        "endLine": 445,
         "sourceKind": "skill",
         "excerpt": "**Advance:** 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL"
       }
@@ -285,8 +285,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",
-        "startLine": 451,
-        "endLine": 451,
+        "startLine": 446,
+        "endLine": 446,
         "sourceKind": "skill",
         "excerpt": "**Advance:** `[1] Approved` -> CHAIN -> DONE; `[2] Additional consideration` -> PAUSE-FOR-USER-ACTION -> re-scope (CONFIRM/SCOPE)"
       }
@@ -328,7 +328,7 @@
     "canonical/skills/aid-update-kb/references/state-scope.md"
   ],
   "warnings": [
-    "[gen-skills] advance: multiple terminal clauses in 'CONFIRM'; keeping last pause-resume (canonical/skills/aid-update-kb/SKILL.md:448)",
-    "[gen-skills] advance: W-1: 'REVIEW' in 'canonical/skills/aid-update-kb/SKILL.md:450': non-commentary residue after clause extraction: '; ; grade/teach-back/act-back/TRACE-1 below gate…'"
+    "[gen-skills] advance: multiple terminal clauses in 'CONFIRM'; keeping last pause-resume (canonical/skills/aid-update-kb/SKILL.md:443)",
+    "[gen-skills] advance: W-1: 'REVIEW' in 'canonical/skills/aid-update-kb/SKILL.md:445': non-commentary residue after clause extraction: '; ; grade/teach-back/act-back/TRACE-1 below gate…'"
   ]
 }

@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-roadmap'
-description: 'Realize a ready roadmap seed into `.aid/knowledge/roadmap.md` -- frontmatter, preamble, ## Contents index (including the forward ## MVP entry), and the three…'
+description: 'Write roadmap.md from a ready seed.'
 generatedFrom: 'canonical/skills/aid-create-roadmap/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-roadmap/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-roadmap
-- **`description`** — Realize a ready roadmap seed into `.aid/knowledge/roadmap.md` -- frontmatter, preamble, ## Contents index (including the forward ## MVP entry), and the three horizon sections ## Now, ## Next, ## Later. Use this skill when a roadmap seed is ready and the project needs its roadmap document written for the first time. Registers the document in `.aid/settings.yml` and `.aid/knowledge/README.md` on first creation. Routes to `/aid-update-roadmap` when the horizon sections already carry committed content. The ## MVP section belongs entirely to `/aid-create-mvp` -- this skill writes only its ## Contents index entry.
+- **`description`** — Write roadmap.md from a ready seed. Use when the roadmap document does not exist yet.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- what to realize (fills horizon sections from the seed)
 
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L38-L52" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L31-L45" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What direction
@@ -77,44 +77,44 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L38-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L38-L52) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L38-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L38-L54)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L31-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L31-L45) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L31-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L31-L47)
 
 <a id="fragment-n2"></a>**2 · `GUARD`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L58-L61" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L51-L54" wrap
 ## State: GUARD
 
 **Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty
 `## Open questions` section per `design-lifecycle.md`'s detection rule.
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L58-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L58-L61) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L58-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L58-L68)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L51-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L51-L54) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L51-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L51-L61)
 
 <a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L72-L75" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L65-L68" wrap
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case
 determined in INTAKE:
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L72-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L72-L109)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L65-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L65-L68) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L65-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L65-L102)
 
 <a id="fragment-n4"></a>**4 · `REGISTER`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L131-L134" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L124-L127" wrap
 ## State: REGISTER
 
 **On creation only** (destination was absent in INTAKE). Write two surfaces atomically
 in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L131-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L131-L134) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L131-L146`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L131-L146)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L124-L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L124-L127) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L124-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L124-L139)
 
 <a id="fragment-n5"></a>**5 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L150-L154" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L143-L147" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -122,24 +122,24 @@ defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs esca
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L150-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L150-L154) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L150-L156`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L150-L156)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L143-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L143-L147) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L143-L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L143-L149)
 
 <a id="fragment-n6"></a>**6 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L160-L162" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L153-L155" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L160-L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L160-L162) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L160-L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L160-L169)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L153-L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L153-L155) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L153-L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L153-L162)
 
 <a id="fragment-n7"></a>**7 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L173-L175" wrap
+~~~~plaintext title="canonical/skills/aid-create-roadmap/SKILL.md#L166-L168" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L173-L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L173-L175) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L173-L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L173-L175)
+[Source: `canonical/skills/aid-create-roadmap/SKILL.md#L166-L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L166-L168) · [full step: `canonical/skills/aid-create-roadmap/SKILL.md#L166-L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-roadmap/SKILL.md#L166-L168)

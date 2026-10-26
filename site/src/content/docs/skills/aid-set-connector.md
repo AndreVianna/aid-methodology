@@ -1,6 +1,6 @@
 ---
 title: 'aid-set-connector'
-description: 'Add or update one entry in the connector catalog.'
+description: 'Add or change a connector to a tracker or tool.'
 generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-set-connector
-- **`description`** — Add or update one entry in the connector catalog. Use this skill when a project gains a new external tool, or an existing connector's configuration changes, and you do not want to re-run discovery for it. Naming a tool and a type creates its descriptor when absent, or updates that same descriptor in place when present, including a change of connection type. It asks the question set matching the type (mcp, api, ssh or cli), prefilled from the preset catalog when the tool is a known preset, and you confirm or edit. It reconciles that connector's secret and touches only that one stem: every other catalogued connector is left byte-for-byte untouched. It never invokes `/aid-discover`.
+- **`description`** — Add or change a connector to a tracker or tool. Use when connecting a new external tool.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
 - **`argument-hint`** — &lt;tool> &lt;type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)
 
@@ -61,56 +61,56 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `STEP-0`** — Validate arguments · _entry_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L42" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L35" wrap
 ### Step 0: Validate arguments
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L42`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L42)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L35)
 
 <a id="fragment-n2"></a>**2 · `STEP-1`** — Resolve &lt;tool> → descriptor stem; read the preset catalog · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L68" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L61" wrap
 ## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L68)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L61)
 
 <a id="fragment-n3"></a>**3 · `STEP-2`** — Branch on &lt;type> — ask the config question-set · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L93" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L86" wrap
 ## Step 2: Branch on `<type>` — ask the config question-set
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L93)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L86)
 
 <a id="fragment-n4"></a>**4 · `STEP-3`** — Classify — ADD vs UPDATE (single stem only) · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L114" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L107" wrap
 ## Step 3: Classify — ADD vs UPDATE (single stem only)
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L114)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L107)
 
 <a id="fragment-n5"></a>**5 · `STEP-4`** — Ensure the .secrets/ gitignore precondition — BEFORE any… · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L136" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L129" wrap
 ## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L136`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L136)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L129)
 
 <a id="fragment-n6"></a>**6 · `STEP-5`** — Author the descriptor + reconcile the secret (set-skill… · _step_
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L158" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L151" wrap
 ## Step 5: Author the descriptor + reconcile the secret (set-skill logic)
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L158)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L151)
 
 <a id="fragment-n7"></a>**7 · `STEP-6`** — Single-stem reconcile → rebuild INDEX.md · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L202" wrap
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L195" wrap
 ## Step 6: Single-stem reconcile → rebuild `INDEX.md`
 ~~~~
 
-[Source: `canonical/skills/aid-set-connector/SKILL.md#L202`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L202)
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L195)

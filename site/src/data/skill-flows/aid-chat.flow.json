@@ -25,7 +25,7 @@
       "id": "n2",
       "order": 2,
       "name": "RUN",
-      "label": "Run Talk to another AI coding session. Use this skill when…",
+      "label": "Run Talk to another AI coding session. Use to ask, answer…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -49,8 +49,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-chat/SKILL.md",
-        "startLine": 13,
-        "endLine": 13,
+        "startLine": 7,
+        "endLine": 7,
         "sourceKind": "skill",
         "excerpt": "---"
       },

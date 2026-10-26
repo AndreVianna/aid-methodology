@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-mvp'
-description: 'Draw the MVP line as a DESIGN SEED in `.aid/design/mvp.md` -- what is in the first shippable slice, what defers, and the reason for each cut.'
+description: 'Design the MVP line as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-mvp/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-mvp/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-mvp
-- **`description`** — Draw the MVP line as a DESIGN SEED in `.aid/design/mvp.md` -- what is in the first shippable slice, what defers, and the reason for each cut. Use this skill when what the first shippable slice should contain is still an open question. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into roadmap.md's ## MVP section with `/aid-create-mvp` once it is ready. For direction beyond the first slice, use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design the MVP line as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;slice> -- what belongs in the first shippable slice, and what to cut
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L39-L51" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L33-L45" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
@@ -68,11 +68,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L39-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L39-L51) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L39-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L39-L53)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L33-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L33-L45) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L33-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L33-L47)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L57-L62" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L51-L56" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -81,11 +81,11 @@ exists. Draws out: **the line -- what is in the first shippable slice, what defe
 the reason for each cut.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L57-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L57-L62) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L57-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L57-L69)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L51-L56`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L51-L56) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L51-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L51-L63)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L73-L77" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L67-L71" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -93,11 +93,11 @@ defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escal
 IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L73-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L73-L77) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L73-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L73-L79)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L67-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L67-L71) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L67-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L67-L73)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L83-L87" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L77-L81" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
@@ -105,15 +105,15 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 (`/aid-create-mvp`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L83-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L83-L87) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L83-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L83-L89)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L77-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L81) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L77-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L83)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L93-L96" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L87-L90" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L93-L96) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L93-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L93-L96)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L90)

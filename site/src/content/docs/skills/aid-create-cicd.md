@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-cicd'
-description: 'Realize a ready CI/CD seed from `.aid/design/cicd.md` into the project''s shipping (C8) Knowledge Base document -- the pipeline stages and their order, the…'
+description: 'Write the CI/CD (shipping) document from a ready seed.'
 generatedFrom: 'canonical/skills/aid-create-cicd/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-cicd/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-cicd
-- **`description`** — Realize a ready CI/CD seed from `.aid/design/cicd.md` into the project's shipping (C8) Knowledge Base document -- the pipeline stages and their order, the triggers, the environments and promotion between them, and the release flow. Use this skill when a CI/CD seed is ready and the project has no record of its delivery pipeline yet. It writes the KB record by default, and emits a workflow file only if you ask for one in that run. Creating the document also registers it, in the same run, which opts it into the Conformance Lane permanently -- a choice you make by running this skill. To revise C8 content already committed use `/aid-update-cicd`; for a resource the pipeline ships to, `/aid-create-infra` or `/aid-update-infra`; for a data pipeline rather than a delivery one, `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a built artifact now, `/aid-deploy`.
+- **`description`** — Write the CI/CD (shipping) document from a ready seed. Use when none exists yet.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the CI/CD seed to realize
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L41-L57" wrap
+~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L31-L47" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -72,32 +72,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-cicd/SKILL.md#L41-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L41-L57) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L41-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L41-L59)
+[Source: `canonical/skills/aid-create-cicd/SKILL.md#L31-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L31-L47) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L31-L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L31-L49)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L63-L65" wrap
+~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L53-L55" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-cicd/SKILL.md#L63-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L63-L65) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L63-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L63-L97)
+[Source: `canonical/skills/aid-create-cicd/SKILL.md#L53-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L53-L55) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L53-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L53-L87)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L101-L104" wrap
+~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L91-L94" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-cicd/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L101-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L101-L106)
+[Source: `canonical/skills/aid-create-cicd/SKILL.md#L91-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L91-L94) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L91-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L91-L96)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L110-L114" wrap
+~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L100-L104" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a
@@ -105,14 +105,14 @@ workflow file was emitted and that it was asked for; on the creation path both r
 surfaces were written; and anything routed to `/aid-update-cicd` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-cicd/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L110-L114) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L110-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L110-L116)
+[Source: `canonical/skills/aid-create-cicd/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L100-L104) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L100-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L100-L106)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L120-L122" wrap
+~~~~plaintext title="canonical/skills/aid-create-cicd/SKILL.md#L110-L112" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-cicd/SKILL.md#L120-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L120-L122) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L120-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L120-L122)
+[Source: `canonical/skills/aid-create-cicd/SKILL.md#L110-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L110-L112) · [full step: `canonical/skills/aid-create-cicd/SKILL.md#L110-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md#L110-L112)

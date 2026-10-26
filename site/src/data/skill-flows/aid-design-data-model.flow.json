@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 36,
-        "endLine": 46,
+        "startLine": 30,
+        "endLine": 40,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What data\n   model do you want to design -- its entities, relationships, and migration impact?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-data-model`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-model.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 36,
-        "endLine": 48,
+        "startLine": 30,
+        "endLine": 42,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What data\n   model do you want to design -- its entities, relationships, and migration impact?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-data-model`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-model.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 52,
-        "endLine": 60,
+        "startLine": 46,
+        "endLine": 54,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/data-model.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **its entities, their relationships, and\nthe migration impact of introducing them**; its `## Destination` names where the built\nmodel and its migration land. **Never writes `.aid/knowledge/` and never writes production\ncode** -- the `design` invariant (`design-lifecycle.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 52,
-        "endLine": 62,
+        "startLine": 46,
+        "endLine": 56,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/data-model.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **its entities, their relationships, and\nthe migration impact of introducing them**; its `## Destination` names where the built\nmodel and its migration land. **Never writes `.aid/knowledge/` and never writes production\ncode** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 66,
-        "endLine": 69,
+        "startLine": 60,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 66,
-        "endLine": 71,
+        "startLine": 60,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 75,
-        "endLine": 78,
+        "startLine": 69,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 75,
-        "endLine": 80,
+        "startLine": 69,
+        "endLine": 74,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`).\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 84,
-        "endLine": 87,
+        "startLine": 78,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 84,
-        "endLine": 87,
+        "startLine": 78,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 48,
-        "endLine": 48,
+        "startLine": 42,
+        "endLine": 42,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 62,
-        "endLine": 62,
+        "startLine": 56,
+        "endLine": 56,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 68,
-        "endLine": 68,
+        "startLine": 62,
+        "endLine": 62,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 71,
-        "endLine": 71,
+        "startLine": 65,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-data-model/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 74,
+        "endLine": 74,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

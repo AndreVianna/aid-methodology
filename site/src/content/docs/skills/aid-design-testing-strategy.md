@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-testing-strategy'
-description: 'Develop the testing policy as a DESIGN SEED in `.aid/design/testing-strategy.md` -- test levels, coverage expectations, which gates block a merge, and who…'
+description: 'Design the testing policy as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-testing-strategy/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-testing-strategy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-testing-strategy
-- **`description`** — Develop the testing policy as a DESIGN SEED in `.aid/design/testing-strategy.md` -- test levels, coverage expectations, which gates block a merge, and who may waive one. Use this skill when how the project should be tested is still being decided, rather than which tests to write. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document and NO test code -- realize the seed into the project's C6 document(s) with `/aid-create-testing-strategy` once it is ready. To design a specific set of tests rather than the policy, use `/aid-design-test`; to RUN existing suites, use `/aid-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design the testing policy as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the testing policy to design (levels, coverage, merge-blocking gates, waivers)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L38-L48" wrap
+~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L31-L41" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What testing
@@ -66,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L38-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L38-L48) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L38-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L38-L50)
+[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L31-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L31-L41) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L31-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L31-L43)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L54-L60" wrap
+~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L47-L53" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -80,22 +80,22 @@ in INTAKE. What this artifact's seed must settle: **the test levels, coverage ex
 which gates block a merge, and who may waive one**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L54-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L54-L60) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L54-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L54-L76)
+[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L47-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L47-L53) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L47-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L47-L69)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L80-L83" wrap
+~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L73-L76" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L80-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L80-L85)
+[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L73-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L73-L78)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L89-L93" wrap
+~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L82-L86" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
@@ -103,11 +103,11 @@ the user iterates (re-invoke this skill) or realizes it now
 (`/aid-create-testing-strategy`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L89-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L89-L93) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L89-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L89-L95)
+[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L82-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L82-L86) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L82-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L82-L88)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L99-L103" wrap
+~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L92-L96" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
@@ -115,4 +115,4 @@ persists at `.aid/design/testing-strategy.md`; consumption happens at
 `/aid-create-testing-strategy`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L99-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L99-L103) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L99-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L99-L103)
+[Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L92-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L92-L96) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L92-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L92-L96)

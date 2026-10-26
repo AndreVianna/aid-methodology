@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 150,
-        "endLine": 150,
+        "startLine": 148,
+        "endLine": 148,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 151,
-        "endLine": 151,
+        "startLine": 149,
+        "endLine": 149,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 152,
-        "endLine": 152,
+        "startLine": 150,
+        "endLine": 150,
         "sourceKind": "skill",
         "excerpt": "| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | → halt |"
       },

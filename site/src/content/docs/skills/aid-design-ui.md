@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-ui'
-description: 'Develop a UI design as a DESIGN SEED in `.aid/design/ui.md` -- the screen/flow structure, the interaction model, and accessibility notes.'
+description: 'Design a UI screen or flow as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-ui/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-ui/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-ui
-- **`description`** — Develop a UI design as a DESIGN SEED in `.aid/design/ui.md` -- the screen/flow structure, the interaction model, and accessibility notes. Use this skill when a screen's layout and behaviour are still being worked out and you want a design you intend to keep. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built component/page with `/aid-create-ui` once it is ready. For a THROWAWAY low-fidelity mock that merely validates a UX direction rather than a kept design, use `/aid-prototype-ui` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design a UI screen or flow as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the UI screen(s)/flow to design (structure, interaction, accessibility)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L39-L48" wrap
+~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L32-L41" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What UI
@@ -65,11 +65,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-ui/SKILL.md#L39-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L39-L48) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L39-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L39-L50)
+[Source: `canonical/skills/aid-design-ui/SKILL.md#L32-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L32-L41) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L32-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L32-L43)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L54-L62" wrap
+~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L47-L55" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -81,37 +81,37 @@ component/page lands. **Never writes `.aid/knowledge/` and never writes producti
 -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-ui/SKILL.md#L54-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L54-L62) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L54-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L54-L64)
+[Source: `canonical/skills/aid-design-ui/SKILL.md#L47-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L47-L55) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L47-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L47-L57)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L68-L71" wrap
+~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L61-L64" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-ui/SKILL.md#L68-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L68-L71) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L68-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L68-L73)
+[Source: `canonical/skills/aid-design-ui/SKILL.md#L61-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L61-L64) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L61-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L61-L66)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L77-L80" wrap
+~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L70-L73" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-ui`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-ui/SKILL.md#L77-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L77-L80) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L77-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L77-L82)
+[Source: `canonical/skills/aid-design-ui/SKILL.md#L70-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L70-L73) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L70-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L70-L75)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L86-L89" wrap
+~~~~plaintext title="canonical/skills/aid-design-ui/SKILL.md#L79-L82" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/ui.md`; consumption happens at `/aid-create-ui`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-ui/SKILL.md#L86-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L86-L89) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L86-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L86-L89)
+[Source: `canonical/skills/aid-design-ui/SKILL.md#L79-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L79-L82) · [full step: `canonical/skills/aid-design-ui/SKILL.md#L79-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-ui/SKILL.md#L79-L82)

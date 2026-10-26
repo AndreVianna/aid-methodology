@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-backlog'
-description: 'Develop the defined-and-prioritized item set as a DESIGN SEED in `.aid/design/backlog.md` -- item definitions, done-conditions, priorities, and which…'
+description: 'Design the backlog as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-backlog/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-backlog/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-backlog
-- **`description`** — Develop the defined-and-prioritized item set as a DESIGN SEED in `.aid/design/backlog.md` -- item definitions, done-conditions, priorities, and which tech-debt.md rows the user is accepting into the plan. Use this skill when what belongs in the backlog is still being decided, and you want that thinking captured as a seed before the document is written. Grounded in the Knowledge Base (`.aid/knowledge/`, including tech-debt.md) and the project source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into backlog.md with `/aid-create-backlog` once it is ready. For direction rather than items, use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design the backlog as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;items> -- the items to define and prioritize, and any tech-debt.md rows to accept
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L41-L55" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L34-L48" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
@@ -70,11 +70,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L41-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L41-L55) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L41-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L41-L57)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L34-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L34-L48) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L34-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L34-L50)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L61-L67" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L54-L60" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -84,11 +84,11 @@ done-conditions and priorities; which `tech-debt.md` rows the user is accepting 
 plan.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L61-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L61-L76)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L54-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L54-L60) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L54-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L54-L69)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L80-L84" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L73-L77" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -96,11 +96,11 @@ defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escal
 IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L80-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L80-L84) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L80-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L80-L86)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L73-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L73-L77) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L73-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L73-L79)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L90-L94" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L83-L87" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
@@ -108,11 +108,11 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 (`/aid-create-backlog`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L90-L94) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L90-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L90-L96)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L83-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L83-L87) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L83-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L83-L89)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L100-L104" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L93-L97" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
@@ -120,4 +120,4 @@ stays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog
 here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L100-L104) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L100-L104)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L93-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L97) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L93-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L93-L97)

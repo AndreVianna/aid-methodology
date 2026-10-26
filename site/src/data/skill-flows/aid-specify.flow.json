@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 220,
-        "endLine": 220,
+        "startLine": 216,
+        "endLine": 216,
         "sourceKind": "skill",
         "excerpt": "| INITIALIZE | `references/state-initialize.md` | `aid-architect` | → CONTINUE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 221,
-        "endLine": 221,
+        "startLine": 217,
+        "endLine": 217,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-architect` | → REVIEW |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 222,
-        "endLine": 222,
+        "startLine": 218,
+        "endLine": 218,
         "sourceKind": "skill",
         "excerpt": "| SPIKE | `references/state-spike.md` | `inline` | → CONTINUE |"
       },
@@ -86,8 +86,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 223,
-        "endLine": 223,
+        "startLine": 219,
+        "endLine": 219,
         "sourceKind": "skill",
         "excerpt": "| BLOCKED | `references/state-blocked.md` | `inline` | → CONTINUE |"
       },
@@ -108,8 +108,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 224,
-        "endLine": 224,
+        "startLine": 220,
+        "endLine": 220,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` | `aid-reviewer` | → DONE |"
       },
@@ -133,8 +133,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 225,
-        "endLine": 225,
+        "startLine": 221,
+        "endLine": 221,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
       },

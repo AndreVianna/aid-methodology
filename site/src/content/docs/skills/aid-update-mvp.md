@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-mvp'
-description: 'Revise roadmap.md''s ## MVP section only -- the first shippable slice: its contents, the line reasoning, what was cut, and its Status field (including the…'
+description: 'Revise the MVP section of roadmap.md.'
 generatedFrom: 'canonical/skills/aid-update-mvp/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-mvp/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-mvp
-- **`description`** — Revise roadmap.md's ## MVP section only -- the first shippable slice: its contents, the line reasoning, what was cut, and its Status field (including the transition to Shipped &lt;version>). Use this skill when the MVP section already carries committed content and its scope has changed. May create the ## MVP section if roadmap.md exists without one. Reads and consumes an MVP seed when one is present in `.aid/design/`; never requires one. Asks every run which previously created outputs to update alongside it -- no stored list, no tracking metadata written. Everything outside ## MVP belongs to `/aid-update-roadmap`. When roadmap.md is absent, routes to `/aid-create-roadmap` without writing anything.
+- **`description`** — Revise the MVP section of roadmap.md. Use when its scope changed.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;slice>] -- what to revise in the MVP section (contents, line, cuts, status)
 
@@ -56,7 +56,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L43-L60" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L36-L53" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
@@ -77,22 +77,22 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L43-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L43-L60) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L43-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L43-L62)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L36-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L36-L53) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L36-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L36-L55)
 
 <a id="fragment-n2"></a>**2 · `GUARD`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L66-L69" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L59-L62" wrap
 ## State: GUARD
 
 **Readiness gate (class-1 contract, feature-002 §3b).** Only applies when a seed was
 found in INTAKE.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L66-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L66-L69) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L66-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L66-L78)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L59-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L59-L62) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L59-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L59-L71)
 
 <a id="fragment-n3"></a>**3 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L82-L90" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L75-L83" wrap
 ## State: UPDATE
 
 Dispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.
@@ -104,11 +104,11 @@ outside that range **byte-identical** -- no reformatting, no whitespace change, 
 re-ordering of any other region.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L82-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L82-L90) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L82-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L82-L121)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L75-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L75-L83) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L75-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L75-L114)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L125-L129" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L118-L122" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -116,25 +116,25 @@ defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escal
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L125-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L125-L129) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L125-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L125-L131)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L118-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L118-L122) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L118-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L118-L124)
 
 <a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L135-L138" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L128-L131" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the revised `## MVP` section clearly.
 Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L135-L138`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L135-L138) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L135-L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L135-L151)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L128-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L128-L131) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L128-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L128-L144)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L155-L157" wrap
+~~~~plaintext title="canonical/skills/aid-update-mvp/SKILL.md#L148-L150" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-mvp/SKILL.md#L155-L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L157) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L155-L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L155-L157)
+[Source: `canonical/skills/aid-update-mvp/SKILL.md#L148-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L148-L150) · [full step: `canonical/skills/aid-update-mvp/SKILL.md#L148-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-mvp/SKILL.md#L148-L150)

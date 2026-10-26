@@ -1,6 +1,6 @@
 ---
 title: 'aid-unset-connector'
-description: 'Remove one entry from the connector catalog.'
+description: 'Remove a connector and its stored secret.'
 generatedFrom: 'canonical/skills/aid-unset-connector/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-unset-connector/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-unset-connector
-- **`description`** — Remove one entry from the connector catalog. Use this skill when a project stops using an external tool and its descriptor and stored secret should go with it. Naming the tool deletes its descriptor, purges its secret, and rebuilds the catalog index from whatever remains on disk -- touching only that one stem, so every other catalogued connector is left byte-for-byte untouched. Idempotent: removing an already-absent tool is a clean no- op. It never invokes `/aid-discover`.
+- **`description`** — Remove a connector and its stored secret. Use when a tool is no longer wanted.
 - **`allowed-tools`** — Read Bash Shell Terminal
 - **`argument-hint`** — &lt;tool>  -- e.g. aid-unset-connector Jira
 
@@ -49,32 +49,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `STEP-0`** — Validate arguments · _entry_
 
-~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L39" wrap
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L34" wrap
 ### Step 0: Validate arguments
 ~~~~
 
-[Source: `canonical/skills/aid-unset-connector/SKILL.md#L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L39)
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L34)
 
 <a id="fragment-n2"></a>**2 · `STEP-1`** — Resolve &lt;tool> → descriptor stem · _step_
 
-~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L58" wrap
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L53" wrap
 ## Step 1: Resolve `<tool>` → descriptor stem
 ~~~~
 
-[Source: `canonical/skills/aid-unset-connector/SKILL.md#L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L58)
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L53)
 
 <a id="fragment-n3"></a>**3 · `STEP-2`** — Single-stem REMOVE (reconcile.md) · _step_
 
-~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L72" wrap
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L67" wrap
 ## Step 2: Single-stem REMOVE (`reconcile.md`)
 ~~~~
 
-[Source: `canonical/skills/aid-unset-connector/SKILL.md#L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L72)
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L67)
 
 <a id="fragment-n4"></a>**4 · `STEP-3`** — Rebuild INDEX.md · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L102" wrap
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L97" wrap
 ## Step 3: Rebuild `INDEX.md`
 ~~~~
 
-[Source: `canonical/skills/aid-unset-connector/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L102)
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L97)

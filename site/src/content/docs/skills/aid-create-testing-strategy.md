@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-testing-strategy'
-description: 'Realize a ready testing-strategy seed from `.aid/design/testing-strategy.md` into the project''s quality (C6) documents -- the test landscape (levels,…'
+description: 'Write the testing-strategy documents (test landscape, merge gates) from a ready seed.'
 generatedFrom: 'canonical/skills/aid-create-testing-strategy/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-testing-strategy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-testing-strategy
-- **`description`** — Realize a ready testing-strategy seed from `.aid/design/testing-strategy.md` into the project's quality (C6) documents -- the test landscape (levels, coverage expectations, CI lane mapping, known gaps) and the gate policy (what blocks a merge, the thresholds, who may waive one). Use this skill when a testing-strategy seed is ready and the project has no record of its test lanes or merge gates yet. Creates the gate document on first use and registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C6 content this lifecycle already committed, use `/aid-update-testing-strategy`; to author or revise test CODE rather than the strategy, use `/aid-create-test` or `/aid-update-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Write the testing-strategy documents (test landscape, merge gates) from a ready seed. Use when none exist.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the testing-strategy seed to realize
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L30-L43" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -69,32 +69,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L52) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L39-L54)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L30-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L30-L43) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L30-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L30-L45)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L49-L51" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L60) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L58-L92)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L49-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L49-L51) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L49-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L49-L83)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L87-L90" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L101)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L87-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L87-L92)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L100" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present both realized documents and assert: which
@@ -102,14 +102,14 @@ half went where; on a creation path both registration surfaces were written; and
 routed to `/aid-update-testing-strategy` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L109) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L105-L111)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L100) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L96-L102)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117" wrap
+~~~~plaintext title="canonical/skills/aid-create-testing-strategy/SKILL.md#L106-L108" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L115-L117)
+[Source: `canonical/skills/aid-create-testing-strategy/SKILL.md#L106-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L106-L108) · [full step: `canonical/skills/aid-create-testing-strategy/SKILL.md#L106-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md#L106-L108)

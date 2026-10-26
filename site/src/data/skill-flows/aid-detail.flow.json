@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-detail/SKILL.md",
-        "startLine": 86,
-        "endLine": 86,
+        "startLine": 82,
+        "endLine": 82,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-detail/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 83,
+        "endLine": 83,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-detail/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
+        "startLine": 84,
+        "endLine": 84,
         "sourceKind": "skill",
         "excerpt": "| DONE | — | `inline` | `→ halt` |"
       },
@@ -111,6 +111,6 @@
     "canonical/skills/aid-detail/references/review.md"
   ],
   "warnings": [
-    "[gen-skills] extract-dispatch: unrecognised detail cell '—' for state 'DONE' (canonical/skills/aid-detail/SKILL.md:88)"
+    "[gen-skills] extract-dispatch: unrecognised detail cell '—' for state 'DONE' (canonical/skills/aid-detail/SKILL.md:84)"
   ]
 }

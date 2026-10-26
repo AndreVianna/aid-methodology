@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-messaging'
-description: 'Develop a messaging design as a DESIGN SEED in `.aid/design/messaging.md` -- the message/event schema, its channel, and its emission points.'
+description: 'Design a message or event as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-messaging/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-messaging/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-messaging
-- **`description`** — Develop a messaging design as a DESIGN SEED in `.aid/design/messaging.md` -- the message/event schema, its channel, and its emission points. Use this skill when an event's schema and who consumes it are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built schema and emission with `/aid-create-messaging` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design a message or event as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the message/event to design (schema, channel, emission)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L34-L44" wrap
+~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L29-L39" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
@@ -66,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-messaging/SKILL.md#L34-L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L34-L44) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L34-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L34-L46)
+[Source: `canonical/skills/aid-design-messaging/SKILL.md#L29-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L29-L39) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L29-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L29-L41)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L50-L58" wrap
+~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L45-L53" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -82,37 +82,37 @@ land. **Never writes `.aid/knowledge/` and never writes production code** -- the
 invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-messaging/SKILL.md#L50-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L50-L58) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L50-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L50-L60)
+[Source: `canonical/skills/aid-design-messaging/SKILL.md#L45-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L45-L53) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L45-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L45-L55)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L64-L67" wrap
+~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L59-L62" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-messaging/SKILL.md#L64-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L64-L67) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L64-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L64-L69)
+[Source: `canonical/skills/aid-design-messaging/SKILL.md#L59-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L59-L62) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L59-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L59-L64)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L73-L76" wrap
+~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L68-L71" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-messaging`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-messaging/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L73-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L73-L78)
+[Source: `canonical/skills/aid-design-messaging/SKILL.md#L68-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L68-L71) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L68-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L68-L73)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L82-L85" wrap
+~~~~plaintext title="canonical/skills/aid-design-messaging/SKILL.md#L77-L80" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/messaging.md`; consumption happens at `/aid-create-messaging`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-messaging/SKILL.md#L82-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L82-L85) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L82-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L82-L85)
+[Source: `canonical/skills/aid-design-messaging/SKILL.md#L77-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L77-L80) · [full step: `canonical/skills/aid-design-messaging/SKILL.md#L77-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md#L77-L80)

@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 172,
-        "endLine": 172,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
         "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |"
       },
@@ -39,8 +39,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 173,
-        "endLine": 173,
+        "startLine": 167,
+        "endLine": 167,
         "sourceKind": "skill",
         "excerpt": "| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |"
       },
@@ -61,8 +61,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 168,
+        "endLine": 168,
         "sourceKind": "skill",
         "excerpt": "| PROFILE | `references/state-profile.md` | inline | → GENERATE |"
       },
@@ -83,8 +83,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 175,
-        "endLine": 175,
+        "startLine": 169,
+        "endLine": 169,
         "sourceKind": "skill",
         "excerpt": "| GENERATE | `references/state-generate.md` | inline | → VALIDATE |"
       },
@@ -105,8 +105,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 176,
-        "endLine": 176,
+        "startLine": 170,
+        "endLine": 170,
         "sourceKind": "skill",
         "excerpt": "| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |"
       },
@@ -127,8 +127,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 177,
-        "endLine": 177,
+        "startLine": 171,
+        "endLine": 171,
         "sourceKind": "skill",
         "excerpt": "| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |"
       },
@@ -149,8 +149,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 178,
-        "endLine": 178,
+        "startLine": 172,
+        "endLine": 172,
         "sourceKind": "skill",
         "excerpt": "| FIX | `references/state-fix.md` | inline | → VALIDATE |"
       },
@@ -174,8 +174,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 179,
-        "endLine": 179,
+        "startLine": 173,
+        "endLine": 173,
         "sourceKind": "skill",
         "excerpt": "| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |"
       },
@@ -196,8 +196,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 180,
-        "endLine": 180,
+        "startLine": 174,
+        "endLine": 174,
         "sourceKind": "skill",
         "excerpt": "| WRITEBACK | `references/state-writeback.md` | inline | → DONE |"
       },
@@ -221,8 +221,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 181,
-        "endLine": 181,
+        "startLine": 175,
+        "endLine": 175,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | → halt |"
       },

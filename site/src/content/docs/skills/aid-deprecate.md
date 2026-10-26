@@ -1,6 +1,6 @@
 ---
 title: 'aid-deprecate'
-description: 'Deprecate an existing artifact/API: mark deprecated, add warnings and a migration path, without deleting yet.'
+description: 'Mark something deprecated, with a migration path.'
 generatedFrom: 'canonical/skills/aid-deprecate/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-deprecate/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-deprecate
-- **`description`** — Deprecate an existing artifact/API: mark deprecated, add warnings and a migration path, without deleting yet. Use this skill when you already know what to deprecate and want it scoped, specified, and broken into reviewable tasks in a single pass, with no requirements interview. You approve the resulting plan before anything is built: this skill plans and stops, so run `/aid-execute` to carry the plan out.
+- **`description`** — Mark something deprecated, with a migration path. Use when the target is known; plans only.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to deprecate; runs straight to a graded flattened Lite work
 
@@ -72,11 +72,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `aid-deprecate`** — Bind VERB=deprecate, ARTIFACT="" (bare verb) · _entry_
 
-~~~~plaintext title="canonical/skills/aid-deprecate/SKILL.md#L17" wrap
+~~~~plaintext title="canonical/skills/aid-deprecate/SKILL.md#L14" wrap
 Bind **VERB=`deprecate`**, **ARTIFACT="" (bare verb)**, then run the shared engine at `.aid/runtime/templates/shortcut-engine.md`. The engine scaffolds the flattened Lite work (feature-001 structure) and authors exactly two documents: `REQUIREMENTS.md`, whose `§ 11` feature section carries the technical specification and whose `§ 9` carries the gate criteria, and the task `DETAIL.md` files -- with reduced capture. One feature and one delivery means there is nothing to sequence, so no plan is written and the execution graph is derived from each task's `**Depends on:**` field. It runs the per-document Grading Gates (feature-004) and halts at the FR-10 approval gate. It never executes. This shortcut's `default_type`/`group` are its row in `.aid/runtime/templates/shortcut-catalog.yml`.
 ~~~~
 
-[Source: `canonical/skills/aid-deprecate/SKILL.md#L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deprecate/SKILL.md#L17)
+[Source: `canonical/skills/aid-deprecate/SKILL.md#L14`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deprecate/SKILL.md#L14)
 
 <a id="fragment-n2"></a>**2 · `INTAKE`** — parse the bound invocation values; resolve the catalog row… · _decision_
 

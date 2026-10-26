@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 34,
-        "endLine": 44,
+        "startLine": 29,
+        "endLine": 39,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   message/event do you want to design -- its schema, channel, and emission points?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-messaging`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/messaging.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 34,
-        "endLine": 46,
+        "startLine": 29,
+        "endLine": 41,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   message/event do you want to design -- its schema, channel, and emission points?\") and\n   wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-messaging`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/messaging.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 50,
-        "endLine": 58,
+        "startLine": 45,
+        "endLine": 53,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/messaging.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the message/event schema, its channel,\nand its emission points**; its `## Destination` names where the built schema and emission\nland. **Never writes `.aid/knowledge/` and never writes production code** -- the `design`\ninvariant (`design-lifecycle.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 50,
-        "endLine": 60,
+        "startLine": 45,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/messaging.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the message/event schema, its channel,\nand its emission points**; its `## Destination` names where the built schema and emission\nland. **Never writes `.aid/knowledge/` and never writes production code** -- the `design`\ninvariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 64,
-        "endLine": 67,
+        "startLine": 59,
+        "endLine": 62,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 64,
-        "endLine": 69,
+        "startLine": 59,
+        "endLine": 64,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 73,
-        "endLine": 76,
+        "startLine": 68,
+        "endLine": 71,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-messaging`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 73,
-        "endLine": 78,
+        "startLine": 68,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-messaging`).\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 82,
-        "endLine": 85,
+        "startLine": 77,
+        "endLine": 80,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/messaging.md`; consumption happens at `/aid-create-messaging`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 82,
-        "endLine": 85,
+        "startLine": 77,
+        "endLine": 80,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/messaging.md`; consumption happens at `/aid-create-messaging`."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 46,
-        "endLine": 46,
+        "startLine": 41,
+        "endLine": 41,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 60,
-        "endLine": 60,
+        "startLine": 55,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 66,
-        "endLine": 66,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 69,
-        "endLine": 69,
+        "startLine": 64,
+        "endLine": 64,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-messaging/SKILL.md",
-        "startLine": 78,
-        "endLine": 78,
+        "startLine": 73,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

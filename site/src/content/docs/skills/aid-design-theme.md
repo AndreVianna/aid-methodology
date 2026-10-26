@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-theme'
-description: 'Develop a visual theme design as a DESIGN SEED in `.aid/design/theme.md` -- the style-token set (color, type, spacing), its light/dark variants, and how…'
+description: 'Design a visual theme as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-theme/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-theme/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-theme
-- **`description`** — Develop a visual theme design as a DESIGN SEED in `.aid/design/theme.md` -- the style-token set (color, type, spacing), its light/dark variants, and how components apply it. Use this skill when the visual language is still being decided, rather than applied. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built theme with `/aid-create-theme` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design a visual theme as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the theme/token set to design (color, type, spacing; light/dark)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L34-L43" wrap
+~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L29-L38" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What theme or
@@ -65,11 +65,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-theme/SKILL.md#L34-L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L34-L43) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L34-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L34-L45)
+[Source: `canonical/skills/aid-design-theme/SKILL.md#L29-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L29-L38) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L29-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L29-L40)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L49-L57" wrap
+~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L44-L52" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -81,37 +81,37 @@ spacing), the light/dark variants, and how components apply the tokens**; its
 never writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-theme/SKILL.md#L49-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L49-L57) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L49-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L49-L59)
+[Source: `canonical/skills/aid-design-theme/SKILL.md#L44-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L44-L52) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L44-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L44-L54)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L63-L66" wrap
+~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L58-L61" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-theme/SKILL.md#L63-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L63-L66) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L63-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L63-L68)
+[Source: `canonical/skills/aid-design-theme/SKILL.md#L58-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L58-L61) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L58-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L58-L63)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L72-L75" wrap
+~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L67-L70" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-theme`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-theme/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L72-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L72-L77)
+[Source: `canonical/skills/aid-design-theme/SKILL.md#L67-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L67-L70) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L67-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L67-L72)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L81-L84" wrap
+~~~~plaintext title="canonical/skills/aid-design-theme/SKILL.md#L76-L79" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/theme.md`; consumption happens at `/aid-create-theme`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-theme/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L81-L84)
+[Source: `canonical/skills/aid-design-theme/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-design-theme/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-theme/SKILL.md#L76-L79)

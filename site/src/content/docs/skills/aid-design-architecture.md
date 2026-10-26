@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-architecture'
-description: 'Develop the system''s shape as a DESIGN SEED in `.aid/design/architecture.md` -- components, boundaries, interactions, invariants, and what is deliberately…'
+description: 'Design the system architecture as a seed in .aid/design (no code).'
 generatedFrom: 'canonical/skills/aid-design-architecture/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-architecture/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-architecture
-- **`description`** — Develop the system's shape as a DESIGN SEED in `.aid/design/architecture.md` -- components, boundaries, interactions, invariants, and what is deliberately not a component. Use this skill when how the system should be shaped is still being worked out, and you want that thinking captured before it is written into the Knowledge Base. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document and NO production code -- realize the seed into the project's C1 document with `/aid-create-architecture` once it is ready. For a subject with no dedicated design row use bare `/aid-design`; to write documentation about an existing architecture rather than design it, use `/aid-document-architecture`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Design the system architecture as a seed in .aid/design (no code). Use while its shape is still open.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the system/subsystem to design (components, boundaries, interactions, invariants)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L39-L48" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L31-L40" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What system or
@@ -65,11 +65,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L39-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L39-L48) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L39-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L39-L50)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L31-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L31-L40) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L31-L42`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L31-L42)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L54-L60" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L46-L52" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -79,33 +79,33 @@ in INTAKE. What this artifact's seed must settle: **the components, their bounda
 interactions, the invariants, and what is deliberately NOT a component**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L54-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L54-L60) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L54-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L54-L76)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L46-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L46-L52) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L46-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L46-L68)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L80-L83" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L72-L75" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L80-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L80-L83) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L80-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L80-L85)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L72-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L72-L77)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L89-L92" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L81-L84" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L89-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L89-L92) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L89-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L89-L94)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L81-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L81-L86)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L98-L102" wrap
+~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L90-L94" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
@@ -113,4 +113,4 @@ persists at `.aid/design/architecture.md`; consumption happens at
 `/aid-create-architecture`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-architecture/SKILL.md#L98-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L102) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L98-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L98-L102)
+[Source: `canonical/skills/aid-design-architecture/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L90-L94) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L90-L94)

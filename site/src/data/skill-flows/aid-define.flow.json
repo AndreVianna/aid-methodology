@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 241,
-        "endLine": 241,
+        "startLine": 235,
+        "endLine": 235,
         "sourceKind": "skill",
         "excerpt": "| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 242,
-        "endLine": 242,
+        "startLine": 236,
+        "endLine": 236,
         "sourceKind": "skill",
         "excerpt": "| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 243,
-        "endLine": 243,
+        "startLine": 237,
+        "endLine": 237,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
       },
