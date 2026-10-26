@@ -33,8 +33,11 @@ FIXTURE = ROOT / "tests/measure/fixture"
 SCENARIOS = {
     "fix": "Some notes in the list come out twice. Can you fix it?",
     "feature": "Add an option to list the notes newest first.",
+    "fix-skill": "/aid-fix Some notes in the list come out twice.",
+    "feature-skill": "/aid-create Add an option to list the notes newest first.",
 }
 REPLY = "Yes, go ahead. Take your recommendation for anything else."
+EXECUTE = "/aid-execute"  # sent instead of REPLY when AID tells the user to start the build with it
 TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 TIMEOUT = 1800
 
@@ -95,7 +98,7 @@ def turn(project: Path, env: dict, model: str, message: str, session: str | None
 
 def asks(text: str) -> bool:
     tail = "\n".join(text.strip().splitlines()[-6:])
-    return "?" in tail or "ask me to explain" in tail
+    return "?" in tail or "ask me to explain" in tail or EXECUTE in tail
 
 
 def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> dict:
@@ -124,7 +127,7 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
         text = r.get("result", "") or ""
         if r.get("is_error") or not asks(text):
             break
-        message = REPLY
+        message = EXECUTE if EXECUTE in text and EXECUTE not in message else REPLY
     rec["seconds"] = round(time.time() - start, 1)
     changed = run(["git", "status", "--porcelain", "--", "src", "tests"], project, env).stdout.splitlines()
     rec["code_files_changed"] = len(changed)
@@ -142,7 +145,7 @@ def main() -> int:
     ap.add_argument("--scenario", choices=sorted(SCENARIOS), default="fix")
     ap.add_argument("--no-aid", action="store_true", help="measure the same request with no AID installed")
     ap.add_argument("--runs", type=int, default=3)
-    ap.add_argument("--turns", type=int, default=6, help="user turns before giving up (default 6)")
+    ap.add_argument("--turns", type=int, default=10, help="user turns before giving up (default 10)")
     ap.add_argument("--model", default=os.environ.get("AID_MEASURE_MODEL", "claude-sonnet-5-5"))
     a = ap.parse_args()
     bundle = Path(tempfile.mkdtemp(prefix="aid-bundle-"))
