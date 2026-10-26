@@ -155,6 +155,47 @@ Each phase produces an artifact. Read it, approve it, and the next phase begins.
 
 Every gate is a human decision. The pipeline never advances without your explicit approval.
 
+#### Starting with an Existing Project (Brownfield)
+
+1. Run `/aid-config` to initialize the workspace (once per project).
+2. Run `/aid-discover` on the codebase. This produces your Knowledge Base.
+3. Review the KB. Fill gaps with human knowledge during the Q&A state.
+4. For the next piece of work: if you know what kind of change it is, run the matching direct-entry shortcut (`/aid-fix`, `/aid-create api`, …). Not sure? Run `/aid-triage` and describe it in a sentence — it suggests the right door. Broad or multi-feature work: run `/aid-describe` directly. Just have a question, not a change? Run `/aid-ask`.
+5. **Full path:** Run `/aid-define` to decompose requirements into features. Run `/aid-specify` to add a technical spec to each feature. Run `/aid-plan` to sequence features into deliveries. Run `/aid-detail` to decompose deliveries into typed tasks. Run `/aid-execute` for each task.
+6. **Lite path:** the shortcut you ran drives the shared shortcut engine straight through to an approval halt, then hands off task(s) directly to `/aid-execute`.
+7. Optionally run `/aid-deploy` to verify, package, and ship; then `/aid-monitor` once the delivery is in production.
+8. Run `/aid-housekeep` periodically to reconcile KB drift without a full discovery cycle.
+
+#### Starting a New Project (Greenfield)
+
+1. Run `/aid-config`, then `/aid-describe` for the initial, broad requirements gathering — greenfield projects with multiple features start on the full path.
+2. On the full path, `aid-describe` runs its DESCRIBE-SEED state: it forward-authors a five-element KB seed (domain language, intended architecture, conventions, technology stack, and key decisions) from intent before any code exists. The seed is stamped `source: forward-authored` — the design is the source of truth, and code is built to conform to it.
+3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
+4. **Lite path (small greenfield change):** run the matching direct-entry shortcut (or `/aid-triage` first if unsure); the shortcut engine halts for approval, then run `/aid-execute`.
+5. As the codebase develops, run `/aid-housekeep` periodically. Its conformance lane will check whether as-built code diverges from the forward-authored design and surface any gaps for your decision — it never overwrites the design automatically.
+
+#### Using the Direct-Entry Shortcuts
+
+For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
+
+1. Run the matching shortcut directly (`/aid-fix "login crash on special characters"`, `/aid-create api "an /orders endpoint"`, …) — or run `/aid-triage` first if you're not sure which one fits; it suggests the canonical shortcut (or the full path) from a one-sentence description and stops.
+2. The shortcut engine runs INTAKE → CAPTURE → SPEC → PLAN → DETAIL autonomously (a rare CAPTURE question aside), producing the flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`).
+3. GATE grades every document mechanically, then APPROVAL-HALT presents the flattened work for your approval. Nothing has executed yet.
+4. Run `/aid-execute`.
+
+#### Adopting Incrementally
+
+You do not need to use all six phases from day one — though `/aid-config` always runs once first:
+
+| **Starting point** | Add-on | What you gain |
+|-------------------|--------|---------------|
+| Detail + Execute | — | Formalized task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop |
+| + Plan | — | Separate delivery strategy from tactical decomposition with two-level planning |
+| + Discover | — | For brownfield projects, build the Knowledge Base before specifying anything |
+| + Describe → Define + Specify | — | For client engagements, gather requirements through the adaptive interview, then refine each feature technically |
+| + Deploy + Monitor | — | Once shipping regularly, formalize delivery and production monitoring |
+| Full pipeline | All phases | Sequenced phases with feedback loops — the complete AID experience |
+
 ## Next steps
 
 - [Lite path quickstart](/get-started/lite-path/) — for small changes that skip the middle phases.

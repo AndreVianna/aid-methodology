@@ -10,7 +10,7 @@ sourceDoc: 'docs/faq.md'
 **AI Integrated Development.** "Integrated" captures the core philosophy: human and AI co-execute every phase. Not "AI-driven" (human is the pilot) and not "AI-assisted" (AI does more than assist).
 
 ### How is AID different from SDD (Spec-Driven Development)?
-SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](/concepts/methodology#9-comparison-with-sdd).
+SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](/concepts/aid-and-sdd/#9-comparison-with-sdd).
 
 ### Is this just Waterfall rebranded?
 Yes — and that's the point. Waterfall's phases were sound. Waterfall failed because humans were too slow to execute them with rigor. Agile solved that by dropping the rigor. AI changes the economics: discovery takes hours not weeks, going back costs tokens not sprints. The rigor becomes viable again.
@@ -134,7 +134,7 @@ The 14 standard markdown documents that capture the living understanding of a pr
 The count is configurable per project via `discovery.doc_set` in `.aid/settings.yml`; 14 is the default seed.
 
 ### What are feedback loops?
-Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](/concepts/methodology#6-feedback-loops).
+Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](/concepts/feedback-loops/#6-feedback-loops).
 
 ### What's the Grade A gate?
 AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist. Define your project's specific quality gates in `REQUIREMENTS.md § 9` and the review criteria.
@@ -160,3 +160,19 @@ All AID runtime state lives under `.aid/` in your project. Key locations:
 - `.aid/works/{work}/PLAN.md` `### delivery-NNN` stanzas (full path; the Lite path writes no `PLAN.md` at all) — delivery definition
 - `.aid/works/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
 - `.aid/settings.yml` — project configuration (including `discovery.doc_set`)
+
+#### Anti-Patterns
+
+- **Skipping Discovery on brownfield.** Agents will hallucinate about your architecture. The 40-minute Discovery investment eliminates hours of review-reject-redo cycles.
+- **Treating the spec as sacred.** It is a hypothesis. Revise it when implementation proves it wrong — formally, with the revision trail.
+- **Ignoring impediments.** If an agent reports an impediment, stop and decide. Do not let it work around the problem. The impediment file is not bureaucracy — it is the agent saying "I found a contradiction and I am not going to silently paper over it."
+- **Bypassing Execute's review loop.** "The tests pass" is not enough. Execute dispatches a separate adversarial reviewer that catches spec, architecture, and convention issues tests cannot detect. The deterministic grade gate is what makes that bite. Do not lower the minimum grade to dodge it.
+- **Not maintaining the KB.** A stale KB is worse than no KB. Every phase should update it when new knowledge is acquired. Run `/aid-housekeep` periodically to catch drift.
+- **Sending agents blind.** Including TASK + SPEC without the KB INDEX means the agent does not know what context exists. It will guess instead of look. Always include INDEX.md.
+- **Auto-advancing between phases.** The human approves every transition. That is the checkpoint that keeps the methodology safe.
+- **Using the full path for every change.** A two-line bug fix does not need Specify, Plan, and Detail. A direct-entry shortcut — or `/aid-triage` if you're unsure which one — routes proportionately. Trust it.
+
+---
+
+*AID V3.2 — June 2026*
+*Built from practice, not theory. Every phase, every template, every feedback loop was born from real projects.*

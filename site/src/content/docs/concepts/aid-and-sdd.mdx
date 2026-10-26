@@ -1,0 +1,96 @@
+---
+title: 'AID and spec-driven development'
+description: 'How AID compares with spec-driven development: where they overlap and where they diverge.'
+---
+
+## 9. Comparison with SDD
+
+### Where We Overlap
+
+Both AID and SDD:
+- Use specifications as the central development artifact.
+- Employ AI agents for code implementation.
+- Rely on tests as contracts between spec and code.
+- Require human review of agent output.
+- Use markdown as the specification format.
+
+### Where We Diverge
+
+```mermaid
+flowchart TB
+    classDef sdd  fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef aid_prep  fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef aid_def   fill:#6D28D9,stroke:#6D28D9,color:#ffffff
+    classDef aid_map   fill:#0F766E,stroke:#0F766E,color:#ffffff
+    classDef aid_exe   fill:#166534,stroke:#166534,color:#ffffff
+    classDef aid_del   fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
+    classDef kb        fill:#0B1F3A,stroke:#0B1F3A,color:#ffffff
+    classDef aid_entry fill:#92400E,stroke:#92400E,color:#ffffff
+
+    subgraph SDD["Spec-Driven Development"]
+        direction TB
+        S1["Write Spec"]:::sdd
+        S2["AI Agent<br/>implements code"]:::sdd
+        S3["Human review"]:::sdd
+        S4["Ship"]:::sdd
+        S1 --> S2 --> S3 --> S4
+        S3 -. "re-spec from scratch" .-> S1
+    end
+
+    subgraph AID["AI-Assisted Development"]
+        direction TB
+        A0["aid-config<br/>(one-time setup)"]:::kb
+        A1["1 · aid-discover<br/>(brownfield)"]:::aid_prep
+        A2["2 · aid-describe + aid-define<br/>(requirements)"]:::aid_def
+        A3["3 · aid-specify<br/>(formal spec)"]:::aid_def
+        A4["4 · aid-plan<br/>(roadmap)"]:::aid_map
+        A5["5 · aid-detail<br/>(task breakdown)"]:::aid_map
+        A6["6 · aid-execute<br/>(build + review loop)"]:::aid_exe
+        KB[("Knowledge Base<br/>(persists across sessions)")]:::kb
+        Dep["aid-deploy<br/>(optional)"]:::aid_del
+        Mon["aid-monitor<br/>(optional)"]:::aid_del
+        Fx["aid-fix<br/>(shortcut)"]:::aid_entry
+        Tr["aid-triage"]:::aid_entry
+
+        A0 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+        A6 -. "on demand" .-> Dep
+        A6 -. "on demand" .-> Mon
+        Mon -. "bug fix" .-> Fx
+        Mon -. "change request" .-> Tr
+
+        A1 <--> KB
+        A2 <--> KB
+        A3 <--> KB
+        A4 <--> KB
+        A5 <--> KB
+        A6 <--> KB
+    end
+```
+
+*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and the optional Deploy/Monitor shortcut paths that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
+
+| **Dimension** | SDD | AID |
+|--------------|-----|-----|
+| **Starting point** | A spec | Understanding (Discovery) |
+| **Brownfield support** | Gap acknowledged | First-class Discovery phase with a 14-document KB (project-configurable) |
+| **Spec philosophy** | Spec is source of truth | Spec is hypothesis — revised by formal protocol |
+| **Requirements** | Assumed to exist | Gathered through adaptive interview |
+| **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
+| **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
+| **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
+| **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic — computed, not judged) plus project-defined quality checks |
+| **Agent model** | One agent per spec | 9 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
+| **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
+| **Memory** | Stateless | Knowledge Base persists across sessions |
+| **Post-delivery** | Not addressed | Monitor routes bugs to `/aid-fix`, change requests to `/aid-triage` |
+| **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
+| **Human role** | Spec writer, reviewer | Co-pilot across all phases |
+| **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 34 direct-entry shortcuts, with `/aid-triage` to route when unsure, or `/aid-ask` for a plain question |
+
+### The Core Argument
+
+SDD says: "Write better specs, get better code."
+
+AID says: "Understand the system first. Then write specs grounded in that understanding. Then plan the roadmap. Then detail the execution. Then build, review, and test it inside Execute's graded loop. Then ship when the delivery model requires it. And when any of that reveals you were wrong — revise formally, don't hack around it."
+
+SDD is not wrong. It is incomplete. AID is SDD + Discovery + Feedback Loops + Two-Level Planning + a Built-in Review Loop + Institutional Memory + Production Lifecycle + a Lite Path for small work.
