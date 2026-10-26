@@ -57,6 +57,17 @@ Tests are judged by effect, not count:
 - small mutations of the changed lines must be caught (mutation check on the diff), which measures test strength;
 - the review flags tests that are redundant, test wording or internals, or trace to no criterion: **unneeded is a finding**.
 
+Where reviews look (from the site benchmark: 5 of 98 planning findings would have changed the result, and all 5
+were checked against the request, the repo or the result; the 93 others compared AID's documents with each other):
+- **Before building, plan against request:** every clause of the request maps to a task and every task to a clause.
+  An unmapped clause is a gap (blocking); an unmapped task is scope creep (a Decision for the user).
+- **After each milestone, result against reality:** the project checks run (build, tests, accessibility, links, names
+  of real things), and a reviewer checks the claims the change makes against the repo.
+- A finding blocks only when it cites a request line it breaks or misses, a repo fact (file and line) it contradicts,
+  or a failing check's output. Criteria come only from the request or the project's written rules, never invented.
+- Risky actions get a fixed rule, not a review (for example: move before delete).
+- Every finding records whether it changed the result; a review type that keeps changing nothing is dropped.
+
 The loop stops by rule: one review pass, one fix round; the second look checks only the fixes and the full test run; a
 fix that breaks a passing check is reverted; no new Notes or Decisions in the second look. Thresholds (what "cheap"
 means, the size budget) are tuned on the benchmark by counting escaped defects against cost.
