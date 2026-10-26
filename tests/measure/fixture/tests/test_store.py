@@ -18,6 +18,14 @@ class NoteStoreTest(unittest.TestCase):
             self.assertEqual(second["id"], 2)
             self.assertEqual([n["text"] for n in store.list()], ["buy milk", "call home"])
 
+    def test_pin_marks_the_note(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = NoteStore(Path(folder) / "notes.json")
+            store.add("buy milk")
+            self.assertTrue(store.pin(1))
+            self.assertFalse(store.pin(9))
+            self.assertTrue(store.list()[0]["pinned"])
+
     def test_empty_store_lists_nothing(self):
         with tempfile.TemporaryDirectory() as folder:
             self.assertEqual(NoteStore(Path(folder) / "missing.json").list(), [])

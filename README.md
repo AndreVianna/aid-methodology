@@ -173,7 +173,7 @@ What `aid add` places in a repo:
 | Claude Code skill mirror (claude-code only) | `.claude/skills/aid-*/`, byte-identical to the shared copy |
 | Runtime: scripts, templates, `rules.md` | `.aid/runtime/` |
 | Agents, per tool | `.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/` (`aid-*` files only) |
-| Root instructions | `AGENTS.md` region for every tool (a SESSION START block that makes a Read of `.aid/runtime/rules.md` the first action, plus its rules summary); `CLAUDE.md` region holding only the `@.aid/runtime/rules.md` and `@.aid/knowledge/PROJECT.md` (project card) imports while Claude Code is installed |
+| Root instructions | `AGENTS.md` region for every tool (a SESSION START block that makes a Read of `.aid/runtime/rules.md` the first action, plus its rules summary); `CLAUDE.md` region holding only an `@.aid/runtime/rules.md` import (plus `@.aid/knowledge/PROJECT.md` when the project card exists) while Claude Code is installed |
 
 Several tools can share one repo. The shared files are installed once and kept while any installed tool still uses them, so `aid remove` of one tool leaves the others working. All installed tools in a repo run one version: `aid update` upgrades them together, and `aid status` reports any shared file that has drifted. A repo still on the v3 layout is upgraded by `aid update`, which moves the old AID-owned files to `.aid/.trash/`; `aid add` refuses until that upgrade has run. Details: [docs/install.md](docs/install.md#what-gets-installed-per-tool).
 

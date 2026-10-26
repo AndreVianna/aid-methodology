@@ -308,11 +308,11 @@ qa:
   - id: Q8
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'Step 1 halved AID''s own context, but the measuring tool cannot tell a right result from a wrong one (the fix scenario has no real bug; its tests check nothing the request changes) and one run each is too noisy. What next?'
     suggested: 'Fix the measuring tool first (a real planted bug, hidden checks for both tasks, 3 runs each), fix the missing-card note, then measure step 1 again'
-    answer: ''
-    applied_to: ''
+    answer: '1'
+    applied_to: 'tests/measure/ (planted bug, hidden checks, runs); installer card import'
   - id: Q7
     category: Scope
     impact: Medium

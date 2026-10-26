@@ -16,7 +16,8 @@ tags: [capability, commands, storage]
 | Command | Effect | Stores |
 |---|---|---|
 | `add <text>` | Appends a note with the next id and a UTC timestamp. | `notes.json` in the current folder. |
-| `list` | Prints every note as id, timestamp and text, in insertion order. | Nothing; read only. |
+| `pin <id>` | Marks the note as pinned. | `"pinned": true` on that note in `notes.json`. |
+| `list` | Prints every note once as id, timestamp and text: pinned notes first, then the others, each group in insertion order. | Nothing; read only. |
 
 ## Not offered
 

@@ -229,7 +229,7 @@ assert_file_contains "$SEVENTH/AGENTS.md" 'Valid first action: Read `.aid/runtim
 # inline tool leaves.
 EIGHTH="${TMP}/claude-inline-transition"; mkdir -p "$EIGHTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$EIGHTH" >/dev/null 2>&1 || exit 1
-assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '2 1 0' 'CLAUDE.md has the rules and card imports while no tool is inline'
+assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '1 1 0' 'CLAUDE.md has exactly one @ line, the rules import, while no tool is inline'
 assert_eq "$(grep -c '^@' "$EIGHTH/AGENTS.md")" '0' 'AGENTS.md region contains no @ line after add'
 set_inline_tool "$EIGHTH" cursor
 python3 - "$EIGHTH" <<'PY'
@@ -242,12 +242,12 @@ d['shared']['claude_md']['region_sha256']=hashlib.sha256(region.encode()).hexdig
 m.write_text(json.dumps(d,indent=2)+'\n',encoding='utf-8')
 PY
 run_aid remove cursor --target "$EIGHTH" >/dev/null 2>&1 || exit 1
-assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '2 1 0' 'Removing the last inline tool restores the CLAUDE.md imports'
+assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '1 1 0' 'Removing the last inline tool restores the CLAUDE.md rules import'
 if python3 - "$EIGHTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
 head='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'
-region=(head+'@.aid/runtime/rules.md\n@.aid/knowledge/PROJECT.md\n<!-- AID:END -->\n').encode()
+region=(head+'@.aid/runtime/rules.md\n<!-- AID:END -->\n').encode()
 assert (r/'CLAUDE.md').read_bytes()==region
 assert d['shared']['claude_md']['region_sha256']==hashlib.sha256(region).hexdigest()
 PY

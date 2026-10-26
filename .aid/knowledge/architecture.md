@@ -153,7 +153,7 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 | `.aid/runtime/host.conf` | written by the CLI (worktree root for this host) | every tool |
 | `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
 | `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body is a SESSION START block (the first action is a Read of `.aid/runtime/rules.md`) plus the rules summary bullets lifted from the `AID:SUMMARY` block of the installed rules (no `@` line) | CLI | every tool |
-| `CLAUDE.md`: `AID:BEGIN`/`AID:END` region holding only the `@.aid/runtime/rules.md` and `@.aid/knowledge/PROJECT.md` import lines, so Claude Code loads the rules and the project card once (the same inline rules text as `AGENTS.md`, no `@` line, under `rules_inline`); no `@AGENTS.md`, so each root file carries the rules alone | CLI | Claude Code only |
+| `CLAUDE.md`: `AID:BEGIN`/`AID:END` region holding only the `@.aid/runtime/rules.md` import line, plus `@.aid/knowledge/PROJECT.md` when the project card exists, so Claude Code loads the rules and the card once (the same inline rules text as `AGENTS.md`, no `@` line, under `rules_inline`); no `@AGENTS.md`, so each root file carries the rules alone | CLI | Claude Code only |
 
 **Lifecycle rules** (implemented in `lib/aid-install-core.sh`: `install_shared`, `manifest_remove_tool`,
 `prune_shared`, `drift_report`):
@@ -490,7 +490,7 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.aid/runtime/`; agent files carry the `aid-` prefix inside each tool's agents directory. Root files are
   updated in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers: the `AGENTS.md`
   region for every tool (a SESSION START block plus the rules summary; the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
-  the `CLAUDE.md` region (only the rules and project-card imports; the inline rules text under `rules_inline`). Enforced by the installer and manifests, by the
+  the `CLAUDE.md` region (only the rules import, plus the card import when the card exists; the inline rules text under `rules_inline`). Enforced by the installer and manifests, by the
   content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`, and by `tests/canonical/test-multitool-isolation.sh`.
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
   `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and the `aid_version` key in

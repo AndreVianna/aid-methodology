@@ -1115,14 +1115,15 @@ PY
 # action, forbids answering before that Read and pre-empts "do not read files" prompts; no '@' line:
 # only Claude Code expands '@' imports) followed by the summary bullets lifted from the installed
 # runtime rules.
-# CLAUDE.md: only the import lines '@.aid/runtime/rules.md' and '@.aid/knowledge/PROJECT.md' (the project
-# card); Claude Code loads both through them, so the SESSION START block and the summary would repeat the
-# rules. A missing card leaves its import line as plain text.
+# CLAUDE.md: only the import line '@.aid/runtime/rules.md', plus '@.aid/knowledge/PROJECT.md' when the
+# project card exists (a missing file would stay as plain text the agent remarks on); Claude Code loads them
+# through the imports, so the SESSION START block and the summary would repeat the rules.
 # Under rules_inline both regions hold the whole rules text instead, with no '@' line. Either root
 # file alone therefore carries the AID rules.
 _AID_REGION_OPEN=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'
 _AID_AGENTS_REGION_HEAD="${_AID_REGION_OPEN}"$'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:\n'
-_AID_CLAUDE_IMPORTS=$'@.aid/runtime/rules.md\n@.aid/knowledge/PROJECT.md'
+_AID_CLAUDE_RULES_IMPORT='@.aid/runtime/rules.md'
+_AID_CLAUDE_CARD_IMPORT='@.aid/knowledge/PROJECT.md'
 
 # _aid_rules_summary <rules-file> - print the bullet lines of the summary block between the
 # AID:SUMMARY markers of the installed rules. A missing file or a missing/malformed block
@@ -1149,7 +1150,7 @@ END { if (bad || nb != 1 || ne != 1 || st != 2 || n < 1) exit 1; for (i = 1; i <
 
 # _aid_root_region <rules-file> <inline:0|1> <agents|claude> - print the root region (ends with a
 # newline) for AGENTS.md or CLAUDE.md. Fails when the installed rules (or, for AGENTS.md, their summary
-# block) are unusable; the CLAUDE.md region outside rules_inline reads no rules.
+# block) are unusable; the CLAUDE.md region outside rules_inline reads no rules, only whether the card exists.
 _aid_root_region() {
     local rules="$1" inline="$2" kind="$3" summary
     if [[ "$inline" == 1 ]]; then
@@ -1158,7 +1159,9 @@ _aid_root_region() {
         return
     fi
     if [[ "$kind" == claude ]]; then
-        printf '%s%s\n<!-- AID:END -->\n' "$_AID_REGION_OPEN" "$_AID_CLAUDE_IMPORTS"
+        printf '%s%s\n' "$_AID_REGION_OPEN" "$_AID_CLAUDE_RULES_IMPORT"
+        [[ -f "${rules%/runtime/rules.md}/knowledge/PROJECT.md" ]] && printf '%s\n' "$_AID_CLAUDE_CARD_IMPORT"
+        printf '<!-- AID:END -->\n'
         return
     fi
     summary="$(_aid_rules_summary "$rules")" || return 1

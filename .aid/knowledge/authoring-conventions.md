@@ -512,7 +512,7 @@ content.**
   and records it in the install manifest.
 - **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed region
   (a SESSION START block plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
-  holding only the `@.aid/runtime/rules.md` and `@.aid/knowledge/PROJECT.md` (the project card) import lines (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
+  holding only an `@.aid/runtime/rules.md` import line, plus `@.aid/knowledge/PROJECT.md` when the project card exists (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
   installer updates only the content **in place** inside that region; content outside it (the user's own
   instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
   **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,

@@ -4,17 +4,19 @@
 Purpose:
     Runs a real `claude -p` session on a fresh copy of a small notes project, with AID installed or not,
     answers every question with one fixed reply, and records what the session used: cost, tokens, turns,
-    time, tool calls, sub-agent dispatches and state-writer calls. These are the baseline numbers every
-    later change is measured against.
+    time, tool calls, sub-agent dispatches and state-writer calls. It then grades the result with a hidden
+    check the agent never sees (tests/measure/hidden/). `start_context_tokens` is the size of the first model
+    request, before any work: the context that is always loaded, free of the session's own choices.
 
 Usage:
     python3 tests/measure/measure.py [--scenario fix|feature] [--no-aid] [--runs N] [--turns N] [--model M]
+    python3 tests/measure/measure.py --report FILE.jsonl...   (medians per scenario, with and without AID)
     Needs the claude CLI logged in. With CLAUDE_CODE_OAUTH_TOKEN set (from `claude setup-token`) every run uses
     it; otherwise ~/.claude/.credentials.json is copied into each run's private home, and a long run can let
     that login expire.
 
 Output:
-    stdout: one JSON object per run.  stderr: progress and a summary line per run.
+    stdout: one JSON object per run, or the report table.  stderr: progress and a summary line per run.
 
 Exit codes:
     0 -- every run finished.  1 -- setup or CLI error.
@@ -32,6 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "tests/measure/fixture"
+HIDDEN = ROOT / "tests/measure/hidden"
 SCENARIOS = {
     "fix": "Some notes in the list come out twice. Can you fix it?",
     "feature": "Add an option to list the notes newest first.",
@@ -79,7 +82,7 @@ def turn(project: Path, env: dict, model: str, message: str, session: str | None
     except subprocess.TimeoutExpired:
         return {"session": session, "tools": {}, "dispatches": 0, "writer_calls": 0,
                 "result": {"is_error": True, "result": f"timed out after {TIMEOUT}s"}}
-    t = {"session": session, "tools": {}, "dispatches": 0, "writer_calls": 0, "result": None}
+    t = {"session": session, "tools": {}, "dispatches": 0, "writer_calls": 0, "result": None, "start_context": None}
     for line in out.stdout.splitlines():
         try:
             ev = json.loads(line)
@@ -88,6 +91,10 @@ def turn(project: Path, env: dict, model: str, message: str, session: str | None
         if ev.get("type") == "system" and ev.get("subtype") == "init":
             t["session"] = t["session"] or ev.get("session_id")
         elif ev.get("type") == "assistant":
+            u = ev.get("message", {}).get("usage") or {}
+            if t["start_context"] is None and u:
+                t["start_context"] = (u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+                                      + u.get("cache_creation_input_tokens", 0))
             for b in ev.get("message", {}).get("content", []):
                 if b.get("type") != "tool_use":
                     continue
@@ -112,12 +119,14 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
     project, env = setup(work, aid, bundle)
     rec = {"scenario": scenario, "aid": aid, "model": model, "user_turns": 0, "agent_turns": 0, "cost_usd": 0.0,
            "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0,
-           "seconds": 0.0, "tools": {}, "dispatches": 0, "writer_calls": 0}
+           "seconds": 0.0, "tools": {}, "dispatches": 0, "writer_calls": 0, "start_context_tokens": None}
     session, message, text = None, SCENARIOS[scenario], ""
     start = time.time()
     while rec["user_turns"] < turns:
         t = turn(project, env, model, message, session)
         session, r = t["session"], t["result"]
+        if rec["start_context_tokens"] is None:
+            rec["start_context_tokens"] = t["start_context"]
         u = r.get("usage", {})
         rec["user_turns"] += 1
         rec["agent_turns"] += r.get("num_turns", 0)
@@ -140,13 +149,41 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
     rec["seconds"] = round(time.time() - start, 1)
     changed = run(["git", "status", "--porcelain", "--", "src", "tests"], project, env).stdout.splitlines()
     rec["code_files_changed"] = len(changed)
+    rec["test_files_changed"] = sum(" tests/" in f" {line[3:]}" for line in changed)
     tests = run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-q"], project,
                 dict(env, PYTHONPATH=str(project / "src")))
     rec["tests_pass"] = tests.returncode == 0
+    check = run([sys.executable, str(HIDDEN / f"check_{scenario.split('-')[0]}.py"), str(project)], work, env)
+    rec["hidden_pass"] = check.returncode == 0
+    rec["hidden_detail"] = (check.stdout + check.stderr).strip()[-200:]
     rec["finished_asking"] = not asks(text)
     rec["last_message"] = text[-300:]
     rec["run_folder"] = str(work)
     return rec
+
+
+def median(values: list) -> float:
+    v = sorted(x for x in values if x is not None)
+    return 0 if not v else (v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2)
+
+
+def report(files: list[str]) -> int:
+    rows = [json.loads(line) for f in files for line in Path(f).read_text().splitlines() if line.strip()]
+    groups: dict[tuple, list] = {}
+    for r in rows:
+        groups.setdefault((r["scenario"], r["aid"]), []).append(r)
+    print("scenario       AID    runs  start context  cache write  cost    seconds  hidden check")
+    for (scenario, aid), g in sorted(groups.items()):
+        print(f"{scenario:<14} {'yes' if aid else 'no':<6} {len(g):<5} {median([r.get('start_context_tokens') for r in g]):>13,.0f}"
+              f"  {median([r['cache_write_tokens'] for r in g]):>11,.0f}  ${median([r['cost_usd'] for r in g]):<6.2f}"
+              f" {median([r['seconds'] for r in g]):>7.0f}  {sum(bool(r.get('hidden_pass')) for r in g)}/{len(g)} pass")
+    for scenario in sorted({s for s, _ in groups}):
+        aid, plain = groups.get((scenario, True)), groups.get((scenario, False))
+        if aid and plain:
+            a, p = (median([r.get("start_context_tokens") for r in x]) for x in (aid, plain))
+            if p:
+                print(f"{scenario}: AID adds {a - p:,.0f} tokens to the start context ({(a - p) / p:+.0%})")
+    return 0
 
 
 def main() -> int:
@@ -156,7 +193,10 @@ def main() -> int:
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--turns", type=int, default=10, help="user turns before giving up (default 10)")
     ap.add_argument("--model", default=os.environ.get("AID_MEASURE_MODEL", "claude-sonnet-5-5"))
+    ap.add_argument("--report", nargs="+", metavar="FILE", help="print medians from earlier runs' JSON lines")
     a = ap.parse_args()
+    if a.report:
+        return report(a.report)
     bundle = Path(tempfile.mkdtemp(prefix="aid-bundle-"))
     if not a.no_aid:
         out = subprocess.run(["bash", "-c", 'source tests/lib/bundle.sh && aid_test_stage_bundle "$1"', "_",
@@ -169,7 +209,8 @@ def main() -> int:
         print(json.dumps(rec), flush=True)
         print(f"{a.scenario} aid={not a.no_aid} run {i}: ${rec['cost_usd']:.2f}, {rec['user_turns']} user turns, "
               f"{rec['agent_turns']} agent turns, {rec['dispatches']} dispatches, {rec['writer_calls']} writer "
-              f"calls, {rec['seconds']:.0f}s, tests {'pass' if rec['tests_pass'] else 'FAIL'}", file=sys.stderr)
+              f"calls, {rec['seconds']:.0f}s, tests {'pass' if rec['tests_pass'] else 'FAIL'}, hidden check "
+              f"{'pass' if rec['hidden_pass'] else 'FAIL'}", file=sys.stderr)
     return 0
 
 

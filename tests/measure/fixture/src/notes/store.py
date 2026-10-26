@@ -32,6 +32,16 @@ class NoteStore:
         self._write(notes)
         return note
 
+    def pin(self, note_id: int) -> bool:
+        """Mark a note as pinned; return False when no note has that id."""
+        notes = self._read()
+        for note in notes:
+            if note["id"] == note_id:
+                note["pinned"] = True
+                self._write(notes)
+                return True
+        return False
+
     def list(self) -> list[dict]:
         """Return every note in insertion order."""
         return self._read()
