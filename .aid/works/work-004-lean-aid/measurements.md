@@ -89,3 +89,24 @@ Maintainer's machine, `claude-sonnet-5-5`, 3 runs each, medians:
 AID adds 4,466-4,471 tokens to the start context (+24%): C1 is met. Across step 1 the added start context went
 12,061 -> 4,47x tokens (-63%). A task with AID still costs about 2 times the plain request and takes 2-3 times as
 long: the sessions take a few more turns and read more. That is step 2's target, not the start context.
+
+## Complex task (note tags), trial run in the cloud, 2026-10-26
+
+Request: tag and untag a note, `list --tag`, `tags` with counts, old note files keep working; 12 hidden checks.
+Main model `claude-haiku-5-5`; AID's helper agents ran on the models their own definitions name (Sonnet, Opus).
+One run each.
+
+| | Plain request, no AID | `/aid-describe`, today's full pipeline |
+|---|---|---|
+| Time | 50 s | 1,725 s (29 min) |
+| Cost | $0.01 | $13.98 |
+| Replies the user had to give | 1 | 10 |
+| Helper agents | 0 | 27 (Sonnet and Opus among them) |
+| State-writer calls | 0 | 23 |
+| Documents | none | REQUIREMENTS.md (2 features), PLAN.md (2 deliveries), 7 task DETAIL.md, 10 STATE.yml, 9 review ledgers |
+| Commits | none | 9, in its own worktree |
+| Code files changed | 3 | 4 (464 lines, 354 of them tests) |
+| Hidden checks | 12/12 | 12/12 |
+
+Both results are correct. The pipeline adds more tests and documents, at about 35 times the time; the cost is not a
+fair ratio, since the plain run used only the cheap model while AID's helpers used Sonnet and Opus.
