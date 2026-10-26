@@ -57,7 +57,7 @@ Verdict is `ok` (no change needed), `corrected` (the Correction cell says what c
 | Page | Source of truth | Verdict | Correction |
 |---|---|---|---|
 | `src/content/docs/index.mdx` (/) | SK, SC, RULES, CLI, INS, VER | pending | |
-| `src/content/docs/get-started/index.md` (/get-started/) | none (redirect stub) | pending | planned: remove; redirect to /get-started/overview/ |
+| `src/content/docs/get-started/index.md` (/get-started/) | none (redirect stub) | removed | redirects to /get-started/overview/ |
 | `src/content/docs/get-started/overview.md` (/get-started/overview/) | SK, RULES, INS | pending | |
 | `src/content/docs/get-started/install.md` (/get-started/install/) | INS, CLI | pending | |
 | `src/content/docs/get-started/first-work.mdx` (/get-started/first-work/) | SK (aid-config to aid-execute), TPL, RULES; DOC `docs/aid-methodology.md` § 10 | pending | planned: absorbs the methodology adoption guide |
@@ -66,8 +66,8 @@ Verdict is `ok` (no change needed), `corrected` (the Correction cell says what c
 | `src/content/docs/guides/pipeline.mdx` (/guides/pipeline/) | SK (phase skills), TPL, RULES | pending | |
 | `src/content/docs/guides/dashboard.mdx` (/guides/dashboard/) | DASH, CLI | pending | |
 | `src/content/docs/guides/maintainer.mdx` (/guides/maintainer/) | REL, GEN | pending | |
-| `src/content/docs/concepts/index.md` (/concepts/) | none (redirect stub) | pending | planned: remove; redirect to /concepts/methodology/ |
-| `src/content/docs/concepts/overview.md` (/concepts/overview/) | none (section index) | pending | planned: remove; redirect to /concepts/methodology/ |
+| `src/content/docs/concepts/index.md` (/concepts/) | none (redirect stub) | removed | redirects to /concepts/methodology/ |
+| `src/content/docs/concepts/overview.md` (/concepts/overview/) | none (section index) | removed | redirects to /concepts/methodology/ |
 | `src/content/docs/concepts/methodology.mdx` (/concepts/methodology/) | DOC `docs/aid-methodology.md`; SK, AG, SC, TPL, RULES | pending | planned: renamed from `concepts/methodology.md` (it hosts a diagram); becomes the Concepts landing page plus philosophy; other sections move to the new pages below |
 | `src/content/docs/concepts/pipeline.mdx` (/concepts/pipeline/) | SK, SC, RULES | new (planned) | split from methodology §§ 1 and 4 |
 | `src/content/docs/concepts/knowledge-base.mdx` (/concepts/knowledge-base/) | SK (aid-discover, aid-housekeep, aid-update-kb), TPL `knowledge-base/`, ST | new (planned) | split from methodology § 3 |
@@ -76,10 +76,10 @@ Verdict is `ok` (no change needed), `corrected` (the Correction cell says what c
 | `src/content/docs/concepts/case-studies.md` (/concepts/case-studies/) | DOC `docs/aid-methodology.md` § 8 | new (planned) | split from methodology § 8 |
 | `src/content/docs/concepts/aid-and-sdd.mdx` (/concepts/aid-and-sdd/) | DOC `docs/aid-methodology.md` § 9 | new (planned) | split from methodology § 9 |
 | `src/content/docs/concepts/faq.md` (/concepts/faq/) | DOC `docs/faq.md`; SK, CLI, INS | pending | |
-| `src/content/docs/reference/index.md` (/reference/) | none (redirect stub) | pending | planned: remove; redirect to /reference/overview/ |
+| `src/content/docs/reference/index.md` (/reference/) | none (redirect stub) | removed | redirects to /reference/overview/ |
 | `src/content/docs/reference/overview.md` (/reference/overview/) | the Reference pages themselves | pending | |
 | `src/content/docs/reference/cli.mdx` (/reference/cli/) | CLI, INS | pending | |
-| `src/content/docs/reference/skills.md` (/reference/skills/) | SC | pending | planned: remove; text merged into /get-started/lite-path/; redirect to /skills/ |
+| `src/content/docs/reference/skills.md` (/reference/skills/) | SC | removed | redirects to /skills/; text merged into /get-started/lite-path/ |
 | `src/content/docs/reference/agents.md` (/reference/agents/) | FACTS; AG | pending | |
 | `src/content/docs/reference/kb.md` (/reference/kb/) | TPL `knowledge-base/`, ST | pending | planned: hand-written |
 | `src/content/docs/reference/settings.md` (/reference/settings/) | FACTS; ST | pending | |
@@ -137,11 +137,11 @@ Every removed or renamed URL, as configured in `astro.config.mjs` `redirects`.
 
 | Old URL | New URL | Status |
 |---|---|---|
-| /get-started/ | /get-started/overview/ | planned |
-| /concepts/ | /concepts/methodology/ | planned |
-| /concepts/overview/ | /concepts/methodology/ | planned |
-| /reference/ | /reference/overview/ | planned |
-| /reference/skills/ | /skills/ | planned |
+| /get-started/ | /get-started/overview/ | done |
+| /concepts/ | /concepts/methodology/ | done |
+| /concepts/overview/ | /concepts/methodology/ | done |
+| /reference/ | /reference/overview/ | done |
+| /reference/skills/ | /skills/ | done |
 
 ## Kept site functions (FR-9)
 
