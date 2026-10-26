@@ -951,11 +951,12 @@ No diagram states a count that changes when the repository changes (Feature 001'
   `canonical/skills/aid-discover/SKILL.md` (it regenerates `README.md` and `INDEX.md`) and
   `references/agent-prompts.md` (`project-index.md`); `canonical/aid/rules.md` (`STATE.md`).
 - desc: "The Knowledge Base is the folder .aid/knowledge/. It holds a project card, the documents
-  chosen at discovery, three meta-documents that index and track them, and a generated file
-  inventory."
+  chosen at discovery, and three meta-documents that index and track them. The generated file
+  inventory lives outside it, in .aid/generated/."
 - caption: "The parts of the Knowledge Base and who writes each one."
-- Drawing: a root box `.aid/knowledge/` at the top, with tree lines to five boxes below it: "Project
-  card", "Documents", "Meta-documents", "File inventory", and a dashed "Extensions (optional)". A
+- Drawing: a root box `.aid/knowledge/` at the top, with tree lines to four boxes below it: "Project
+  card", "Documents", "Meta-documents", and a dashed "Extensions (optional)". A separate "File
+  inventory" box (note "in .aid/generated/") sits below the tree, outside the root's tree lines. A
   dashed arrow labelled "writes" runs from an `/aid-discover` box at the side to Documents,
   Meta-documents and File inventory.
 - Text equivalent (`<table>`, header row Part | Files | Written by):
@@ -965,7 +966,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   | Project card | `PROJECT.md`, optional, read first in every session | you, from the project card template |
   | Documents | one file per topic, such as `architecture.md`, `coding-standards.md` and `test-landscape.md`; the full list is on the Knowledge Base documents page | `/aid-discover`, from the standard templates |
   | Meta-documents | `INDEX.md` (one line per document), `README.md` (completeness), `STATE.md` (grade and open questions) | `/aid-discover`; every phase adds its questions to `STATE.md` |
-  | File inventory | `project-index.md` | `/aid-discover`, before its writers start |
+  | File inventory | `project-index.md`, kept in `.aid/generated/`, outside the knowledge folder | `/aid-discover`, before its writers start |
   | Extensions (optional) | documents only your project needs | added to the document set when you confirm it at discovery |
 
   "the Knowledge Base documents page" links to `/reference/kb/`.
@@ -976,7 +977,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   a specific document, and then loads just that document."
 - caption: "An agent loads the least context that answers its question."
 - Drawing: three stacked boxes joined by downward arrows, widening from top to bottom: `PROJECT.md`
-  ("always, first"), `INDEX.md` ("only to find a document"), "one KB document" ("only the one
+  ("first, if present"), `INDEX.md` ("only to find a document"), "one KB document" ("only the one
   needed").
 - Text equivalent (`<ol>`):
   1. The agent reads the project card, `.aid/knowledge/PROJECT.md`, first, when the project has one.
