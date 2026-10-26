@@ -301,14 +301,22 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q6
+    category: Technical
+    impact: Medium
+    state: Answered
+    context: 'How should the skill list shrink without breaking skills that other skills start?'
+    suggested: 'Shorten every description (about 10 entry skills at most 300 characters, the rest about 100); hide none'
+    answer: 'Assumed by the agent: disable-model-invocation also stops other skills from starting a skill, and aid-execute, aid-fix, aid-specify and aid-review are started that way; shortening alone cuts about 64k to 13k characters. Confirmed with the step-1 result approval'
+    applied_to: 'STEP-1.md C3'
   - id: Q5
     category: Plan
     impact: High
-    state: Pending
+    state: Answered
     context: 'Do you approve STEP-1.md, the foundation goal card: about 5k always-loaded tokens instead of 20k, rules loaded once, about 10 listed skills, a project card and a merge-blocking hook, within about one day?'
     suggested: 'Approve: the skill list is most of the measured overhead, and every criterion is checkable'
-    answer: --
-    applied_to: --
+    answer: '1'
+    applied_to: 'STEP-1.md approved; build step 1'
   - id: Q4
     category: Design
     impact: High
