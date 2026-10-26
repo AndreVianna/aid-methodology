@@ -301,6 +301,14 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q4
+    category: Design
+    impact: High
+    state: Pending
+    context: 'Do you approve DESIGN.md as the lean-AID design: evidence over opinion, a direct lane for small tasks, a planned lane with a goal card, tests first and bounded review, and project rules as checks?'
+    suggested: 'Approve: it answers the three needs with mechanisms that converge, and each step is proven by measurement'
+    answer: --
+    applied_to: --
   - id: Q3
     category: Measurement
     impact: High
