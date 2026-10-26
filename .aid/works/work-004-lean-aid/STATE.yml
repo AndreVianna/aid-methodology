@@ -305,6 +305,14 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q10
+    category: Approval
+    impact: High
+    state: Pending
+    context: 'Approve step 1 as done: AID adds 4,47x tokens to the start context (+24%, goal +25%), 12 of 12 results correct, 112 to 37 skills. This also confirms the assumed Q6 and Q7.'
+    suggested: 'Approve'
+    answer: ''
+    applied_to: ''
   - id: Q9
     category: Scope
     impact: High

@@ -74,3 +74,18 @@ descriptions on `master`. What is left, measured by removing one part at a time:
 The skill list costs about 42 tokens per skill whatever the description length, so the number of skills now
 matters more than their text. The cost per task is still about 2.5 times the plain request: beyond the start
 context, AID sessions read more and take a few more turns.
+
+## After folding the kind variants (112 to 37 skills), 2026-10-26
+
+Maintainer's machine, `claude-sonnet-5-5`, 3 runs each, medians:
+
+| Scenario | AID | Start context | Cache write | Cost | Seconds | Hidden check |
+|---|---|---|---|---|---|---|
+| fix | no | 18,559 | 7,616 | $0.04 | 7 | 3/3 |
+| fix | yes | 23,025 | 16,431 | $0.09 | 26 | 3/3 |
+| feature | no | 18,548 | 8,087 | $0.05 | 15 | 3/3 |
+| feature | yes | 23,019 | 15,644 | $0.11 | 28 | 3/3 |
+
+AID adds 4,466-4,471 tokens to the start context (+24%): C1 is met. Across step 1 the added start context went
+12,061 -> 4,47x tokens (-63%). A task with AID still costs about 2 times the plain request and takes 2-3 times as
+long: the sessions take a few more turns and read more. That is step 2's target, not the start context.
