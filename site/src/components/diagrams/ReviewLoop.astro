@@ -1,0 +1,46 @@
+---
+/** D3: the Propose, Discuss, Write, Review loop inside every full-path phase.
+ *  The dashed edge from Review back to Propose is labelled "grade below minimum". */
+import Diagram from '../Diagram.astro';
+const id = 'review-loop';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={420}
+  title="Propose, discuss, write, review"
+  desc="On the full path each phase runs a four-step loop: the agent proposes, you and the agent discuss, the agent writes, and a reviewer grades the result. The loop repeats until the grade meets the project's minimum, and then you approve the next phase."
+  caption="The loop inside every full-path phase: the AI does the work, you steer.">
+  <rect class="dg-node dg-accent" x="160" y="16" width="144" height="56" rx="6" />
+  <text class="dg-label" x="232" y="40" text-anchor="middle">Propose</text>
+  <text class="dg-note" x="232" y="58" text-anchor="middle">agent</text>
+  <path class="dg-edge" d="M304 44 H320 V128" marker-end={arrow} />
+
+  <rect class="dg-node dg-accent" x="248" y="128" width="136" height="56" rx="6" />
+  <text class="dg-label" x="316" y="152" text-anchor="middle">Discuss</text>
+  <text class="dg-note" x="316" y="170" text-anchor="middle">you and agent</text>
+  <path class="dg-edge" d="M320 184 V268 H304" marker-end={arrow} />
+
+  <rect class="dg-node dg-accent" x="160" y="240" width="144" height="56" rx="6" />
+  <text class="dg-label" x="232" y="264" text-anchor="middle">Write</text>
+  <text class="dg-note" x="232" y="282" text-anchor="middle">agent</text>
+  <path class="dg-edge" d="M160 268 H64 V184" marker-end={arrow} />
+
+  <rect class="dg-node dg-accent" x="16" y="128" width="112" height="56" rx="6" />
+  <text class="dg-label" x="72" y="152" text-anchor="middle">Review</text>
+  <text class="dg-note" x="72" y="170" text-anchor="middle">reviewer</text>
+
+  <path class="dg-edge dg-optional" d="M104 128 V44 H160" marker-end={arrow} />
+  <rect class="dg-label-bg" x="8" y="68" width="88" height="44" />
+  <text class="dg-note" x="96" y="86" text-anchor="end">grade below<tspan x="96" dy="1.25em">minimum</tspan></text>
+
+  <path class="dg-edge" d="M32 184 V344" marker-end={arrow} />
+  <rect class="dg-node" x="16" y="344" width="160" height="56" rx="6" />
+  <text class="dg-label" x="96" y="368" text-anchor="middle">You approve<tspan x="96" dy="1.25em">the next phase</tspan></text>
+
+  <ol slot="text">
+    <li>Propose: the agent suggests a solution grounded in the Knowledge Base and the code.</li>
+    <li>Discuss: you and the agent refine it; you challenge, adjust and decide.</li>
+    <li>Write: the agent writes the result to a file straight away.</li>
+    <li>Review: a reviewer grades the result. If the grade is below the project's minimum, the loop goes back to step 1.</li>
+    <li>When the grade is met, you approve, and only then does the next phase start.</li>
+  </ol>
+</Diagram>

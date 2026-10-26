@@ -3,34 +3,11 @@ title: 'Agents'
 description: 'The AID agent model: tiers, tool mapping and how skills dispatch agents.'
 ---
 
+import AgentTiers from '../../../components/diagrams/AgentTiers.astro';
+
 ## 5. The Agent Model
 
-```mermaid
-flowchart TB
-    classDef large fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
-
-    subgraph L["Large tier — 1 default · highest-stakes reasoning (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
-        direction LR
-        LB["aid-architect"]:::large
-    end
-    subgraph M["Medium tier — 7 default · workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
-        direction LR
-        MA["aid-developer"]:::med
-        MB["aid-operator"]:::med
-        MC["aid-orchestrator"]:::med
-        MD["aid-tech-writer"]:::med
-        ME["aid-interviewer"]:::med
-        MF["aid-researcher"]:::med
-        MG["aid-reviewer"]:::med
-    end
-    subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
-        direction LR
-        SA["aid-clerk"]:::small
-    end
-    L -. "reviewer tier ≥ executor tier" .-> M -.-> S
-```
+<AgentTiers />
 
 *9 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
 

@@ -1,0 +1,40 @@
+---
+/** D6: the three model tiers and the work each gets. No agent names: the roster is generated. */
+import Diagram from '../Diagram.astro';
+const id = 'agent-tiers';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={360}
+  title="Agent model tiers"
+  desc="Each agent runs on a large, medium or small model, chosen by how hard the work is. Most work runs on medium. When work is hard enough for the large tier, its reviewer moves to the large tier too."
+  caption="The three model tiers and the work each one gets.">
+  <rect class="dg-node" x="16" y="16" width="368" height="104" rx="6" />
+  <text class="dg-label" x="32" y="48">Large</text>
+  <text class="dg-note" x="32" y="80">hard and frontier work</text>
+  <text class="dg-note" x="296" y="40" text-anchor="middle">hard work</text>
+  <path class="dg-edge dg-optional" d="M296 48 V80" marker-end={arrow} />
+  <rect class="dg-label-bg" x="304" y="54" width="72" height="18" />
+  <text class="dg-note" x="304" y="68">same tier</text>
+  <text class="dg-note" x="296" y="104" text-anchor="middle">its reviewer</text>
+
+  <rect class="dg-node dg-accent" x="16" y="136" width="368" height="88" rx="6" />
+  <text class="dg-label" x="32" y="168">Medium</text>
+  <text class="dg-note" x="112" y="168">default</text>
+  <text class="dg-note" x="32" y="200">routine and retrieval-heavy work</text>
+
+  <rect class="dg-node" x="16" y="240" width="368" height="88" rx="6" />
+  <text class="dg-label" x="32" y="272">Small</text>
+  <text class="dg-note" x="32" y="304">mechanical work</text>
+
+  <table slot="text">
+    <thead>
+      <tr><th scope="col">Tier</th><th scope="col">Work it gets</th><th scope="col">Examples</th></tr>
+    </thead>
+    <tbody>
+      <tr><th scope="row">Large</th><td>hard and frontier work</td><td>complex reasoning, cross-cutting changes, a full design review, hard architecture</td></tr>
+      <tr><th scope="row">Medium (default)</th><td>routine and retrieval-heavy work</td><td>a scoped change, a normal document, research, Knowledge Base writing</td></tr>
+      <tr><th scope="row">Small</th><td>mechanical work</td><td>extracting, formatting, looking things up</td></tr>
+    </tbody>
+  </table>
+  <p slot="text">When work is hard enough for the large tier, the reviewer of that work runs on the large tier too. One review is small on purpose: during <code>/aid-execute</code>, a quick check on the small tier looks at each finished task for serious problems before the graded review of the whole delivery. The <a href="/reference/agents/">agents reference</a> shows each agent's default tier.</p>
+</Diagram>

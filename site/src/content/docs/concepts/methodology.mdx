@@ -4,6 +4,8 @@ description: 'How AID works — pipeline, philosophy, Knowledge Base, phases, ag
 sourceDoc: 'docs/aid-methodology.md'
 ---
 
+import ReviewLoop from '../../../components/diagrams/ReviewLoop.astro';
+
 **A Complete Methodology for AI Integrated Software Development**
 
 *Version 3.2 — June 2026*
@@ -45,7 +47,7 @@ This is not anti-Agile. Sprints, backlogs, and retrospectives can coexist with A
 
 ### The Iron Man Model: Human-in-the-Middle
 
-![The Iron Man Model — the universal Propose → Discuss → Write → Review loop, with human as pilot and AI as suit](../../../assets/3-ironman.png)
+<ReviewLoop />
 
 *The Iron Man Model. Every design phase on the full path follows the same loop: AI proposes (grounded in KB and codebase), human and AI discuss, AI writes, AI reviews — and the loop repeats until the output meets the bar. Human approves advancement. Human never leaves the cockpit.*
 

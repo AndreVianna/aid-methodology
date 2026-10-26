@@ -1,0 +1,30 @@
+---
+/** D5: how an agent finds what it needs. Drawing and text equivalent carry the same three steps. */
+import Diagram from '../Diagram.astro';
+const id = 'context-loading';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={300}
+  title="How an agent finds what it needs"
+  desc="An agent reads the one-page project card first, opens the Knowledge Base index only to find a specific document, and then loads just that document."
+  caption="An agent loads the least context that answers its question.">
+  <rect class="dg-node dg-accent" x="120" y="16" width="160" height="56" rx="6" />
+  <text class="dg-label" x="200" y="40" text-anchor="middle">PROJECT.md</text>
+  <text class="dg-note" x="200" y="58" text-anchor="middle">always, first</text>
+  <path class="dg-edge" d="M200 72 V112" marker-end={arrow} />
+
+  <rect class="dg-node" x="80" y="112" width="240" height="56" rx="6" />
+  <text class="dg-label" x="200" y="136" text-anchor="middle">INDEX.md</text>
+  <text class="dg-note" x="200" y="154" text-anchor="middle">only to find a document</text>
+  <path class="dg-edge" d="M200 168 V208" marker-end={arrow} />
+
+  <rect class="dg-node" x="40" y="208" width="320" height="56" rx="6" />
+  <text class="dg-label" x="200" y="232" text-anchor="middle">one KB document</text>
+  <text class="dg-note" x="200" y="250" text-anchor="middle">only the one needed</text>
+
+  <ol slot="text">
+    <li>The agent reads the project card, <code>.aid/knowledge/PROJECT.md</code>, first, when the project has one.</li>
+    <li>It opens <code>.aid/knowledge/INDEX.md</code> only to find a specific document.</li>
+    <li>It loads that one document, not the whole Knowledge Base.</li>
+  </ol>
+</Diagram>

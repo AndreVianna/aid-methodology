@@ -3,28 +3,12 @@ title: 'Knowledge Base'
 description: 'The Knowledge Base: the living project specification that every AID phase reads.'
 ---
 
+import KbStructure from '../../../components/diagrams/KbStructure.astro';
+import ContextLoading from '../../../components/diagrams/ContextLoading.astro';
+
 ## 3. The Knowledge Base
 
-```mermaid
-flowchart TD
-    classDef kb   fill:#0B1F3A,stroke:#0B1F3A,color:#ffffff
-    classDef std  fill:#1D4ED8,stroke:#1D4ED8,color:#ffffff
-    classDef meta fill:#7C3AED,stroke:#7C3AED,color:#ffffff
-    classDef gen  fill:#166534,stroke:#166534,color:#ffffff
-    classDef ext  fill:#B45309,stroke:#B45309,color:#ffffff,stroke-dasharray:5 4
-
-    KB["Knowledge Base<br/>.aid/knowledge/"]:::kb
-    KB --> STD["14 standard documents<br/>(default seed)"]:::std
-    KB --> META["3 meta-documents<br/>STATE · INDEX · README"]:::meta
-    KB --> GEN["1 generated pre-pass<br/>project-index.md"]:::gen
-    KB --> EXT["KB extensions<br/>optional · project-specific<br/>via discovery.doc_set"]:::ext
-    STD --> S1["architecture · tech-stack<br/>coding-standards · module-map"]:::std
-    STD --> S2["schemas · pipeline-contracts<br/>integration-map · infrastructure"]:::std
-    STD --> S3["test-landscape · tech-debt<br/>domain-glossary · …"]:::std
-    DISC["aid-discover<br/>5 discovery sub-agents"]:::gen
-    DISC -. "populate" .-> STD
-    DISC -. "populate" .-> GEN
-```
+<KbStructure />
 
 *The Knowledge Base is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.*
 
@@ -123,17 +107,7 @@ If your task touches an area covered here, read the relevant document first.
 
 This is **RAG by convention** — not embeddings and vector databases, but predictable file structure and an index that agents navigate. Retrieval happens in three tiers, cheapest first:
 
-```mermaid
-flowchart TB
-    classDef t1 fill:#0B1F3A,stroke:#0B1F3A,color:#ffffff
-    classDef t2 fill:#1D4ED8,stroke:#1D4ED8,color:#ffffff
-    classDef t3 fill:#0F766E,stroke:#0F766E,color:#ffffff
-    I["Tier 1 · INDEX.md<br/>one-line intent per KB doc — always loaded"]:::t1
-    D["Tier 2 · one KB document<br/>loaded on demand when the intent matches"]:::t2
-    L["Tier 3 · exact path:line<br/>cited inline in the task prompt"]:::t3
-    I -- "agent picks the relevant doc" --> D
-    D -- "agent cites the precise location" --> L
-```
+<ContextLoading />
 
 1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries the index (~200–500 tokens total). The agent always knows *what knowledge exists and which file holds it*, at negligible context cost.
 2. **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads the single document a task needs. The fixed-shape directory makes this deterministic — `schemas.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
