@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-triage/SKILL.md#L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L73) · [full step: `canonical/skills/aid-triage/references/state-suggest.md#L1-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-suggest.md#L1-L98)
+[Source: `canonical/skills/aid-triage/SKILL.md#L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L73) · [full step: `canonical/skills/aid-triage/references/state-suggest.md#L1-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-suggest.md#L1-L100)
 
 <a id="fragment-n4"></a>**4 · `HALT`** — Print the recommended invocation the user should type next… · _exit_ · HALT
 

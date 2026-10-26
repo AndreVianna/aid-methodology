@@ -105,14 +105,14 @@
         "startLine": 122,
         "endLine": 128,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document decision` -> once landed, `/aid-create document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
         "startLine": 122,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution.\n\n**Advance:** DONE."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document decision` -> once landed, `/aid-create document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution.\n\n**Advance:** DONE."
       }
     },
     {

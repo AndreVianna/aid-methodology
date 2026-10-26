@@ -8,7 +8,7 @@ sidebar:
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml -->
 
-AID ships **112 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **18 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
+AID ships **37 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **18 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
 
 > **Note:** This page is the roster, and it files skills per FR-5’s Placement rules. `aid-triage` is **Support** here and **Definition** in the curated roster that [the methodology's skill inventory](/concepts/methodology/) publishes. Where they disagree about grouping, **this page is authoritative**. How the shortcut skills themselves work — the shared engine and its INTAKE → APPROVAL-HALT sequence — is at [Reference → Shortcut engine](/reference/skills/).
 
@@ -53,54 +53,11 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `create`
 
-- [`aid-create`](/skills/aid-create/) — Create a new internal module, interface or type.
-- [`aid-create-api`](/skills/aid-create-api/) — Create an API endpoint or middleware.
-- [`aid-create-ui`](/skills/aid-create-ui/) — Create a UI component or page.
-- [`aid-create-theme`](/skills/aid-create-theme/) — Create a visual theme or style-token set.
-- [`aid-create-cli`](/skills/aid-create-cli/) — Create a CLI command.
-- [`aid-create-data-model`](/skills/aid-create-data-model/) — Create a new data model/entity with its schema migration.
-- [`aid-create-data-pipeline`](/skills/aid-create-data-pipeline/) — Create a data pipeline (source, transform, sink, schedule).
-- [`aid-create-messaging`](/skills/aid-create-messaging/) — Create a message/event schema and its emission.
-- [`aid-create-integration`](/skills/aid-create-integration/) — Create an external-service integration (client/adapter).
-- [`aid-create-job`](/skills/aid-create-job/) — Create a scheduled or background job.
-- [`aid-create-config`](/skills/aid-create-config/) — Create a new configuration option or feature flag.
-- [`aid-create-infra`](/skills/aid-create-infra/) — Provision a new infrastructure resource.
-- [`aid-create-roadmap`](/skills/aid-create-roadmap/) — Write roadmap.md from a ready seed.
-- [`aid-create-backlog`](/skills/aid-create-backlog/) — Write backlog.md from a ready seed.
-- [`aid-create-mvp`](/skills/aid-create-mvp/) — Write the MVP section of roadmap.md from a ready seed.
-- [`aid-create-architecture`](/skills/aid-create-architecture/) — Write the architecture KB document from a ready seed.
-- [`aid-create-stack`](/skills/aid-create-stack/) — Write the technology-stack KB document from a ready seed.
-- [`aid-create-testing-strategy`](/skills/aid-create-testing-strategy/) — Write the testing-strategy KB documents (test landscape, merge gates) from a ready seed.
-- [`aid-create-cicd`](/skills/aid-create-cicd/) — Write the CI/CD (shipping) KB document from a ready seed.
-- [`aid-create-test`](/skills/aid-create-test/) — Write new tests, each tracing to an acceptance criterion.
-- [`aid-create-document`](/skills/aid-create-document/) — Write any non-KB document in one pass, choosing its format and structure.
-- [`aid-create-diagram`](/skills/aid-create-diagram/) — Draw a diagram (flowchart, sequence, ER, C4) in one pass.
-- [`aid-create-dashboard`](/skills/aid-create-dashboard/) — Build a durable dashboard or BI view.
+- [`aid-create`](/skills/aid-create/) — Create something new: code (API, UI, job, test...), a KB record or a document.
 
 ### `update`
 
-- [`aid-update-roadmap`](/skills/aid-update-roadmap/) — Revise roadmap.md outside the MVP section.
-- [`aid-update-mvp`](/skills/aid-update-mvp/) — Revise the MVP section of roadmap.md.
-- [`aid-update-backlog`](/skills/aid-update-backlog/) — Revise backlog.md: reprioritize, add or retire items.
-- [`aid-update`](/skills/aid-update/) — Change an existing code artifact's behavior.
-- [`aid-update-api`](/skills/aid-update-api/) — Update an existing API endpoint or middleware.
-- [`aid-update-ui`](/skills/aid-update-ui/) — Update an existing UI component or page.
-- [`aid-update-theme`](/skills/aid-update-theme/) — Update an existing visual theme or style-token set.
-- [`aid-update-cli`](/skills/aid-update-cli/) — Update an existing CLI command.
-- [`aid-update-data-model`](/skills/aid-update-data-model/) — Update an existing data model and its schema migration.
-- [`aid-update-data-pipeline`](/skills/aid-update-data-pipeline/) — Update an existing data pipeline.
-- [`aid-update-messaging`](/skills/aid-update-messaging/) — Update an existing message/event schema or its emission.
-- [`aid-update-integration`](/skills/aid-update-integration/) — Update an existing external-service integration.
-- [`aid-update-job`](/skills/aid-update-job/) — Update an existing scheduled or background job.
-- [`aid-update-config`](/skills/aid-update-config/) — Update an existing configuration option or feature flag.
-- [`aid-update-infra`](/skills/aid-update-infra/) — Update an existing infrastructure resource.
-- [`aid-update-architecture`](/skills/aid-update-architecture/) — Revise the architecture KB document.
-- [`aid-update-stack`](/skills/aid-update-stack/) — Revise the technology-stack KB document.
-- [`aid-update-testing-strategy`](/skills/aid-update-testing-strategy/) — Revise the testing-strategy KB documents.
-- [`aid-update-cicd`](/skills/aid-update-cicd/) — Revise the CI/CD (shipping) KB document.
-- [`aid-update-test`](/skills/aid-update-test/) — Update or extend existing tests.
-- [`aid-update-document`](/skills/aid-update-document/) — Revise or extend an existing non-KB document against the current source.
-- [`aid-update-dashboard`](/skills/aid-update-dashboard/) — Update an existing dashboard or BI view.
+- [`aid-update`](/skills/aid-update/) — Change something that exists: code (API, UI, job, test...), a KB record or a document.
 
 ### `refactor`
 
@@ -120,10 +77,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `test`
 
-- [`aid-test`](/skills/aid-test/) — Run tests or checks and report the findings.
-- [`aid-test-security`](/skills/aid-test-security/) — Run a security scan (SAST, DAST, fuzzing, dependency audit) and report.
-- [`aid-test-performance`](/skills/aid-test-performance/) — Run a benchmark or load test against a threshold and report.
-- [`aid-test-data-quality`](/skills/aid-test-data-quality/) — Run data-quality checks (schema, freshness, completeness, uniqueness) and report.
+- [`aid-test`](/skills/aid-test/) — Run tests or checks (suites, security, performance, data quality) and report findings.
 
 ### `experiment`
 
@@ -131,33 +85,11 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `prototype`
 
-- [`aid-prototype`](/skills/aid-prototype/) — Build a throwaway low-fidelity model to test a direction.
-- [`aid-prototype-ui`](/skills/aid-prototype-ui/) — Build a throwaway UI wireframe to test a UX direction.
+- [`aid-prototype`](/skills/aid-prototype/) — Build a throwaway low-fidelity model, such as a UI, to test a direction.
 
 ### `design`
 
-- [`aid-design`](/skills/aid-design/) — Design anything without its own design skill (UX flow, component, interface).
-- [`aid-design-roadmap`](/skills/aid-design-roadmap/) — Design the roadmap direction as a seed in .aid/design (no code).
-- [`aid-design-mvp`](/skills/aid-design-mvp/) — Design the MVP line as a seed in .aid/design (no code).
-- [`aid-design-backlog`](/skills/aid-design-backlog/) — Design the backlog as a seed in .aid/design (no code).
-- [`aid-design-api`](/skills/aid-design-api/) — Design an API endpoint as a seed in .aid/design (no code).
-- [`aid-design-ui`](/skills/aid-design-ui/) — Design a UI screen or flow as a seed in .aid/design (no code).
-- [`aid-design-theme`](/skills/aid-design-theme/) — Design a visual theme as a seed in .aid/design (no code).
-- [`aid-design-cli`](/skills/aid-design-cli/) — Design a CLI command as a seed in .aid/design (no code).
-- [`aid-design-data-model`](/skills/aid-design-data-model/) — Design a data model as a seed in .aid/design (no code).
-- [`aid-design-data-pipeline`](/skills/aid-design-data-pipeline/) — Design a data pipeline as a seed in .aid/design (no code).
-- [`aid-design-messaging`](/skills/aid-design-messaging/) — Design a message or event as a seed in .aid/design (no code).
-- [`aid-design-integration`](/skills/aid-design-integration/) — Design an integration as a seed in .aid/design (no code).
-- [`aid-design-job`](/skills/aid-design-job/) — Design a background job as a seed in .aid/design (no code).
-- [`aid-design-config`](/skills/aid-design-config/) — Design a config option as a seed in .aid/design (no code).
-- [`aid-design-infra`](/skills/aid-design-infra/) — Design an infrastructure resource as a seed in .aid/design (no code).
-- [`aid-design-test`](/skills/aid-design-test/) — Design a test as a seed in .aid/design (no code).
-- [`aid-design-document`](/skills/aid-design-document/) — Design a document as a seed in .aid/design (no code).
-- [`aid-design-dashboard`](/skills/aid-design-dashboard/) — Design a dashboard as a seed in .aid/design (no code).
-- [`aid-design-architecture`](/skills/aid-design-architecture/) — Design the system architecture as a seed in .aid/design (no code).
-- [`aid-design-stack`](/skills/aid-design-stack/) — Design the technology stack as a seed in .aid/design (no code).
-- [`aid-design-testing-strategy`](/skills/aid-design-testing-strategy/) — Design the testing policy as a seed in .aid/design (no code).
-- [`aid-design-cicd`](/skills/aid-design-cicd/) — Design the delivery pipeline as a seed in .aid/design (no code).
+- [`aid-design`](/skills/aid-design/) — Design something as a kept seed: API, UI, data model, architecture, roadmap and more.
 
 ### `brainstorm`
 
@@ -165,14 +97,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `document`
 
-- [`aid-document`](/skills/aid-document/) — Write a how-to, reference, explanation or status report, outside the KB.
-- [`aid-document-decision`](/skills/aid-document-decision/) — Write an ADR (decision record) in one pass.
-- [`aid-document-architecture`](/skills/aid-document-architecture/) — Write an architecture write-up (C4 or arc42) in one pass.
-- [`aid-document-guideline`](/skills/aid-document-guideline/) — Write a guideline (advisory practice) in one pass.
-- [`aid-document-standard`](/skills/aid-document-standard/) — Write a standard (mandatory rule) in one pass.
-- [`aid-document-runbook`](/skills/aid-document-runbook/) — Write a runbook (operational procedure) in one pass.
-- [`aid-document-tutorial`](/skills/aid-document-tutorial/) — Write a tutorial (learning walkthrough) in one pass.
-- [`aid-document-changelog`](/skills/aid-document-changelog/) — Write a changelog (release notes) in one pass.
+- [`aid-document`](/skills/aid-document/) — Write a document outside the KB: how-to, runbook, decision, tutorial, changelog and more.
 
 ### `report`
 

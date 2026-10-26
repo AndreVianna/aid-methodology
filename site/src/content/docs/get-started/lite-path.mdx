@@ -16,8 +16,8 @@ mostly-autonomous pass.
 There is no routing step inside another skill — you enter the lite path directly:
 
 - **Name your change with a shortcut.** If you already know what you're changing, invoke the
-  matching verb-first shortcut directly: `/aid-fix` for a bug, `/aid-create-api` for a new
-  endpoint, `/aid-update-ui` for a UI change, and so on. Each shortcut is a thin doorway into
+  matching verb-first shortcut directly: `/aid-fix` for a bug, `/aid-create api` for a new
+  endpoint, `/aid-update ui` for a UI change, and so on. Each shortcut is a thin doorway into
   the shared **shortcut engine**.
 - **Ask `/aid-triage` when you're not sure.** Describe your change in one free-form sentence.
   `/aid-triage` infers the work type and scope, then suggests either the matching shortcut or,
@@ -56,7 +56,7 @@ Each shortcut invocation allocates a brand-new `work-NNN`; there is no cross-ses
    /aid-fix
    ```
 
-   (or `/aid-create-api`, `/aid-update-config`, … — whichever shortcut matches your change).
+   (or `/aid-create api`, `/aid-update config`, … — whichever shortcut matches your change).
    Describe what you want in a sentence or two.
 
 2. **Answer the rare gap-question, if asked.**
@@ -105,7 +105,7 @@ Compare this to the full path's nested `deliveries/delivery-NNN/` structure, cov
 
 | | Lite path | Full path |
 |--|-----------|-----------|
-| Entry | A shortcut (`/aid-fix`, `/aid-create-api`, …), or a `/aid-triage` suggestion | `/aid-describe` |
+| Entry | A shortcut (`/aid-fix`, `/aid-create api`, …), or a `/aid-triage` suggestion | `/aid-describe` |
 | Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
 | Phases | One collapsed, mostly-autonomous engine run (Describe → Detail) | Discover → Describe → Define → Specify → Plan → Detail → Execute |
 | Artifacts | Flattened: `REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md` | Nested: `REQUIREMENTS.md` (§ 11 feature sections), `PLAN.md` (`### delivery-NNN` stanzas), `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
