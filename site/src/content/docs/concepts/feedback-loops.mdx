@@ -3,65 +3,17 @@ title: 'Feedback loops'
 description: 'The formal pathways that send a finding back to an earlier AID phase.'
 ---
 
+import FeedbackLoops from '../../../components/diagrams/FeedbackLoops.astro';
+
 ## 6. Feedback Loops
 
-```mermaid
-flowchart TB
-    classDef prep    fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef def     fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef map     fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef exe     fill:#166534,stroke:#166534,color:#ffffff
-    classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
-    classDef offpipe fill:#374151,stroke:#374151,color:#ffffff
-    classDef entry   fill:#92400E,stroke:#92400E,color:#ffffff
-
-    D["1 · Discover"]:::prep
-    I["2 · Describe → Define"]:::def
-    S["3 · Specify"]:::def
-    P["4 · Plan"]:::map
-    Dt["5 · Detail"]:::map
-    E["6 · Execute"]:::exe
-    Dp["Deploy · optional"]:::delopt
-    M["Monitor · optional"]:::delopt
-    Fx["/aid-fix · shortcut"]:::entry
-    Tr["/aid-triage"]:::entry
-    Any["Any phase<br/>L11 · cross-cutting"]:::offpipe
-
-    D --> I --> S --> P --> Dt --> E
-    E  -. "optional" .-> Dp
-    E  -. "optional" .-> M
-    I  -. "L1" .-> D
-    S  -. "L2" .-> D
-    P  -. "L3" .-> D
-    P  -. "L4" .-> S
-    Dt -. "L5" .-> P
-    E  -. "L6 · impediment" .-> D
-    E  -. "L7 · review" .-> S
-    Dp -. "L8 · verification" .-> E
-    M  -. "L9 · bug" .-> Fx
-    M  -. "L10 · change request" .-> Tr
-    Any -. "targeted re-discovery" .-> D
-```
+<FeedbackLoops />
 
 *Eleven formal feedback loops — eight within development, two from production out to the shortcut/triage entry layer, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
 
 The development pipeline (Discover through Execute) is sequential by default; the optional Deploy and Monitor shortcut paths (Definition group) are separate, on-demand paths, not a continuation of it. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
 
 ### The Eleven Loops
-
-| **Loop** | From | To | Trigger condition |
-|---------|------|-----|------------------|
-| L1 | Describe/Define | Discover | A human's answer reveals the KB is wrong or incomplete |
-| L2 | Specify | Discover | Writing the spec exposes insufficient understanding of a subsystem |
-| L3 | Plan | Discover | Planning reveals the codebase is more complex than the KB captured |
-| L4 | Plan | Specify | The KB is complete, but a SPEC is ambiguous or contradictory |
-| L5 | Detail | Plan | The plan is too vague to decompose into tasks |
-| L6 | Execute | Discover / Specify / Detail | Agent discovers an assumption doesn't hold (`IMPEDIMENT-task-NNN.md`) |
-| L7 | Execute Review | Any upstream phase | Reviewer finds issues traced to the task, spec, or KB — not just code quality |
-| L8 | Deploy | Execute | Final verification (build + tests + lint) fails before the delivery ships |
-| L9 | Monitor | `/aid-fix` (shortcut) | Monitor classifies a finding as BUG |
-| L10 | Monitor | `/aid-triage` | Monitor classifies a finding as Change Request |
-| L11 | Any phase | Discover | Any phase finds the KB wrong, incomplete, or stale |
 
 #### Development Loops (1–8)
 

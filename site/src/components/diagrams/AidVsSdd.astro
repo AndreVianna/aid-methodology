@@ -1,0 +1,87 @@
+---
+/** D8: AID compared with spec-driven development. Drawing and table carry the same steps. */
+import Diagram from '../Diagram.astro';
+const id = 'aid-vs-sdd';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={600}
+  title="AID compared with spec-driven development"
+  desc="Spec-driven development goes from a spec straight to AI-written code and a human review. AID adds a Knowledge Base that every phase from Discover on reads, separate planning phases, reviews that grade each phase, your approval at each phase of the full path, and loops back to the phase that caused a problem."
+  caption="Spec-driven development and AID, step by step.">
+  <text class="dg-label" x="8" y="28">Spec-driven<tspan x="8" dy="1.25em">development</tspan></text>
+  <rect class="dg-node" x="8" y="72" width="96" height="40" rx="6" />
+  <text class="dg-label" x="56" y="97" text-anchor="middle">Write spec</text>
+  <path class="dg-edge" d="M56 112 V144" marker-end={arrow} />
+  <rect class="dg-node" x="8" y="144" width="96" height="48" rx="6" />
+  <text class="dg-label" x="56" y="165" text-anchor="middle">AI writes<tspan x="56" dy="1.25em">code</tspan></text>
+  <path class="dg-edge" d="M56 192 V224" marker-end={arrow} />
+  <rect class="dg-node" x="8" y="224" width="96" height="48" rx="6" />
+  <text class="dg-label" x="56" y="245" text-anchor="middle">Human<tspan x="56" dy="1.25em">review</tspan></text>
+  <path class="dg-edge" d="M56 272 V304" marker-end={arrow} />
+  <rect class="dg-node" x="8" y="304" width="96" height="40" rx="6" />
+  <text class="dg-label" x="56" y="329" text-anchor="middle">Ship</text>
+  <path class="dg-edge dg-optional" d="M104 248 H120 V96 H104" marker-end={arrow} />
+  <rect class="dg-label-bg" x="92" y="196" width="56" height="24" />
+  <text class="dg-note" x="120" y="213" text-anchor="middle">re-spec</text>
+
+  <text class="dg-label" x="152" y="28">AID (AI Integrated<tspan x="152" dy="1.25em">Development)</tspan></text>
+  <path class="dg-node dg-accent" d="M304 88 V552 A44 16 0 0 0 392 552 V88 A44 16 0 0 0 304 88 Z" />
+  <ellipse class="dg-node dg-accent" cx="348" cy="88" rx="44" ry="16" />
+  <text class="dg-label" x="348" y="316" text-anchor="middle">Knowledge<tspan x="348" dy="1.25em">Base</tspan></text>
+
+  <rect class="dg-node dg-accent" x="152" y="72" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="94" text-anchor="middle">/aid-config</text>
+  <path class="dg-edge" d="M212 104 V120" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="120" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="142" text-anchor="middle">/aid-discover</text>
+  <path class="dg-edge" d="M212 152 V168" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="168" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="190" text-anchor="middle">/aid-describe</text>
+  <path class="dg-edge" d="M212 200 V216" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="216" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="238" text-anchor="middle">/aid-define</text>
+  <path class="dg-edge" d="M212 248 V264" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="264" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="286" text-anchor="middle">/aid-specify</text>
+  <path class="dg-edge" d="M212 296 V312" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="312" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="334" text-anchor="middle">/aid-plan</text>
+  <path class="dg-edge" d="M212 344 V360" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="360" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="382" text-anchor="middle">/aid-detail</text>
+  <path class="dg-edge" d="M212 392 V408" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="152" y="408" width="120" height="32" rx="6" />
+  <text class="dg-label" x="212" y="430" text-anchor="middle">/aid-execute</text>
+  <path class="dg-edge dg-optional" d="M212 440 V456" marker-end={arrow} />
+  <rect class="dg-node dg-optional" x="152" y="456" width="120" height="48" rx="6" />
+  <text class="dg-label" x="212" y="478" text-anchor="middle">/aid-deploy</text>
+  <text class="dg-note" x="212" y="496" text-anchor="middle">(optional)</text>
+  <path class="dg-edge dg-optional" d="M212 504 V520" marker-end={arrow} />
+  <rect class="dg-node dg-optional" x="152" y="520" width="120" height="48" rx="6" />
+  <text class="dg-label" x="212" y="542" text-anchor="middle">/aid-monitor</text>
+  <text class="dg-note" x="212" y="560" text-anchor="middle">(optional)</text>
+
+  <path class="dg-edge" d="M272 136 H304" marker-end={arrow} />
+  <path class="dg-edge" d="M304 184 H272" marker-end={arrow} />
+  <path class="dg-edge" d="M304 232 H272" marker-end={arrow} />
+  <path class="dg-edge" d="M304 280 H272" marker-end={arrow} />
+  <path class="dg-edge" d="M304 328 H272" marker-end={arrow} />
+  <path class="dg-edge" d="M304 376 H272" marker-end={arrow} />
+  <path class="dg-edge" d="M304 424 H272" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M304 480 H272" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M304 544 H272" marker-end={arrow} />
+
+  <table slot="text">
+    <thead><tr><th scope="col">Step</th><th scope="col">Spec-driven development</th><th scope="col">AID (AI Integrated Development)</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Before the work</th><td>nothing</td><td><code>/aid-config</code> once; on an existing codebase, <code>/aid-discover</code> builds the Knowledge Base</td></tr>
+      <tr><th scope="row">Requirements and spec</th><td>one spec, written up front</td><td><code>/aid-describe</code>, <code>/aid-define</code>, <code>/aid-specify</code></td></tr>
+      <tr><th scope="row">Planning</th><td>none</td><td><code>/aid-plan</code>, <code>/aid-detail</code></td></tr>
+      <tr><th scope="row">Building</th><td>an AI agent writes the code</td><td><code>/aid-execute</code> builds and reviews each task</td></tr>
+      <tr><th scope="row">Review</th><td>a person reviews the result</td><td>a reviewer grades each phase; on the full path you approve each phase before the next</td></tr>
+      <tr><th scope="row">When something is wrong</th><td>rewrite the spec</td><td>a feedback loop returns to the phase that caused it</td></tr>
+      <tr><th scope="row">Memory between sessions</th><td>the spec</td><td>the Knowledge Base, built by <code>/aid-discover</code> and read by every later phase</td></tr>
+      <tr><th scope="row">After shipping</th><td>nothing</td><td>optional <code>/aid-deploy</code> and <code>/aid-monitor</code></td></tr>
+    </tbody>
+  </table>
+</Diagram>

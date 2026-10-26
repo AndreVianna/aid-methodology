@@ -5,6 +5,7 @@ sidebar:
   label: Maintainer
 ---
 
+import ReleaseFlow from '../../../components/diagrams/ReleaseFlow.astro';
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## Who this is for
@@ -53,23 +54,7 @@ A single pushed `v*` tag triggers `release.yml`, which runs four sequential stag
 All four channels — GitHub Release artifacts, npm, PyPI, and the offline bundle — are produced
 from the same tag in one workflow run.
 
-```mermaid
-sequenceDiagram
-    participant M as Maintainer
-    participant G as Git / GitHub
-    participant W as release.yml
-    participant R as release.sh
-    participant N as npm registry
-    participant P as PyPI
-
-    M->>G: git push origin v$(cat VERSION)
-    G->>W: trigger release.yml
-    W->>W: gate (version-sync + render-drift + suites)
-    W->>R: invoke release.sh (build assets)
-    R->>G: gh release create + upload assets
-    W->>N: npm-publish (OIDC, if NPM_ENABLED)
-    W->>P: pypi-publish (OIDC, if PYPI_ENABLED)
-```
+<ReleaseFlow />
 
 ### Prerequisites
 

@@ -1041,24 +1041,27 @@ No diagram states a count that changes when the repository changes (Feature 001'
 **D8 — AID compared with spec-driven development** (`id="aid-vs-sdd"`, viewBox 400 x 600)
 - Sources: `canonical/aid/rules.md` § Workflow; the skill descriptions cited for D1.
 - desc: "Spec-driven development goes from a spec straight to AI-written code and a human review.
-  AID adds a Knowledge Base that every phase reads and updates, separate planning phases, graded
-  reviews with your approval at each phase, and loops back to the phase that caused a problem."
+  AID adds a Knowledge Base that every phase from Discover on reads, separate planning phases,
+  reviews that grade each phase, your approval at each phase of the full path, and loops back to
+  the phase that caused a problem."
 - caption: "Spec-driven development and AID, step by step."
 - Drawing: two columns. The left column is titled "Spec-driven development": Write spec → AI writes
   code → Human review → Ship, with a dashed arrow from review back to "Write spec" ("re-spec"). The
   right column is titled "AID (AI Integrated Development)": the D1 phases in one column, with a
-  cylinder "Knowledge Base" beside it joined to each phase by a short two-headed line.
+  cylinder "Knowledge Base" beside it joined by a short arrow to each phase from `/aid-discover`
+  on (the arrow points into the KB at `/aid-discover`, which builds it, and into the phase for the
+  others, which read it; `/aid-config` does not touch it).
 - Text equivalent (`<table>`, header row Step | Spec-driven development | AID):
 
   | Step | Spec-driven development | AID |
   |---|---|---|
-  | Before the work | nothing | `/aid-config` once; `/aid-discover` builds the Knowledge Base |
+  | Before the work | nothing | `/aid-config` once; on an existing codebase, `/aid-discover` builds the Knowledge Base |
   | Requirements and spec | one spec, written up front | `/aid-describe`, `/aid-define`, `/aid-specify` |
   | Planning | none | `/aid-plan`, `/aid-detail` |
   | Building | an AI agent writes the code | `/aid-execute` builds and reviews each task |
-  | Review | a person reviews the result | a reviewer grades every phase; you approve each one |
+  | Review | a person reviews the result | a reviewer grades each phase; on the full path you approve each phase before the next |
   | When something is wrong | rewrite the spec | a feedback loop returns to the phase that caused it |
-  | Memory between sessions | the spec | the Knowledge Base, read and updated by every phase |
+  | Memory between sessions | the spec | the Knowledge Base, built by `/aid-discover` and read by every later phase |
   | After shipping | nothing | optional `/aid-deploy` and `/aid-monitor` |
 
 - Today's diagram titles the AID column "AI-Assisted Development". The product name is "AI

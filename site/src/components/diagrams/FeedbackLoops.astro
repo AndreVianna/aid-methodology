@@ -1,0 +1,92 @@
+---
+/** D7: the eleven feedback loops. The drawing shows each loop as a numbered dashed arc; the table carries the meaning. */
+import Diagram from '../Diagram.astro';
+const id = 'feedback-loops';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={480} height={640}
+  title="The eleven feedback loops"
+  desc="Development runs forward from Discover to Execute, but each phase can send work back to an earlier one when it finds a gap. Monitor sends production findings to /aid-fix or /aid-triage, and any phase can ask for a targeted re-discovery."
+  caption="Where each feedback loop sends work back to.">
+  <rect class="dg-node dg-accent" x="40" y="16" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="41" text-anchor="middle">Discover</text>
+  <path class="dg-edge" d="M120 56 V88" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="40" y="88" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="113" text-anchor="middle">Describe, Define</text>
+  <path class="dg-edge" d="M120 128 V160" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="40" y="160" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="185" text-anchor="middle">Specify</text>
+  <path class="dg-edge" d="M120 200 V232" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="40" y="232" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="257" text-anchor="middle">Plan</text>
+  <path class="dg-edge" d="M120 272 V304" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="40" y="304" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="329" text-anchor="middle">Detail</text>
+  <path class="dg-edge" d="M120 344 V376" marker-end={arrow} />
+  <rect class="dg-node dg-accent" x="40" y="376" width="160" height="40" rx="6" />
+  <text class="dg-label" x="120" y="401" text-anchor="middle">Execute</text>
+  <path class="dg-edge dg-optional" d="M120 416 V448" marker-end={arrow} />
+  <rect class="dg-node dg-optional" x="40" y="448" width="160" height="48" rx="6" />
+  <text class="dg-label" x="120" y="470" text-anchor="middle">Deploy</text>
+  <text class="dg-note" x="120" y="488" text-anchor="middle">(optional)</text>
+  <rect class="dg-node dg-optional" x="40" y="520" width="160" height="48" rx="6" />
+  <text class="dg-label" x="120" y="542" text-anchor="middle">Monitor</text>
+  <text class="dg-note" x="120" y="560" text-anchor="middle">(optional)</text>
+  <path class="dg-edge dg-optional" d="M120 496 V520" marker-end={arrow} />
+  <rect class="dg-node" x="344" y="488" width="128" height="40" rx="6" />
+  <text class="dg-label" x="408" y="513" text-anchor="middle">/aid-fix</text>
+  <rect class="dg-node" x="344" y="552" width="128" height="40" rx="6" />
+  <text class="dg-label" x="408" y="577" text-anchor="middle">/aid-triage</text>
+
+  <path class="dg-edge dg-optional" d="M200 104 H216 V48 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 168 H280 V40 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 248 H312 V32 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 240 H232 V184 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 312 H248 V256 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 392 H328 V24 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 384 H296 V176 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 456 H264 V400 H200" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 528 H344" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 560 H344" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M32 560 H16 V28 H40" marker-end={arrow} />
+
+  <rect class="dg-node dg-accent" x="204" y="68" width="24" height="16" rx="6" />
+  <text class="dg-note" x="216" y="81" text-anchor="middle">L1</text>
+  <rect class="dg-node dg-accent" x="268" y="92" width="24" height="16" rx="6" />
+  <text class="dg-note" x="280" y="105" text-anchor="middle">L2</text>
+  <rect class="dg-node dg-accent" x="300" y="112" width="24" height="16" rx="6" />
+  <text class="dg-note" x="312" y="125" text-anchor="middle">L3</text>
+  <rect class="dg-node dg-accent" x="220" y="204" width="24" height="16" rx="6" />
+  <text class="dg-note" x="232" y="217" text-anchor="middle">L4</text>
+  <rect class="dg-node dg-accent" x="236" y="276" width="24" height="16" rx="6" />
+  <text class="dg-note" x="248" y="289" text-anchor="middle">L5</text>
+  <rect class="dg-node dg-accent" x="316" y="232" width="24" height="16" rx="6" />
+  <text class="dg-note" x="328" y="245" text-anchor="middle">L6</text>
+  <rect class="dg-node dg-accent" x="284" y="312" width="24" height="16" rx="6" />
+  <text class="dg-note" x="296" y="325" text-anchor="middle">L7</text>
+  <rect class="dg-node dg-accent" x="252" y="420" width="24" height="16" rx="6" />
+  <text class="dg-note" x="264" y="433" text-anchor="middle">L8</text>
+  <rect class="dg-node dg-accent" x="260" y="520" width="24" height="16" rx="6" />
+  <text class="dg-note" x="272" y="533" text-anchor="middle">L9</text>
+  <rect class="dg-node dg-accent" x="260" y="552" width="24" height="16" rx="6" />
+  <text class="dg-note" x="272" y="565" text-anchor="middle">L10</text>
+  <rect class="dg-node dg-accent" x="4" y="284" width="24" height="16" rx="6" />
+  <text class="dg-note" x="16" y="297" text-anchor="middle">L11</text>
+
+  <table slot="text">
+    <thead><tr><th scope="col">Loop</th><th scope="col">From</th><th scope="col">To</th><th scope="col">When</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">L1</th><td>Describe/Define</td><td>Discover</td><td>A human's answer reveals the KB is wrong or incomplete</td></tr>
+      <tr><th scope="row">L2</th><td>Specify</td><td>Discover</td><td>Writing the spec exposes insufficient understanding of a subsystem</td></tr>
+      <tr><th scope="row">L3</th><td>Plan</td><td>Discover</td><td>Planning reveals the codebase is more complex than the KB captured</td></tr>
+      <tr><th scope="row">L4</th><td>Plan</td><td>Specify</td><td>The KB is complete, but a SPEC is ambiguous or contradictory</td></tr>
+      <tr><th scope="row">L5</th><td>Detail</td><td>Plan</td><td>The plan is too vague to decompose into tasks</td></tr>
+      <tr><th scope="row">L6</th><td>Execute</td><td>Discover / Specify / Detail</td><td>Agent discovers an assumption doesn't hold (<code>IMPEDIMENT-task-NNN.md</code>)</td></tr>
+      <tr><th scope="row">L7</th><td>Execute Review</td><td>Any upstream phase</td><td>Reviewer finds issues traced to the task, spec, or KB, not just code quality</td></tr>
+      <tr><th scope="row">L8</th><td>Deploy</td><td>Execute</td><td>Final verification (build + tests + lint) fails before the delivery ships</td></tr>
+      <tr><th scope="row">L9</th><td>Monitor</td><td><code>/aid-fix</code> (shortcut)</td><td>Monitor classifies a finding as BUG</td></tr>
+      <tr><th scope="row">L10</th><td>Monitor</td><td><code>/aid-triage</code></td><td>Monitor classifies a finding as Change Request</td></tr>
+      <tr><th scope="row">L11</th><td>Any phase</td><td>Discover</td><td>Any phase finds the KB wrong, incomplete, or stale</td></tr>
+    </tbody>
+  </table>
+</Diagram>

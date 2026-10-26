@@ -1,0 +1,46 @@
+---
+/** D9: how a release is published. Drawing and text equivalent follow .github/workflows/release.yml. */
+import Diagram from '../Diagram.astro';
+const id = 'release-flow';
+const arrow = `url(#dg-${id}-arrow)`;
+---
+<Diagram id={id} width={400} height={520}
+  title="How a release is published"
+  desc="Pushing a version tag starts the release workflow. A gate job re-runs the checks; only if it passes does the GitHub Release get built. npm and PyPI publishing follow, each only when its repository switch is on."
+  caption="From a pushed tag to published packages.">
+  <rect class="dg-node dg-accent" x="80" y="16" width="240" height="48" rx="6" />
+  <text class="dg-label" x="200" y="37" text-anchor="middle">Maintainer pushes<tspan x="200" dy="1.25em">tag v&lt;VERSION&gt;</tspan></text>
+  <path class="dg-edge" d="M200 64 V96" marker-end={arrow} />
+
+  <rect class="dg-node" x="80" y="96" width="240" height="40" rx="6" />
+  <text class="dg-label" x="200" y="121" text-anchor="middle">release.yml starts</text>
+  <path class="dg-edge" d="M200 136 V168" marker-end={arrow} />
+
+  <rect class="dg-node" x="80" y="168" width="240" height="48" rx="6" />
+  <text class="dg-label" x="200" y="190" text-anchor="middle">gate</text>
+  <text class="dg-note" x="200" y="208" text-anchor="middle">re-runs the checks</text>
+  <path class="dg-edge" d="M200 216 V248" marker-end={arrow} />
+
+  <rect class="dg-node" x="80" y="248" width="240" height="48" rx="6" />
+  <text class="dg-label" x="200" y="270" text-anchor="middle">github-release</text>
+  <text class="dg-note" x="200" y="288" text-anchor="middle">runs release.sh</text>
+
+  <path class="dg-edge dg-optional" d="M200 296 V328 H96 V360" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M200 328 H304 V360" marker-end={arrow} />
+
+  <rect class="dg-node dg-optional" x="16" y="360" width="160" height="48" rx="6" />
+  <text class="dg-label" x="96" y="382" text-anchor="middle">npm-publish</text>
+  <text class="dg-note" x="96" y="400" text-anchor="middle">(if NPM_ENABLED)</text>
+  <rect class="dg-node dg-optional" x="224" y="360" width="160" height="48" rx="6" />
+  <text class="dg-label" x="304" y="382" text-anchor="middle">pypi-publish</text>
+  <text class="dg-note" x="304" y="400" text-anchor="middle">(if PYPI_ENABLED)</text>
+
+  <ol slot="text">
+    <li>The maintainer pushes a version tag: <code>git push origin v$(cat VERSION)</code>.</li>
+    <li>The tag starts the <code>release.yml</code> workflow.</li>
+    <li>The <code>gate</code> job re-runs version-sync, render-drift and the test suites on the tagged commit. If it fails, nothing is published.</li>
+    <li>The <code>github-release</code> job runs <code>release.sh</code>, which builds the release files and creates the GitHub Release.</li>
+    <li>The <code>npm-publish</code> job then publishes to npm, only when the repository variable <code>NPM_ENABLED</code> is <code>true</code> and the version is not a pre-release.</li>
+    <li>The <code>pypi-publish</code> job publishes to PyPI, only when the repository variable <code>PYPI_ENABLED</code> is <code>true</code>.</li>
+  </ol>
+</Diagram>
