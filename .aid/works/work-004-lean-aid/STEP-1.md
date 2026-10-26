@@ -14,7 +14,7 @@ approval signal, step 3).
 | C4 | (merged into C3) | |
 | C5 | `rules.md` is at most 60 lines, and every rule it drops is moved or justified in an inventory | static check; one review |
 | C6 | A one-page project card (stack, build/test/lint commands, top rules) exists as a template, with this repo's own card, and is always loaded | static check |
-| C7 | A hook blocks merges (`git merge`, `gh pr merge`), since AID never merges | hook test with a crafted tool call |
+| C7 | Moved to step 3 with push protection (Q7): master's installer has no hook support, and adding it is about 900 lines in two installer twins | — |
 
 **Budget:** about one day of agent time; no per-task ceremony; one independent review of the whole change; the
 measurement runs cost about $2.

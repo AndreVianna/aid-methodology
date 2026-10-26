@@ -301,6 +301,14 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q7
+    category: Scope
+    impact: Medium
+    state: Answered
+    context: 'Should the merge-blocking hook (C7) stay in step 1?'
+    suggested: 'Move it to step 3 with push protection'
+    answer: 'Assumed by the agent: master''s installer has no hook support (work-003 needed about 900 lines in two installer twins for it), which breaks the one-day budget; step 3 needs the same machinery. Confirmed with the step-1 result approval'
+    applied_to: 'STEP-1.md C7'
   - id: Q6
     category: Technical
     impact: Medium
