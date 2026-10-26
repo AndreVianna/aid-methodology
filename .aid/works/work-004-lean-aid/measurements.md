@@ -99,7 +99,7 @@ One run each.
 | | Plain request, no AID | `/aid-describe`, today's full pipeline |
 |---|---|---|
 | Time | 50 s | 1,725 s (29 min) |
-| Cost | $0.01 | $13.98 |
+| Cost | $0.01 | $4.69 |
 | Replies the user had to give | 1 | 10 |
 | Helper agents | 0 | 27 (Sonnet and Opus among them) |
 | State-writer calls | 0 | 23 |
@@ -118,13 +118,20 @@ fair ratio, since the plain run used only the cheap model while AID's helpers us
 | | Plain request, no AID | `/aid-describe`, today's full pipeline |
 |---|---|---|
 | Time | 23 s | 1,043 s (17 min) |
-| Cost | $0.08 | $10.74 |
+| Cost | $0.08 | $4.31 |
 | User replies | 1 | 8 |
 | Helper agents | 0 | 13 |
 | State-writer calls | 0 | 34 |
 | Hidden checks | 12/12 | 12/12 |
 
-Cost by phase of the AID run (cumulative cost at each turn's end, differenced): name and interview $0.77
-(describe), $0.67 define, $1.10 specify, $1.56 plan, $2.33 detail, $4.31 execute. Writing the definition and plan
-documents (define through detail) cost $5.66, more than building and reviewing the code ($4.31). About 134 times the
-cost and 45 times the time of the plain request, for the same correct result.
+Cost by phase of the AID run: describe (name, interview, approval) $0.37, define $0.30, specify $0.43, plan $0.46,
+detail $0.77, execute $1.98. Writing the definition and plan documents (define through detail, $1.96) cost as much as
+building and reviewing the code ($1.98). About 54 times the cost and 45 times the time of the plain request, for the
+same correct result.
+
+## Correction: cost of multi-turn runs
+
+`claude -p` reports `total_cost_usd` for the whole resumed session, not for the turn. measure.py added it per turn
+until this was found, so every run with more than one user turn was over-counted; the tools now keep the latest
+total. Single-turn runs were right. The two complex-task tables above are corrected (the summed figures were $13.98
+and $10.74); the medians of the step-1 tables do not change.
