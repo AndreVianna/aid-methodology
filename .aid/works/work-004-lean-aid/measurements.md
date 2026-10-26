@@ -37,3 +37,40 @@ Cost basis: the plain AID run's measured $0.37 is matched by $0.30 per million c
 cache-write tokens and $15 per million output tokens; the same rates on the `/aid-fix` totals give about $24.
 Sub-agents on a pricier model would raise it. So the typed skill path cost on the order of 100 times the plain
 request and over 60 times the time, and had not changed any code when it was stopped.
+
+## After step 1, with the graded tool, 2026-10-26
+
+The fixture now has a real bug (a pinned note is listed twice), and a hidden check grades each result. "Start
+context" is the size of the first model request: what is always loaded, before the session makes any choice.
+
+Maintainer's machine, `claude-sonnet-5-5`, 3 runs each, medians:
+
+| Scenario | AID | Start context | Cache write | Cost | Seconds | Hidden check |
+|---|---|---|---|---|---|---|
+| fix | no | 18,554 | 7,612 | $0.04 | 8 | 3/3 |
+| fix | yes | 26,046 | 20,750 | $0.11 | 16 | 3/3 |
+| feature | no | 18,545 | 8,129 | $0.05 | 11 | 3/3 |
+| feature | yes | 26,039 | 21,617 | $0.12 | 17 | 3/3 |
+
+AID adds 7,49x tokens to the start context (+40%). C1 (at most +25%) is not met.
+
+Before and after, same tool, `claude-haiku-5-5`, one run each (the added tokens do not depend on the model):
+
+| AID | Start context | Added by AID |
+|---|---|---|
+| none | 34,511 | -- |
+| `master` | 46,572 | 12,061 |
+| after step 1 | 42,008 | 7,497 (-38%) |
+
+The cut is smaller than the file sizes suggested, because Claude Code already trimmed the long skill
+descriptions on `master`. What is left, measured by removing one part at a time:
+
+| Part | Tokens |
+|---|---|
+| Skill list (112 skills) | about 4,700 |
+| Rules (`CLAUDE.md` import) | about 1,900 |
+| Agent list (9 agents) | about 1,000 |
+
+The skill list costs about 42 tokens per skill whatever the description length, so the number of skills now
+matters more than their text. The cost per task is still about 2.5 times the plain request: beyond the start
+context, AID sessions read more and take a few more turns.
