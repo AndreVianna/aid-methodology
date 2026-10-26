@@ -1,7 +1,8 @@
 # canonical/aid/templates/shortcut-catalog.yml
 #
 # Single-source manifest for the direct-entry shortcut engine.
-# One row per capability, one directory per row.
+# One row per capability. A family row owns a directory; a kind row (`kind_of`) has none
+# and is invoked through its family as `/aid-<verb> <kind>`.
 # `create` and `update` are the two canonical grid verbs. There is no alias
 # form, no synonym data, and no redirect -- a name that is not a row is not
 # invocable at all. The generator provides no runtime redirect mechanism: `render.py`
@@ -16,7 +17,8 @@
 #   1. The maintainer build helper
 #      (`generate-profile/scripts/build-shortcut-skills.py`) -- reads this
 #      file and emits/refreshes the thin-doorway `canonical/skills/aid-<name>/SKILL.md`
-#      directories, one per non-`repurpose` row. After any edit to this file the
+#      directories, one per row that is neither `repurpose` nor a kind row; a family
+#      doorway lists its kinds. After any edit to this file the
 #      maintainer runs that helper, then the FULL `run_generator.py` (never a partial
 #      render -- architecture.md § Gotchas).
 #   2. `/aid-triage` (feature-014) at runtime -- resolves a typed invocation to its
@@ -26,8 +28,9 @@
 # Field contract (every row; documented once here, not repeated per row)
 # ---------------------------------------------------------------------------
 #
-#   name          (required, string) -- the invocation name AND the skill directory name
-#                 AND the rendered `/command` name. `render.py` sets
+#   name          (required, string) -- for a family row, the invocation name AND the skill
+#                 directory name AND the rendered `/command` name; for a kind row, the id the
+#                 engine binds as `{name}` (the family doorway resolves `/aid-<verb> <kind>` to it). `render.py` sets
 #                 `skill_slug = skill_dir.name` and carries the frontmatter `name:`
 #                 through untouched -- there is no command-alias mechanism and no
 #                 runtime redirect, so every row name is its own
@@ -107,11 +110,15 @@
 #                 every session. The builder uses it when present and falls back to `intent`;
 #                 give a row one only when its `intent` is long. `intent` is unchanged.
 #
-#   repurpose     (optional, boolean, default `false`) -- `true` for rows whose
-#                 `SKILL.md` is hand-authored rather than generated. The maintainer
-#                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
-#                 rows -- it never generates or overwrites their `SKILL.md`. 60 rows
-#                 carry `repurpose: true`.
+#   repurpose     (optional, boolean, default `false`) -- `true` for rows whose text is
+#                 hand-authored rather than generated: a family row's `SKILL.md`, or a kind
+#                 row's `references/<kind>.md` in its family's directory. The maintainer
+#                 build helper (`build-shortcut-skills.py`) never generates or overwrites them.
+#
+#   kind_of       (optional, string) -- the family row this kind belongs to. A kind row has
+#                 no directory: `/aid-<verb> <kind>` reaches it through the family skill. A
+#                 generated kind runs the engine with `{artifact}` bound to the kind; a
+#                 `repurpose` kind follows its family's `references/<kind>.md`.
 #
 # ---------------------------------------------------------------------------
 # Row shape (documentation only -- illustrative; NOT a live row. Family features
@@ -158,10 +165,11 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Create a new internal code artifact (module, interface, type) from scratch."
-    summary: "Create a new internal module, interface or type."
+    summary: "Create something new: code (API, UI, job, test...), a KB record or a document."
   - name: aid-create-api
     verb: create
     artifact: api
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -170,6 +178,7 @@ shortcuts:
   - name: aid-create-ui
     verb: create
     artifact: ui
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -177,6 +186,7 @@ shortcuts:
   - name: aid-create-theme
     verb: create
     artifact: theme
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -184,6 +194,7 @@ shortcuts:
   - name: aid-create-cli
     verb: create
     artifact: cli
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -191,6 +202,7 @@ shortcuts:
   - name: aid-create-data-model
     verb: create
     artifact: data-model
+    kind_of: aid-create
     alias_of: null
     default_type: MIGRATE
     group: G4
@@ -198,6 +210,7 @@ shortcuts:
   - name: aid-create-data-pipeline
     verb: create
     artifact: data-pipeline
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -205,6 +218,7 @@ shortcuts:
   - name: aid-create-messaging
     verb: create
     artifact: messaging
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -212,6 +226,7 @@ shortcuts:
   - name: aid-create-integration
     verb: create
     artifact: integration
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -219,6 +234,7 @@ shortcuts:
   - name: aid-create-job
     verb: create
     artifact: job
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -226,6 +242,7 @@ shortcuts:
   - name: aid-create-config
     verb: create
     artifact: config
+    kind_of: aid-create
     alias_of: null
     default_type: CONFIGURE
     group: G4
@@ -233,6 +250,7 @@ shortcuts:
   - name: aid-create-infra
     verb: create
     artifact: infra
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G4
@@ -240,6 +258,7 @@ shortcuts:
   - name: aid-create-roadmap
     verb: create
     artifact: roadmap
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -248,6 +267,7 @@ shortcuts:
   - name: aid-create-backlog
     verb: create
     artifact: backlog
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -256,6 +276,7 @@ shortcuts:
   - name: aid-create-mvp
     verb: create
     artifact: mvp
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -264,6 +285,7 @@ shortcuts:
   - name: aid-create-architecture
     verb: create
     artifact: architecture
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -272,6 +294,7 @@ shortcuts:
   - name: aid-create-stack
     verb: create
     artifact: stack
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -280,6 +303,7 @@ shortcuts:
   - name: aid-create-testing-strategy
     verb: create
     artifact: testing-strategy
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -288,6 +312,7 @@ shortcuts:
   - name: aid-create-cicd
     verb: create
     artifact: cicd
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G4
@@ -304,6 +329,7 @@ shortcuts:
   - name: aid-update-roadmap
     verb: update
     artifact: roadmap
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -312,6 +338,7 @@ shortcuts:
   - name: aid-update-mvp
     verb: update
     artifact: mvp
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -320,6 +347,7 @@ shortcuts:
   - name: aid-update-backlog
     verb: update
     artifact: backlog
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -332,10 +360,11 @@ shortcuts:
     default_type: IMPLEMENT
     group: G5
     intent: "Update an existing internal code artifact's behavior under new acceptance criteria."
-    summary: "Change an existing code artifact's behavior."
+    summary: "Change something that exists: code (API, UI, job, test...), a KB record or a document."
   - name: aid-update-api
     verb: update
     artifact: api
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -344,6 +373,7 @@ shortcuts:
   - name: aid-update-ui
     verb: update
     artifact: ui
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -351,6 +381,7 @@ shortcuts:
   - name: aid-update-theme
     verb: update
     artifact: theme
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -358,6 +389,7 @@ shortcuts:
   - name: aid-update-cli
     verb: update
     artifact: cli
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -365,6 +397,7 @@ shortcuts:
   - name: aid-update-data-model
     verb: update
     artifact: data-model
+    kind_of: aid-update
     alias_of: null
     default_type: MIGRATE
     group: G5
@@ -373,6 +406,7 @@ shortcuts:
   - name: aid-update-data-pipeline
     verb: update
     artifact: data-pipeline
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -381,6 +415,7 @@ shortcuts:
   - name: aid-update-messaging
     verb: update
     artifact: messaging
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -388,6 +423,7 @@ shortcuts:
   - name: aid-update-integration
     verb: update
     artifact: integration
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -395,6 +431,7 @@ shortcuts:
   - name: aid-update-job
     verb: update
     artifact: job
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -402,6 +439,7 @@ shortcuts:
   - name: aid-update-config
     verb: update
     artifact: config
+    kind_of: aid-update
     alias_of: null
     default_type: CONFIGURE
     group: G5
@@ -409,6 +447,7 @@ shortcuts:
   - name: aid-update-infra
     verb: update
     artifact: infra
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G5
@@ -453,6 +492,7 @@ shortcuts:
   - name: aid-update-architecture
     verb: update
     artifact: architecture
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -461,6 +501,7 @@ shortcuts:
   - name: aid-update-stack
     verb: update
     artifact: stack
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -469,6 +510,7 @@ shortcuts:
   - name: aid-update-testing-strategy
     verb: update
     artifact: testing-strategy
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -477,6 +519,7 @@ shortcuts:
   - name: aid-update-cicd
     verb: update
     artifact: cicd
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G5
@@ -494,6 +537,7 @@ shortcuts:
   - name: aid-create-test
     verb: create
     artifact: test
+    kind_of: aid-create
     alias_of: null
     default_type: TEST
     group: G7
@@ -502,6 +546,7 @@ shortcuts:
   - name: aid-update-test
     verb: update
     artifact: test
+    kind_of: aid-update
     alias_of: null
     default_type: TEST
     group: G7
@@ -517,6 +562,7 @@ shortcuts:
   - name: aid-test-security
     verb: test
     artifact: security
+    kind_of: aid-test
     alias_of: null
     default_type: TEST
     group: G7
@@ -525,6 +571,7 @@ shortcuts:
   - name: aid-test-performance
     verb: test
     artifact: performance
+    kind_of: aid-test
     alias_of: null
     default_type: TEST
     group: G7
@@ -533,6 +580,7 @@ shortcuts:
   - name: aid-test-data-quality
     verb: test
     artifact: data-quality
+    kind_of: aid-test
     alias_of: null
     default_type: TEST
     group: G7
@@ -564,6 +612,7 @@ shortcuts:
   - name: aid-prototype-ui
     verb: prototype
     artifact: ui
+    kind_of: aid-prototype
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -580,6 +629,7 @@ shortcuts:
   - name: aid-design-roadmap
     verb: design
     artifact: roadmap
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -588,6 +638,7 @@ shortcuts:
   - name: aid-design-mvp
     verb: design
     artifact: mvp
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -596,6 +647,7 @@ shortcuts:
   - name: aid-design-backlog
     verb: design
     artifact: backlog
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -604,6 +656,7 @@ shortcuts:
   - name: aid-design-api
     verb: design
     artifact: api
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -612,6 +665,7 @@ shortcuts:
   - name: aid-design-ui
     verb: design
     artifact: ui
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -620,6 +674,7 @@ shortcuts:
   - name: aid-design-theme
     verb: design
     artifact: theme
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -628,6 +683,7 @@ shortcuts:
   - name: aid-design-cli
     verb: design
     artifact: cli
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -636,6 +692,7 @@ shortcuts:
   - name: aid-design-data-model
     verb: design
     artifact: data-model
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -644,6 +701,7 @@ shortcuts:
   - name: aid-design-data-pipeline
     verb: design
     artifact: data-pipeline
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -652,6 +710,7 @@ shortcuts:
   - name: aid-design-messaging
     verb: design
     artifact: messaging
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -660,6 +719,7 @@ shortcuts:
   - name: aid-design-integration
     verb: design
     artifact: integration
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -668,6 +728,7 @@ shortcuts:
   - name: aid-design-job
     verb: design
     artifact: job
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -676,6 +737,7 @@ shortcuts:
   - name: aid-design-config
     verb: design
     artifact: config
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -684,6 +746,7 @@ shortcuts:
   - name: aid-design-infra
     verb: design
     artifact: infra
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -692,6 +755,7 @@ shortcuts:
   - name: aid-design-test
     verb: design
     artifact: test
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -700,6 +764,7 @@ shortcuts:
   - name: aid-design-document
     verb: design
     artifact: document
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -708,6 +773,7 @@ shortcuts:
   - name: aid-design-dashboard
     verb: design
     artifact: dashboard
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -724,6 +790,7 @@ shortcuts:
   - name: aid-design-architecture
     verb: design
     artifact: architecture
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -732,6 +799,7 @@ shortcuts:
   - name: aid-design-stack
     verb: design
     artifact: stack
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -740,6 +808,7 @@ shortcuts:
   - name: aid-design-testing-strategy
     verb: design
     artifact: testing-strategy
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -748,6 +817,7 @@ shortcuts:
   - name: aid-design-cicd
     verb: design
     artifact: cicd
+    kind_of: aid-design
     alias_of: null
     default_type: DESIGN
     group: G3
@@ -766,6 +836,7 @@ shortcuts:
   - name: aid-create-document
     verb: create
     artifact: document
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -774,6 +845,7 @@ shortcuts:
   - name: aid-update-document
     verb: update
     artifact: document
+    kind_of: aid-update
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -782,6 +854,7 @@ shortcuts:
   - name: aid-create-diagram
     verb: create
     artifact: diagram
+    kind_of: aid-create
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -798,6 +871,7 @@ shortcuts:
   - name: aid-document-decision
     verb: document
     artifact: decision
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -806,6 +880,7 @@ shortcuts:
   - name: aid-document-architecture
     verb: document
     artifact: architecture
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -814,6 +889,7 @@ shortcuts:
   - name: aid-document-guideline
     verb: document
     artifact: guideline
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -822,6 +898,7 @@ shortcuts:
   - name: aid-document-standard
     verb: document
     artifact: standard
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -830,6 +907,7 @@ shortcuts:
   - name: aid-document-runbook
     verb: document
     artifact: runbook
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -838,6 +916,7 @@ shortcuts:
   - name: aid-document-tutorial
     verb: document
     artifact: tutorial
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -846,6 +925,7 @@ shortcuts:
   - name: aid-document-changelog
     verb: document
     artifact: changelog
+    kind_of: aid-document
     alias_of: null
     default_type: DOCUMENT
     group: G8
@@ -873,6 +953,7 @@ shortcuts:
   - name: aid-create-dashboard
     verb: create
     artifact: dashboard
+    kind_of: aid-create
     alias_of: null
     default_type: IMPLEMENT
     group: G11
@@ -881,6 +962,7 @@ shortcuts:
   - name: aid-update-dashboard
     verb: update
     artifact: dashboard
+    kind_of: aid-update
     alias_of: null
     default_type: IMPLEMENT
     group: G11

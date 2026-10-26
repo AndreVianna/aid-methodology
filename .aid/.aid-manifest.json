@@ -28,103 +28,51 @@
         },
         {
           "path": "aid-config/SKILL.md",
-          "sha256": "17cf6d0cea19c187da43aeec2fafbbefb305965c5024a4c0f1f64768e02dc463"
-        },
-        {
-          "path": "aid-create-api/SKILL.md",
-          "sha256": "ac319134af4661a2beb7ec8f5848b18ef72ab3a15efa2bb4801cd5161b127bdb"
-        },
-        {
-          "path": "aid-create-architecture/SKILL.md",
-          "sha256": "ffbf2c4ac7692985d08069579a46e3ba8fa1aa99f88c33419b8be8f7e6ae8ba0"
-        },
-        {
-          "path": "aid-create-backlog/SKILL.md",
-          "sha256": "0f0e47de3a86c82564f134707acafaa0088ebf27c24609e83a505c2c091603e8"
-        },
-        {
-          "path": "aid-create-cicd/SKILL.md",
-          "sha256": "f1dedfafcf1bb117ff8d80143d38e48ac5292e8d29f38d873a59701bc01d24fc"
-        },
-        {
-          "path": "aid-create-cli/SKILL.md",
-          "sha256": "2b0a050302c3485f39af522e1112229f4b8aa373a69617d1a67e70be2cf757ed"
-        },
-        {
-          "path": "aid-create-config/SKILL.md",
-          "sha256": "d2b4a6ea520ee45d91f589a4244ddbc81f61185b58686e0f707bbaa9e3d41ec0"
-        },
-        {
-          "path": "aid-create-dashboard/SKILL.md",
-          "sha256": "5d9e228ec544c3ad939509751e7ee2404d95594cea05f66f47f199f48e518ec0"
-        },
-        {
-          "path": "aid-create-data-model/SKILL.md",
-          "sha256": "367306a323248c74b79d638e2195c07bce46a307434a5f398709aa6c1b145b39"
-        },
-        {
-          "path": "aid-create-data-pipeline/SKILL.md",
-          "sha256": "4d7dd3d122145f83af0a9e540f082c90f114297109f4179290da5b4e6323f7e0"
-        },
-        {
-          "path": "aid-create-diagram/SKILL.md",
-          "sha256": "12461ff2db2694f98a8eacfcfeba2cdcca72c023b3d3d61d54216e28dd5cab8c"
-        },
-        {
-          "path": "aid-create-document/SKILL.md",
-          "sha256": "c9b5eddbd8fb0ea6930b427c525db869915c9465b972ce09a12b714045829c41"
-        },
-        {
-          "path": "aid-create-infra/SKILL.md",
-          "sha256": "df89b9afd54fc52f302d699b3ede30343779b012c7b6d0746c7136ac400c82c8"
-        },
-        {
-          "path": "aid-create-integration/SKILL.md",
-          "sha256": "44d3b6655c2dfbcf84c8556508129a2fdc0c80cc52893262171d0fe35fe17353"
-        },
-        {
-          "path": "aid-create-job/SKILL.md",
-          "sha256": "f3e84ff7b0893d84285c7049ab158b41798d8dd28c30017dfafd9a5df9ac98e5"
-        },
-        {
-          "path": "aid-create-messaging/SKILL.md",
-          "sha256": "79eea545d8593827520fedcdc8d553f065bf80b012301f7fca5d083ef523ed4d"
-        },
-        {
-          "path": "aid-create-mvp/SKILL.md",
-          "sha256": "30a4d8066157266762cbe183a59ce9179a820096e148535795dbe930b24550f1"
-        },
-        {
-          "path": "aid-create-roadmap/SKILL.md",
-          "sha256": "ac5e30256988e11ab2ac8a78cc6ac3b13458354824ff4e157ca49891acc93bce"
-        },
-        {
-          "path": "aid-create-stack/SKILL.md",
-          "sha256": "736f28dff1680f537392afa0ece5026408045c11a6dbfb00e205631fb5002207"
-        },
-        {
-          "path": "aid-create-test/SKILL.md",
-          "sha256": "0a3cceda8c7698a33bea76e3f5d6e8ce4277daaf40d01fb64e2ebf88b7c852ef"
-        },
-        {
-          "path": "aid-create-testing-strategy/SKILL.md",
-          "sha256": "a57b7b9c1364df6eafee5b7d083cca66bfe77a4945cad94b58002c71667b136b"
-        },
-        {
-          "path": "aid-create-theme/SKILL.md",
-          "sha256": "82585db2c1cf80186c2380960c776d0c8e395405e447b6f311b09b7b8360691d"
+          "sha256": "d7b12944d32ee074a047b0ce0c6e12a6b10567617e465f37aa3da30ddbfd27f1"
         },
         {
           "path": "aid-create-ticket/SKILL.md",
           "sha256": "ddadc9c692bf76a11086677f3a230d6e77007525e6dab2edfd06c2ae5c94416c"
         },
         {
-          "path": "aid-create-ui/SKILL.md",
-          "sha256": "42835c9359bcdbbdf4b38a1562d0d81168424760b38b1a4f581aaa880bd3694e"
+          "path": "aid-create/SKILL.md",
+          "sha256": "dc192a030790d18006c287a53e45db90d522c6a6c4b81c1ec27fc4609b330051"
         },
         {
-          "path": "aid-create/SKILL.md",
-          "sha256": "99002c6a14cb9141a5ad4dbbf0611283e8d945050c4fffe5e69cada0e1287f8d"
+          "path": "aid-create/references/architecture.md",
+          "sha256": "c79d812b1ada987110494880fb50cf044ddee81a183f1d1c3030ecc1cd7db1fb"
+        },
+        {
+          "path": "aid-create/references/backlog.md",
+          "sha256": "76bc49ada5e4797420181eadca12c2d6c87ebc93bbaeb80ec725a6584947860f"
+        },
+        {
+          "path": "aid-create/references/cicd.md",
+          "sha256": "39ae1310c2e07a3c6c26ff98947ccb9977f09fbd0d649c20401a354aa04b30a6"
+        },
+        {
+          "path": "aid-create/references/diagram.md",
+          "sha256": "8fff27347323ab81d7589acca7d08aaebdff089b2fbc909653dcd2858273f4ef"
+        },
+        {
+          "path": "aid-create/references/document.md",
+          "sha256": "2cadca9fa94c518bc199f997adfe90afdce269af591687e8ac919094d9481158"
+        },
+        {
+          "path": "aid-create/references/mvp.md",
+          "sha256": "ad6ec8aa37a4578100025eddcf3bd8d2d00c4138195baf6004ff78fc535b3501"
+        },
+        {
+          "path": "aid-create/references/roadmap.md",
+          "sha256": "3f0fe0ac16abf3b0c3ed13eaad42c2f889c365a264240e3e1610b649f0033949"
+        },
+        {
+          "path": "aid-create/references/stack.md",
+          "sha256": "a5978e39f202d6f413c35de6e5fe6f3892fb853c917eaac341e544da999b1e42"
+        },
+        {
+          "path": "aid-create/references/testing-strategy.md",
+          "sha256": "2c63c074a68112b1ad73a326c6ed1a5ee80100b79d57fa83d91dd2911f920578"
         },
         {
           "path": "aid-define/SKILL.md",
@@ -243,92 +191,92 @@
           "sha256": "09cf158072d50e2716e30642513c87a25fda54e9da53227d55de408bcb59d350"
         },
         {
-          "path": "aid-design-api/SKILL.md",
-          "sha256": "6083b2681319e7da5fa4e7e6e0a2f9802c602983fb655394793fc46d9d139d9e"
-        },
-        {
-          "path": "aid-design-architecture/SKILL.md",
-          "sha256": "c9878bf07f5214a03e611d16676ecf10ae16d161dda60ccd1dd91d3ba6d453c8"
-        },
-        {
-          "path": "aid-design-backlog/SKILL.md",
-          "sha256": "d2b7479f4756d4abd520c2c7a6395628c4f0fc7459e62906516710a21cacde15"
-        },
-        {
-          "path": "aid-design-cicd/SKILL.md",
-          "sha256": "50ee9428df868ad2f7e67bb96117843760c88ee7bb43cc32ba9f865ac82beb71"
-        },
-        {
-          "path": "aid-design-cli/SKILL.md",
-          "sha256": "fdc91412b0c10c16f7c03011b57c86eafbffa19c97caeca63a30b7519c381794"
-        },
-        {
-          "path": "aid-design-config/SKILL.md",
-          "sha256": "7268567a303e72bc0c0e0d63e8fd06bd4894f0965502863ada2c0e2f02dc56bc"
-        },
-        {
-          "path": "aid-design-dashboard/SKILL.md",
-          "sha256": "eb8880ae2e2f5db963d776ad8a1dab59d42425ef92ca72edeeb5d9cf8ccbbf6d"
-        },
-        {
-          "path": "aid-design-data-model/SKILL.md",
-          "sha256": "88045faf5807a2dfe71b3884c0abb36942647d46f4aa29a1b8121831208fdd43"
-        },
-        {
-          "path": "aid-design-data-pipeline/SKILL.md",
-          "sha256": "83e714e3e28672c0e96b69d22fd0139dbaa73b6d9b1a0f63ee819bdf0544b70c"
-        },
-        {
-          "path": "aid-design-document/SKILL.md",
-          "sha256": "aa83d9413aff11f3447370b397da2c9f1cfe628e8da76402558e1b1f4c92e92c"
-        },
-        {
-          "path": "aid-design-infra/SKILL.md",
-          "sha256": "0aec545ff474c025908ade5eb72ce68d6294aaf7c7a6ba02bdd5d0636d6fe999"
-        },
-        {
-          "path": "aid-design-integration/SKILL.md",
-          "sha256": "831bac1f82efd7f9558bd7308dc51d8ac039fb5873592ba24de1082e37f21f02"
-        },
-        {
-          "path": "aid-design-job/SKILL.md",
-          "sha256": "247e6dc640040cee7ffb836af8f0aee50ac7a34832b6cf8c12f72940f34de3c8"
-        },
-        {
-          "path": "aid-design-messaging/SKILL.md",
-          "sha256": "2ce4bd247ae5ec5877b3261758d39bbc49b937a847d2190ffe6617be6b49605c"
-        },
-        {
-          "path": "aid-design-mvp/SKILL.md",
-          "sha256": "7e089d1956686ffd4c88974931238ed87b056b6efb40eef001ec44e4ed93799e"
-        },
-        {
-          "path": "aid-design-roadmap/SKILL.md",
-          "sha256": "d4fe181c9f0034abba1626fd60a179239d7436734c66e2450d5176ac3e656bab"
-        },
-        {
-          "path": "aid-design-stack/SKILL.md",
-          "sha256": "95baa1736bc4bf6923c433559facc94e93e72f0d47e5a7fdb0faf172cd891f46"
-        },
-        {
-          "path": "aid-design-test/SKILL.md",
-          "sha256": "59f3cad354011ffaec5104a695141d1e5b059b496846c9ed333d61553c4e922c"
-        },
-        {
-          "path": "aid-design-testing-strategy/SKILL.md",
-          "sha256": "f23378fe4336fe74c0fd6945a8470d79a147976029f6c03df6603d364483357f"
-        },
-        {
-          "path": "aid-design-theme/SKILL.md",
-          "sha256": "88aa17bc6605f09ccd62aadffc311b8ec3eed28d5cd23c95299a61718aadc915"
-        },
-        {
-          "path": "aid-design-ui/SKILL.md",
-          "sha256": "a02453e138c8e77345f8e2b5d43d3b7025d48ea9f75d20c9bbfcd20f0634881c"
-        },
-        {
           "path": "aid-design/SKILL.md",
-          "sha256": "6b591d5fa3e76c3b95636986e07e45e15c7041749783a062bea1d7414cccfd8b"
+          "sha256": "7eba9f6bcbcb475e87125b02f3a2fe21a7bb12b2257100cdff43fb12d167708f"
+        },
+        {
+          "path": "aid-design/references/api.md",
+          "sha256": "7084eadc43c372bf51028c36700bc3d56fb8490444a16ef5ded88caea08a67ba"
+        },
+        {
+          "path": "aid-design/references/architecture.md",
+          "sha256": "46c808246dfbc04e74286f3c74093da830e577593e60a81d51716ca523bfd530"
+        },
+        {
+          "path": "aid-design/references/backlog.md",
+          "sha256": "c26b063ef7a162715403fb712514b4f757fd8a4c8bb9baeb137f473987db207e"
+        },
+        {
+          "path": "aid-design/references/cicd.md",
+          "sha256": "e3b2feb315b072dc4115acbd0830307c1e87120ad1bd7c7611dbe452f2267f9b"
+        },
+        {
+          "path": "aid-design/references/cli.md",
+          "sha256": "cac4c1e673f10ece623f2d512d956cf28056d93c610c075eb1260aeecb53c6f5"
+        },
+        {
+          "path": "aid-design/references/config.md",
+          "sha256": "56dac75a97a3fe6668a65bc6dd08019aff358507fbbda22713f960b6ea1da4e4"
+        },
+        {
+          "path": "aid-design/references/dashboard.md",
+          "sha256": "fa0c3b51e91f1b3f2da12433013413600258e083aa82f4c461a8b62efdedfef9"
+        },
+        {
+          "path": "aid-design/references/data-model.md",
+          "sha256": "d46a5dd36ff1ea0d4d1406e47204eaf556483461fefc6e41c1ff69bf2ddec271"
+        },
+        {
+          "path": "aid-design/references/data-pipeline.md",
+          "sha256": "36839f72e79a6a7b088a20a7e85c20dd8acd14f17a918d03ca30e917ff68459a"
+        },
+        {
+          "path": "aid-design/references/document.md",
+          "sha256": "77c365fb32bf3c81870520e59cbd003b77cd56c5cfc1ee8a020a17c5938bb642"
+        },
+        {
+          "path": "aid-design/references/infra.md",
+          "sha256": "77985d3c559c0790144c8a5941871b1524f9f1331d50c138ca2109bacec82308"
+        },
+        {
+          "path": "aid-design/references/integration.md",
+          "sha256": "427c62de2e9063a8b82f3026bacbf0bda4466dce65fba0e9935cb18008d26a65"
+        },
+        {
+          "path": "aid-design/references/job.md",
+          "sha256": "dcd49f40f502026e3940d6163808fe030578e404b0b6d17df9bc5721c6d1d2ef"
+        },
+        {
+          "path": "aid-design/references/messaging.md",
+          "sha256": "acd40830d8f3587067da1ec411198209942534085e0350b8c7df9bc42ae2fd6b"
+        },
+        {
+          "path": "aid-design/references/mvp.md",
+          "sha256": "d682397bed6ec6e3b501284dec1db29577bb8ff8e0ee9bf58b6810dc12bc558a"
+        },
+        {
+          "path": "aid-design/references/roadmap.md",
+          "sha256": "0128a41c7bbb8d95dd771a98b5e836acfd62f40b58cdc79f1e737d870644aa11"
+        },
+        {
+          "path": "aid-design/references/stack.md",
+          "sha256": "381b9f09d1017a99d9981598e5dde0741fed7a69997969f1ba11b23e0a77488e"
+        },
+        {
+          "path": "aid-design/references/test.md",
+          "sha256": "61db9f06f9042e859bbf3469807e00b32169bdd20c5f5ef034455427f7c2aeb8"
+        },
+        {
+          "path": "aid-design/references/testing-strategy.md",
+          "sha256": "ae8c6d79d243ca4044b48c522b5b2894f8909ea892e3c2750fd843a762a10e5e"
+        },
+        {
+          "path": "aid-design/references/theme.md",
+          "sha256": "870a90fce0f36f2b2ed5249238146276370f583ab9f8408b379d5289edaa7fa7"
+        },
+        {
+          "path": "aid-design/references/ui.md",
+          "sha256": "8d6e6664382bb33194164a798b03b68f54697dea7d0eee0baf3e01e9779c8687"
         },
         {
           "path": "aid-detail/SKILL.md",
@@ -431,36 +379,36 @@
           "sha256": "8e2a8fc9b907cba4b38214d3339a1d7f123e1d4fdc99da899590a7259cb3b623"
         },
         {
-          "path": "aid-document-architecture/SKILL.md",
-          "sha256": "302ceac264ca61af305de758fd60e828835d75960d5e13894e4fdfbfde550196"
-        },
-        {
-          "path": "aid-document-changelog/SKILL.md",
-          "sha256": "22dd1445e0215cf8cc5f97d53c58318c0a4c5106cace12346fa73409659ab4b0"
-        },
-        {
-          "path": "aid-document-decision/SKILL.md",
-          "sha256": "9da05daaadcf9529a34ff96da68818658888371a2b5d65eafe50ec22c6fc268c"
-        },
-        {
-          "path": "aid-document-guideline/SKILL.md",
-          "sha256": "19e8d0615c681972f20fd4c9e25bcc1c2eaec7272ad511ca0b5aad1e3672bb8f"
-        },
-        {
-          "path": "aid-document-runbook/SKILL.md",
-          "sha256": "8a37882e8ad3a8ce918a698074a70b30dea9c193fb7a9a72d682acf3b5c4f9e7"
-        },
-        {
-          "path": "aid-document-standard/SKILL.md",
-          "sha256": "1f3ce948b4f39e99a0f60d23d96472f57956119306ea9a007d912b6479cf63ed"
-        },
-        {
-          "path": "aid-document-tutorial/SKILL.md",
-          "sha256": "369fe8157a763d3c86a1a231dd72c7bef238a3f0e938f749b2c4f49656f9a5ad"
-        },
-        {
           "path": "aid-document/SKILL.md",
-          "sha256": "3deeb7425074c07dbfe7fea8323a3e19bf65838af24ba95c5173a04b80bd3131"
+          "sha256": "c44d34914776d7184520690fb84f72340ae549ca54673dbaa30461682a658eff"
+        },
+        {
+          "path": "aid-document/references/architecture.md",
+          "sha256": "040d652b5d4230394a308af149fa98210d9b193b22be82fa2d35eb9098461bfb"
+        },
+        {
+          "path": "aid-document/references/changelog.md",
+          "sha256": "b86f00013fac7105ab6236e1dbe6d57614bba35214035e04188829c60647f04b"
+        },
+        {
+          "path": "aid-document/references/decision.md",
+          "sha256": "68a583c81f5728ebdf96af044ef5c8370f51a9f4c37aa6f3ddaa3c222081f43a"
+        },
+        {
+          "path": "aid-document/references/guideline.md",
+          "sha256": "8d5dbaffea3f6ec0244cd6e27e6d2d1a1d8dce3d41f98313358bcb7089bbb295"
+        },
+        {
+          "path": "aid-document/references/runbook.md",
+          "sha256": "e3c5b0d9c10a11ae0b1e5549709378368a8b1c06ce6ccaa0c3d17c8e5f8ffcce"
+        },
+        {
+          "path": "aid-document/references/standard.md",
+          "sha256": "69509a6bf25de2d8e53d8939a908caad98594324840c88388eabc27c071c74f7"
+        },
+        {
+          "path": "aid-document/references/tutorial.md",
+          "sha256": "b17717a1e2f4b1da02bb8a22f8cc9dd78facf38d3b3892860e1d1b132b8589a0"
         },
         {
           "path": "aid-execute/SKILL.md",
@@ -571,12 +519,12 @@
           "sha256": "7434dc8320da1ea7fee7a7cd5199aa260b52801459be7706e0cb54f5ee18635c"
         },
         {
-          "path": "aid-prototype-ui/SKILL.md",
-          "sha256": "dd5111050d5ef12353ec2f5fd5662f50f00d963ac52a42c9ae50154e696dd9f2"
+          "path": "aid-prototype/SKILL.md",
+          "sha256": "8268eb3ec501b2991316242a2a7884cc4ed29251a6b165dac5ae3680e8c521ee"
         },
         {
-          "path": "aid-prototype/SKILL.md",
-          "sha256": "51eeea928025803942ecc6b341d20484d017ed187d781873e1d9af14a2d07538"
+          "path": "aid-prototype/references/ui.md",
+          "sha256": "5c338bea4fe7ffd4ae0d8cc7c54fcd4f0cd56f9015459d94bf667bad8e720b51"
         },
         {
           "path": "aid-read-ticket/SKILL.md",
@@ -592,11 +540,11 @@
         },
         {
           "path": "aid-report/SKILL.md",
-          "sha256": "417a280f35a09e5b2599a1c8764f1d38f8e31597b1a79e196c9b4adb9c481a56"
+          "sha256": "6589a7ba644bb8b130d61181af0db33fb44d176a4a679db6f1aba4810d4191cb"
         },
         {
           "path": "aid-research/SKILL.md",
-          "sha256": "6b226cfce4adf233d49039a0cedf3a220133085df17b304c080f3ffc6c0c8119"
+          "sha256": "7c38ec77030812cc55cdeb5a7755e99aa31d40e98bbe2f9d51ec18600d241bca"
         },
         {
           "path": "aid-review/SKILL.md",
@@ -699,24 +647,24 @@
           "sha256": "86788fc50c0eca9184e6191ea61288ed84fbb64f7c3cc5fbfaac6dabc571bddd"
         },
         {
-          "path": "aid-test-data-quality/SKILL.md",
-          "sha256": "2fab03c4ceea660580c784974968ef7b446551d494c11a7cb326f99fa1d1f598"
-        },
-        {
-          "path": "aid-test-performance/SKILL.md",
-          "sha256": "9f6972334ebff293e1b2f698beff0cd4a1f6f6871a9b96c8b22be41250ab16e3"
-        },
-        {
-          "path": "aid-test-security/SKILL.md",
-          "sha256": "f6806d2a2c2a09294b62189706d4dea70143f1330d44c92ee1e3b06c1137d8c1"
-        },
-        {
           "path": "aid-test/SKILL.md",
-          "sha256": "fac15931f2980dccedd10f50d7a126b999034c4dbe3d5024b4ae91d09ce294a6"
+          "sha256": "773b7c24a9180d2115bfdadaadbfc2ab518ccb7dd666245944447f6d0560c3bb"
+        },
+        {
+          "path": "aid-test/references/data-quality.md",
+          "sha256": "12b49d1d4df2504567faaaa80ab58d0103bea67c8cd646442cbcaec51c0e1093"
+        },
+        {
+          "path": "aid-test/references/performance.md",
+          "sha256": "e787953202664c46cb82d3d4bc997028786efc7a78ff7cb08bd91ed1b20e11a7"
+        },
+        {
+          "path": "aid-test/references/security.md",
+          "sha256": "5e770329c1c09f5eaf733f44abba0dfa4b38b5d84f7e720db2b13d80393e8b5c"
         },
         {
           "path": "aid-triage/SKILL.md",
-          "sha256": "765d7bd6e24eea0692e519fb5eb42737663ad04fa08030c9f5bab60e98d940f0"
+          "sha256": "204210a0f26d0e6274f2838898135a44d0dc6792d86cd10d5ad2d4e6b5f1ea49"
         },
         {
           "path": "aid-triage/references/state-classify.md",
@@ -724,63 +672,11 @@
         },
         {
           "path": "aid-triage/references/state-suggest.md",
-          "sha256": "956ef869392cc13ad2bcaea989d2724ab70d918312c61e0a781da705416eb322"
+          "sha256": "bc2809ca6065bdc73ae93aa1b393047f026ce3688f0fbeed29ba1a5f119fa024"
         },
         {
           "path": "aid-unset-connector/SKILL.md",
           "sha256": "7c2f37173b4b05d570eb429da9cba2478fcc0265eeb09e563308ee62eb786b21"
-        },
-        {
-          "path": "aid-update-api/SKILL.md",
-          "sha256": "95e85be5eee0e29823104f9e9da0599751fa70c108f392e743e250e44d766e55"
-        },
-        {
-          "path": "aid-update-architecture/SKILL.md",
-          "sha256": "408885042e24d403679d7353ed4e5fcf7318e5039c4bf066e1de376ca3fa409c"
-        },
-        {
-          "path": "aid-update-backlog/SKILL.md",
-          "sha256": "6acbc31847ce7f114726228e7ff36226a348fcac1d6cdc1a00bebb587e2822cb"
-        },
-        {
-          "path": "aid-update-cicd/SKILL.md",
-          "sha256": "38b27ab4be1fa6bf441c62e03fc4a3c480027589c9d319394fd742524e36b452"
-        },
-        {
-          "path": "aid-update-cli/SKILL.md",
-          "sha256": "a2ab1e417c2d9dd858cec53138d152cead77916459c0b6757059c1b4e772e9fc"
-        },
-        {
-          "path": "aid-update-config/SKILL.md",
-          "sha256": "b9cf0f3776734957ced5692fbe49e0620b50874af2d9a3725a4f482a09d44598"
-        },
-        {
-          "path": "aid-update-dashboard/SKILL.md",
-          "sha256": "1db0030fc52095942128d7cffc3b1452173b584b0d2610f3c477981c574bde2a"
-        },
-        {
-          "path": "aid-update-data-model/SKILL.md",
-          "sha256": "1942c947493b4478fda18d0db48bd4e312ceb520b1b93498f936e96d5b31b0a2"
-        },
-        {
-          "path": "aid-update-data-pipeline/SKILL.md",
-          "sha256": "aab34ac8dc896be1d8fc0fd35af9e0cc1d1e491d83156f6bc93eef00806eb023"
-        },
-        {
-          "path": "aid-update-document/SKILL.md",
-          "sha256": "df417e479b56d9efdd21858d2d7d38aeec6e03f5185cda190eb6db772b1717c0"
-        },
-        {
-          "path": "aid-update-infra/SKILL.md",
-          "sha256": "f51633ee094f3277cfb624c3676587ef6fd3d03a26c339c8e7df0192c9844e82"
-        },
-        {
-          "path": "aid-update-integration/SKILL.md",
-          "sha256": "b091cf2eb9b5759dd79769b6db7513110de95fb77f579069ef37243ee56f4db4"
-        },
-        {
-          "path": "aid-update-job/SKILL.md",
-          "sha256": "4c66da16cdd30db579de0b50ab50e999887d4eb35bcb88b145e24a09d3f092f3"
         },
         {
           "path": "aid-update-kb/SKILL.md",
@@ -815,44 +711,44 @@
           "sha256": "a7bf0f9e329600aa2d15bf10053fc4ab92b2ec10ee9892179b910f3de3b655ea"
         },
         {
-          "path": "aid-update-messaging/SKILL.md",
-          "sha256": "cf6bc3f249ce6f0e014e891fd16f6fcdfc9bdcf48ccfe11d39cbd12b4999ea59"
-        },
-        {
-          "path": "aid-update-mvp/SKILL.md",
-          "sha256": "9b17c936914abd64981182e32c26f3a7c1caff7e04ab1a2ae2ebd2537180c6a2"
-        },
-        {
-          "path": "aid-update-roadmap/SKILL.md",
-          "sha256": "08c4bef896d42540bf8e0cd7142ce57f2544efc95a0aa3203a1860597e180c12"
-        },
-        {
-          "path": "aid-update-stack/SKILL.md",
-          "sha256": "58843e1b67627fe055cd882387891bf7a78bfe1c64775b35894bca32ad1f8075"
-        },
-        {
-          "path": "aid-update-test/SKILL.md",
-          "sha256": "689076087ee043ca31dbf64326babea6f34a5059b484575de94eceb962da9385"
-        },
-        {
-          "path": "aid-update-testing-strategy/SKILL.md",
-          "sha256": "8d9c0bfc09bb6e553adc16a89b85c44a380827a4f73d25f10726a05abd131202"
-        },
-        {
-          "path": "aid-update-theme/SKILL.md",
-          "sha256": "dc05cb5f0c2f2421f8aeb62705c8b06a6c251fd4b019c6f3720eee9cbba1c3bd"
-        },
-        {
           "path": "aid-update-ticket/SKILL.md",
           "sha256": "ab8c9a418007c42fe8f62fa2556fefda4f3998591019690c25c6b308b64ee551"
         },
         {
-          "path": "aid-update-ui/SKILL.md",
-          "sha256": "f1131b9ebe0c98cf9ab0ffdc297471f01c34aa994e632e5d5f7255a042253727"
+          "path": "aid-update/SKILL.md",
+          "sha256": "b8b625d92760855d1f8b681a1fb24b6f86dccca84890ffe5ecabcd353e7e6575"
         },
         {
-          "path": "aid-update/SKILL.md",
-          "sha256": "323a268de64f32be68e6c7f0aff76f572c12fbbb57566a15327bf34739c13cf7"
+          "path": "aid-update/references/architecture.md",
+          "sha256": "0298f72d6b96633a7cc162b453b042ef91abe65eb1f77d3c922e9c398f30a43e"
+        },
+        {
+          "path": "aid-update/references/backlog.md",
+          "sha256": "1dab8d7e0ccd9245dfd024073d14408d7fd97a467d9046481a8b512ac39d771c"
+        },
+        {
+          "path": "aid-update/references/cicd.md",
+          "sha256": "3695e417e996e46d5cbc7caaa0893fa28174a579ffd6d81007d4b966e84423f0"
+        },
+        {
+          "path": "aid-update/references/document.md",
+          "sha256": "ec6541dc46bdfc7e527cb5adc55ed3f82bd48e69d9310874ceb4bccb7d0daac5"
+        },
+        {
+          "path": "aid-update/references/mvp.md",
+          "sha256": "ca76cf193faace655300aff061e8aeb2d73b27d2f30b28181e6b6d38ab0114c1"
+        },
+        {
+          "path": "aid-update/references/roadmap.md",
+          "sha256": "2b9854c4172a4fec6d526804ac9e5bf04699bacda00a44db5d6e508f5f31c130"
+        },
+        {
+          "path": "aid-update/references/stack.md",
+          "sha256": "3909e2517ede805a6ef13070b347ea4b534997eb521ba41fc511835efbf20478"
+        },
+        {
+          "path": "aid-update/references/testing-strategy.md",
+          "sha256": "0546716620df87ef3e8f21e4beab127051c081244ab2b68ac9820d7b976c0270"
         }
       ]
     },
@@ -1130,7 +1026,7 @@
         },
         {
           "path": "templates/design-lifecycle.md",
-          "sha256": "e48c796b1ee78c4fa1906542cb18d2c66f12526186288a58fe50422af98556fe"
+          "sha256": "01d668fafb428adc059f5c6b6bc9b77ca3a3ddc3ee61c9a983e2740d5444840c"
         },
         {
           "path": "templates/design-seed.md",
@@ -1354,39 +1250,39 @@
         },
         {
           "path": "templates/shortcut-catalog.yml",
-          "sha256": "c5a5f3e27e3ea0d3b4747a1b4a338942deecd3159ea92e4b28ec689944bfaf55"
+          "sha256": "ac221d77e53c9f6fef87869df3cccfd8cea07845ade1fb7023e95ce3c80d03aa"
         },
         {
           "path": "templates/shortcut-engine.md",
-          "sha256": "5753f486e66c6d1149a76304ac6c46ce1e2342baf90c215a7cf606893939079c"
+          "sha256": "71f1a20fb875de7d1151caaada4f570d5d2eb157632c71d59014f2ad9580acaa"
         },
         {
           "path": "templates/shortcut-scaffolding/analyze-report.md",
-          "sha256": "baa773749ea61d339d365911c15238950658378806e0a0e4c902840da2d3b6bc"
+          "sha256": "8908bf94cd6ac95870c4003d38f99214f600f0881e30bf0e049567b1119b1a54"
         },
         {
           "path": "templates/shortcut-scaffolding/change-refactor.md",
-          "sha256": "7fa24f99d18b9f76a3fb5f1b8323d6d6ed33b00847dbf0170554731c1ff55443"
+          "sha256": "3c7672eea80859047f354b7950ce648d551c4069cfee13d4664700d723f1d727"
         },
         {
           "path": "templates/shortcut-scaffolding/create.md",
-          "sha256": "2df2de90885f85d28b93c8ce1d67f3c5d36e45e59e043750b694e0642f574f80"
+          "sha256": "a8dce803b9c09c2edddde038f0159a23027fe2c1435c564e034b1f6994768302"
         },
         {
           "path": "templates/shortcut-scaffolding/document.md",
-          "sha256": "37007a48d9e98464d2eed695b3bbce6847e4cf41e0b949860ff5b458dc42f9b5"
+          "sha256": "9a5163d5579f00b85a9a1bcfb6a592fd3d75b2314bd1271697ca2064e8bb9a1b"
         },
         {
           "path": "templates/shortcut-scaffolding/fix.md",
-          "sha256": "8fcedae634e2ca04613c40fae14dfed2d7a09774b8d66f7ce7650e5df183c003"
+          "sha256": "f360ad1f8444a9eff0fed17b0ce2d07fdaa86e0fec8cf778335861464e072b57"
         },
         {
           "path": "templates/shortcut-scaffolding/prototype.md",
-          "sha256": "35f6d888681f271b0fda0368400fa8481b05ed9bb7c0f8f3087dc995035319e5"
+          "sha256": "29038dba1f94c59342dfefd7f1172e84aee0df44de522473ccd86d4d0d74c5eb"
         },
         {
           "path": "templates/shortcut-scaffolding/test-experiment.md",
-          "sha256": "5cca7d9d06966615fe35f98d867ce940b9ae9f89522e7a255a03c7823564e11d"
+          "sha256": "30dde0c12e21c09166c2b28d202151af4148aec420575ba477ad414a110c8cbf"
         },
         {
           "path": "templates/specs/technical-specification-template.md",
@@ -1410,11 +1306,11 @@
         },
         {
           "path": "templates/work-initiation-gate.md",
-          "sha256": "d68e1b818da77264eb6ca8838f4a0907c287f4a24af112a271e82a3a9fbdde8c"
+          "sha256": "027eed85a8714d99392c82207f6cd9a38b4717167b169288d95a3bddf0c6110f"
         },
         {
           "path": "templates/work-state-template.yml",
-          "sha256": "1364b66543ac971ea3fb125e38b66cdc28bfc65aae074fe19bb1dec88be5a927"
+          "sha256": "23df1e5a9d0e1a5c342a1a35639949d507325f03a683b0e57626dbcdb0cdfe45"
         },
         {
           "path": "templates/worktree-lifecycle.md",

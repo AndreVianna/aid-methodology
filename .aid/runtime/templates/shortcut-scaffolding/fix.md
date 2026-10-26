@@ -78,8 +78,8 @@ type per task always holds (`artifact-schemas.md § Task DETAIL.md`).
 |---|---|---|---|
 | `defect` (default) | base `Feature Flow` | reproduce -> root-cause -> patch, as above | fails pre-fix / passes post-fix, as above |
 | `regression` | base + a note identifying the regressing change | reproduction is **pinned to the regressing commit/change** (name it in Scope) so the root-cause search starts from the actual delta, not from scratch | same fail/pass contract, additionally anchored to "did not fail before {regressing change}" |
-| `vulnerability` | `### Security Specs` activated | patches the vulnerability (the `fix-security` shape) | proves the **exploit path is closed**, not just that the symptom disappeared; a deep SAST/DAST scan or dependency audit is **out of this task's scope** -- route that to `aid-test-security` (Ownership boundary below), do not fold it into `task-002` |
-| `incident` | base `Feature Flow` (no new section) | the mitigation code/config stays in `aid-fix`'s own `task-001` | same fail/pass contract for the mitigation; the **postmortem / runbook document is a separate deliverable** -- route it to `aid-document-runbook` (Ownership boundary below), never authored as a task here |
+| `vulnerability` | `### Security Specs` activated | patches the vulnerability (the `fix-security` shape) | proves the **exploit path is closed**, not just that the symptom disappeared; a deep SAST/DAST scan or dependency audit is **out of this task's scope** -- route that to `aid-test security` (Ownership boundary below), do not fold it into `task-002` |
+| `incident` | base `Feature Flow` (no new section) | the mitigation code/config stays in `aid-fix`'s own `task-001` | same fail/pass contract for the mitigation; the **postmortem / runbook document is a separate deliverable** -- route it to `aid-document runbook` (Ownership boundary below), never authored as a task here |
 
 ## Ownership boundary
 
@@ -92,9 +92,9 @@ route elsewhere; do not fold them into this shortcut's task set:
 | Broad test-authoring not scoped to *this* defect | `aid-test` | `aid-fix`'s own `task-002` is coverage scoped narrowly to proving this one defect closed, not general test authoring |
 | New behavior / intent (not a defect) | `aid-update` | not corrective -- a defect is "the code violates its own spec/intent"; new intent is a change |
 | Behavior-preserving cleanup | `aid-refactor` | no observable defect being corrected |
-| Security **verification** (SAST/DAST/fuzz/dependency audit) beyond the one exploit path `task-002` closes | `aid-test-security` | deep security verification is its own specialized activity, not a regression test |
-| Incident **postmortem / runbook** | `aid-document-runbook` | documentation-of-the-incident is a DOCUMENT-typed deliverable, distinct from the IMPLEMENT mitigation |
-| Infra provisioning to close an incident | `aid-update-infra` | infrastructure change, not application-level correction |
+| Security **verification** (SAST/DAST/fuzz/dependency audit) beyond the one exploit path `task-002` closes | `aid-test security` | deep security verification is its own specialized activity, not a regression test |
+| Incident **postmortem / runbook** | `aid-document runbook` | documentation-of-the-incident is a DOCUMENT-typed deliverable, distinct from the IMPLEMENT mitigation |
+| Infra provisioning to close an incident | `aid-update infra` | infrastructure change, not application-level correction |
 
 `aid-fix` itself performs the security **remediation** (the vulnerability
 patch) and the incident **mitigation** (the code/config fix) -- only the

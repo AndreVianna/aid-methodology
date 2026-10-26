@@ -15,8 +15,8 @@ decide -- but its subject is *data* (a dataset, logs, telemetry, metrics, an A/B
 rather than an open question.
 
 - **Boundary:** `aid-report` = a **one-time** analysis + insight. A **durable, refreshable**
-  BI view is `/aid-create-dashboard`, not this. If the user wants the analysis to recur,
-  that's a printed handoff to `/aid-create-dashboard`.
+  BI view is `/aid-create dashboard`, not this. If the user wants the analysis to recur,
+  that's a printed handoff to `/aid-create dashboard`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -> HANDOFF?
@@ -97,8 +97,8 @@ conflicts with reasons, and gaps. Assert no resolution.
 
 ## State: HANDOFF  (optional; printed suggestions only)
 
-Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
-a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
+Printed suggestions the user may act on: make it recurring (`/aid-create dashboard`), record
+a decision (`/aid-document decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 Never auto-invoked; never a resolution.
 
@@ -137,5 +137,5 @@ work folder (`REPORT.md`, the verify ledger) as the audit record.
 - **Two-tier grounding, enforced**; data<->KB conflicts surfaced with reasons.
 - **Caveats are mandatory** -- a metric/A-B conclusion without its caveat fails VERIFY.
 - **Clean context**; **verification always a sub-agent** (`aid-reviewer`).
-- **Boundary:** durable/refreshable dashboards are `/aid-create-dashboard`, not this.
+- **Boundary:** durable/refreshable dashboards are `/aid-create dashboard`, not this.
 - **Tracking:** write STATE `lifecycle` at every transition.

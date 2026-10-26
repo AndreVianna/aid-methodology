@@ -84,7 +84,7 @@ reference rather than duplicating -- edit artifact specifics here, once.
 | `theme` | `task-001` IMPLEMENT (define tokens + apply; note a visual-regression check if the KB's test-landscape names one) |
 | `cli` | `task-001` IMPLEMENT (register + wire), `task-002` TEST |
 | `data-model` | `task-001` MIGRATE (schema + migration), `task-002` IMPLEMENT (repo/model wiring), `task-003` TEST |
-| `data-pipeline` | `task-001` IMPLEMENT (pipeline), `task-002` TEST (a deep data-quality need routes to `aid-test-data-quality` instead of expanding this task) |
+| `data-pipeline` | `task-001` IMPLEMENT (pipeline), `task-002` TEST (a deep data-quality need routes to `aid-test data-quality` instead of expanding this task) |
 | `messaging` | `task-001` IMPLEMENT (schema + emit), `task-002` TEST |
 | `integration` | `task-001` IMPLEMENT (client/adapter), `task-002` TEST (integration, stub/sandbox) |
 | `job` | `task-001` IMPLEMENT (job + schedule), `task-002` TEST |
@@ -101,13 +101,13 @@ DETAIL's `## Execution Graph` places each in its own wave.
 
 Bare `aid-create` owns **internal code** (module/interface/type/member -- no
 `-code` suffix, which would collide with the bare verb). **Authoring test code
-IS this family** -- the `test` artifact (`aid-create-test` / `aid-update-test`,
+IS this family** -- the `test` artifact (`aid-create test` / `aid-update test`,
 work-005): committed test code, keep-cycle, executed by `aid-developer`. What
 does **not** belong to create: **running tests / verification -> `aid-test`**
 (+ its `security`/`performance`/`data-quality` kind-siblings; a hand-authored
 collapse, work-005), **experiment -> `aid-experiment`**, **doc/content ->
-`aid-create-document`**, **report -> `aid-report`**, **dashboard ->
-`aid-create-dashboard`**. A create work for a non-test artifact still emits its
+`aid-create document`**, **report -> `aid-report`**, **dashboard ->
+`aid-create dashboard`**. A create work for a non-test artifact still emits its
 own `TEST` task for the artifact it builds (coverage of the new artifact, not a
 standalone test-authoring request). Modifying an **existing** artifact is
 `aid-update` (`shortcut-scaffolding/change-refactor.md`), not create.

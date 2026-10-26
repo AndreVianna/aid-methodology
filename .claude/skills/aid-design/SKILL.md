@@ -1,23 +1,26 @@
 ---
 name: aid-design
 description: >
-  Design anything without its own design skill (UX flow, component, interface). Use while
-  its shape is open.
+  Design something as a kept seed: API, UI, data model, architecture, roadmap and more.
+  Use while its shape is open.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
-argument-hint: "<subject> -- what to design (a flow, a component/interface, a UI; use a dedicated /aid-design-<artifact> row when one exists)"
+argument-hint: "[kind] <subject> -- kind: api, architecture, backlog, cicd, cli, config, dashboard, data-model, data-pipeline, document, infra, integration, job, messaging, mvp, roadmap, stack, test, testing-strategy, theme, ui; or any other subject"
 ---
 
 # Design (produce a kept design, resolve nothing)
+
+**Kinds.** When the argument starts with one of these kinds, read `references/<kind>.md` in this skill's folder and follow it
+with the rest of the argument instead of the steps below: `api`, `architecture`, `backlog`, `cicd`, `cli`, `config`, `dashboard`, `data-model`, `data-pipeline`, `document`, `infra`, `integration`, `job`, `messaging`, `mvp`, `roadmap`, `stack`, `test`, `testing-strategy`, `theme`, `ui`.
 
 `/aid-design` produces a **design artifact meant to be kept and built** -- distinct from
 `/aid-prototype`, whose model is throwaway and only validates a direction. Pin the
 distinction: **prototype = throwaway, to *validate*; design = kept, to *inform the build*.**
 It fills the DESIGN lite gap (DESIGN is a task type, but there was no lite entry point).
 
-- **Boundary vs `/aid-create-document`:** `aid-design` *produces the design*
+- **Boundary vs `/aid-create document`:** `aid-design` *produces the design*
   (`aid-architect`, DESIGN); `aid-document` *writes documentation about* something
   (`aid-tech-writer`, DOCUMENT). A design needing a formal written spec -> print a handoff
-  to `/aid-create-document`.
+  to `/aid-create document`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> HANDOFF? ->
@@ -87,7 +90,7 @@ the user decides whether/when to build it.
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
-capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
+capture it as a formal doc (`/aid-create document`). Never auto-invoked; never a resolution.
 
 **Advance:** DONE.
 

@@ -1,7 +1,7 @@
 # Shortcut Scaffolding: prototype
 
 Scaffolding reference for the **`prototype`** family (bare `aid-prototype` plus the
-`ui` kind-sibling `aid-prototype-ui`). `prototype` is a hand-authored collapse skill;
+`ui` kind-sibling `aid-prototype ui`). `prototype` is a hand-authored collapse skill;
 this file is **not read by the shared engine** -- the hand-authored `aid-prototype`
 body reads it for the per-slot capture / detail
 guidance below. Neither row carries an alias (feature-005 SPEC "Catalog rows owned" -- 2
@@ -49,7 +49,7 @@ The `aid-prototype` collapse body builds, in its BUILD state (it emits no tasks)
 The runnable spike is **never a production build** (see Ownership boundary below); it exists
 only to observe the direction's own success signal.
 
-## `aid-prototype-ui` -- CAPTURE
+## `aid-prototype ui` -- CAPTURE
 
 | Slot | Notes |
 |---|---|
@@ -61,13 +61,13 @@ only to observe the direction's own success signal.
 **Escalation.** Same rule: escalate only when the target screen(s)/flow cannot be made
 concrete from `{description}` + KB context.
 
-## `aid-prototype-ui` -- structure (no technical specification)
+## `aid-prototype ui` -- structure (no technical specification)
 
 A ui prototype likewise emits no spec document: the **interaction flow** (states,
 transitions) and **accessibility notes** (`task-type-rules.md ## DESIGN`) are part of the
 wireframe/mock the collapse produces (no schema change), not a `##### UI Specs` subsection.
 
-## `aid-prototype-ui` -- what the collapse builds
+## `aid-prototype ui` -- what the collapse builds
 
 For a ui prototype the collapse builds a **wireframe/mock of `{screens}` + interaction flow**
 (states, transitions, a11y notes), and **optionally a clickable flow prototype** -- all

@@ -22,7 +22,7 @@ four bound values before the state machine below starts:
 
 | Value | Source | Notes |
 |---|---|---|
-| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup and the `STATE.yml` Active Skill field |
+| `{name}` | the catalog row: the doorway's own name, or the kind row `aid-<verb>-<kind>` when the argument starts with a kind (e.g. `/aid-create api ...` binds `aid-create-api`) | used for the catalog lookup and the `STATE.yml` Active Skill field |
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
@@ -338,7 +338,7 @@ block_artifact: --
 
 (`pipeline.path` is always `lite` for this engine -- it only ever produces the
 flattened, single-delivery, no-`deliveries/`-wrapper shape; `pipeline.initiator` is the
-invoking doorway's own skill name, e.g. `aid-create-api`.) The flattened-only
+bound `{name}`, e.g. `aid-create-api`.) The flattened-only
 `delivery_state`/`gate_tier`/`gate_grade`/`gate_timestamp` group keeps its template
 placeholder text until PLAN/DETAIL (`delivery_state`) and the GATE state
 (`gate_tier`/`gate_grade`/`gate_timestamp`) fill it for real.
@@ -936,7 +936,7 @@ strategy asserts both).
 
 ---
 
-## Worked example: `aid-create-api`
+## Worked example: `/aid-create api`
 
 - Invocation binds `{name}=aid-create-api`, `{verb}=create`, `{artifact}=api`,
   `{description}="a /orders read endpoint with pagination"`.
@@ -958,6 +958,6 @@ strategy asserts both).
 |---|---|
 | `aid-fix` (no description) | CAPTURE Step 1 asks one bootstrapping question; `work-NNN-fix` slug is provisional until answered |
 | `aid-fix` with a full bug description | Zero inline questions; `REQUIREMENTS.md` fully terse-filled; a single IMPLEMENT task (no `fix.md` landed yet) or the `fix.md` IMPLEMENT -> TEST pair (once task-013 lands) |
-| `aid-create-data-model` with a full description | the feature section activates `##### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
+| `/aid-create data-model` with a full description | the feature section activates `##### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
 | Catalog row missing for the invoking `{name}` | INTAKE STOPs with the build-defect error; no work folder allocated |
 | Any shortcut, any family state landed or not | `tasks/task-NNN/DETAIL.md` never has a sibling `STATE.yml`; the flat `tasks_lifecycle` mapping is the only mutable-state home |

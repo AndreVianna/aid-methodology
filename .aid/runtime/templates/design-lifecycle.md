@@ -152,9 +152,9 @@ above authorizes a different set.
 | Region identity | the literal heading `## MVP`, matched exactly |
 | Region extent | from that heading to the next heading of level 2 or shallower, or EOF — deeper subsections belong to the region |
 | Position when created | immediately after the `## Contents` block, before the first content section — not "before the first other `##`", which would break KB layout order. The exact anchor is feature-003's to place |
-| Who may create the region | `/aid-create-mvp` and `/aid-update-mvp` only |
-| Who may create the document | `/aid-create-roadmap` only — this destination's instance of the region-owning-skill rule above |
-| Minimum document shape | Whatever `/aid-create-roadmap` defines for `roadmap.md`, which must place `## MVP` per the two rows above — no template exists, so the shape is feature-003's to set |
+| Who may create the region | `/aid-create mvp` and `/aid-update mvp` only |
+| Who may create the document | `/aid-create roadmap` only — this destination's instance of the region-owning-skill rule above |
+| Minimum document shape | Whatever `/aid-create roadmap` defines for `roadmap.md`, which must place `## MVP` per the two rows above — no template exists, so the shape is feature-003's to set |
 | Write discipline | read the whole file, replace only the owned byte range, write back with every other region byte-identical. Never regenerate |
 
 ---

@@ -11,7 +11,7 @@ argument-hint: "[description]  -- what you want to do; I'll point you at the rig
 
 For the "I don't know which path or skill fits" case. Takes a short free-form
 description and suggests where to go next -- a specific direct-entry shortcut
-(`/aid-fix`, `/aid-create-api`, ...) for a known, single change, or the full
+(`/aid-fix`, `/aid-create api`, ...) for a known, single change, or the full
 path (`/aid-describe`) for anything broad, multi-activity, or ambiguous.
 
 This skill is largely the **extraction** of `/aid-describe`'s former TRIAGE
