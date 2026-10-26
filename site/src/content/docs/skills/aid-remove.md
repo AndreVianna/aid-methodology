@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-remove/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-remove
-- **`description`** — Remove code, a feature or a dependency and its uses. Use when the target is known; plans only.
+- **`description`** — Remove code, a feature or a dependency and its uses. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to remove; runs straight to a graded flattened Lite work
 

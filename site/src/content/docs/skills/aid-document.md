@@ -1,6 +1,6 @@
 ---
 title: 'aid-document'
-description: 'Write a how-to, reference, explanation or status report in one pass.'
+description: 'Write a how-to, reference, explanation or status report, outside the KB.'
 generatedFrom: 'canonical/skills/aid-document/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-document/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-document
-- **`description`** — Write a how-to, reference, explanation or status report in one pass. Use when no named genre fits.
+- **`description`** — Write a how-to, reference, explanation or status report, outside the KB. Use when no named genre fits.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- what to document
 

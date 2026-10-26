@@ -1,7 +1,6 @@
 ---
 title: 'aid-config'
-description: 'View or change AID settings such as project name, type or minimum grade.
-'
+description: 'View or change AID settings such as project name, type or minimum grade.'
 generatedFrom: 'canonical/skills/aid-config/SKILL.md'
 ---
 

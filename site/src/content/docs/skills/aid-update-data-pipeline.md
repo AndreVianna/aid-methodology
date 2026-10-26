@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-data-pipeline/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-data-pipeline
-- **`description`** — Update an existing data pipeline. Use when the target is known; plans only.
+- **`description`** — Update an existing data pipeline. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to update; runs straight to a graded flattened Lite work
 

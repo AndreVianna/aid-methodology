@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-testing-strategy'
-description: 'Write the testing-strategy documents (test landscape, merge gates) from a ready seed.'
+description: 'Write the testing-strategy KB documents (test landscape, merge gates) from a ready seed.'
 generatedFrom: 'canonical/skills/aid-create-testing-strategy/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-testing-strategy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-testing-strategy
-- **`description`** — Write the testing-strategy documents (test landscape, merge gates) from a ready seed. Use when none exist.
+- **`description`** — Write the testing-strategy KB documents (test landscape, merge gates) from a ready seed. Use when none exist.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the testing-strategy seed to realize
 

@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-test/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-test
-- **`description`** — Update or extend existing tests. Use when the target is known; plans only.
+- **`description`** — Update or extend existing tests. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to update; runs straight to a graded flattened Lite work
 

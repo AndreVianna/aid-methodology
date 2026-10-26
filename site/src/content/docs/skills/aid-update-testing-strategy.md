@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-testing-strategy'
-description: 'Revise the testing-strategy documents.'
+description: 'Revise the testing-strategy KB documents.'
 generatedFrom: 'canonical/skills/aid-update-testing-strategy/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-testing-strategy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-testing-strategy
-- **`description`** — Revise the testing-strategy documents. Use when a test lane or merge gate changed.
+- **`description`** — Revise the testing-strategy KB documents. Use when a test lane or merge gate changed.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the testing strategy or the gate policy
 

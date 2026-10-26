@@ -68,12 +68,12 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 - [`aid-create-roadmap`](/skills/aid-create-roadmap/) — Write roadmap.md from a ready seed.
 - [`aid-create-backlog`](/skills/aid-create-backlog/) — Write backlog.md from a ready seed.
 - [`aid-create-mvp`](/skills/aid-create-mvp/) — Write the MVP section of roadmap.md from a ready seed.
-- [`aid-create-architecture`](/skills/aid-create-architecture/) — Write the architecture document from a ready seed.
-- [`aid-create-stack`](/skills/aid-create-stack/) — Write the technology-stack document from a ready seed.
-- [`aid-create-testing-strategy`](/skills/aid-create-testing-strategy/) — Write the testing-strategy documents (test landscape, merge gates) from a ready seed.
-- [`aid-create-cicd`](/skills/aid-create-cicd/) — Write the CI/CD (shipping) document from a ready seed.
+- [`aid-create-architecture`](/skills/aid-create-architecture/) — Write the architecture KB document from a ready seed.
+- [`aid-create-stack`](/skills/aid-create-stack/) — Write the technology-stack KB document from a ready seed.
+- [`aid-create-testing-strategy`](/skills/aid-create-testing-strategy/) — Write the testing-strategy KB documents (test landscape, merge gates) from a ready seed.
+- [`aid-create-cicd`](/skills/aid-create-cicd/) — Write the CI/CD (shipping) KB document from a ready seed.
 - [`aid-create-test`](/skills/aid-create-test/) — Write new tests, each tracing to an acceptance criterion.
-- [`aid-create-document`](/skills/aid-create-document/) — Write any document in one pass, choosing its format and structure.
+- [`aid-create-document`](/skills/aid-create-document/) — Write any non-KB document in one pass, choosing its format and structure.
 - [`aid-create-diagram`](/skills/aid-create-diagram/) — Draw a diagram (flowchart, sequence, ER, C4) in one pass.
 - [`aid-create-dashboard`](/skills/aid-create-dashboard/) — Build a durable dashboard or BI view.
 
@@ -94,12 +94,12 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 - [`aid-update-job`](/skills/aid-update-job/) — Update an existing scheduled or background job.
 - [`aid-update-config`](/skills/aid-update-config/) — Update an existing configuration option or feature flag.
 - [`aid-update-infra`](/skills/aid-update-infra/) — Update an existing infrastructure resource.
-- [`aid-update-architecture`](/skills/aid-update-architecture/) — Revise the architecture document.
-- [`aid-update-stack`](/skills/aid-update-stack/) — Revise the technology-stack document.
-- [`aid-update-testing-strategy`](/skills/aid-update-testing-strategy/) — Revise the testing-strategy documents.
-- [`aid-update-cicd`](/skills/aid-update-cicd/) — Revise the CI/CD (shipping) document.
+- [`aid-update-architecture`](/skills/aid-update-architecture/) — Revise the architecture KB document.
+- [`aid-update-stack`](/skills/aid-update-stack/) — Revise the technology-stack KB document.
+- [`aid-update-testing-strategy`](/skills/aid-update-testing-strategy/) — Revise the testing-strategy KB documents.
+- [`aid-update-cicd`](/skills/aid-update-cicd/) — Revise the CI/CD (shipping) KB document.
 - [`aid-update-test`](/skills/aid-update-test/) — Update or extend existing tests.
-- [`aid-update-document`](/skills/aid-update-document/) — Revise or extend an existing document against the current source.
+- [`aid-update-document`](/skills/aid-update-document/) — Revise or extend an existing non-KB document against the current source.
 - [`aid-update-dashboard`](/skills/aid-update-dashboard/) — Update an existing dashboard or BI view.
 
 ### `refactor`
@@ -165,7 +165,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `document`
 
-- [`aid-document`](/skills/aid-document/) — Write a how-to, reference, explanation or status report in one pass.
+- [`aid-document`](/skills/aid-document/) — Write a how-to, reference, explanation or status report, outside the KB.
 - [`aid-document-decision`](/skills/aid-document-decision/) — Write an ADR (decision record) in one pass.
 - [`aid-document-architecture`](/skills/aid-document-architecture/) — Write an architecture write-up (C4 or arc42) in one pass.
 - [`aid-document-guideline`](/skills/aid-document-guideline/) — Write a guideline (advisory practice) in one pass.

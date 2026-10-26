@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-architecture'
-description: 'Write the architecture document from a ready seed.'
+description: 'Write the architecture KB document from a ready seed.'
 generatedFrom: 'canonical/skills/aid-create-architecture/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-architecture/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-architecture
-- **`description`** — Write the architecture document from a ready seed. Use when a seed exists and the document does not.
+- **`description`** — Write the architecture KB document from a ready seed. Use when the seed exists and the document does not.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the architecture seed to realize
 

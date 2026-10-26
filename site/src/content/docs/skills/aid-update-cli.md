@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-cli/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-cli
-- **`description`** — Update an existing CLI command. Use when the target is known; plans only.
+- **`description`** — Update an existing CLI command. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to update; runs straight to a graded flattened Lite work
 

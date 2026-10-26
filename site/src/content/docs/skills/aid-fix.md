@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-fix/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-fix
-- **`description`** — Diagnose and correct a defect or regression. Use when the target is known; plans only.
+- **`description`** — Diagnose and correct a defect or regression. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to fix; runs straight to a graded flattened Lite work
 

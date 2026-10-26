@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-cicd'
-description: 'Revise the CI/CD (shipping) document.'
+description: 'Revise the CI/CD (shipping) KB document.'
 generatedFrom: 'canonical/skills/aid-update-cicd/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-cicd/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-cicd
-- **`description`** — Revise the CI/CD (shipping) document. Use when stages, triggers or environments changed.
+- **`description`** — Revise the CI/CD (shipping) KB document. Use when stages, triggers or environments changed.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the delivery-pipeline record
 
@@ -48,7 +48,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L31-L52" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L32-L53" wrap
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
@@ -73,11 +73,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L31-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L31-L52) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L31-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L31-L54)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L32-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L32-L53) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L32-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L32-L55)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L58-L68" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L59-L69" wrap
 ## State: UPDATE
 
 1. **Apply only the change the user named in this run**, to the owned C8 content, per the
@@ -91,22 +91,22 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **`source: generated` refuses.** A registered build script owns that content.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L58-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L58-L68) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L58-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L58-L70)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L59-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L59-L69) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L59-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L59-L71)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L74-L77" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L75-L78" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L74-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L74-L77) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L74-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L74-L79)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L75-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L75-L78) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L75-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L75-L80)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L83-L87" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L84-L88" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was
@@ -114,4 +114,4 @@ touched and that it was asked for, name every output touched, and assert that a 
 is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L83-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L83-L87) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L83-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L83-L89)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L84-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L84-L88) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L84-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L84-L90)

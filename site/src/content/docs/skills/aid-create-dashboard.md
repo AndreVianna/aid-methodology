@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-dashboard/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-dashboard
-- **`description`** — Build a durable dashboard or BI view. Use when the target is known; plans only.
+- **`description`** — Build a durable dashboard or BI view. Plans the work; /aid-execute builds it.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to create; runs straight to a graded flattened Lite work
 

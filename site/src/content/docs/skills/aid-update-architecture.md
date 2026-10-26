@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-architecture'
-description: 'Revise the architecture document.'
+description: 'Revise the architecture KB document.'
 generatedFrom: 'canonical/skills/aid-update-architecture/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-architecture/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-architecture
-- **`description`** — Revise the architecture document. Use when it exists and part of it changed.
+- **`description`** — Revise the architecture KB document. Use when it exists and part of it changed.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the architecture record
 

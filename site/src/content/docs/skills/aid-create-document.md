@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-document'
-description: 'Write any document in one pass, choosing its format and structure.'
+description: 'Write any non-KB document in one pass, choosing its format and structure.'
 generatedFrom: 'canonical/skills/aid-create-document/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-document/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-document
-- **`description`** — Write any document in one pass, choosing its format and structure. Use when you need one now.
+- **`description`** — Write any non-KB document in one pass, choosing its format and structure. Use when you need one now.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)
 
