@@ -19,7 +19,7 @@
 // All mutation tests use the mutator at .aid/.temp/mutate.py.
 //
 // Notes:
-// - Real skills (aid-review, aid-create-api) are used to verify integration with
+// - Real skills (aid-review, aid-create) are used to verify integration with
 //   the live corpus (verifyProvenance passes clean, section emitted).
 // - Testing seams opts._memo, opts._buildFlowChart, opts._renderFragmentList allow
 //   call counting and render-before-verify proof without needing filesystem fakes.
@@ -216,7 +216,7 @@ describe('buildFlowChart memoisation (AC-3) — asserted by call count', () => {
     const renderFn = () => '## Source fragments\n\n';
 
     provenanceAppender.render(makeSkill('aid-review'), { _memo: memo, _buildFlowChart: build, _renderFragmentList: renderFn });
-    provenanceAppender.render(makeSkill('aid-create-api'), { _memo: memo, _buildFlowChart: build, _renderFragmentList: renderFn });
+    provenanceAppender.render(makeSkill('aid-create'), { _memo: memo, _buildFlowChart: build, _renderFragmentList: renderFn });
 
     expect(calls.n).toBe(2);
   });
@@ -307,8 +307,8 @@ describe('unconditional emission — no skip path (AC-4)', () => {
     expect(result).toContain('## Source fragments');
   });
 
-  it('emits ## Source fragments for a doorway skill (aid-create-api)', () => {
-    const result = provenanceAppender.render(makeSkill('aid-create-api'));
+  it('emits ## Source fragments for a doorway skill (aid-create)', () => {
+    const result = provenanceAppender.render(makeSkill('aid-create'));
     expect(result).toContain('## Source fragments');
   });
 
@@ -324,8 +324,8 @@ describe('unconditional emission — no skip path (AC-4)', () => {
     expect(result.length).toBeGreaterThan(0);
   });
 
-  it('returns a string for aid-create-api', () => {
-    const result = provenanceAppender.render(makeSkill('aid-create-api'));
+  it('returns a string for aid-create', () => {
+    const result = provenanceAppender.render(makeSkill('aid-create'));
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
   });

@@ -1,13 +1,16 @@
 ---
 name: aid-prototype
 description: >
-  Build a throwaway low-fidelity model to test a direction. Use before committing to a
+  Build a throwaway low-fidelity model, such as a UI, to test a direction. Use before a
   full build.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
-argument-hint: "<direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)"
+argument-hint: "[kind] <direction> -- kind: ui; or any direction (optionally: fidelity paper|low-fi|runnable-spike)"
 ---
 
 # Prototype (validate a direction, throwaway)
+
+**Kinds.** When the argument starts with one of these kinds, read `references/<kind>.md` in this skill's folder and follow it
+with the rest of the argument instead of the steps below: `ui`.
 
 `/aid-prototype` builds a **throwaway** model **now** to de-risk a direction, captures the
 validation signal, presents it, and hands the real build off. It **resolves nothing** and

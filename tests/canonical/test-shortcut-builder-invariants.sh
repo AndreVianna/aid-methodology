@@ -354,12 +354,14 @@ echo ""
 echo "=== SBI05: two-process idempotence + --check, hermetic, against the copied tree ==="
 
 # Derive the expected counts from the COPIED catalogue -- no literal anywhere.
+# Kind rows (`kind_of`) own no directory, so they are neither emitted nor counted as skipped.
 mapfile -t EMITTING < <(awk '
-  /^  - name: / { if (n != "") { if (!r) print n } ; n = $3; r = 0 }
+  /^  - name: / { if (n != "") { if (!r && !k) print n } ; n = $3; r = 0; k = 0 }
   /^    repurpose: true/ { r = 1 }
-  END { if (n != "" && !r) print n }
+  /^    kind_of:/ { k = 1 }
+  END { if (n != "" && !r && !k) print n }
 ' "$SANDBOX_CATALOG" | LC_ALL=C sort)
-TOTAL_ROWS=$(grep -c '^  - name: ' "$SANDBOX_CATALOG")
+TOTAL_ROWS=$(( $(grep -c '^  - name: ' "$SANDBOX_CATALOG") - $(grep -c '^    kind_of:' "$SANDBOX_CATALOG") ))
 EXPECTED_N=${#EMITTING[@]}
 REPURPOSE_N=$((TOTAL_ROWS - EXPECTED_N))
 log "derived from the copied catalogue: rows=${TOTAL_ROWS} emitting=${EXPECTED_N} repurpose=${REPURPOSE_N}"

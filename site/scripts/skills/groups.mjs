@@ -128,8 +128,8 @@ export const CURATED_GROUPS = [
  *
  * Returns only after all four pass, so no downstream renderer needs a defensive branch.
  *
- * Family order = catalog first-appearance order, derived by walking catalog.rows
- * in file order, skipping curated names, and appending each newly-seen verb to an
+ * Family order = catalog first-appearance order, derived by walking the family rows
+ * (no `kind_of`) in file order, skipping curated names, and appending each newly-seen verb to an
  * ordered array. A verb whose every member is curated produces no section at all.
  *
  * Card order within a family = catalog row order (canonical before aliases).
@@ -211,10 +211,15 @@ export function assignGroups(records, catalog) {
     }
   }
 
+  // Only family rows own a directory; a kind row (`kind_of`) is invoked through its
+  // family skill, so it neither backs a directory nor gets a card of its own.
+  const familyRows = catalog.rows.filter((r) => !r.kind_of);
+  const familyNames = new Set(familyRows.map((r) => r.name));
+
   // ── Guard: unassignable skill (the clamp) ────────────────────────────────
-  // Every on-disk directory must be either curated or catalog-backed.
+  // Every on-disk directory must be either curated or backed by a family row.
   for (const name of onDiskNames) {
-    if (!curatedGroup.has(name) && !catalog.byName.has(name)) {
+    if (!curatedGroup.has(name) && !familyNames.has(name)) {
       throw new Error(
         '[gen-skills] unassignable skill: "' + name + '" is neither in CURATED_GROUPS nor in the shortcut catalog'
       );
@@ -243,7 +248,7 @@ export function assignGroups(records, catalog) {
     return { name: r.dirName, route: r.route, intent: skillSummary(r) };
   }
 
-  // ── Build family order by walking catalog.rows in file order ──────────────
+  // ── Build family order by walking the family rows in file order ───────────
   // Skipping curated names; appending each newly-seen verb to an ordered array.
   // A verb whose every member is curated therefore produces no empty section.
   /** @type {string[]} — ordered array of verbs, first-appearance order */
@@ -253,7 +258,7 @@ export function assignGroups(records, catalog) {
   /** @type {Map<string, SkillCard[]>} verb → cards in catalog row order */
   const familyCards = new Map();
 
-  for (const row of catalog.rows) {
+  for (const row of familyRows) {
     if (curatedGroup.has(row.name)) continue; // skip curated skills
 
     const verb = row.verb;

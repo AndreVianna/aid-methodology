@@ -4,7 +4,7 @@
 #
 # The shortcut engine + the change/refactor scaffolding reference are agent-executed
 # PROSE, not executable scripts -- a deterministic canonical test cannot "run"
-# /aid-update-data-model or /aid-refactor. This suite is therefore CONTRACT +
+# /aid-update data-model or /aid-refactor. This suite is therefore CONTRACT +
 # FIXTURE-SHAPE, matching the other work-001 shortcut-engine suites
 # (test-fix-family-scaffold.sh, test-create-family-scaffold.sh):
 #
@@ -18,14 +18,14 @@
 #      templates (rename/restructure/performance), and the Ownership-boundary split
 #      (behavior-changing vs. not; defect routes to aid-fix, not aid-update).
 #   2. Catalog + doorway + bare-verb contract -- checked against the REAL catalog +
-#      skill dirs: `aid-update-api`'s row carries the expected `{verb, artifact}`
+#      skill dirs: `aid-update api`'s row carries the expected `{verb, artifact}`
 #      binding, the family's bare and artifact-suffixed doorways agree on
 #      VERB=`update`, and `aid-refactor` carries NO alias row and NO
 #      artifact-suffixed variant (stays bare, AC-4). The alias-equivalence half of
 #      this part was DELETED by work-004 delivery-003 task-002 (feature-006
 #      Decision 5) -- see the justification comments below.
 #   3. Fixture-shape assertions -- hand-authored flattened work fixtures mirroring what
-#      `/aid-update-data-model`, `/aid-refactor` (performance mode), and `/aid-refactor`
+#      `/aid-update data-model`, `/aid-refactor` (performance mode), and `/aid-refactor`
 #      (rename mode) would produce, all halted at APPROVAL-HALT (pre-Execute).
 #
 # No agent is invoked; nothing here dispatches aid-architect/aid-reviewer.
@@ -207,23 +207,23 @@ get_row_field() {
     ' "$CATALOG"
 }
 
-# CRF-10: aid-update-api's catalog row carries the {verb, artifact} binding the update
+# CRF-10: aid-update api's catalog row carries the {verb, artifact} binding the update
 # family's `api` doorway is defined by. Before work-004 the canonical row was
-# `aid-change-api` and `aid-update-api` was its alias; feature-001 RENAMED the canonical
-# row (`verb: change` -> `verb: update`, `aid-change-api` -> `aid-update-api`) and
+# `aid-change-api` and `aid-update api` was its alias; feature-001 RENAMED the canonical
+# row (`verb: change` -> `verb: update`, `aid-change-api` -> `aid-update api`) and
 # dropped the alias, so CRF10a/CRF10b follow the renamed row and CRF10c-e are gone.
 UPDATE_API_VERB=$(get_row_field "aid-update-api" "verb")
 UPDATE_API_ARTIFACT=$(get_row_field "aid-update-api" "artifact")
 
-assert_eq "$UPDATE_API_VERB" "update" "CRF10a aid-update-api row: verb == update"
-assert_eq "$UPDATE_API_ARTIFACT" "api" "CRF10b aid-update-api row: artifact == api"
+assert_eq "$UPDATE_API_VERB" "update" "CRF10a aid-update api row: verb == update"
+assert_eq "$UPDATE_API_ARTIFACT" "api" "CRF10b aid-update api row: artifact == api"
 # CRF10c / CRF10d / CRF10e -- DELETED by work-004 delivery-003 task-002.
-# All three were mirror-pair assertions: `CRF10c` that `aid-update-api`'s verb was
+# All three were mirror-pair assertions: `CRF10c` that `aid-update api`'s verb was
 # identical to `aid-change-api`'s, `CRF10d` the same for artifact, `CRF10e` that
-# `aid-update-api`'s `alias_of` read `aid-change-api`. There is no mirror pair left to
+# `aid-update api`'s `alias_of` read `aid-change-api`. There is no mirror pair left to
 # compare -- `grep -c '^  - name: aid-change-api$' shortcut-catalog.yml` returns 0, and
 # `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 for every catalogue row
-# (each reads `alias_of: null`). `CRF10c`/`CRF10d` would compare `aid-update-api`'s
+# (each reads `alias_of: null`). `CRF10c`/`CRF10d` would compare `aid-update api`'s
 # real values against the empty string `get_row_field` returns for an absent row, and
 # `CRF10e` asserts a relationship the catalogue no longer expresses at all. The
 # `CHANGE_API_VERB` / `CHANGE_API_ARTIFACT` / `UPDATE_API_ALIAS_OF` bindings are gone
@@ -231,9 +231,9 @@ assert_eq "$UPDATE_API_ARTIFACT" "api" "CRF10b aid-update-api row: artifact == a
 # and CRF10b above. (Removing the `alias_of` FIELD is out of this work's scope -- rows
 # keep it pinned to `null`, which CRF15 still asserts.)
 
-# CRF-11: aid-update-data-model row is MIGRATE-typed (mirrors create-data-model).
+# CRF-11: aid-update data-model row is MIGRATE-typed (mirrors create-data-model).
 UPDATE_DM_DEFAULT_TYPE=$(get_row_field "aid-update-data-model" "default_type")
-assert_eq "$UPDATE_DM_DEFAULT_TYPE" "MIGRATE" "CRF11 aid-update-data-model row: default_type == MIGRATE"
+assert_eq "$UPDATE_DM_DEFAULT_TYPE" "MIGRATE" "CRF11 aid-update data-model row: default_type == MIGRATE"
 
 # CRF-12: aid-refactor row is bare (artifact "") and REFACTOR-typed.
 REFACTOR_ARTIFACT=$(get_row_field "aid-refactor" "artifact")
@@ -269,31 +269,31 @@ fi
 assert_dir_exists "${SKILLS_ROOT}/aid-refactor" "CRF13e canonical/skills/aid-refactor/ (the one bare doorway) exists"
 
 # CRF-14: both generated doorways of the update family -- the artifact-suffixed
-# `aid-update-api` and the bare `aid-update` -- bind the identical VERB=`update`, each
+# `aid-update api` and the bare `aid-update` -- bind the identical VERB=`update`, each
 # with its own row's ARTIFACT.
 #
 # RE-POINTED by work-004 delivery-003 task-002, and the re-point is recorded because the
 # PAIR changed, not just the names. This block used to compare the canonical doorway
-# `aid-change-api` against its ALIAS doorway `aid-update-api` (CRF14a/b on the canonical,
+# `aid-change-api` against its ALIAS doorway `aid-update api` (CRF14a/b on the canonical,
 # CRF14c/d on the alias, both expected to bind VERB=`change`). feature-001 renamed the
-# canonical doorway to `aid-update-api` and retired the alias, which leaves the family
+# canonical doorway to `aid-update api` and retired the alias, which leaves the family
 # one `api` doorway instead of two. Rather than delete two keys and lose the
 # "two doorways of one family agree on the verb" invariant, the invariant is re-pointed
-# at the pair that DOES survive -- bare `aid-update` and suffixed `aid-update-api`.
+# at the pair that DOES survive -- bare `aid-update` and suffixed `aid-update api`.
 # Same assertion mechanism, same strength, and the bare doorway (previously asserted
 # nowhere in this suite) is now covered.
-UPDATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-update-api/SKILL.md" 2>/dev/null || true)
+UPDATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-update/SKILL.md" 2>/dev/null || true)
 UPDATE_BARE_BODY=$(cat "${SKILLS_ROOT}/aid-update/SKILL.md" 2>/dev/null || true)
-assert_output_contains "$UPDATE_API_BODY" 'VERB=`update`' "CRF14a aid-update-api doorway binds VERB=\`update\`"
-assert_output_contains "$UPDATE_API_BODY" 'ARTIFACT=`api`' "CRF14b aid-update-api doorway binds ARTIFACT=\`api\`"
+assert_output_contains "$UPDATE_API_BODY" 'VERB=`update`' "CRF14a aid-update api doorway binds VERB=\`update\`"
+assert_output_contains "$UPDATE_API_BODY" '`api`' "CRF14b the aid-update doorway lists the kind \`api\`"
 assert_output_contains "$UPDATE_BARE_BODY" 'VERB=`update`' "CRF14c bare aid-update doorway binds the identical VERB=\`update\`"
 assert_output_contains "$UPDATE_BARE_BODY" 'ARTIFACT="" (bare verb)' "CRF14d bare aid-update doorway binds ARTIFACT=\"\" (bare verb)"
 # CRF14e -- DELETED by work-004 delivery-003 task-002.
-# It asserted that `canonical/skills/aid-update-api/SKILL.md` self-documented as a
+# It asserted that `canonical/skills/aid-update/SKILL.md` self-documented as a
 # "thin alias of `aid-change-api`". feature-002/FR-3a deleted the emitter for that
 # sentence from `.claude/skills/generate-profile/scripts/build-shortcut-skills.py`
 # (the `if alias_of:` branch of `render_doorway`), so NO generated doorway carries the
-# sentence any more, and `aid-update-api` is no longer an alias of anything. There is no
+# sentence any more, and `aid-update api` is no longer an alias of anything. There is no
 # successor sentence to quote, so the assertion cannot be re-pointed.
 # `CHANGE_API_BODY` read the pruned `aid-change-api/SKILL.md` and is gone with it.
 
@@ -379,7 +379,7 @@ trap 'rm -rf "$TMP"' EXIT
 #
 # It hand-authored a flattened `api`-artifact work and took the invoking shortcut's name
 # as a parameter precisely so Part 4 could build the same work twice, once labelled
-# `aid-change-api` and once `aid-update-api`, and diff the two. With the alias retired
+# `aid-change-api` and once `aid-update api`, and diff the two. With the alias retired
 # there is no second name to build under, so the builder had exactly one caller left
 # doing exactly one build whose result nothing asserted -- Part 4 held no shape
 # assertions of its own, only the byte-identity comparison. Leaving a ~285-line
@@ -393,7 +393,7 @@ trap 'rm -rf "$TMP"' EXIT
 # CRF20-CRF26, CRF30-CRF34, CRF40-CRF43 and the CRF50-CRF57 halt-proof loop.
 
 # build_update_data_model_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-update-data-model +
+# Hand-authors a flattened work mirroring what /aid-update data-model +
 # shortcut-engine.md would produce: MIGRATE (forward+rollback) -> IMPLEMENT (update
 # readers/writers) -> TEST, ### Data Model + ### Migration Plan activated, halted
 # pre-Execute.
@@ -579,7 +579,7 @@ verb=update, artifact=data-model. Delta only: the loyalty_tier column.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-update-data-model (update,
+Shortcut-generated flattened Lite work. Source: /aid-update data-model (update,
 artifact 'data-model').
 EOF
 
@@ -644,7 +644,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-update-data-model
+- **Active Skill:** aid-update data-model
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -993,7 +993,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-update-data-model
+# Fixture A: aid-update data-model
 # ---------------------------------------------------------------------------
 DM_DIR="${TMP}/work-update-data-model"
 build_update_data_model_fixture "$DM_DIR"
@@ -1093,7 +1093,7 @@ done
 #
 # Part 4 was the alias-equivalence fixture-shape proof: it built the SAME fixture twice
 # via `build_change_api_fixture`, once labelled `aid-change-api` and once
-# `aid-update-api`, normalized away the invoking shortcut's own name, and asserted the
+# `aid-update api`, normalized away the invoking shortcut's own name, and asserted the
 # two work shapes were byte-identical -- `CRF60` once per compared file (8 executions)
 # and `CRF61` once for the aggregate verdict.
 #

@@ -71,7 +71,7 @@ function parseShortcutCatalog(raw) {
 
 /**
  * @typedef {{ name: string, verb: string, artifact: string, alias_of: string,
- *             group: string, intent: string, repurpose?: string }} CatalogRow
+ *             group: string, intent: string, repurpose?: string, kind_of?: string }} CatalogRow
  */
 
 /**
@@ -80,10 +80,10 @@ function parseShortcutCatalog(raw) {
  * Returns rows in **file order** — load-bearing for feature-002's family
  * ordering, which derives verb-family order from catalog first appearance.
  *
- * No `repurpose` filtering: every row participates.  The reference generator
- * restricts its family table to non-repurpose rows because it only generates
- * directories for those; this index cards every skill directory, and every
- * catalog row has one, so all rows participate.
+ * No filtering: every row is returned, `repurpose` and kind rows included.  Only a
+ * family row (no `kind_of`) owns a skill directory; a kind row is invoked through its
+ * family as `/aid-<verb> <kind>`, so a consumer that maps rows to directories filters
+ * kind rows out itself.
  *
  * Throws `[gen-skills] catalog parse: <detail>` for:
  *   - a row with no `name` field (impossible from the row-opener regex, but

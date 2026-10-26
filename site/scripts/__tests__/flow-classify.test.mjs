@@ -4,7 +4,7 @@
 //   AC-1  Never reads shortcut-catalog.yml or its `repurpose` flag (source grep).
 //   AC-2  D1 requires EXACT heading text and a State+Advance table (not "contains Dispatch").
 //   AC-3  aid-triage → dispatch-table despite having ## State Machine + ## State: headings.
-//   AC-4  aid-review → inline-states; aid-test-security → sibling-doorway (both repurpose: true).
+//   AC-4  aid-review → inline-states; a full kind-sibling body → sibling-doorway.
 //   AC-5  Classification is total: every input returns one of the five shapes.
 //   AC-6  delegatesTo is the parent dir for D3; null (never undefined) for all other shapes.
 //   AC-7  evidence identifies the discriminator and the body construct that triggered it.
@@ -335,6 +335,19 @@ This skill carries no logic of its own.
 See canonical/skills/aid-first/SKILL.md and canonical/skills/aid-second/SKILL.md.
 `;
 
+// The shape a hand-authored kind-sibling skill had: installed path, bold phrase, and
+// slash-command mentions of other skills alongside the one SKILL.md target.
+const D3_KIND_SIBLING_BODY = `
+# Parent Security (security kind-sibling of /aid-parent)
+
+\`/aid-parent-security\` is a thin **kind-sibling** of **\`/aid-parent\`**
+(\`.agents/skills/aid-parent/SKILL.md\`) -- not an alias: its own catalog row.
+It carries **no logic of its own.**
+
+Execute \`.agents/skills/aid-parent/SKILL.md\` exactly as written, with the kind bound to
+security. Findings route to \`/aid-fix\`; to author tests, use \`/aid-create test\`.
+`;
+
 describe('D3 sibling-doorway', () => {
   it('fires when "no logic of its own" and exactly one distinct SKILL.md reference', () => {
     const result = classifySkill(makeSkill(D3_BODY));
@@ -377,20 +390,19 @@ describe('D3 sibling-doorway', () => {
     expect(result.shape).not.toBe('sibling-doorway');
   });
 
-  // ── AC-4: aid-test-security real-file test ───────────────────────────────
+  // ── AC-4: the full kind-sibling shape ────────────────────────────────────
+  // No skill in the corpus delegates to a sibling any more, so the shape a real
+  // kind-sibling had is kept here as a fixture: the installed `.agents/skills/` path
+  // named twice, the phrase in bold, and slash-command mentions that are not SKILL.md refs.
 
-  it('AC-4: aid-test-security classifies as sibling-doorway (repurpose: true)', () => {
-    const body = readRealBody('aid-test-security');
-    // Verify the fixture has the discriminating phrase so this test is non-trivial.
-    expect(body).toMatch(/no logic of its own/i);
-    const result = classifySkill(makeSkill(body));
+  it('AC-4: a full kind-sibling body classifies as sibling-doorway', () => {
+    const result = classifySkill(makeSkill(D3_KIND_SIBLING_BODY));
     expect(result.shape).toBe('sibling-doorway');
   });
 
-  it('AC-4: aid-test-security delegatesTo is "aid-test"', () => {
-    const body = readRealBody('aid-test-security');
-    const result = classifySkill(makeSkill(body));
-    expect(result.delegatesTo).toBe('aid-test');
+  it('AC-4: a full kind-sibling body delegatesTo its family', () => {
+    const result = classifySkill(makeSkill(D3_KIND_SIBLING_BODY));
+    expect(result.delegatesTo).toBe('aid-parent');
   });
 });
 

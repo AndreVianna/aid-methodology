@@ -308,11 +308,11 @@ qa:
   - id: Q9
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'After step 1 AID adds about 7,500 tokens to the start context (+40%, goal +25%); 12 of 12 results were correct. The skill list is about 4,700 of those tokens, about 42 per skill. How should step 1 close?'
     suggested: 'Merge the 75 kind variants into their family skills, with the kind as an argument (112 to about 37 skills), then measure again'
-    answer: ''
-    applied_to: ''
+    answer: '1'
+    applied_to: 'STEP-1.md C3; canonical/skills kind families'
   - id: Q8
     category: Scope
     impact: High

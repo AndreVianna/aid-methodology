@@ -28,9 +28,9 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
 ## MVP
 
 - **What:** The nine planning skills plus the design-lifecycle machinery from the first
-  delivery: `/aid-design-roadmap`, `/aid-create-roadmap`, `/aid-update-roadmap`,
-  `/aid-design-mvp`, `/aid-create-mvp`, `/aid-update-mvp`, `/aid-design-backlog`,
-  `/aid-create-backlog`, `/aid-update-backlog` — together with the shared `design →
+  delivery: `/aid-design roadmap`, `/aid-create roadmap`, `/aid-update roadmap`,
+  `/aid-design mvp`, `/aid-create mvp`, `/aid-update mvp`, `/aid-design backlog`,
+  `/aid-create backlog`, `/aid-update backlog` — together with the shared `design →
   create → update` contract, the design-seed layer (`.aid/design/`), the KB doctrine
   amendment admitting `roadmap.md` and `backlog.md` as conditional doc-set members, and
   their conditional registrations in `.aid/settings.yml`.
@@ -68,8 +68,8 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   the grid skills before the planning skills (the planning skills produce the documents this
   repo needs to record its own committed direction, so they go first).
 - **Status:** Shipped in v3.0.0 — all three deliveries are complete and released. All 36
-  skills exist under `canonical/skills/` and are rendered to the five profiles; the shortcut
-  catalog is back to 94 rows and the corpus to 111 skill directories.
+  capabilities are rows of the 94-row shortcut catalog, most of them kinds of `aid-design`,
+  `aid-create` and `aid-update`.
 
 ## Next
 

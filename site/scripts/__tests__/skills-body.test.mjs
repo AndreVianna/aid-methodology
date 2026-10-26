@@ -18,6 +18,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BODY_PROVIDERS, BODY_APPENDERS, renderSkillBody } from '../skills/body.mjs';
+import { SKILL_GROUPS } from '../skills/curated-roster.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BODY_SRC = resolve(__dirname, '../skills/body.mjs');
@@ -250,6 +251,10 @@ describe('renderSkillBody — contract with populated registries (AC-6)', () => 
 // is added it goes unclaimed and these tests fail loudly — rather than being routed
 // silently to whichever provider happens to be listed first.
 
+// Non-vacuity floor, derived: the corpus is the curated roster plus the catalog's family
+// skills, so a read that finds no more directories than the curated roster is broken.
+const CURATED_COUNT = new Set(SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name))).size;
+
 describe('task-037 — exactly one provider claims each skill', () => {
   const dirNames = readdirSync(join(REPO_ROOT, 'canonical', 'skills'), { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -273,7 +278,7 @@ describe('task-037 — exactly one provider claims each skill', () => {
 
   it('every directory under canonical/skills/ is claimed by exactly one provider', () => {
     // Non-vacuity: an empty listing would make the loop below prove nothing.
-    expect(dirNames.length).toBeGreaterThan(50);
+    expect(dirNames.length).toBeGreaterThan(CURATED_COUNT);
 
     const unclaimed = [];
     const contested = [];
@@ -310,7 +315,7 @@ describe('task-037 — exactly one provider claims each skill', () => {
       .render(recordFor('aid-review'));
     const doorwayOut = BODY_PROVIDERS
       .find((p) => p.id === 'flow-chart-doorway')
-      .render(recordFor('aid-create-api'));
+      .render(recordFor('aid-create'));
 
     const headingOf = (s) => s.split('\n')[0];
     expect(headingOf(authoredOut)).toBe('## Flow');

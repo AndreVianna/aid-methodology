@@ -439,9 +439,10 @@ the root instruction regions, and two managed blocks in the git ignore and attri
 
 ### Shared files (one copy per repo)
 
-`.agents/skills/` holds 112 `aid-`-prefixed skill directories: 18 curated pipeline, on-demand and
-router skills, plus the 94-row shortcut catalog's skills (34 Lite-Path shortcut doorways and 60
-hand-authored repurpose skills).
+`.agents/skills/` holds 37 `aid-`-prefixed skill directories: 18 curated pipeline, on-demand and
+router skills, plus the 19 skills that own a row of the 94-row shortcut catalog (8 doorways for its
+34 Lite-Path shortcuts and 11 hand-authored repurpose skills). A catalog kind has no directory; you
+run it through its family, as in `/aid-create api`.
 
 | Path | Content |
 |------|---------|

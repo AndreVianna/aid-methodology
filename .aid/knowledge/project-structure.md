@@ -98,7 +98,7 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 112 skill definitions (18 curated + 94 catalog skills)
+│   ├── skills/               # 37 skill definitions (18 curated + 19 catalog skills)
 │   ├── agents/               # agent role definitions (one AGENT.md each)
 │   └── aid/                  # runtime payload, installed at .aid/runtime/
 │       ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
@@ -192,7 +192,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `packages/npm/package.json` | npm `aid-installer` manifest. |
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |
-| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 60 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
+| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 8 shortcut doorway directories, alongside 11 hand-authored `repurpose` skills; its 75 `kind_of` rows own no directory and are invoked through their family; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
 | `canonical/aid/templates/task-detail-template.md` | Template for a task definition (`DETAIL.md`, formerly the task-level `SPEC.md` / `task-NNN.md`). |

@@ -43,7 +43,7 @@ mandatory three sections suffice for both modes.
 | `functional` | single `task-001` TEST -- author/extend + run; **each test traces to a specific acceptance criterion** (`task-type-rules.md ## TEST`) |
 | `model-eval` | single `task-001` TEST -- run the evaluation harness against `eval-dataset` and assert `metric` meets `threshold` (maps to the `TEST` type; no enum change -- §5.1 places model evaluation inside bare `aid-test`, not a separate type) |
 
-## `aid-test-security`
+## `aid-test security`
 
 ### CAPTURE
 
@@ -64,7 +64,7 @@ audit, per the captured technique). **Findings route to `aid-fix`** (vulnerabili
 kind) -- remediation is never folded into this task; the task's own scope ends
 at the verification report.
 
-## `aid-test-performance`
+## `aid-test performance`
 
 ### CAPTURE
 
@@ -85,7 +85,7 @@ Single `task-001` TEST -- benchmark/load/stress the target against the
 captured threshold; the result must be reproducible (same environment, same
 workload profile, re-runnable).
 
-## `aid-test-data-quality`
+## `aid-test data-quality`
 
 ### CAPTURE
 
@@ -103,7 +103,7 @@ Activates `### Data Model`.
 
 Single `task-001` TEST -- data-quality checks on the dataset/pipeline per the
 captured checks/thresholds. A data-pipeline's own build-time coverage
-(`aid-create-data-pipeline`'s `task-002` TEST) stays shallow; a **deep**
+(`aid-create data-pipeline`'s `task-002` TEST) stays shallow; a **deep**
 data-quality need routes here instead of expanding that task.
 
 ## `aid-experiment`
@@ -153,11 +153,11 @@ Model` stays "no schema changes" (an experiment is throwaway).
 
 ## Ownership boundary
 
-**Test/experiment belong wholly to G7, not to `aid-create`.** `aid-test-security`
+**Test/experiment belong wholly to G7, not to `aid-create`.** `aid-test security`
 only *verifies/plans* -- the remediation of any finding is **`aid-fix`**
 (vulnerability kind); building the feature under test is `aid-create`/
 `aid-update`; documenting a test strategy is `aid-document`; the data pipeline
-that `aid-test-data-quality` checks is built by `aid-create-data-pipeline`.
+that `aid-test data-quality` checks is built by `aid-create data-pipeline`.
 Analytical insight from usage data (as opposed to a controlled experiment) is
 `aid-report` (G11), not `aid-experiment`.
 

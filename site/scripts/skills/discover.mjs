@@ -17,10 +17,10 @@ import { CANONICAL_SKILLS_DIR } from './paths.mjs';
 
 /**
  * @typedef {object} SkillRecord
- * @property {string}   dirName        'aid-create-api' — also the slug
- * @property {string}   sourcePath     'canonical/skills/aid-create-api/SKILL.md'  (POSIX, repo-relative)
- * @property {string}   route          '/skills/aid-create-api/'
- * @property {string}   destPath       'site/src/content/docs/skills/aid-create-api.md' (POSIX, repo-relative)
+ * @property {string}   dirName        'aid-create' — also the slug
+ * @property {string}   sourcePath     'canonical/skills/aid-create/SKILL.md'  (POSIX, repo-relative)
+ * @property {string}   route          '/skills/aid-create/'
+ * @property {string}   destPath       'site/src/content/docs/skills/aid-create.md' (POSIX, repo-relative)
  * @property {Field[]}  fields         frontmatter, source order
  * @property {(k:string)=>Field|undefined} field   convenience lookup
  * @property {string}   body           SKILL.md text after the closing fence
@@ -58,7 +58,7 @@ export function discoverSkills(skillsDir = CANONICAL_SKILLS_DIR) {
 /**
  * Build a single SkillRecord for one skill directory.
  *
- * @param {string} dirName        Directory name, e.g. 'aid-create-api'.
+ * @param {string} dirName        Directory name, e.g. 'aid-create'.
  * @param {string} [skillsDir]    Absolute OS path to the skills root.
  *                                Defaults to CANONICAL_SKILLS_DIR.
  * @returns {SkillRecord}

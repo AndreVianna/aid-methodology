@@ -87,6 +87,16 @@ describe('guard: unassignable skill', () => {
 
     expect(() => assignGroups(records, catalog)).toThrow('"aid-mystery-skill"');
   });
+
+  it('throws when a directory is named after a kind row, which owns no directory', () => {
+    const records = allCuratedRecs({ extras: ['aid-make', 'aid-make-api'] });
+    const catalog = makeCatalog([
+      { name: 'aid-make', verb: 'make' },
+      { name: 'aid-make-api', verb: 'make', kind_of: 'aid-make' },
+    ]);
+
+    expect(() => assignGroups(records, catalog)).toThrow('"aid-make-api"');
+  });
 });
 
 // ── Guard: curated skill missing ──────────────────────────────────────────────
@@ -308,14 +318,14 @@ describe('family ordering', () => {
     const defSection = sections.find((s) => s.group === 'Definition');
 
     // Build the expected verb order by walking catalog.rows in file order,
-    // skipping curated names — the same algorithm groups.mjs uses.
+    // skipping curated names and kind rows — the same algorithm groups.mjs uses.
     const allCurated = new Set(
       CURATED_GROUPS.flatMap((e) => [...(e.fullPath || []), ...e.members])
     );
     const expectedVerbOrder = [];
     const seenVerbs = new Set();
     for (const row of catalog.rows) {
-      if (allCurated.has(row.name)) continue;
+      if (allCurated.has(row.name) || row.kind_of) continue;
       if (!seenVerbs.has(row.verb)) {
         seenVerbs.add(row.verb);
         expectedVerbOrder.push(row.verb);
@@ -339,9 +349,10 @@ describe('family ordering', () => {
     );
 
     // For each family, build expected card order from catalog rows in file order.
+    // A kind row has no directory, so it has no card: its family skill routes it.
     for (const family of defSection.families) {
       const expectedNames = catalog.rows
-        .filter((r) => !allCurated.has(r.name) && r.verb === family.verb)
+        .filter((r) => !allCurated.has(r.name) && !r.kind_of && r.verb === family.verb)
         .map((r) => r.name);
       const actualNames = family.cards.map((c) => c.name);
       expect(actualNames).toEqual(expectedNames);

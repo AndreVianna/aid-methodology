@@ -10,8 +10,8 @@
 #   LR06  every repo path named in code spans on the card exists
 #   LR07  the card is routed by the KB index, and the type registry knows it (a kb-card row and PC- criteria)
 #   LR08  the path check is falsifiable (it reports a planted missing path)
-#   LR09  the skill list stays small: no description over 300 characters, at most 12 over 110,
-#         all together at most 16,000 characters (about 4k tokens), and no skill hidden from the model
+#   LR09  the skill list stays small: at most 40 skills (each costs about 40 tokens in the list), no description
+#         over 300 characters, all together at most 6,000 characters, and no skill hidden from the model
 #
 # Usage: bash test-lean-rules-card.sh [--verbose]
 
@@ -123,14 +123,13 @@ for f in sorted(pathlib.Path(sys.argv[1]).glob("*/SKILL.md")):
             parts.append(fm[i].strip()); i += 1
         total += len(" ".join(parts))
     sizes[f.parent.name] = total
-long = sorted(n for n, s in sizes.items() if s > 110)
-print(len(sizes), max(sizes.values()), len(long), sum(sizes.values()), ",".join(hidden) or "-")
+print(len(sizes), max(sizes.values()), sum(sizes.values()), ",".join(hidden) or "-")
 PY
 )"
-read -r n_skills max_len n_long total hidden <<< "$budget"
-if [[ "$n_skills" -gt 0 && "$max_len" -le 300 ]]; then pass "LR09 longest description is ${max_len} characters (limit 300, ${n_skills} skills)"; else fail "LR09 longest description is ${max_len} characters, over 300 (${n_skills} skills)"; fi
-if [[ "$n_long" -le 12 ]]; then pass "LR09 ${n_long} descriptions are over 110 characters (limit 12)"; else fail "LR09 ${n_long} descriptions are over 110 characters, limit 12"; fi
-if [[ "$total" -le 16000 ]]; then pass "LR09 descriptions total ${total} characters (limit 16000)"; else fail "LR09 descriptions total ${total} characters, over 16000"; fi
+read -r n_skills max_len total hidden <<< "$budget"
+if [[ "$n_skills" -gt 0 && "$n_skills" -le 40 ]]; then pass "LR09 ${n_skills} skills (limit 40)"; else fail "LR09 ${n_skills} skills, limit 1 to 40"; fi
+if [[ "$max_len" -le 300 ]]; then pass "LR09 longest description is ${max_len} characters (limit 300)"; else fail "LR09 longest description is ${max_len} characters, over 300"; fi
+if [[ "$total" -le 6000 ]]; then pass "LR09 descriptions total ${total} characters (limit 6000)"; else fail "LR09 descriptions total ${total} characters, over 6000"; fi
 assert_eq "$hidden" "-" "LR09 no skill is hidden from the model (disable-model-invocation)"
 
 test_summary

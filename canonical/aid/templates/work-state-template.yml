@@ -101,7 +101,7 @@
 
 # [W]
 #   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
-#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create api)
 pipeline:
   path: lite
   initiator: aid-describe

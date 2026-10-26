@@ -71,11 +71,48 @@ const REPO_ROOT = resolve(__dirname, '../../..');
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Read a canonical SKILL.md and build a SkillRecord matching discover.mjs output.
+ * SKILL.md text in the shape a hand-authored kind-sibling had: a thin doorway that names
+ * its family's installed SKILL.md, carries a braced `{verb, artifact}` group and a bolded
+ * facet binding, and has no logic or H2 section of its own. No skill in the corpus has
+ * this shape any more, so these fixtures stand in for it; each parent is a real skill.
+ */
+function kindSiblingText(name, parent, verb, artifact) {
+  return [
+    '---',
+    `name: ${name}`,
+    'description: >',
+    `  Run a ${artifact} check and report.`,
+    '---',
+    '',
+    `# ${artifact} kind-sibling of /${parent}`,
+    '',
+    `\`/${name}\` is a thin **kind-sibling** of **\`/${parent}\`**`,
+    `(\`.agents/skills/${parent}/SKILL.md\`) -- not an alias: its own catalog row`,
+    `(\`alias_of: null\`, \`{verb: ${verb}, artifact: ${artifact}}\`), \`repurpose: true\``,
+    '(hand-authored). It carries **no logic of its own.**',
+    '',
+    `Execute \`.agents/skills/${parent}/SKILL.md\` exactly as written, with the`,
+    `**kind bound to ${artifact}**. Substitute only the invocation name (\`/${name}\`)`,
+    'in any printed usage example. Findings route to `/aid-fix`.',
+    '',
+  ].join('\n');
+}
+
+const FIXTURE_SIBLINGS = {
+  'aid-fixture-security':     kindSiblingText('aid-fixture-security', 'aid-test', 'test', 'security'),
+  'aid-fixture-performance':  kindSiblingText('aid-fixture-performance', 'aid-test', 'test', 'performance'),
+  'aid-fixture-data-quality': kindSiblingText('aid-fixture-data-quality', 'aid-test', 'test', 'data-quality'),
+  'aid-fixture-design-ui':    kindSiblingText('aid-fixture-design-ui', 'aid-design', 'design', 'ui'),
+  'aid-fixture-design-cli':   kindSiblingText('aid-fixture-design-cli', 'aid-design', 'design', 'cli'),
+};
+
+/**
+ * Build a SkillRecord matching discover.mjs output from a fixture's SKILL.md text.
  */
 function loadSkillRecord(dirName) {
   const sourcePath = `canonical/skills/${dirName}/SKILL.md`;
-  const raw = readFileSync(join(REPO_ROOT, sourcePath), 'utf8');
+  const raw = FIXTURE_SIBLINGS[dirName];
+  if (raw === undefined) throw new Error(`no sibling fixture named ${dirName}`);
   const lines = raw.split('\n').map((l) => l.replace(/\r$/, ''));
   let fenceCount = 0;
   let bodyStartIdx = 0;
@@ -105,10 +142,10 @@ function makeSyntheticRecord(dirName, bodyLines) {
   return { dirName, sourcePath, body, bodyStartLine: 1 };
 }
 
-// ── Load real fixtures once ───────────────────────────────────────────────────
+// ── Load fixtures once ────────────────────────────────────────────────────────
 
-const testSecRecord  = loadSkillRecord('aid-test-security');
-const testPerfRecord = loadSkillRecord('aid-test-performance');
+const testSecRecord  = loadSkillRecord('aid-fixture-security');
+const testPerfRecord = loadSkillRecord('aid-fixture-performance');
 
 // Clear cache before each test to avoid inter-test pollution.
 beforeEach(() => { parentChartCache.clear(); });
@@ -117,7 +154,7 @@ beforeEach(() => { parentChartCache.clear(); });
 
 describe('resolveSiblingParent — D3 resolution', () => {
   it('returns the single parent name when exactly one distinct ref exists', () => {
-    // Only aid-test-security → 'aid-test' (body has exactly one canonical skill ref)
+    // Only aid-fixture-security → 'aid-test' (body has exactly one canonical skill ref)
     const result = resolveSiblingParent({ body: testSecRecord.body });
     expect(result).toBe('aid-test');
   });
@@ -148,9 +185,9 @@ describe('resolveSiblingParent — D3 resolution', () => {
   });
 });
 
-// ── AC-1: shape, extractor, confidence (aid-test-security) ───────────────────
+// ── AC-1: shape, extractor, confidence (aid-fixture-security) ───────────────────
 
-describe('AC-1 — shape / extractor / confidence (aid-test-security)', () => {
+describe('AC-1 — shape / extractor / confidence (aid-fixture-security)', () => {
   const chart = extractSiblingDoorway(testSecRecord);
 
   it('shape === "sibling-doorway"', () => {
@@ -166,9 +203,9 @@ describe('AC-1 — shape / extractor / confidence (aid-test-security)', () => {
   });
 });
 
-// ── AC-2: entry node — kind-sibling sub-form (aid-test-security) ─────────────
+// ── AC-2: entry node — kind-sibling sub-form (aid-fixture-security) ─────────────
 
-describe('AC-2 — entry node properties (aid-test-security)', () => {
+describe('AC-2 — entry node properties (aid-fixture-security)', () => {
   const chart = extractSiblingDoorway(testSecRecord);
 
   // Non-vacuity: nodes array is non-empty before we index into it.
@@ -180,8 +217,8 @@ describe('AC-2 — entry node properties (aid-test-security)', () => {
     expect(chart.entries).toEqual([chart.nodes[0].id]);
   });
 
-  it('nodes[0].name === "aid-test-security"', () => {
-    expect(chart.nodes[0].name).toBe('aid-test-security');
+  it('nodes[0].name === "aid-fixture-security"', () => {
+    expect(chart.nodes[0].name).toBe('aid-fixture-security');
   });
 
   it('nodes[0].kind === "entry"', () => {
@@ -204,7 +241,7 @@ describe('AC-2 — entry node properties (aid-test-security)', () => {
 
   it('nodes[0].provenance.file is the skill SKILL.md path', () => {
     expect(chart.nodes[0].provenance.file).toBe(
-      'canonical/skills/aid-test-security/SKILL.md'
+      'canonical/skills/aid-fixture-security/SKILL.md'
     );
   });
 
@@ -220,9 +257,9 @@ describe('AC-2 — entry node properties (aid-test-security)', () => {
   });
 });
 
-// ── AC-3: hop edge structure (aid-test-security) ─────────────────────────────
+// ── AC-3: hop edge structure (aid-fixture-security) ─────────────────────────────
 
-describe('AC-3 — hop edge (aid-test-security)', () => {
+describe('AC-3 — hop edge (aid-fixture-security)', () => {
   const chart = extractSiblingDoorway(testSecRecord);
   const hopEdge = () => chart.edges.find((e) => e.from === 'n1');
 
@@ -253,7 +290,7 @@ describe('AC-3 — hop edge (aid-test-security)', () => {
     const n2 = chart.nodes.find((n) => n.id === 'n2');
     expect(n2).toBeTruthy();
     expect(chart.entries).toContain('n1');
-    expect(n2.name).not.toBe('aid-test-security'); // not the doorway itself
+    expect(n2.name).not.toBe('aid-fixture-security'); // not the doorway itself
   });
 });
 
@@ -287,14 +324,14 @@ describe('AC-4 — splice fidelity (parent chart spliced whole, no L1/B1)', () =
     const chart = extractSiblingDoorway(testSecRecord);
     const parentPath = 'canonical/skills/aid-test/SKILL.md';
     // Non-vacuity: there must be at least one spliced node (nodes[1..N]).
-    const splicedNodes = chart.nodes.filter((n) => n.name !== 'aid-test-security');
+    const splicedNodes = chart.nodes.filter((n) => n.name !== 'aid-fixture-security');
     expect(splicedNodes.length).toBeGreaterThan(0);
     for (const n of splicedNodes) {
       expect(n.provenance.file).toBe(parentPath);
     }
   });
 
-  it('no L1/B1 applied: aid-test-security sees the same spine as aid-test-performance', () => {
+  it('no L1/B1 applied: aid-fixture-security sees the same spine as aid-fixture-performance', () => {
     // Two siblings of the same parent must see the same spliced spine.
     parentChartCache.clear();
     const chartSec = extractSiblingDoorway(testSecRecord);
@@ -329,15 +366,15 @@ describe('AC-5 — parent spine (aid-test nodes appear in order)', () => {
 // ── AC-6: parentChartCache memo identity ─────────────────────────────────────
 
 describe('AC-6 — parentChartCache memo (object identity, not deep equality)', () => {
-  it('aid-create-document chart is derived once for two siblings', () => {
+  it('aid-design chart is derived once for two siblings', () => {
     parentChartCache.clear();
-    // Two siblings of aid-create-document.
-    const rec1 = loadSkillRecord('aid-document-architecture');
-    const rec2 = loadSkillRecord('aid-document-changelog');
+    // Two siblings of aid-design.
+    const rec1 = loadSkillRecord('aid-fixture-design-ui');
+    const rec2 = loadSkillRecord('aid-fixture-design-cli');
     extractSiblingDoorway(rec1);
-    const cached1 = parentChartCache.get('aid-create-document');
+    const cached1 = parentChartCache.get('aid-design');
     extractSiblingDoorway(rec2);
-    const cached2 = parentChartCache.get('aid-create-document');
+    const cached2 = parentChartCache.get('aid-design');
 
     // Non-vacuity: cache must have an entry after the first call.
     expect(cached1).toBeTruthy();
@@ -347,10 +384,10 @@ describe('AC-6 — parentChartCache memo (object identity, not deep equality)', 
 
   it('cache has exactly one entry for the shared parent after two sibling calls', () => {
     parentChartCache.clear();
-    extractSiblingDoorway(loadSkillRecord('aid-document-architecture'));
-    extractSiblingDoorway(loadSkillRecord('aid-document-changelog'));
-    // Both resolve to aid-create-document; only one cache entry.
-    expect(parentChartCache.has('aid-create-document')).toBe(true);
+    extractSiblingDoorway(loadSkillRecord('aid-fixture-design-ui'));
+    extractSiblingDoorway(loadSkillRecord('aid-fixture-design-cli'));
+    // Both resolve to aid-design; only one cache entry.
+    expect(parentChartCache.has('aid-design')).toBe(true);
   });
 });
 
@@ -470,7 +507,7 @@ describe('AC-9 — W4: confidence weakens to approximate when parent is approxim
     expect(w4).toContain('aid-approx-parent');
   });
 
-  it('derived confidence (aid-test-security) does NOT emit W4', () => {
+  it('derived confidence (aid-fixture-security) does NOT emit W4', () => {
     // Separability: only an approximate parent triggers W4.
     const chart = extractSiblingDoorway(testSecRecord);
     const w4 = chart.warnings.filter((w) => w.includes('W4'));
@@ -620,25 +657,17 @@ describe('AC-12 — W2: sibling body carrying H2 sections not drawn', () => {
   });
 
   it('body WITHOUT H2 sections does not emit W2 (separability)', () => {
-    // aid-test-security has no H2 sections in its body.
+    // aid-fixture-security has no H2 sections in its body.
     const chart = extractSiblingDoorway(testSecRecord);
     const w2 = chart.warnings.filter((w) => w.includes('W2'));
     expect(w2.length).toBe(0);
   });
 });
 
-// ── AC-13: validateChart passes for all real sibling-doorway skills ───────────
+// ── AC-13: validateChart passes for every sibling-doorway fixture ─────────────
 
 describe('AC-13 — validateChart passes (entries=1, exits>=1)', () => {
-  const realSiblings = [
-    'aid-test-security',
-    'aid-test-performance',
-    'aid-test-data-quality',
-    'aid-document-architecture',
-    'aid-document',
-  ];
-
-  for (const skill of realSiblings) {
+  for (const skill of Object.keys(FIXTURE_SIBLINGS)) {
     it(`validateChart(${skill}).ok === true`, () => {
       const record = loadSkillRecord(skill);
       const chart = extractSiblingDoorway(record);

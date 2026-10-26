@@ -209,8 +209,8 @@ function tryD4(body) {
  * Classification is total: every input produces exactly one shape.
  *
  * This function is keyed on body inspection only. Skills like `aid-review`
- * (full state machine) classify as inline-states. `aid-test-security` (a thin
- * delegation skill) classifies as sibling-doorway. Neither catalog flag
+ * (full state machine) classify as inline-states; a thin skill that delegates to one
+ * other skill classifies as sibling-doorway. Neither catalog flag
  * nor catalog row content is read or consulted.
  *
  * @param {{ name: string, dir: string, frontmatter: object, body: string }} skill

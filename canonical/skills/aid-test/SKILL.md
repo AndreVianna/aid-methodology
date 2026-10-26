@@ -1,20 +1,24 @@
 ---
 name: aid-test
 description: >
-  Run tests or checks and report the findings. Use when something must be verified.
+  Run tests or checks (suites, security, performance, data quality) and report findings.
+  Use to verify something.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
-argument-hint: "<target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)"
+argument-hint: "[kind] <target> -- kind: data-quality, performance, security; or a suite/module"
 ---
 
 # Test (run + consolidate, resolve nothing)
 
+**Kinds.** When the argument starts with one of these kinds, read `references/<kind>.md` in this skill's folder and follow it
+with the rest of the argument instead of the steps below: `data-quality`, `performance`, `security`.
+
 `/aid-test` **runs** the requested verification and consolidates the results -- it does not
-*author* tests (that is `/aid-create-test`, a keep-cycle create-family skill). It is
+*author* tests (that is `/aid-create test`, a keep-cycle create-family skill). It is
 **review-shaped**: run-a-tool is the evidence-gathering step, and consolidating results into
 severity-tagged findings that hand off to `/aid-fix` is exactly the `/aid-review` shape --
 so this **reuses `aid-review`'s machinery** (work folder, 7-column ledger, clean-context
 verify, present, printed-suggestion handoff). The three `test-*` kind-siblings
-(`/aid-test-security`, `/aid-test-performance`, `/aid-test-data-quality`) delegate here.
+(`/aid-test security`, `/aid-test performance`, `/aid-test data-quality`) delegate here.
 
 - **Read-only** on the source; never fixes (findings -> `/aid-fix`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
@@ -95,7 +99,7 @@ each with its evidence; state pass/fail against any threshold; and a printed sug
 
 ## State: HANDOFF  (optional; printed suggestions only)
 
-Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests
+Printed suggestions: `/aid-fix` (address findings), `/aid-create test` (add regression tests
 for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.
 
 **Advance:** DONE.
@@ -111,7 +115,7 @@ findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record
 
 ## Constraints
 
-- **Runs, does not author** -- test authoring is `/aid-create-test` (keep-cycle); this only
+- **Runs, does not author** -- test authoring is `/aid-create test` (keep-cycle); this only
   runs + reports.
 - **Read-only** on the source; never fixes (findings -> `/aid-fix`).
 - **Resolves nothing**; presents consolidated findings.

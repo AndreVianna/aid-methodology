@@ -1,7 +1,7 @@
 // flow-extract-inline.test.mjs — Unit tests for extract-inline.mjs (task-026).
 //
 // Coverage:
-//   extractInline — all processing steps, each rule, and all 8 corpus skills.
+//   extractInline — all processing steps, each rule, and every inline-states corpus skill.
 //
 // Testing discipline (binding per DETAIL.md):
 //   - Every assertion drives the real module; no logic is re-implemented here.
@@ -22,6 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { extractInline } from '../lib/flow-graph/extract-inline.mjs';
 import { splitFrontmatter } from '../lib/flow-graph/source.mjs';
 import { validateChart } from '../lib/flow-graph/validate.mjs';
+import { classifySkill } from '../lib/flow-graph/classify.mjs';
+import { discoverSkills } from '../skills/discover.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../../');
@@ -831,24 +833,20 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
   });
 });
 
-// ── All 8 inline-states corpus skills ─────────────────────────────────────────
+// ── Every inline-states corpus skill ──────────────────────────────────────────
 
-// `aid-change-document` was retired and `aid-update-document` is its successor,
-// carrying the same `## State:` sections (INTAKE/AUTHOR/VERIFY/PRESENT/WRITE/DONE).
-// Listed last to keep the array alphabetical. The substitution keeps this array the
-// COMPLETE inline-states corpus rather than a sample of it: classifySkill returns
-// inline-states for exactly the skills named here and for no other live skill, which
-// is what makes the "all 8" claims below true of the array's length.
-const INLINE_SKILLS = [
-  'aid-create-document',
-  'aid-design',
-  'aid-prototype',
-  'aid-report',
-  'aid-research',
-  'aid-review',
-  'aid-test',
-  'aid-update-document',
-];
+// Derived from the classifier rather than listed, so the array is the COMPLETE
+// inline-states corpus, not a sample of it, and stays so as skills come and go.
+const INLINE_SKILLS = discoverSkills()
+  .filter((s) => classifySkill({ name: s.dirName, dir: REPO_ROOT, frontmatter: {}, body: s.body })
+    .shape === 'inline-states')
+  .map((s) => s.dirName);
+
+describe('the inline-states corpus is real', () => {
+  it('finds more than one inline-states skill', () => {
+    expect(INLINE_SKILLS.length).toBeGreaterThan(1);
+  });
+});
 
 describe.each(INLINE_SKILLS)('corpus: %s — invariants', (skillName) => {
   const params = loadSkill(skillName);
@@ -937,7 +935,7 @@ describe('corpus: loop-back back-reference per skill', () => {
       const chart = extractInline(params);
 
       const verify = chart.nodes.find((n) => n.name === 'VERIFY');
-      if (!verify) return; // skill doesn't have VERIFY (shouldn't happen for our 8)
+      if (!verify) return; // skill doesn't have VERIFY
 
       // Measure the declared state names with order < VERIFY's order.
       const earlierStateNames = chart.nodes
@@ -968,13 +966,11 @@ describe('corpus: loop-back back-reference per skill', () => {
         expect(loopEdges.length).toBeGreaterThanOrEqual(1);
       } else {
         // No earlier state name in VERIFY body → no body-scan loop-back.
-        // (aid-update-document: "loop on failure" with no explicit state name.)
         const loopEdgesFromBody = chart.edges.filter(
           (e) => e.from === verify.id && e.kind === 'loop-back'
         );
-        // aid-update-document: body says "loop on failure" but names no state, and
-        // its VERIFY section mentions neither of the two earlier states.
-        // The advance.mjs rule 5 also doesn't fire (VERIFY advance is unconditional).
+        // A body that says "loop on failure" but names no earlier state gets no loop-back,
+        // provided its VERIFY advance is unconditional (advance.mjs rule 5 does not fire).
         expect(loopEdgesFromBody.length).toBe(0);
       }
     });
@@ -983,8 +979,8 @@ describe('corpus: loop-back back-reference per skill', () => {
 
 // ── V9 safety: no skill throws during extraction ──────────────────────────────
 
-describe('V9 safety — extractInline throws on 0 of the 8 inline skills', () => {
-  it('all 8 skills extract without throwing (V9 not triggered)', () => {
+describe('V9 safety — extractInline throws on none of the inline skills', () => {
+  it('every inline skill extracts without throwing (V9 not triggered)', () => {
     // Mutant: use wrong blockStartLine in parseAdvanceBlock call → V9 may see wrong
     //         context and throw for an advance block that references a state it cannot find.
     const errors = [];
@@ -1001,13 +997,13 @@ describe('V9 safety — extractInline throws on 0 of the 8 inline skills', () =>
 });
 
 // ── Rule 8 explicit statement (AC compliance note) ────────────────────────────
-// None of the 8 inline-states corpus skills contain a ## or ### heading whose
+// None of the inline-states corpus skills contain a ## or ### heading whose
 // text contains "Loopback" or "Re-entry". Rule 8 is implemented and tested via
-// REENTRY_FIXTURE above but does not fire on the current 8-skill corpus.
+// REENTRY_FIXTURE above but does not fire on the current corpus.
 // This is explicitly documented here rather than silently absent from the corpus
 // tests, per the task instruction to "say so explicitly."
 describe('rule 8 explicit corpus statement', () => {
-  it('none of the 8 corpus skills have Loopback/Re-entry headings in their bodies', () => {
+  it('no inline-states corpus skill has a Loopback/Re-entry heading in its body', () => {
     for (const skillName of INLINE_SKILLS) {
       const params = loadSkill(skillName);
       const reentryLines = params.allLines.filter(
@@ -1094,7 +1090,7 @@ Keep \`DESIGN.md\` in the work folder as the record.
   });
 
   it('a real loop still emits an edge when the verb wraps onto the PREVIOUS line', () => {
-    // The load-bearing case. aid-create-document, aid-report, aid-test and aid-design all
+    // The load-bearing case. aid-report, aid-test and aid-design all
     // wrap as `... -> loop` / `   to <STATE>.`, so these are real corpus loop edges rather
     // than hypothetical ones, and a line-scoped cue test deletes every one of them.
     //
@@ -1160,7 +1156,7 @@ Finish.
   });
 
   it('"back to" pointing somewhere else does not capture a later-mentioned state', () => {
-    // Shape from aid-update-document:87 — "Write the revision back to the existing
+    // Shape of a revision skill's WRITE step — "Write the revision back to the existing
     // document (the diff was already reviewed at PRESENT)." A loop cue IS present, but
     // its object is "the existing document", not PRESENT.
     // Mutant: test for cue-anywhere-in-block instead of cue-targeting-the-state → n2->n1

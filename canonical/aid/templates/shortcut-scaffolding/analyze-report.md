@@ -103,7 +103,7 @@ persistence).
 | Task | Type | Notes |
 |---|---|---|
 | `task-001` | RESEARCH | compare >= 2 alternatives against `{decision criteria}` (feasibility spike or options analysis, per `task-type-rules.md ## RESEARCH`); ends with a recommendation |
-| `task-002` (optional) | DOCUMENT | write up the recommendation (e.g. an ADR via `aid-document-decision`-shaped content); depends on `task-001` |
+| `task-002` (optional) | DOCUMENT | write up the recommendation (e.g. an ADR via `aid-document decision`-shaped content); depends on `task-001` |
 
 ## Ownership boundary
 
@@ -111,8 +111,8 @@ persistence).
 `aid-report` = **derive insight** from data (RESEARCH); `aid-document` = **communicate
 already-known** information (a status/progress report is G8's bare `aid-document`;
 an analytical report is here). Building the **data pipeline** that feeds a
-report/dashboard is `aid-create-data-pipeline` (G4); adding **data-quality checks**
-on the source is `aid-test-data-quality` (G7); a controlled **experiment/A-B test**
+report/dashboard is `aid-create data-pipeline` (G4); adding **data-quality checks**
+on the source is `aid-test data-quality` (G7); a controlled **experiment/A-B test**
 (design + run) is `aid-experiment` (G7) -- `aid-report` analyzes results, it does not
 design the trial.
 

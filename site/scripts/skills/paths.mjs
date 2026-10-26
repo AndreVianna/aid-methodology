@@ -70,8 +70,8 @@ export const SITE_SKILL_FLOWS_DIR = resolve(SITE_ROOT, 'src', 'data', 'skill-flo
 
 /**
  * Repo-relative POSIX source path for a skill's SKILL.md.
- * @param {string} dirName  e.g. 'aid-create-api'
- * @returns {string}        e.g. 'canonical/skills/aid-create-api/SKILL.md'
+ * @param {string} dirName  e.g. 'aid-create'
+ * @returns {string}        e.g. 'canonical/skills/aid-create/SKILL.md'
  */
 export function skillSourcePath(dirName) {
   return 'canonical/skills/' + dirName + '/SKILL.md';
@@ -79,8 +79,8 @@ export function skillSourcePath(dirName) {
 
 /**
  * Repo-relative POSIX destination path for a skill's generated page.
- * @param {string} dirName  e.g. 'aid-create-api'
- * @returns {string}        e.g. 'site/src/content/docs/skills/aid-create-api.md'
+ * @param {string} dirName  e.g. 'aid-create'
+ * @returns {string}        e.g. 'site/src/content/docs/skills/aid-create.md'
  */
 export function skillDestPath(dirName) {
   return 'site/src/content/docs/skills/' + dirName + '.md';
@@ -88,7 +88,7 @@ export function skillDestPath(dirName) {
 
 /**
  * Full GitHub blob URL for a skill's SKILL.md source file.
- * @param {string} dirName  e.g. 'aid-create-api'
+ * @param {string} dirName  e.g. 'aid-create'
  * @returns {string}
  */
 export function skillGithubUrl(dirName) {
@@ -97,7 +97,7 @@ export function skillGithubUrl(dirName) {
 
 /**
  * Absolute OS path to a specific skill directory.
- * @param {string} dirName  e.g. 'aid-create-api'
+ * @param {string} dirName  e.g. 'aid-create'
  * @returns {string}
  */
 export function skillDirAbs(dirName) {
@@ -106,7 +106,7 @@ export function skillDirAbs(dirName) {
 
 /**
  * Absolute OS path to a skill's SKILL.md file.
- * @param {string} dirName  e.g. 'aid-create-api'
+ * @param {string} dirName  e.g. 'aid-create'
  * @returns {string}
  */
 export function skillFileAbs(dirName) {
@@ -115,7 +115,7 @@ export function skillFileAbs(dirName) {
 
 /**
  * Absolute OS path to a skill's generated destination page.
- * @param {string} dirName  e.g. 'aid-create-api'
+ * @param {string} dirName  e.g. 'aid-create'
  * @returns {string}
  */
 export function skillDestAbs(dirName) {
@@ -124,8 +124,8 @@ export function skillDestAbs(dirName) {
 
 /**
  * Repo-relative POSIX destination path for a skill's flow sidecar.
- * @param {string} dirName  e.g. 'aid-create-api'
- * @returns {string}        e.g. 'site/src/data/skill-flows/aid-create-api.flow.json'
+ * @param {string} dirName  e.g. 'aid-create'
+ * @returns {string}        e.g. 'site/src/data/skill-flows/aid-create.flow.json'
  */
 export function skillFlowPath(dirName) {
   return 'site/src/data/skill-flows/' + dirName + '.flow.json';
@@ -133,7 +133,7 @@ export function skillFlowPath(dirName) {
 
 /**
  * Absolute OS path to a skill's flow sidecar.
- * @param {string} dirName  e.g. 'aid-create-api'
+ * @param {string} dirName  e.g. 'aid-create'
  * @returns {string}
  */
 export function skillFlowAbs(dirName) {

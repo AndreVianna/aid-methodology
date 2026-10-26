@@ -52,8 +52,12 @@ describe('deriveSkillCounts — internal consistency', () => {
   it('finds a plausible corpus, with no literal count asserted', () => {
     // Floors rather than numbers: these move when the roster does, but an empty or
     // nearly-empty read means a broken path, not a smaller corpus.
-    expect(counts.directories).toBeGreaterThan(50);
+    // The corpus is the curated roster plus the catalog's family skills, so it must hold
+    // more than the curated roster alone: a read that finds only those missed the families.
+    expect(counts.directories).toBeGreaterThan(counts.curated);
     expect(counts.curated).toBeGreaterThan(5);
+    expect(counts.familyRows).toBeGreaterThan(5);
+    expect(counts.kindRows).toBeGreaterThan(0);
     expect(counts.shortcuts).toBeGreaterThan(20);
     expect(counts.catalogRows).toBeGreaterThan(counts.shortcuts);
   });
@@ -69,23 +73,28 @@ describe('deriveSkillCounts — internal consistency', () => {
     expect(counts.repurposed).toBeGreaterThan(0);
   });
 
-  it('every curated and shortcut name has a directory on disk', () => {
+  it('every curated and family name has a directory on disk, and nothing else does', () => {
     const onDisk = new Set(
       readdirSync(CANONICAL_SKILLS_DIR, { withFileTypes: true })
         .filter((e) => e.isDirectory()).map((e) => e.name),
     );
     expect(counts.curatedNames.filter((n) => !onDisk.has(n))).toEqual([]);
-    expect(counts.shortcutNames.filter((n) => !onDisk.has(n))).toEqual([]);
-    // Non-vacuity: the sets are real, so the filters above had something to check.
-    expect(counts.curatedNames.length + counts.shortcutNames.length).toBeGreaterThan(50);
+    expect(counts.familyNames.filter((n) => !onDisk.has(n))).toEqual([]);
+    // A kind row has no directory of its own: only its family does.
+    const kindNames = counts.shortcutNames.filter((n) => !counts.familyNames.includes(n));
+    expect(kindNames.filter((n) => onDisk.has(n))).toEqual([]);
+    // The two sets cover the corpus exactly, which is also what makes the filters non-vacuous.
+    expect(new Set([...counts.curatedNames, ...counts.familyNames]).size).toBe(onDisk.size);
   });
 
-  it('decomposes the corpus without double-counting: curatedOnly + catalogRows = directories', () => {
+  it('decomposes the corpus without double-counting: curatedOnly + familyRows = directories', () => {
     // THE identity every reader-facing decomposition depends on. `curated` counts four
     // skills that are also catalog rows, so a sentence built from it does not sum — which
     // is exactly the defect this guard now prevents: the home page briefly read
     // "111 skills — 19 classic … and 64 verb-first", i.e. 85, for a 111-skill corpus.
-    expect(counts.curatedOnly + counts.catalogRows).toBe(counts.directories);
+    // Only family rows own a directory; kind rows are routed by their family skill.
+    expect(counts.curatedOnly + counts.familyRows).toBe(counts.directories);
+    expect(counts.familyRows + counts.kindRows).toBe(counts.catalogRows);
     // And the overlap is real, so the distinction is not academic.
     expect(counts.curated - counts.curatedOnly).toBe(counts.classicRepurposed);
     expect(counts.classicRepurposed).toBeGreaterThan(0);
@@ -112,12 +121,17 @@ describe('deriveSkillCounts — internal consistency', () => {
     // So a missing claim is now a failure, not a skip. If the page's wording changes
     // again, this test says so instead of quietly measuring less.
     const page = readFileSync(join(DOCS, 'reference', 'skills.md'), 'utf8');
+    // A doorway is a family row that is also engine-driven.
+    const doorways = counts.familyNames.filter((n) => counts.shortcutNames.includes(n)).length;
     const claims = [
       ['corpus total', /all \*\*(\d+)\*\* skills/, counts.directories],
-      ['emitting shortcuts', /\*\*(\d+) engine-driven verb-first shortcut skills\*\*/, counts.shortcuts],
+      ['emitting shortcuts', /\*\*(\d+) engine-driven verb-first shortcuts\*\*/, counts.shortcuts],
       ['catalog rows', /\((\d+) rows total/, counts.catalogRows],
-      ['repurpose rows', /the other (\d+) are `repurpose/, counts.repurposed],
-      ['classic re-registered', /the (\d+) classic re-registered/, counts.classicRepurposed],
+      ['family rows', /(\d+) family rows own a skill directory/, counts.familyRows],
+      ['doorways', /the (\d+) doorways plus/, doorways],
+      ['hand-authored family rows', /plus (\d+) hand-authored `repurpose/, counts.familyRows - doorways],
+      ['kind rows', /the other (\d+) are kind rows/, counts.kindRows],
+      ['classic re-registered', /the (\d+) classic\s+re-registered/, counts.classicRepurposed],
     ];
     const missing = [];
     for (const [what, re, expected] of claims) {
@@ -204,20 +218,27 @@ describe('hand-authored pages state no superseded or unguarded claim', () => {
  * table is the coverage boundary, and that is a limit rather than a guarantee.
  */
 const CLAIM_PATTERNS = [
-  { re: /\b(\d+) (?:AID )?skills\b/g, of: (c) => c.directories, what: 'corpus total' },
+  // A kind row owns no directory, so a count of SKILLS from the catalog is a count of its
+  // family rows, while a count of ROWS or shortcuts includes the kinds. The noun decides.
+  { re: /\b(\d+) (?:AID )?skills\b(?! that own a row| and their kinds)/g, of: (c) => c.directories, what: 'corpus total' },
   { re: /\b(\d+) skill directories\b/g, of: (c) => c.directories, what: 'corpus total' },
   { re: /\b(\d+) skill definitions\b/g, of: (c) => c.directories, what: 'corpus total' },
   { re: /\b(\d+) curated\b/g, of: (c) => c.curatedOnly, what: 'curated (non-catalog)' },
-  { re: /\b(\d+) verb-first\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+) verb-first\b(?! shortcut doorways)/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
   { re: /\b(\d+) shortcut skills\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+) shortcuts\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
   { re: /\b(\d+) engine-driven verb-first shortcut skills\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+) (?:(?:engine-)?generated |verb-first )(?:Lite-Path )?(?:shortcut )?doorways\b/g, of: (c) => c.doorways, what: 'generated doorways' },
   { re: /\b(\d+)-row (?:shortcut )?catalog\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
   { re: /\((\d+) rows total\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
-  { re: /\b(\d+) shortcut-catalog skills\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
-  { re: /\b(\d+) catalog skills\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
-  { re: /\b(\d+) hand-authored `repurpose`/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /\b(\d+) shortcut-catalog skills\b/g, of: (c) => c.familyRows, what: 'catalog family rows' },
+  { re: /\b(\d+) catalog skills\b/g, of: (c) => c.familyRows, what: 'catalog family rows' },
+  { re: /\b(\d+) skills that own a row\b/g, of: (c) => c.familyRows, what: 'catalog family rows' },
+  { re: /\b(\d+) hand-authored `repurpose` rows\b/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /\b(\d+) hand-authored `repurpose` skills\b/g, of: (c) => c.familyRepurposed, what: 'repurpose skills' },
   { re: /the other (\d+) are `repurpose/g, of: (c) => c.repurposed, what: 'repurpose rows' },
-  { re: /\b(\d+) `repurpose` skills\b/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /\b(\d+) `repurpose` skills\b/g, of: (c) => c.familyRepurposed, what: 'repurpose skills' },
+  { re: /\b(\d+) skills and their kinds\b/g, of: (c) => c.familyRepurposed, what: 'repurpose skills' },
   { re: /the (\d+) classic\s+re-registered/g, of: (c) => c.classicRepurposed, what: 'classic re-registered' },
   { re: /\b(\d+) canonical names?\b/g, of: (c) => c.catalogCanonical, what: 'catalog canonical names' },
   { re: /\b(\d+) canonical\b(?! names)/g, of: (c) => c.catalogCanonical, what: 'catalog canonical names' },
@@ -271,7 +292,8 @@ describe('every roster claim on every page equals the derivation', () => {
       for (const line of readFileSync(p, 'utf8').split('\n')) {
         const m = /and (\d+) others\b/.exec(line);
         if (!m) continue;
-        const named = (line.slice(0, m.index).match(/`\/aid-[a-z-]+`/g) || []).length;
+        // A kind is named after its family as `/aid-<verb> <kind>`, so allow one argument word.
+        const named = (line.slice(0, m.index).match(/`\/aid-[a-z-]+(?: [a-z-]+)?`/g) || []).length;
         expect(named + Number(m[1]), `${basename(p)}: ${named} named + ${m[1]} others`)
           .toBe(counts.shortcuts);
         checked++;

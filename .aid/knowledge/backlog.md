@@ -14,7 +14,7 @@ audience: [developer, architect, pm]
 
 This document holds the work items that have been explicitly accepted into the plan but not
 yet shipped. An item moves here when a human makes a deliberate planning decision to commit
-to it — the per-item confirm gate at `/aid-create-backlog` or `/aid-update-backlog`. Raw,
+to it — the per-item confirm gate at `/aid-create backlog` or `/aid-update backlog`. Raw,
 unscheduled debt observations stay in `tech-debt.md` until that decision is made; shipped
 items move to `release-tracking.md`.
 

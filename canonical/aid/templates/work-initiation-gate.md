@@ -9,8 +9,8 @@ branch. This is the Concern B counterpart to Concern A's `.aid/works/` container
 Consulted by: the direct-entry shortcut engine's INTAKE
 (`.aid/runtime/templates/shortcut-engine.md`), `aid-describe`, and the
 collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
-`aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
-`aid-update-document`. Each references THIS file at its allocation step rather
+`aid-report`, `aid-test`, `aid-prototype`, `aid-create document`,
+`aid-update document`. Each references THIS file at its allocation step rather
 than re-implementing the logic.
 
 > **Where the gate sits.** It runs at the exact point a starter would otherwise

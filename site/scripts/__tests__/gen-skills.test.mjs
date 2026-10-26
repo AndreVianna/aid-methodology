@@ -1318,9 +1318,14 @@ describe('gen-skills: flow sidecars', () => {
 
     // The doorway shapes are populated, so this is not passing because they vanished
     // — the arm that used to assert they had NO sidecar.
-    const doorwayCount = m.shapeCounts['engine-doorway'] + m.shapeCounts['sibling-doorway'];
-    expect(doorwayCount).toBeGreaterThan(0);
-    for (const shape of shapes) expect(m.shapeCounts[shape]).toBeGreaterThan(0);
+    expect(m.shapeCounts['engine-doorway']).toBeGreaterThan(0);
+    // Every other shape is populated too, except sibling-doorway: no skill in the corpus
+    // delegates to a sibling skill any more, so that shape charts only in the fixtures of
+    // flow-classify.test.mjs and flow-facade.test.mjs.
+    expect(m.shapeCounts['sibling-doorway']).toBe(0);
+    for (const shape of shapes.filter((s) => s !== 'sibling-doorway')) {
+      expect(m.shapeCounts[shape]).toBeGreaterThan(0);
+    }
   });
 
   it('the generator CREATES the sidecars — deleting them all and re-running restores them', async () => {

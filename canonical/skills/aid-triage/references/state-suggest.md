@@ -91,6 +91,8 @@ not fire twice for the same run) and continue triage from there.
 | `[2]` treat as a task instead (Case D) | fall through to `state-classify.md` Step 1 and continue triage; no HALT yet |
 | user rejects every option offered | print the `/aid-describe` invocation (conservative default -- mirrors aid-describe's former TRIAGE state's Step 4 rule: "any signal short of one confident match routes to full") |
 
+A row's shortcut invocation is `/{name}`, or `/{kind_of} {artifact}` for a kind row (one with `kind_of`).
+
 The rule is intentionally conservative: any signal short of one confident,
 user-confirmed single shortcut routes to the full path.
 

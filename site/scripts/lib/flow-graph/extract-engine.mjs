@@ -56,7 +56,7 @@ export const RESOLUTION_NOTICE =
  * their deterministic positions as established by engine-core.mjs).
  *
  * @param {object} skillRecord  SkillRecord as produced by discover.mjs
- * @param {string} skillRecord.dirName        Skill directory name (e.g. 'aid-create-api')
+ * @param {string} skillRecord.dirName        Skill directory name (e.g. 'aid-create')
  * @param {string} skillRecord.sourcePath     Repo-root-relative POSIX path to SKILL.md
  * @param {string} skillRecord.body           Body text (after frontmatter closing fence)
  * @param {number} skillRecord.bodyStartLine  1-based file line of body[0]

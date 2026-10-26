@@ -3,21 +3,21 @@
 # aid-prototype family scaffold + halt proof.
 #
 # The shortcut engine + the prototype scaffolding reference are agent-executed PROSE, not
-# executable scripts -- a deterministic canonical test cannot "run" /aid-prototype-ui. This
+# executable scripts -- a deterministic canonical test cannot "run" /aid-prototype ui. This
 # suite is therefore CONTRACT + FIXTURE-SHAPE, matching the other work-001 shortcut-engine
 # suites (test-fix-family-scaffold.sh, test-create-family-scaffold.sh,
 # test-change-refactor-family-scaffold.sh, test-test-experiment-family-scaffold.sh):
 #
 #   1. Contract assertions -- grep shortcut-scaffolding/prototype.md for the load-bearing
 #      elements: aid-prototype's CAPTURE slots (fidelity-level enum) and DESIGN ->
-#      [IMPLEMENT] breakdown, aid-prototype-ui's CAPTURE slots and ### UI Specs activation,
+#      [IMPLEMENT] breakdown, aid-prototype ui's CAPTURE slots and ### UI Specs activation,
 #      and the Ownership-boundary handoff to aid-create/aid-update (+ testing-with-users
 #      routed to G7).
 #   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 2 G3 rows
-#      (aid-prototype, aid-prototype-ui), both default_type DESIGN, neither carrying an
+#      (aid-prototype, aid-prototype ui), both default_type DESIGN, neither carrying an
 #      alias (feature-005 SPEC "Catalog rows owned" -- 2 canonical, no aliases).
 #   3. Fixture-shape assertions -- two hand-authored flattened work fixtures mirroring what
-#      `/aid-prototype-ui` and bare `/aid-prototype` would produce, both halted at
+#      `/aid-prototype ui` and bare `/aid-prototype` would produce, both halted at
 #      APPROVAL-HALT (pre-Execute). Proves the binding drives the correct DESIGN-typed
 #      shape (feature-005's own testing strategy) for both family members.
 #
@@ -65,13 +65,13 @@ assert_output_contains "$PROTO_TXT" \
     'Scope boundary | what the prototype does **not** attempt' \
     "PFS01b aid-prototype captures an explicit scope boundary (what it does NOT attempt)"
 
-# PFS-02: aid-prototype-ui CAPTURE slots.
+# PFS-02: aid-prototype ui CAPTURE slots.
 assert_output_contains "$PROTO_TXT" \
     'Target screen(s) / flow | the screen(s) or flow being wireframed' \
-    "PFS02a aid-prototype-ui captures target screen(s)/flow"
+    "PFS02a aid-prototype ui captures target screen(s)/flow"
 assert_output_contains "$PROTO_TXT" \
     'Key interactions + states | the interactions and states to mock (loading, empty, error, success' \
-    "PFS02b aid-prototype-ui captures key interactions + states"
+    "PFS02b aid-prototype ui captures key interactions + states"
 
 # PFS-03: aid-prototype is a hand-authored collapse skill (work-005) -- it produces the
 # throwaway model directly and emits NO SPEC.md and NO tasks; a prototype is throwaway
@@ -86,11 +86,11 @@ assert_output_contains "$PROTO_TXT" \
     'it emits no tasks' \
     "PFS03c aid-prototype collapse emits no tasks"
 
-# PFS-04: aid-prototype-ui likewise emits no SPEC.md (its interaction flow / a11y notes are
+# PFS-04: aid-prototype ui likewise emits no SPEC.md (its interaction flow / a11y notes are
 # part of the wireframe, not a ### UI Specs SPEC section).
 assert_output_contains "$PROTO_TXT" \
     'A ui prototype likewise emits no spec document' \
-    "PFS04 aid-prototype-ui emits no SPEC.md"
+    "PFS04 aid-prototype ui emits no SPEC.md"
 
 # PFS-05: aid-prototype BUILD -- low-fidelity model + optional throwaway spike, never production.
 assert_output_contains "$PROTO_TXT" \
@@ -103,13 +103,13 @@ assert_output_contains "$PROTO_TXT" \
     'never a production build' \
     "PFS05c aid-prototype runnable spike is never a production build"
 
-# PFS-06: aid-prototype-ui BUILD -- wireframe/mock + interaction flow, optional clickable flow.
+# PFS-06: aid-prototype ui BUILD -- wireframe/mock + interaction flow, optional clickable flow.
 assert_output_contains "$PROTO_TXT" \
     'a **wireframe/mock of `{screens}` + interaction flow**' \
-    "PFS06a aid-prototype-ui builds a wireframe/mock + interaction flow"
+    "PFS06a aid-prototype ui builds a wireframe/mock + interaction flow"
 assert_output_contains "$PROTO_TXT" \
     'optionally a clickable flow prototype' \
-    "PFS06b aid-prototype-ui optionally builds a clickable flow prototype"
+    "PFS06b aid-prototype ui optionally builds a clickable flow prototype"
 
 # PFS-07: Ownership boundary -- validates direction, not the production build; hands off to
 # aid-create[-artifact]/aid-update; testing with users is G7.
@@ -141,13 +141,17 @@ get_row_field() {
     ' "$CATALOG"
 }
 
-# PFS-10: exactly 2 G3 rows exist, each with the aid- prefix and a matching skill dir.
+# PFS-10: exactly 2 G3 rows exist, each with the aid- prefix and a skill dir, or for a kind row its family's reference file.
 G3_NAMES=(aid-prototype aid-prototype-ui)
 for name in "${G3_NAMES[@]}"; do
     ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
     assert_eq "$ROW_COUNT" "1" "PFS10 [${name}] exactly one catalog row named exactly ${name}"
-    assert_dir_exists "${SKILLS_ROOT}/${name}" "PFS10 [${name}] skill directory exists"
-    assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "PFS10 [${name}] SKILL.md exists"
+    fam=$(get_row_field "$name" "kind_of"); art=$(get_row_field "$name" "artifact")
+    if [[ -n "$fam" ]]; then
+        assert_file_exists "${SKILLS_ROOT}/${fam}/references/${art}.md" "PFS10 [${name}] kind text exists at ${fam}/references/${art}.md"
+    else
+        assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "PFS10 [${name}] SKILL.md exists"
+    fi
 done
 
 # PFS-11: default_type mapping -- both prototype rows -> DESIGN (feature-005 A-6 mapping).
@@ -164,9 +168,9 @@ assert_eq "$VERB_PROTO" "prototype" "PFS12a aid-prototype row: verb == prototype
 ARTIFACT_PROTO=$(get_row_field "aid-prototype" "artifact")
 assert_eq "$ARTIFACT_PROTO" "" "PFS12b aid-prototype row: artifact == \"\" (bare)"
 VERB_PROTO_UI=$(get_row_field "aid-prototype-ui" "verb")
-assert_eq "$VERB_PROTO_UI" "prototype" "PFS12c aid-prototype-ui row: verb == prototype"
+assert_eq "$VERB_PROTO_UI" "prototype" "PFS12c aid-prototype ui row: verb == prototype"
 ARTIFACT_PROTO_UI=$(get_row_field "aid-prototype-ui" "artifact")
-assert_eq "$ARTIFACT_PROTO_UI" "ui" "PFS12d aid-prototype-ui row: artifact == ui"
+assert_eq "$ARTIFACT_PROTO_UI" "ui" "PFS12d aid-prototype ui row: artifact == ui"
 
 # PFS-13: no alias on either row (feature-005 SPEC "2 canonical, no aliases").
 for name in "${G3_NAMES[@]}"; do
@@ -175,15 +179,15 @@ for name in "${G3_NAMES[@]}"; do
 done
 
 # PFS-14: no aid-prototype-* directory beyond the one -ui suffix (no other artifact variant).
-EXTRA_DIRS=$(find "$SKILLS_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'aid-prototype-*' ! -name 'aid-prototype-ui' 2>/dev/null || true)
+EXTRA_DIRS=$(find "$SKILLS_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'aid-prototype-*' ! -name 'aid-prototype ui' 2>/dev/null || true)
 if [[ -z "$EXTRA_DIRS" ]]; then
-    pass "PFS14 no canonical/skills/aid-prototype-* directory exists beyond aid-prototype-ui"
+    pass "PFS14 no canonical/skills/aid-prototype-* directory exists beyond aid-prototype ui"
 else
-    fail "PFS14 no canonical/skills/aid-prototype-* directory exists beyond aid-prototype-ui -- found: ${EXTRA_DIRS}"
+    fail "PFS14 no canonical/skills/aid-prototype-* directory exists beyond aid-prototype ui -- found: ${EXTRA_DIRS}"
 fi
 
 # ===========================================================================
-# Part 3 -- Fixture-shape assertions (aid-prototype-ui + bare aid-prototype)
+# Part 3 -- Fixture-shape assertions (aid-prototype ui + bare aid-prototype)
 # ===========================================================================
 echo ""
 echo "--- Part 3: fixture-shape assertions ---"
@@ -192,7 +196,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_prototype_ui_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-prototype-ui + shortcut-engine.md
+# Hand-authors a flattened work mirroring what /aid-prototype ui + shortcut-engine.md
 # would produce: ### UI Specs activated, Data Model "no schema changes", single task-001
 # DESIGN (wireframe/mock + interaction flow), halted pre-Execute.
 build_prototype_ui_fixture() {
@@ -386,7 +390,7 @@ aid-test).
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-prototype-ui (prototype, artifact
+Shortcut-generated flattened Lite work. Source: /aid-prototype ui (prototype, artifact
 'ui').
 EOF
 
@@ -418,7 +422,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-prototype-ui
+- **Active Skill:** aid-prototype ui
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -703,7 +707,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-prototype-ui (the literal fixture named by task-022's Scope)
+# Fixture A: aid-prototype ui (the literal fixture named by task-022's Scope)
 # ---------------------------------------------------------------------------
 UI_DIR="${TMP}/work-prototype-ui"
 build_prototype_ui_fixture "$UI_DIR"
@@ -716,8 +720,8 @@ assert_file_contains "${UI_DIR}/tasks/task-001/DETAIL.md" "**Type:** DESIGN" \
     "PFS22 prototype-ui fixture: task-001 is DESIGN"
 UI_TASK_COUNT=$(find "${UI_DIR}/tasks" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
 assert_eq "$UI_TASK_COUNT" "1" "PFS23 prototype-ui fixture: single-task shape (task-001 only)"
-assert_file_contains "${UI_DIR}/STATE.md" "**Active Skill:** aid-prototype-ui" \
-    "PFS24 prototype-ui fixture: Active Skill is aid-prototype-ui"
+assert_file_contains "${UI_DIR}/STATE.md" "**Active Skill:** aid-prototype ui" \
+    "PFS24 prototype-ui fixture: Active Skill is aid-prototype ui"
 
 # ---------------------------------------------------------------------------
 # Fixture B: bare aid-prototype (proves the family's DESIGN default + optional spike)

@@ -3,7 +3,7 @@
 # aid-create family scaffold test.
 #
 # The shortcut engine + the create scaffolding reference are agent-executed PROSE, not
-# executable scripts -- a deterministic canonical test cannot "run" /aid-create-api. This
+# executable scripts -- a deterministic canonical test cannot "run" /aid-create api. This
 # suite is therefore CONTRACT + FIXTURE-SHAPE, matching the other work-001 shortcut-engine
 # suites (test-fix-family-scaffold.sh, test-catalog-dirs-parity.sh):
 #
@@ -13,13 +13,13 @@
 #      rows, the strictly-sequential task-dependency rule, and the Ownership-boundary
 #      routing (test/experiment/document/report carved out of create).
 #   2. Catalog + doorway contract -- checked against the REAL catalog + skill dirs:
-#      `aid-create-api`'s row carries the expected `{verb, artifact}` binding, the
-#      `aid-create-data-model` row is MIGRATE-typed, and the generated `aid-create-api`
+#      `aid-create api`'s row carries the expected `{verb, artifact}` binding, the
+#      `aid-create data-model` row is MIGRATE-typed, and the generated `aid-create api`
 #      doorway binds the same VERB/ARTIFACT pair as its catalog row.
 #      The alias-equivalence half of this part was DELETED by work-004 delivery-003
 #      task-003 (feature-006 Decision 5) -- see the justification comments below.
 #   3. Fixture-shape assertions -- two hand-authored flattened work fixtures mirroring what
-#      `/aid-create-api` and `/aid-create-data-model` would produce (API: IMPLEMENT ->
+#      `/aid-create api` and `/aid-create data-model` would produce (API: IMPLEMENT ->
 #      IMPLEMENT -> TEST + `### API Contracts`; data-model: MIGRATE -> IMPLEMENT -> TEST +
 #      `### Migration Plan`), both halted at APPROVAL-HALT (pre-Execute).
 #
@@ -98,8 +98,8 @@ assert_output_contains "$CREATE_TXT" \
     "CFS04b strictly-sequential task-dependency rule stated (wrap point 2)"
 
 # CFS-05: Ownership boundary -- test/experiment/doc/report/dashboard carved out of create
-# (work-005: routing re-authored -- running-tests -> aid-test, doc -> aid-create-document,
-# report -> aid-report, dashboard -> aid-create-dashboard; each on its own source line).
+# (work-005: routing re-authored -- running-tests -> aid-test, doc -> aid-create document,
+# report -> aid-report, dashboard -> aid-create dashboard; each on its own source line).
 assert_output_contains "$CREATE_TXT" \
     '**running tests / verification -> `aid-test`**' \
     "CFS05a Ownership boundary: running tests/verification -> aid-test"
@@ -107,11 +107,11 @@ assert_output_contains "$CREATE_TXT" \
     '**experiment -> `aid-experiment`**,' \
     "CFS05b Ownership boundary: experiment -> aid-experiment"
 assert_output_contains "$CREATE_TXT" \
-    '`aid-create-document`**, **report -> `aid-report`**, **dashboard ->' \
-    "CFS05c Ownership boundary: doc/content -> aid-create-document, report -> aid-report"
+    '`aid-create document`**, **report -> `aid-report`**, **dashboard ->' \
+    "CFS05c Ownership boundary: doc/content -> aid-create document, report -> aid-report"
 assert_output_contains "$CREATE_TXT" \
-    '`aid-create-dashboard`**.' \
-    "CFS05d Ownership boundary: dashboard -> aid-create-dashboard"
+    '`aid-create dashboard`**.' \
+    "CFS05d Ownership boundary: dashboard -> aid-create dashboard"
 assert_output_contains "$CREATE_TXT" \
     '`aid-update` (`shortcut-scaffolding/change-refactor.md`),' \
     "CFS05e Ownership boundary: modifying an existing artifact routes to aid-update"
@@ -121,7 +121,7 @@ echo "--- Part 2: catalog + doorway contract (checked against the real catalog +
 
 # CFS-10 -- DELETED by work-004 delivery-003 task-003.
 # `CFS10a` asserted that the engine's alias-resolution sentence named the exact pair
-# `aid-add-api` / `aid-create-api`; `CFS10b` asserted the same sentence's second clause
+# `aid-add-api` / `aid-create api`; `CFS10b` asserted the same sentence's second clause
 # ("both resolve `shortcut-scaffolding/create.md`;"). feature-005 removed that
 # parenthetical from `canonical/aid/templates/shortcut-engine.md` when the alias family
 # was retired -- measured here: `grep -n 'both resolve' shortcut-engine.md` returns no
@@ -131,7 +131,7 @@ echo "--- Part 2: catalog + doorway contract (checked against the real catalog +
 # `ENGINE_FLAT` was read only by these two, so it and `ENGINE_TXT`/`$ENGINE` stay only
 # as far as CFS00b's existence check needs them.
 
-# CFS-11: catalog row -- aid-create-api carries the expected {verb, artifact} binding.
+# CFS-11: catalog row -- aid-create api carries the expected {verb, artifact} binding.
 get_row_field() {
     local name="$1" field="$2"
     awk -v target="  - name: ${name}" -v fieldpat="^    ${field}:" '
@@ -144,12 +144,12 @@ get_row_field() {
 CREATE_API_VERB=$(get_row_field "aid-create-api" "verb")
 CREATE_API_ARTIFACT=$(get_row_field "aid-create-api" "artifact")
 
-assert_eq "$CREATE_API_VERB" "create" "CFS11a aid-create-api row: verb == create"
-assert_eq "$CREATE_API_ARTIFACT" "api" "CFS11b aid-create-api row: artifact == api"
+assert_eq "$CREATE_API_VERB" "create" "CFS11a aid-create api row: verb == create"
+assert_eq "$CREATE_API_ARTIFACT" "api" "CFS11b aid-create api row: artifact == api"
 # CFS11c / CFS11d / CFS11e -- DELETED by work-004 delivery-003 task-003.
 # All three took `aid-add-api`'s catalog row as their subject: `CFS11c` its verb being
-# identical to `aid-create-api`'s, `CFS11d` its artifact likewise, `CFS11e` its
-# `alias_of: aid-create-api`. feature-001 removed the row; measured here,
+# identical to `aid-create api`'s, `CFS11d` its artifact likewise, `CFS11e` its
+# `alias_of: aid-create api`. feature-001 removed the row; measured here,
 # `grep -c '^  - name: aid-add-api$' shortcut-catalog.yml` returns 0 and
 # `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 for every catalogue row.
 # `get_row_field` on an absent row returns the empty string, so all three now read ""
@@ -159,18 +159,18 @@ assert_eq "$CREATE_API_ARTIFACT" "api" "CFS11b aid-create-api row: artifact == a
 # The `ADD_API_VERB` / `ADD_API_ARTIFACT` / `ADD_API_ALIAS_OF` bindings are gone with
 # them; nothing else in this suite read them.
 
-# CFS-12: aid-create-data-model row is MIGRATE-typed (the feature-003 reclassification).
+# CFS-12: aid-create data-model row is MIGRATE-typed (the feature-003 reclassification).
 DATA_MODEL_DEFAULT_TYPE=$(get_row_field "aid-create-data-model" "default_type")
-assert_eq "$DATA_MODEL_DEFAULT_TYPE" "MIGRATE" "CFS12 aid-create-data-model row: default_type == MIGRATE"
+assert_eq "$DATA_MODEL_DEFAULT_TYPE" "MIGRATE" "CFS12 aid-create data-model row: default_type == MIGRATE"
 
-# CFS-13: the generated aid-create-api doorway binds the VERB=`create` ARTIFACT=`api` pair.
-CREATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-create-api/SKILL.md" 2>/dev/null || true)
-assert_output_contains "$CREATE_API_BODY" 'VERB=`create`' "CFS13a aid-create-api doorway binds VERB=\`create\`"
-assert_output_contains "$CREATE_API_BODY" 'ARTIFACT=`api`' "CFS13b aid-create-api doorway binds ARTIFACT=\`api\`"
+# CFS-13: the generated aid-create api doorway binds the VERB=`create` ARTIFACT=`api` pair.
+CREATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-create/SKILL.md" 2>/dev/null || true)
+assert_output_contains "$CREATE_API_BODY" 'VERB=`create`' "CFS13a aid-create api doorway binds VERB=\`create\`"
+assert_output_contains "$CREATE_API_BODY" '`api`' "CFS13b the aid-create doorway lists the kind \`api\`"
 # CFS13c / CFS13d / CFS13e -- DELETED by work-004 delivery-003 task-003.
 # Their subject was the GENERATED `canonical/skills/aid-add-api/SKILL.md` doorway:
-# `CFS13c`/`CFS13d` that it bound the same VERB/ARTIFACT pair as `aid-create-api`'s,
-# `CFS13e` that its body carried the sentence "thin alias of `aid-create-api`".
+# `CFS13c`/`CFS13d` that it bound the same VERB/ARTIFACT pair as `aid-create api`'s,
+# `CFS13e` that its body carried the sentence "thin alias of `aid-create api`".
 # feature-004 pruned the directory (`test -d canonical/skills/aid-add-api` is false, and
 # no `aid-add*` directory survives anywhere under `canonical/skills/`) and
 # feature-002/FR-3a deleted the "thin alias of" emitter from
@@ -187,7 +187,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_create_api_fixture <work-dir> <shortcut-name>
-# Hand-authors a flattened work mirroring what /aid-create-api + shortcut-engine.md would
+# Hand-authors a flattened work mirroring what /aid-create api + shortcut-engine.md would
 # produce, per create.md's own SPEC-section activation + task-breakdown template for the
 # `api` artifact, halted at APPROVAL-HALT. (It kept a <shortcut-name> parameter because
 # the deleted Part 4 called it twice, once per alias; Fixture A remains the one caller.)
@@ -459,7 +459,7 @@ EOF
 }
 
 # build_create_data_model_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-create-data-model +
+# Hand-authors a flattened work mirroring what /aid-create data-model +
 # shortcut-engine.md would produce, per create.md's data-model row: MIGRATE ->
 # IMPLEMENT -> TEST, ### Data Model + ### Migration Plan activated, halted pre-Execute.
 build_create_data_model_fixture() {
@@ -644,7 +644,7 @@ verb=create, artifact=data-model.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-create-data-model (create,
+Shortcut-generated flattened Lite work. Source: /aid-create data-model (create,
 artifact 'data-model').
 EOF
 
@@ -709,7 +709,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-create-data-model
+- **Active Skill:** aid-create data-model
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -733,10 +733,10 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-create-api
+# Fixture A: aid-create api
 # ---------------------------------------------------------------------------
 API_DIR="${TMP}/work-create-api"
-build_create_api_fixture "$API_DIR" "aid-create-api"
+build_create_api_fixture "$API_DIR" "aid-create api"
 
 assert_file_contains "${API_DIR}/SPEC.md" "### API Contracts" \
     "CFS20 create-api fixture: SPEC.md activates ### API Contracts"
@@ -756,7 +756,7 @@ assert_file_contains "${API_DIR}/PLAN.md" "| task-003 | task-002 |" \
     "CFS26b create-api fixture: PLAN.md Execution Graph carries task-003 -> task-002"
 
 # ---------------------------------------------------------------------------
-# Fixture B: aid-create-data-model
+# Fixture B: aid-create data-model
 # ---------------------------------------------------------------------------
 DM_DIR="${TMP}/work-create-data-model"
 build_create_data_model_fixture "$DM_DIR"
@@ -771,8 +771,8 @@ assert_file_contains "${DM_DIR}/tasks/task-002/DETAIL.md" "**Type:** IMPLEMENT" 
     "CFS33 create-data-model fixture: task-002 is IMPLEMENT (repo/model wiring)"
 assert_file_contains "${DM_DIR}/tasks/task-003/DETAIL.md" "**Type:** TEST" \
     "CFS34 create-data-model fixture: task-003 is TEST"
-assert_file_contains "${DM_DIR}/STATE.md" "**Active Skill:** aid-create-data-model" \
-    "CFS35 create-data-model fixture: Active Skill is aid-create-data-model"
+assert_file_contains "${DM_DIR}/STATE.md" "**Active Skill:** aid-create data-model" \
+    "CFS35 create-data-model fixture: Active Skill is aid-create data-model"
 
 # ---------------------------------------------------------------------------
 # Both fixtures: halt-proof + engine-smoke shape (feature-003 FR-3/FR-4/FR-6/FR-10).
@@ -819,7 +819,7 @@ done
 # Part 4 -- DELETED by work-004 delivery-003 task-003 (feature-006 Decision 5).
 #
 # Part 4 was the alias-equivalence fixture-shape proof: it built the SAME fixture twice
-# via `build_create_api_fixture`, once labelled `aid-create-api` and once `aid-add-api`,
+# via `build_create_api_fixture`, once labelled `aid-create api` and once `aid-add-api`,
 # normalized away the invoking shortcut's own name, and asserted the two work shapes
 # were byte-identical -- `CFS50` once per compared file (8 executions) and `CFS51` once
 # for the aggregate verdict.

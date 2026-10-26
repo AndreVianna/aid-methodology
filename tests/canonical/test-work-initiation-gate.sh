@@ -397,12 +397,10 @@ STARTERS=(
     "canonical/skills/aid-report/SKILL.md"
     "canonical/skills/aid-test/SKILL.md"
     "canonical/skills/aid-prototype/SKILL.md"
-    "canonical/skills/aid-create-document/SKILL.md"
-    # feature-003 moved the document-editing starter: its directory was deleted and the body
-    # promoted into aid-update-document/. One element's VALUE moves; the array's length does
-    # not -- nothing is added or removed, so the "10" below is re-checked and kept, not stale.
-    # Its twin binding in STARTER_ALLOC_ANCHOR below must move with it.
-    "canonical/skills/aid-update-document/SKILL.md"
+    "canonical/skills/aid-create/references/document.md"
+    # The two document starters are kinds of aid-create / aid-update, so their text lives in
+    # each family's references/document.md. Their twin bindings below must move with them.
+    "canonical/skills/aid-update/references/document.md"
 )
 assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under coverage"
 
@@ -421,8 +419,8 @@ declare -A STARTER_ALLOC_ANCHOR=(
     ["canonical/skills/aid-report/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-prototype/SKILL.md"]="**then** allocate (\`"
-    ["canonical/skills/aid-create-document/SKILL.md"]="**then** allocate (\`"
-    ["canonical/skills/aid-update-document/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-create/references/document.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-update/references/document.md"]="**then** allocate (\`"
 )
 
 # Per-starter coverage ID for the ordering check below -- the token that gives each
@@ -458,8 +456,8 @@ declare -A STARTER_COVERAGE_ID=(
     ["canonical/skills/aid-report/SKILL.md"]="GG06-aid-report"
     ["canonical/skills/aid-test/SKILL.md"]="GG07-aid-test"
     ["canonical/skills/aid-prototype/SKILL.md"]="GG08-aid-prototype"
-    ["canonical/skills/aid-create-document/SKILL.md"]="GG09-aid-create-document"
-    ["canonical/skills/aid-update-document/SKILL.md"]="GG10-aid-update-document"
+    ["canonical/skills/aid-create/references/document.md"]="GG09-aid-create-document"
+    ["canonical/skills/aid-update/references/document.md"]="GG10-aid-update-document"
 )
 
 # Collision-proofness is ENFORCED here, not merely asserted in prose: an ID that is

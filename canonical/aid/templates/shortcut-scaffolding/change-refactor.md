@@ -179,7 +179,7 @@ Bare verb, no artifact parameter:
 | Slot | Notes |
 |---|---|
 | From -> To | the current state and the target state (a dependency version, a framework, a platform, or a dataset's current location) |
-| Scope | closed enum: `data` \| `dependency` \| `framework` \| `platform` -- narrows what the MIGRATE task actually moves. Non-schema: a schema/entity migration stays `aid-create-data-model`/`aid-update-data-model`, not here |
+| Scope | closed enum: `data` \| `dependency` \| `framework` \| `platform` -- narrows what the MIGRATE task actually moves. Non-schema: a schema/entity migration stays `aid-create data-model`/`aid-update data-model`, not here |
 | Rollback plan | how to revert if the migration fails partway -- `task-type-rules.md ## MIGRATE` requires this unconditionally |
 
 **Escalation.** Same rule: escalate only when the From -> To delta or the
@@ -217,8 +217,8 @@ call sites. **Deprecating** is the middle step between `aid-update`/no action
 and `aid-remove`: the target still works, but callers are warned off it ahead
 of a later, separate removal -- `aid-deprecate` never deletes anything itself.
 **Migrating** data/a dependency/a framework/a platform is `aid-migrate`, kept
-distinct from a **schema** migration (`aid-create-data-model`/
-`aid-update-data-model`, G4/G5's own `data-model` artifact suffix) by scope,
+distinct from a **schema** migration (`aid-create data-model`/
+`aid-update data-model`, G4/G5's own `data-model` artifact suffix) by scope,
 not by verb family. Assessing whether something *should* be removed/deprecated/
 migrated, before committing to the change, is `aid-review`/`aid-research`
 (G11, `shortcut-scaffolding/analyze-report.md`) -- this file's four verbs all

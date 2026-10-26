@@ -4,14 +4,14 @@
 #
 # The shortcut engine + the test/experiment scaffolding reference are agent-executed
 # PROSE, not executable scripts -- a deterministic canonical test cannot "run"
-# /aid-test-security or /aid-experiment. This suite is therefore CONTRACT +
+# /aid-test security or /aid-experiment. This suite is therefore CONTRACT +
 # FIXTURE-SHAPE, matching the other work-001 shortcut-engine suites
 # (test-fix-family-scaffold.sh, test-create-family-scaffold.sh,
 # test-change-refactor-family-scaffold.sh):
 #
 #   1. Contract assertions -- grep shortcut-scaffolding/test-experiment.md for the
 #      load-bearing elements: aid-test's two inferred modes (functional/model-eval),
-#      aid-test-security's SPEC activation + findings-route-to-aid-fix contract,
+#      aid-test security's SPEC activation + findings-route-to-aid-fix contract,
 #      aid-experiment's RESEARCH -> [IMPLEMENT] -> RESEARCH chain, and the Ownership
 #      boundary (G7 owns test/experiment wholly, not aid-create).
 #   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 5 G7
@@ -19,9 +19,9 @@
 #      aid-experiment), NO alias row for any of them (feature-009's "5 canonical, no
 #      aliases"), and the test/test-* -> TEST, experiment -> RESEARCH default_type mapping.
 #      Scope, because `group: G7` is a WIDER set: 7 catalog rows carry `group: G7`, the
-#      other 2 being aid-create-test and aid-update-test, which feature-009 does not own.
+#      other 2 being aid-create test and aid-update test, which feature-009 does not own.
 #   3. Fixture-shape assertions -- three hand-authored flattened work fixtures mirroring
-#      what `/aid-test-security`, `/aid-experiment`, and `/aid-test` (model-eval mode)
+#      what `/aid-test security`, `/aid-experiment`, and `/aid-test` (model-eval mode)
 #      would produce, all halted at APPROVAL-HALT (pre-Execute).
 #
 # No agent is invoked; nothing here dispatches aid-architect/aid-reviewer.
@@ -80,19 +80,19 @@ assert_output_contains "$TE_TXT" \
     'maps to the `TEST` type; no enum change' \
     "TEF02c model-eval mode maps to the TEST type -- no enum change (§5.1 places it inside bare aid-test)"
 
-# TEF-03: aid-test-security -- SPEC activates ### Security Specs; DETAIL findings route to aid-fix.
+# TEF-03: aid-test security -- SPEC activates ### Security Specs; DETAIL findings route to aid-fix.
 assert_output_contains "$TE_TXT" \
     "Activates \`### Security Specs\`." \
-    "TEF03a aid-test-security SPEC activates ### Security Specs"
+    "TEF03a aid-test security SPEC activates ### Security Specs"
 assert_output_contains "$TE_TXT" \
     "Single \`task-001\` TEST -- security-verification plan + run (SAST/DAST/fuzz/" \
-    "TEF03b aid-test-security DETAIL: single task-001 TEST, security-verification plan + run (wrap point 1)"
+    "TEF03b aid-test security DETAIL: single task-001 TEST, security-verification plan + run (wrap point 1)"
 assert_output_contains "$TE_TXT" \
     "audit, per the captured technique). **Findings route to \`aid-fix\`**" \
-    "TEF03c aid-test-security DETAIL: findings route to aid-fix (wrap point 2)"
+    "TEF03c aid-test security DETAIL: findings route to aid-fix (wrap point 2)"
 assert_output_contains "$TE_TXT" \
     "remediation is never folded into this task" \
-    "TEF03d aid-test-security: remediation is never folded into the verification task"
+    "TEF03d aid-test security: remediation is never folded into the verification task"
 
 # TEF-04: aid-experiment's RESEARCH -> [IMPLEMENT] -> RESEARCH chain (exact table rows).
 assert_output_contains "$TE_TXT" \
@@ -110,11 +110,11 @@ assert_output_contains "$TE_TXT" \
     "**Test/experiment belong wholly to G7, not to \`aid-create\`.**" \
     "TEF05a Ownership boundary: test/experiment belongs wholly to G7, not aid-create"
 assert_output_contains "$TE_TXT" \
-    "\`aid-test-security\`" \
-    "TEF05b Ownership boundary names aid-test-security"
+    "\`aid-test security\`" \
+    "TEF05b Ownership boundary names aid-test security"
 assert_output_contains "$TE_TXT" \
     'only *verifies/plans* -- the remediation of any finding is **`aid-fix`**' \
-    "TEF05c Ownership boundary: aid-test-security only verifies/plans; remediation is aid-fix"
+    "TEF05c Ownership boundary: aid-test security only verifies/plans; remediation is aid-fix"
 
 # TEF-06: no alias for any test/experiment row (feature-009's "5 canonical, no aliases").
 assert_output_contains "$TE_TXT" \
@@ -137,13 +137,17 @@ get_row_field() {
 }
 
 # TEF-10: exactly 5 G7 TEST/EXPERIMENT rows exist (scope = the G7_NAMES roster below, not the
-# 7 rows carrying `group: G7`), each with the aid- prefix and a matching skill dir.
+# 7 rows carrying `group: G7`), each with the aid- prefix and a skill dir, or for a kind row its family's reference file.
 G7_NAMES=(aid-test aid-test-security aid-test-performance aid-test-data-quality aid-experiment)
 for name in "${G7_NAMES[@]}"; do
     ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
     assert_eq "$ROW_COUNT" "1" "TEF10 [${name}] exactly one catalog row named exactly ${name}"
-    assert_dir_exists "${SKILLS_ROOT}/${name}" "TEF10 [${name}] skill directory exists"
-    assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "TEF10 [${name}] SKILL.md exists"
+    fam=$(get_row_field "$name" "kind_of"); art=$(get_row_field "$name" "artifact")
+    if [[ -n "$fam" ]]; then
+        assert_file_exists "${SKILLS_ROOT}/${fam}/references/${art}.md" "TEF10 [${name}] kind text exists at ${fam}/references/${art}.md"
+    else
+        assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "TEF10 [${name}] SKILL.md exists"
+    fi
 done
 
 # TEF-11: default_type mapping -- test/test-* -> TEST, experiment -> RESEARCH.
@@ -184,7 +188,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_test_security_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-test-security +
+# Hand-authors a flattened work mirroring what /aid-test security +
 # shortcut-engine.md would produce: ### Security Specs activated, single task-001 TEST
 # (SAST/DAST plan), findings routed to aid-fix, halted pre-Execute.
 build_test_security_fixture() {
@@ -364,7 +368,7 @@ verb=test, artifact=security. Target surface: the orders search endpoint.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-test-security (test, artifact
+Shortcut-generated flattened Lite work. Source: /aid-test security (test, artifact
 'security'). Findings route to aid-fix (vulnerability kind), not back into this work.
 EOF
 
@@ -397,7 +401,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-test-security
+- **Active Skill:** aid-test security
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -929,7 +933,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-test-security
+# Fixture A: aid-test security
 # ---------------------------------------------------------------------------
 SEC_DIR="${TMP}/work-test-security"
 build_test_security_fixture "$SEC_DIR"

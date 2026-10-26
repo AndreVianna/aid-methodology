@@ -135,11 +135,10 @@ function stripYamlScalar(raw) {
   return val.replace(/^['"]|['"]$/g, '');
 }
 
-// Rows that emit a `canonical/skills/<name>/SKILL.md` directory: every row
-// EXCEPT `repurpose: true` ones (those re-register a pre-existing hand-authored
-// skill — `aid-deploy` / `aid-monitor` / `aid-ask` — for
-// /aid-triage's benefit; the maintainer build helper skips generating a
-// directory for them).
+// Engine-driven rows: every row EXCEPT `repurpose: true` ones (those name a
+// hand-authored skill or reference). Of these, a family row (no `kind_of`) is a
+// generated doorway with its own `canonical/skills/<name>/SKILL.md`; a kind row has no
+// directory and is invoked through its family as `/aid-<verb> <kind>`.
 function emittingShortcutRows(rows) {
   return rows.filter((r) => r.repurpose !== 'true');
 }
@@ -191,7 +190,6 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
   const heading = '#'.repeat(headingLevel);
 
   const repurposedRows = rows.filter((r) => r.repurpose === 'true');
-  const repurposed = repurposedRows.length;
 
   // Derived, not stated. Both the count and the names were hard-coded here as
   // KI-003 -- "the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/
@@ -202,14 +200,23 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
   const classicRepurposedRows = repurposedRows.filter((r) => curatedRosterNames.has(r.name));
   const classicRepurposedNames = classicRepurposedRows.map((r) => `\`${r.name}\``).join('/');
 
+  // Only family rows own a directory; kind rows are routed by their family skill.
+  const familyRows = rows.filter((r) => !r.kind_of);
+  const doorways = emitting.filter((r) => !r.kind_of);
+  const handAuthored = familyRows.length - doorways.length;
+  const doorwayNames = doorways.map((r) => `\`/${r.name}\``).join(', ');
+
   return (
     `${heading} Direct-entry shortcuts\n\n` +
-    `**${emitting.length} engine-driven verb-first shortcut skills** — a fast, mostly-autonomous ` +
-    `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
-    `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
-    `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the ${classicRepurposedRows.length} classic re-registered ` +
-    `skills (${classicRepurposedNames}) plus the ` +
-    `single-shot "collapse" skills, all hand-authored with their own directory).\n\n` +
+    `**${emitting.length} engine-driven verb-first shortcuts** — a fast, mostly-autonomous ` +
+    `alternative to the full Describe→Detail path for a single, well-scoped change. They enter through ` +
+    `the ${doorways.length} thin doorway skills generated from the non-\`repurpose\` family rows of ` +
+    `[\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) (${doorwayNames}); a doorway runs ` +
+    `bare, or takes a kind as the first word of its argument (\`/aid-create api\`). ` +
+    `(${rows.length} rows total: ${familyRows.length} family rows own a skill directory — the ${doorways.length} doorways ` +
+    `plus ${handAuthored} hand-authored \`repurpose: true\` skills, among them the ${classicRepurposedRows.length} classic ` +
+    `re-registered skills (${classicRepurposedNames}); the other ${rows.length - familyRows.length} are kind rows, ` +
+    `routed by their family skill.)\n\n` +
     `Every engine-driven shortcut delegates to the shared **shortcut engine** — ` +
     `[\`${SHORTCUT_ENGINE_FILE}\`](${BLOB}/${SHORTCUT_ENGINE_FILE}) — which collapses the five definition ` +
     `phases (Describe → Detail) into one mostly-autonomous run:\n\n` +
@@ -230,12 +237,10 @@ function generateSkillsPage() {
 
   // Drift guard, kept: this is a correctness check on the corpus, not roster rendering.
   // Expected skill-directory set = the curated skills (which include `aid-triage`, plus
-  // the classic repurpose skills deploy/monitor/ask) ∪ EVERY catalog row name.
-  // Many `repurpose` rows are hand-authored single-shot "collapse" skills
-  // that DO have their own directory, so every catalog row's directory is expected — not
-  // just the engine-driven (non-`repurpose`) emitting ones.
+  // the classic repurpose skills deploy/monitor/ask) ∪ every catalog row that is not a
+  // kind row. A kind row (`kind_of`) has no directory: its family skill routes it.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
-  const allCatalogNames = catalog.rows.map((r) => r.name);
+  const allCatalogNames = catalog.rows.filter((r) => !r.kind_of).map((r) => r.name);
   const expected = [...new Set([...curatedNames, ...allCatalogNames])].sort();
   const onDisk = readdirSync(SKILLS_DIR, { withFileTypes: true })
     .filter((d) => d.isDirectory())

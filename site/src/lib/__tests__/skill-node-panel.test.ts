@@ -486,9 +486,12 @@ describe('whole-corpus sweep over site/src/data/skill-flows', () => {
   const files = readdirSync(flowsDir).filter((f) => f.endsWith('.flow.json')).sort();
 
   it('finds a plausible corpus, with no literal count asserted', () => {
-    // A floor rather than a number: the count moves when the skill roster does, but
-    // an empty or nearly-empty read means a broken path, not a smaller corpus.
-    expect(files.length).toBeGreaterThan(50);
+    // Derived rather than a number: every skill charts, so there is one sidecar per
+    // skill directory, and an empty read means a broken path, not a smaller corpus.
+    const skillsDir = resolve(moduleDir, '../../../../canonical/skills');
+    const skills = readdirSync(skillsDir, { withFileTypes: true }).filter((e) => e.isDirectory());
+    expect(skills.length).toBeGreaterThan(0);
+    expect(files.length).toBe(skills.length);
   });
 
   it('projects every sidecar, emitting exactly PanelNode\'s field set and no excluded key', () => {

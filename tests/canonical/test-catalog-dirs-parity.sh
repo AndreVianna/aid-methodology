@@ -65,7 +65,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Parse the catalog's `shortcuts:` rows into pipe-delimited records:
-#   name|verb|artifact|alias_of|repurpose
+#   name|verb|artifact|alias_of|repurpose|kind_of
 # (a non-whitespace delimiter is required -- bash `read` collapses consecutive
 # IFS-whitespace delimiters, which would silently swallow an empty `artifact` field)
 #
@@ -81,20 +81,21 @@ fi
 # so this test's own parity proof does not depend on the maintainer helper being correct.
 # ---------------------------------------------------------------------------
 ROWS_TSV=$(awk '
-  BEGIN { in_ss = 0; name=""; verb=""; artifact=""; alias_of=""; repurpose="false" }
+  BEGIN { in_ss = 0; name=""; verb=""; artifact=""; alias_of=""; repurpose="false"; kind_of="" }
   /^shortcuts:[[:space:]]*$/ { in_ss = 1; next }
   !in_ss { next }
   /^[a-zA-Z]/ { in_ss = 0 }
   /^  - name:/ {
-    if (name != "") print name "|" verb "|" artifact "|" alias_of "|" repurpose
-    name=""; verb=""; artifact=""; alias_of=""; repurpose="false"
+    if (name != "") print name "|" verb "|" artifact "|" alias_of "|" repurpose "|" kind_of
+    name=""; verb=""; artifact=""; alias_of=""; repurpose="false"; kind_of=""
     line=$0; sub(/^  - name:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); name=line
   }
   /^    verb:/ { line=$0; sub(/^    verb:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); verb=line }
   /^    artifact:/ { line=$0; sub(/^    artifact:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); gsub(/"/, "", line); artifact=line }
   /^    alias_of:/ { line=$0; sub(/^    alias_of:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); alias_of=line }
   /^    repurpose:/ { line=$0; sub(/^    repurpose:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); repurpose=line }
-  END { if (name != "") print name "|" verb "|" artifact "|" alias_of "|" repurpose }
+  /^    kind_of:/ { line=$0; sub(/^    kind_of:[[:space:]]*/, "", line); gsub(/[[:space:]]*#.*$/, "", line); kind_of=line }
+  END { if (name != "") print name "|" verb "|" artifact "|" alias_of "|" repurpose "|" kind_of }
 ' "$CATALOG")
 
 if [[ -z "$ROWS_TSV" ]]; then
@@ -114,10 +115,25 @@ declare -A CATALOG_NAMES=()
 # Per-row assertions
 # ---------------------------------------------------------------------------
 i=0
-while IFS='|' read -r name verb artifact alias_of repurpose; do
+while IFS='|' read -r name verb artifact alias_of repurpose kind_of; do
     [[ -z "$name" ]] && continue
     i=$((i + 1))
     CATALOG_NAMES["$name"]=1
+
+    # -- a kind row has no directory: its family owns it (a reference file, or a listed engine kind) --
+    if [[ -n "$kind_of" ]]; then
+        family_md="${SKILLS_ROOT}/${kind_of}/SKILL.md"
+        assert_file_exists "$family_md" "CDP${i}a [${name}] kind row's family ${kind_of} has a SKILL.md"
+        assert_eq "$([[ -d "${SKILLS_ROOT}/${name}" ]] && echo dir || echo none)" "none" "CDP${i}b [${name}] kind row has no directory of its own"
+        if [[ "$repurpose" == "true" ]]; then
+            assert_file_exists "${SKILLS_ROOT}/${kind_of}/references/${artifact}.md" "CDP${i}c [${name}] hand-authored kind lives at ${kind_of}/references/${artifact}.md"
+        elif grep -qF "\`${artifact}\`" "$family_md" 2>/dev/null; then
+            pass "CDP${i}c [${name}] family doorway lists the kind ${artifact}"
+        else
+            fail "CDP${i}c [${name}] family doorway lists the kind ${artifact} -- not found in ${family_md}"
+        fi
+        continue
+    fi
 
     skill_dir="${SKILLS_ROOT}/${name}"
     skill_md="${skill_dir}/SKILL.md"

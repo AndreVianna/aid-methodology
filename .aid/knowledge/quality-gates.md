@@ -293,7 +293,7 @@ lifecycle + gate directly into the **work-root** `STATE.yml` (the `delivery_life
 
 ## The Shortcut / Lite-Path Gate (shortcut engine)
 
-Every verb-first shortcut (`/aid-fix`, `/aid-create-api`, …) delegates to the shared
+Every verb-first shortcut (`/aid-fix`, `/aid-create api`, …) delegates to the shared
 **shortcut engine** (`canonical/aid/templates/shortcut-engine.md`), which collapses the five
 definition phases into one autonomous run: `INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE →
 APPROVAL-HALT`. Unlike the full path — where each phase has its own per-phase REVIEW loop —

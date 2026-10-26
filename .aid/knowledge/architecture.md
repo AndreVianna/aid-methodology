@@ -113,7 +113,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (9 agent
+1. `canonical/` holds the single source: `skills/` (37 skill directories), `agents/` (9 agent
    directories) and `aid/{scripts,templates,rules.md}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the agents into the five
    `profiles/<tool>/` trees, one per `profiles/*.toml`. Each tree is wiped and regenerated in full on
@@ -186,10 +186,11 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **112 skill
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **37 skill
 directories**: 18 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
-router among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
-shortcut doorways plus 60 hand-authored `repurpose` skills):
+router among them) and the 19 skills that own a row of the 94-row shortcut catalog — 8 generated
+verb-first doorways plus 11 hand-authored `repurpose` skills; the other 75 rows are kinds
+(`kind_of`), invoked through their family as `/aid-<verb> <kind>`):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
@@ -207,8 +208,8 @@ shortcut doorways plus 60 hand-authored `repurpose` skills):
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
-| Design | 22 `aid-design[-<artifact>]` skills + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
-| Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Design | `aid-design` (bare + 21 kinds) + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
+| Shortcut (Lite path) | 34 `aid-<verb> [<kind>]` shortcuts (8 doorway skills) + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 
 **The `design` stage and the shared lifecycle contract.** `design` is a pre-build grid verb
@@ -216,9 +217,9 @@ ordered `design -> create -> update`. Its 22 rows cover every artifact carrying 
 pair, plus a bare `/aid-design` catch-all, and all of them **bind one shared contract** rather than
 restating it -- `canonical/aid/templates/design-lifecycle.md`, which fixes the seed shape, the
 allocation step, the verify depth and the `design` invariant (a `design` skill writes its seed and
-nothing else). That single binding is what keeps 36 skills consistent without 36 copies of the
-rules, and it is why adding an artifact to the grid is a catalog row plus a thin body rather than a
-new state machine. `/aid-brainstorm` sits beside the grid as an exploratory doorway with no
+nothing else). That single binding is what keeps 36 catalog rows consistent without 36 copies of the
+rules, and it is why adding an artifact to the grid is a catalog row plus a `references/<kind>.md`
+file rather than a new state machine. `/aid-brainstorm` sits beside the grid as an exploratory doorway with no
 `create` counterpart.
 
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
@@ -232,7 +233,7 @@ and §4 "The Phases"):
 - **Full path** — `/aid-describe` (2a) -> `/aid-define` (2b) -> `/aid-specify` -> `/aid-plan` ->
   `/aid-detail` -> `/aid-execute` (brownfield enters at `/aid-discover` first). For broad,
   multi-target, or ambiguous work.
-- **Lite path** — a verb-first **shortcut** (`/aid-fix`, `/aid-create-api`, …) drives the shared
+- **Lite path** — a verb-first **shortcut** (`/aid-fix`, `/aid-create api`, …) drives the shared
   **shortcut engine** (`canonical/aid/templates/shortcut-engine.md`): INTAKE -> CAPTURE -> SPEC ->
   PLAN -> DETAIL -> GATE -> APPROVAL-HALT. The engine collapses Describe->Detail into one fast,
   mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
@@ -415,7 +416,7 @@ CONFIRMED in `README.md` "Install", `docs/aid-methodology.md` §10 and `lib/aid-
 /aid-config -> /aid-discover -> KB in .aid/knowledge/
   -> choose an entry:
        full  : /aid-describe -> /aid-define -> /aid-specify -> /aid-plan -> /aid-detail
-       lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
+       lite  : /aid-<verb> [<kind>] shortcut -> shortcut engine
                  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
        unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
   -> work in its tracked work folder  -> approval halt -> /aid-execute   (numbered sequence ends here)
@@ -448,9 +449,9 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **112** directories — 18 curated
-   pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 verb-first
-   direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). `README.md`,
+1. **Skill count (reconciled).** `canonical/skills/` has **37** directories — 18 curated
+   pipeline / on-demand / router skills plus the 19 skills that own a shortcut-catalog row (8
+   generated doorways + 11 hand-authored `repurpose` skills); the catalog's other 75 rows are kinds. `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
    taxonomy, so the doc-vs-code gap this item tracked stays closed. It cannot silently reopen:
    `tests/canonical/test-doc-counts.sh` re-derives the figures from `canonical/skills/`,
@@ -551,7 +552,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
   the shared layout cannot drive the shared layout, so the release notes name the CLI version each release
   requires.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 112 shipped skills).
+  for it in `canonical/skills/` (the 37 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)

@@ -3,7 +3,7 @@
 # aid-document family scaffold + halt proof (archetype-selects-structure test).
 #
 # The shortcut engine + the document scaffolding reference are agent-executed PROSE, not
-# executable scripts -- a deterministic canonical test cannot "run" /aid-document-decision.
+# executable scripts -- a deterministic canonical test cannot "run" /aid-document decision.
 # This suite is therefore CONTRACT + FIXTURE-SHAPE, matching the other work-001
 # shortcut-engine suites (test-fix-family-scaffold.sh, test-create-family-scaffold.sh,
 # test-prototype-family-scaffold.sh):
@@ -18,10 +18,10 @@
 #      DOCUMENT-ARCHETYPE rows (the `G8_NAMES` array below -- aid-document plus its 7
 #      archetype suffixes), all default_type DOCUMENT, none carrying an alias (feature-010
 #      SPEC "Catalog rows owned" -- 8 canonical, no aliases). Scope, because `group: G8` is
-#      a WIDER set: 11 catalog rows carry `group: G8`, the other 3 being aid-create-document,
-#      aid-update-document and aid-create-diagram, which feature-010 does not own.
+#      a WIDER set: 11 catalog rows carry `group: G8`, the other 3 being aid-create document,
+#      aid-update document and aid-create diagram, which feature-010 does not own.
 #   3. Fixture-shape assertions -- two hand-authored flattened work fixtures mirroring what
-#      `/aid-document-decision` and `/aid-document-runbook` would produce, proving the
+#      `/aid-document decision` and `/aid-document runbook` would produce, proving the
 #      artifact suffix selects the archetype's document STRUCTURE (not a synonym) --
 #      each carries the OTHER archetype's shape nowhere. Both halted at APPROVAL-HALT
 #      (pre-Execute).
@@ -64,11 +64,11 @@ echo "--- Part 1: document.md contract assertions ---"
 
 # DFS-01: per-archetype CAPTURE slots -- decision + runbook rows (the two fixture archetypes).
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-decision` | the decision; alternatives considered; consequences |' \
-    "DFS01a aid-document-decision CAPTURE: the decision; alternatives considered; consequences"
+    '| `aid-document decision` | the decision; alternatives considered; consequences |' \
+    "DFS01a aid-document decision CAPTURE: the decision; alternatives considered; consequences"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-runbook` | the trigger/alert; diagnostic + remediation steps; escalation path |' \
-    "DFS01b aid-document-runbook CAPTURE: the trigger/alert; diagnostic + remediation steps; escalation path"
+    '| `aid-document runbook` | the trigger/alert; diagnostic + remediation steps; escalation path |' \
+    "DFS01b aid-document runbook CAPTURE: the trigger/alert; diagnostic + remediation steps; escalation path"
 
 # DFS-02: document is a hand-authored collapse artifact (work-005) -- the body produces the
 # document directly, emits no separate SPEC.md, and activates no ## Technical Specification.
@@ -80,7 +80,7 @@ assert_output_contains "$DOC_TXT" \
     'there is no `#### Technical Specification` to activate and no schema change' \
     "DFS02b no ## Technical Specification to activate (no schema change)"
 
-# DFS-03: DETAIL -- the collapse emits no task or SPEC artifact (aid-create-document writes
+# DFS-03: DETAIL -- the collapse emits no task or SPEC artifact (aid-create document writes
 # the document directly). (Was: one generated DOCUMENT task-001 per archetype; now detached.)
 assert_output_contains "$DOC_TXT" \
     'the collapse emits no task or SPEC artifact' \
@@ -88,38 +88,38 @@ assert_output_contains "$DOC_TXT" \
 
 # DFS-04: exact per-archetype document-shape rows (the DETAIL table).
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-decision` | ADR: **Context -> Decision -> Alternatives -> Consequences** |' \
-    "DFS04a aid-document-decision shape: ADR Context -> Decision -> Alternatives -> Consequences"
+    '| `aid-document decision` | ADR: **Context -> Decision -> Alternatives -> Consequences** |' \
+    "DFS04a aid-document decision shape: ADR Context -> Decision -> Alternatives -> Consequences"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-runbook` | operational: **trigger -> diagnostic -> remediation -> escalation** |' \
-    "DFS04b aid-document-runbook shape: operational trigger -> diagnostic -> remediation -> escalation"
+    '| `aid-document runbook` | operational: **trigger -> diagnostic -> remediation -> escalation** |' \
+    "DFS04b aid-document runbook shape: operational trigger -> diagnostic -> remediation -> escalation"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-architecture` | components, boundaries, interactions, **C4/arc42 diagrams (Mermaid)** |' \
-    "DFS04c aid-document-architecture shape: components/boundaries/interactions, C4/arc42 (Mermaid)"
+    '| `aid-document architecture` | components, boundaries, interactions, **C4/arc42 diagrams (Mermaid)** |' \
+    "DFS04c aid-document architecture shape: components/boundaries/interactions, C4/arc42 (Mermaid)"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-guideline` | advisory: **principle -> rationale -> do/don'"'"'t examples** |' \
-    "DFS04d aid-document-guideline shape: advisory principle -> rationale -> do/don't examples"
+    '| `aid-document guideline` | advisory: **principle -> rationale -> do/don'"'"'t examples** |' \
+    "DFS04d aid-document guideline shape: advisory principle -> rationale -> do/don't examples"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-standard` | mandatory: **rule -> scope -> compliance/enforcement -> exceptions** |' \
-    "DFS04e aid-document-standard shape: mandatory rule -> scope -> compliance/enforcement -> exceptions"
+    '| `aid-document standard` | mandatory: **rule -> scope -> compliance/enforcement -> exceptions** |' \
+    "DFS04e aid-document standard shape: mandatory rule -> scope -> compliance/enforcement -> exceptions"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-tutorial` | learning: **prerequisites -> worked steps -> outcome** |' \
-    "DFS04f aid-document-tutorial shape: learning prerequisites -> worked steps -> outcome"
+    '| `aid-document tutorial` | learning: **prerequisites -> worked steps -> outcome** |' \
+    "DFS04f aid-document tutorial shape: learning prerequisites -> worked steps -> outcome"
 assert_output_contains "$DOC_TXT" \
-    '| `aid-document-changelog` | **[Added]/[Changed]/[Fixed]/[Removed]/[Security]** release notes |' \
-    "DFS04g aid-document-changelog shape: [Added]/[Changed]/[Fixed]/[Removed]/[Security] release notes"
+    '| `aid-document changelog` | **[Added]/[Changed]/[Fixed]/[Removed]/[Security]** release notes |' \
+    "DFS04g aid-document changelog shape: [Added]/[Changed]/[Fixed]/[Removed]/[Security] release notes"
 assert_output_contains "$DOC_TXT" \
     '| `aid-document` (general) | Diataxis how-to / reference / explanation **or** status/progress report, per the captured shape |' \
     "DFS04h aid-document (general) shape: Diataxis how-to/reference/explanation OR status/progress report"
 
-# DFS-05: aid-document-decision extends the baseline ADR format with an explicit
+# DFS-05: aid-document decision extends the baseline ADR format with an explicit
 # Alternatives step (two-phrase -- wraps source lines).
 assert_output_contains "$DOC_TXT" \
     "extends \`task-type-rules.md ## DOCUMENT\`'s baseline Context -> Decision ->" \
-    "DFS05a aid-document-decision extends task-type-rules.md baseline ADR format (wrap point 1)"
+    "DFS05a aid-document decision extends task-type-rules.md baseline ADR format (wrap point 1)"
 assert_output_contains "$DOC_TXT" \
     'Consequences ADR format with an explicit Alternatives step (feature-010 SPEC).' \
-    "DFS05b aid-document-decision adds an explicit Alternatives step (wrap point 2)"
+    "DFS05b aid-document decision adds an explicit Alternatives step (wrap point 2)"
 
 # DFS-06: Ownership boundary -- doc/content wholly aid-document; analytical reports cede to
 # G11; only status/progress stays here.
@@ -149,13 +149,17 @@ get_row_field() {
 }
 
 # DFS-10: exactly 8 G8 DOCUMENT-ARCHETYPE rows exist (scope = the G8_NAMES roster below, not
-# the 11 rows carrying `group: G8`), each with the aid- prefix and a matching skill dir.
+# the 11 rows carrying `group: G8`), each with the aid- prefix and a skill dir, or for a kind row its family's reference file.
 G8_NAMES=(aid-document aid-document-decision aid-document-architecture aid-document-guideline aid-document-standard aid-document-runbook aid-document-tutorial aid-document-changelog)
 for name in "${G8_NAMES[@]}"; do
     ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
     assert_eq "$ROW_COUNT" "1" "DFS10 [${name}] exactly one catalog row named exactly ${name}"
-    assert_dir_exists "${SKILLS_ROOT}/${name}" "DFS10 [${name}] skill directory exists"
-    assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "DFS10 [${name}] SKILL.md exists"
+    fam=$(get_row_field "$name" "kind_of"); art=$(get_row_field "$name" "artifact")
+    if [[ -n "$fam" ]]; then
+        assert_file_exists "${SKILLS_ROOT}/${fam}/references/${art}.md" "DFS10 [${name}] kind text exists at ${fam}/references/${art}.md"
+    else
+        assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "DFS10 [${name}] SKILL.md exists"
+    fi
 done
 
 # DFS-11: default_type mapping -- all 8 -> DOCUMENT; all group G8.
@@ -175,9 +179,9 @@ done
 # DFS-13: artifact suffix selects the structure -- decision/runbook rows carry the expected
 # artifact value, verb=document.
 DECISION_ARTIFACT=$(get_row_field "aid-document-decision" "artifact")
-assert_eq "$DECISION_ARTIFACT" "decision" "DFS13a aid-document-decision row: artifact == decision"
+assert_eq "$DECISION_ARTIFACT" "decision" "DFS13a aid-document decision row: artifact == decision"
 RUNBOOK_ARTIFACT=$(get_row_field "aid-document-runbook" "artifact")
-assert_eq "$RUNBOOK_ARTIFACT" "runbook" "DFS13b aid-document-runbook row: artifact == runbook"
+assert_eq "$RUNBOOK_ARTIFACT" "runbook" "DFS13b aid-document runbook row: artifact == runbook"
 for name in "${G8_NAMES[@]}"; do
     verb=$(get_row_field "$name" "verb")
     assert_eq "$verb" "document" "DFS13c [${name}] row: verb == document"
@@ -185,10 +189,10 @@ done
 
 # DFS-14: no aid-document-* directory beyond the 7 named archetype suffixes (no stray 9th).
 EXTRA_DIRS=$(find "$SKILLS_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'aid-document-*' \
-    ! -name 'aid-document-decision' ! -name 'aid-document-architecture' \
-    ! -name 'aid-document-guideline' ! -name 'aid-document-standard' \
-    ! -name 'aid-document-runbook' ! -name 'aid-document-tutorial' \
-    ! -name 'aid-document-changelog' 2>/dev/null || true)
+    ! -name 'aid-document decision' ! -name 'aid-document architecture' \
+    ! -name 'aid-document guideline' ! -name 'aid-document standard' \
+    ! -name 'aid-document runbook' ! -name 'aid-document tutorial' \
+    ! -name 'aid-document changelog' 2>/dev/null || true)
 if [[ -z "$EXTRA_DIRS" ]]; then
     pass "DFS14 no canonical/skills/aid-document-* directory exists beyond the 7 named archetypes"
 else
@@ -196,7 +200,7 @@ else
 fi
 
 # ===========================================================================
-# Part 3 -- Fixture-shape assertions (aid-document-decision + aid-document-runbook)
+# Part 3 -- Fixture-shape assertions (aid-document decision + aid-document runbook)
 # ===========================================================================
 echo ""
 echo "--- Part 3: fixture-shape assertions ---"
@@ -205,7 +209,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_document_decision_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-document-decision +
+# Hand-authors a flattened work mirroring what /aid-document decision +
 # shortcut-engine.md would produce: single task-001 DOCUMENT whose Scope requires the
 # Context -> Decision -> Alternatives -> Consequences ADR structure, halted pre-Execute.
 build_document_decision_fixture() {
@@ -362,7 +366,7 @@ verb=document, artifact=decision. Subject: message-queue choice. Decision: Kafka
 Alternatives: RabbitMQ, SQS.
 
 **Out of scope:** implementing the Kafka migration itself (routes to
-aid-update-infra/aid-refactor); this work documents the decision only.
+aid-update infra/aid-refactor); this work documents the decision only.
 
 ## Gate Criteria
 
@@ -384,7 +388,7 @@ aid-update-infra/aid-refactor); this work documents the decision only.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-document-decision (document,
+Shortcut-generated flattened Lite work. Source: /aid-document decision (document,
 artifact 'decision').
 EOF
 
@@ -418,7 +422,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-document-decision
+- **Active Skill:** aid-document decision
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -440,7 +444,7 @@ EOF
 }
 
 # build_document_runbook_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-document-runbook +
+# Hand-authors a flattened work mirroring what /aid-document runbook +
 # shortcut-engine.md would produce: single task-001 DOCUMENT whose Scope requires the
 # trigger -> diagnostic -> remediation -> escalation runbook structure, halted pre-Execute.
 build_document_runbook_fixture() {
@@ -602,7 +606,7 @@ verb=document, artifact=runbook. Trigger: p99 latency > 2s for 5 minutes. Escala
 page the owning team after 15 minutes unresolved.
 
 **Out of scope:** the observability wiring the alert itself depends on (routes to
-aid-update-infra/aid-monitor); this work documents the response procedure only.
+aid-update infra/aid-monitor); this work documents the response procedure only.
 
 ## Gate Criteria
 
@@ -624,7 +628,7 @@ aid-update-infra/aid-monitor); this work documents the response procedure only.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-document-runbook (document,
+Shortcut-generated flattened Lite work. Source: /aid-document runbook (document,
 artifact 'runbook').
 EOF
 
@@ -659,7 +663,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-document-runbook
+- **Active Skill:** aid-document runbook
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -681,7 +685,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-document-decision
+# Fixture A: aid-document decision
 # ---------------------------------------------------------------------------
 DECISION_DIR="${TMP}/work-document-decision"
 build_document_decision_fixture "$DECISION_DIR"
@@ -698,11 +702,11 @@ if grep -q "trigger -> diagnostic -> remediation -> escalation" "${DECISION_DIR}
 else
     pass "DFS23 decision fixture: task-001 does NOT carry the runbook-only trigger/diagnostic/remediation/escalation shape"
 fi
-assert_file_contains "${DECISION_DIR}/STATE.md" "**Active Skill:** aid-document-decision" \
-    "DFS24 decision fixture: Active Skill is aid-document-decision"
+assert_file_contains "${DECISION_DIR}/STATE.md" "**Active Skill:** aid-document decision" \
+    "DFS24 decision fixture: Active Skill is aid-document decision"
 
 # ---------------------------------------------------------------------------
-# Fixture B: aid-document-runbook
+# Fixture B: aid-document runbook
 # ---------------------------------------------------------------------------
 RUNBOOK_DIR="${TMP}/work-document-runbook"
 build_document_runbook_fixture "$RUNBOOK_DIR"
@@ -719,8 +723,8 @@ if grep -q "Context -> Decision -> Alternatives -> Consequences" "${RUNBOOK_DIR}
 else
     pass "DFS33 runbook fixture: task-001 does NOT carry the ADR-only Context/Decision/Alternatives/Consequences shape"
 fi
-assert_file_contains "${RUNBOOK_DIR}/STATE.md" "**Active Skill:** aid-document-runbook" \
-    "DFS34 runbook fixture: Active Skill is aid-document-runbook"
+assert_file_contains "${RUNBOOK_DIR}/STATE.md" "**Active Skill:** aid-document runbook" \
+    "DFS34 runbook fixture: Active Skill is aid-document runbook"
 
 # ---------------------------------------------------------------------------
 # Both fixtures: halt-proof + engine-smoke shape (feature-003 FR-3/FR-4/FR-6/FR-10);

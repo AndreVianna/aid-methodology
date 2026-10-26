@@ -70,8 +70,8 @@ Two contract facts shape every hand-off:
   contract — downstream skills navigate by convention, never by search.
 - **Three entry doors, two paths.** The *full path* runs every numbered phase and is entered
   by `/aid-describe` (broad or new-project work). The *flattened Lite path* is entered by
-  naming the change with a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`, e.g. `/aid-fix`,
-  `/aid-create-api`) — each shortcut is a thin doorway into the shared **shortcut engine**
+  naming the change with a verb-first **shortcut** (`/aid-<verb> [<kind>]`, e.g. `/aid-fix`,
+  `/aid-create api`) — each shortcut is a thin doorway into the shared **shortcut engine**
   (`shortcut-engine.md`) that collapses Describe → Define → Specify → Plan → Detail into one
   fast, mostly-autonomous run. A third door, **`/aid-triage`**, is a stateless, write-free,
   *suggest-only* router: it points at the matching shortcut or at `/aid-describe`, then stops.
@@ -86,8 +86,8 @@ Two contract facts shape every hand-off:
 
 The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
 `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-ask`,
-`aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts and
-`/aid-triage` are direct-entry skills that sit outside the numbered pipeline (the shortcuts
+`aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts (8 doorway skills) and
+`/aid-triage` are direct entries that sit outside the numbered pipeline (the shortcuts
 drive the shortcut engine; triage only suggests). CONFIRMED: `docs/aid-methodology.md` ("Skill
 Inventory" table, "§4 The Phases").
 
@@ -249,7 +249,7 @@ machine … One invocation per state. No auto-advance").
 | `aid-detail` | universal loop per delivery producing task files → build execution graph |
 | `aid-execute` | per-task universal loop (read type → execute → gates → reviewer dispatch → grade → fix/loopback) inside a parallel pool |
 | `aid-triage` | INTAKE → CLASSIFY → SUGGEST → HALT (stateless, write-free, suggest-only) |
-| shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT (Describe→Detail collapsed & autonomous; never executes) |
+| shortcut skills (`/aid-<verb> [<kind>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT (Describe→Detail collapsed & autonomous; never executes) |
 | `aid-deploy` | package selection → final verification → package record → packaging → doc routing → status update |
 | `aid-monitor` | Observe → Classify → Analyze → Propose → Act |
 | `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE |
@@ -433,11 +433,11 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `delivery-state-template.yml` / `task-state-template.yml`,
   `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
   `STATE.yml`.
-- The skill taxonomy is **112 skill directories** under `canonical/skills/`: 18 curated
+- The skill taxonomy is **37 skill directories** under `canonical/skills/`: 18 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
-  name — 34 verb-first direct-entry shortcut doorways (generated from
-  `shortcut-catalog.yml`) plus 60 hand-authored `repurpose` skills. The alias model is
+  `aid-update-ticket`) + the 19 skills that own a row of the 94-row shortcut catalog, every row
+  a canonical name — 8 doorways (generated from `shortcut-catalog.yml`) plus 11 hand-authored
+  `repurpose` skills; the other 75 rows are kinds (`kind_of`), invoked as `/aid-<verb> <kind>`. The alias model is
   retired: `alias_of` is required but always `null`, so no row is a synonym of another. <!-- count-history -->
   Re-derive both figures rather than trusting this prose — `ls -1d canonical/skills/*/`
   and `grep -c '^  - name:' canonical/aid/templates/shortcut-catalog.yml`. The recipe system
@@ -454,7 +454,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **A new phase/skill** is authored once in `canonical/skills/<name>/SKILL.md` as a state
   machine (states advance one invocation at a time), then shipped in the shared payload and installed to
   `.agents/skills/aid-*` for every tool. Never edit an installed copy. A new verb-first shortcut is added as a row in
-  `canonical/aid/templates/shortcut-catalog.yml` and regenerated — the shortcut doorway is a
+  `canonical/aid/templates/shortcut-catalog.yml` (a `kind_of` row for a kind) and regenerated — the shortcut doorway is a
   thin delegate to `shortcut-engine.md`, never a hand-authored state machine.
 - **A new artifact type** gets a template under `canonical/aid/templates/`, a fixed location
   under `.aid/works/{work}/`, and an entry in the artifact reference. Downstream skills find it by

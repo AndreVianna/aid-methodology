@@ -87,7 +87,7 @@ Uninstall is manifest-driven — only files that `aid add` wrote are removed. Fi
 ### How do I use the skills?
 The skills run as slash commands inside your AI coding tool. There are three ways in:
 ```
-/aid-fix, /aid-create-api, ...  # shortcut: name your change, go straight to the lite path
+/aid-fix, /aid-create api, ...  # shortcut: name your change, go straight to the lite path
 /aid-triage                     # not sure which shortcut fits? describe it, get routed
 /aid-describe                   # broad or new-project work: full requirements interview
 ```
@@ -112,13 +112,13 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** skill — `/aid-fix`, `/aid-create-api`, `/aid-update-ui`, and 31 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
+The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** — `/aid-fix`, `/aid-create api`, `/aid-update ui`, and 31 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
 
 ### When should I use the lite path vs. the full path?
 Pick the entry yourself: if you know exactly what you want (one focused change, no new requirements gathering needed), run the matching shortcut directly. If you're not sure which shortcut fits, run `/aid-triage` — it's a stateless, suggest-only router: describe the work in a sentence, it infers scope, and suggests either a specific shortcut or the full path via `/aid-describe`. Broad, multi-target, or ambiguous work (multiple features, design decisions to make, formal requirements and a delivery plan needed) belongs on the full path either way.
 
 ### How do shortcuts work under the hood?
-The 34 shortcut skills are generated from a catalog (`shortcut-catalog.yml`) of canonical names — one row, one skill, no alias or synonym form and no runtime redirect — for example `aid-create-api` names the API-creation shortcut directly. Each shortcut delegates to the shared shortcut engine, which consults a family-specific `shortcut-scaffolding/<family>.md` for SPEC/PLAN/DETAIL scaffolding appropriate to the kind of change (API, UI, CLI, data model, infra, and so on). The engine runs autonomously through CAPTURE/SPEC/PLAN/DETAIL — no per-phase human checkpoint — with a mechanical GATE grading every generated document before the terminal approval halt. It never executes; `/aid-execute` is a separate, user-initiated run after you approve.
+The 34 shortcuts come from a catalog (`shortcut-catalog.yml`) of canonical names, with no alias or synonym form and no runtime redirect. A bare verb is its own skill (`/aid-fix`); a kind is the first word of its family's argument — `/aid-create api` names the API-creation shortcut directly. Each shortcut delegates to the shared shortcut engine, which consults a family-specific `shortcut-scaffolding/<family>.md` for SPEC/PLAN/DETAIL scaffolding appropriate to the kind of change (API, UI, CLI, data model, infra, and so on). The engine runs autonomously through CAPTURE/SPEC/PLAN/DETAIL — no per-phase human checkpoint — with a mechanical GATE grading every generated document before the terminal approval halt. It never executes; `/aid-execute` is a separate, user-initiated run after you approve.
 
 ---
 

@@ -325,14 +325,18 @@ assert_eq "$CANONICAL_PLUS_ALIAS" "$TOTAL_ROWS" "DMR34 canonical + alias == tota
 mapfile -t ALL_NAMES < <(awk '/^  - name:/ { line=$0; sub(/^  - name:[[:space:]]*/, "", line); print line }' "$CATALOG")
 assert_eq "${#ALL_NAMES[@]}" "$TOTAL_ROWS" "DMR35a re-derived name list carries one entry per catalog row (awk name-extraction agrees with the grep row count)"
 
+# A kind row (`kind_of`) has no directory of its own: its family skill routes it.
+declare -A KIND_ROWS=()
+while IFS= read -r k; do [[ -n "$k" ]] && KIND_ROWS["$k"]=1; done < <(awk '/^  - name:/ { n=$3 } /^    kind_of:/ { print n }' "$CATALOG")
 orphan_row=0
 for name in "${ALL_NAMES[@]}"; do
+    [[ -n "${KIND_ROWS[$name]:-}" ]] && continue
     if [[ ! -d "${SKILLS_ROOT}/${name}" ]]; then
         fail "DMR35b [${name}] no orphan row -- directory missing at ${SKILLS_ROOT}/${name}"
         orphan_row=1
     fi
 done
-[[ "$orphan_row" -eq 0 ]] && pass "DMR35b every one of the ${#ALL_NAMES[@]} rows has a matching canonical/skills/ directory (no orphan row)"
+[[ "$orphan_row" -eq 0 ]] && pass "DMR35b every one of the $(( ${#ALL_NAMES[@]} - ${#KIND_ROWS[@]} )) family rows has a matching canonical/skills/ directory (no orphan row)"
 
 # DMR-36: no orphan directory -- every GENERATED-marker doorway (or repurpose fat skill) has
 # a matching catalog row.

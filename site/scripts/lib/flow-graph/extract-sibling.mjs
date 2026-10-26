@@ -6,11 +6,11 @@
 //
 // Splices the parent's chart whole and verbatim (no feature-004 rule — L1, B1,
 // or otherwise — is applied to the spliced segment).  This is an invariant:
-// /skills/aid-test/ and /skills/aid-test-security/ must show the same aid-test
+// a parent's page and its sibling's page must show the same parent
 // flow.  composeDoorwayChart (compose.mjs) performs the offset splice.
 //
-// parentChartCache is a contract, not an optimisation: aid-create-document has
-// ten siblings and re-deriving its chart ten times would be visible in build time.
+// parentChartCache is a contract, not an optimisation: a parent with many siblings
+// would otherwise have its chart re-derived once per sibling.
 //
 // Sub-forms (read by readDoorwayBinding from compose.mjs):
 //   kind-sibling  — body carries {verb, artifact}: label = braced group verbatim;
@@ -61,8 +61,8 @@ const _SKILL_REF_SRC = '(?:canonical|\\.agents)\\/skills\\/([^/\\s]+)\\/SKILL\\.
 /**
  * Memoizes FlowChart for authored-shape parent skills by directory name.
  *
- * A contract: aid-create-document has ten siblings; re-deriving its chart ten
- * times would be visible in build time.  Tests must assert object identity
+ * A contract: a parent with many siblings would otherwise have its chart
+ * re-derived once per sibling.  Tests must assert object identity
  * (toBe) or call count — not deep equality, which would pass for a re-derivation.
  *
  * @type {Map<string, import('./model.mjs').FlowChart>}
@@ -239,7 +239,7 @@ function _resolveChain(initialParent, skill) {
  * provider (task-037) to emit above the Mermaid fence.
  *
  * @param {object} skillRecord  SkillRecord as produced by discover.mjs
- * @param {string} skillRecord.dirName        Skill directory name (e.g. 'aid-test-security')
+ * @param {string} skillRecord.dirName        Skill directory name (e.g. 'aid-test-security' for a kind-sibling of aid-test)
  * @param {string} skillRecord.sourcePath     Repo-root-relative POSIX path to SKILL.md
  * @param {string} skillRecord.body           Body text (after frontmatter closing fence)
  * @param {number} skillRecord.bodyStartLine  1-based file line of body[0]

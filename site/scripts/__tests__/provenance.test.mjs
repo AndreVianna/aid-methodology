@@ -38,6 +38,7 @@ import { makeProvenance, makeNode, buildChart } from '../lib/flow-graph/model.mj
 import { verifyProvenance } from '../lib/provenance/verify.mjs';
 import { buildEntries, renderFragmentList } from '../lib/provenance/render-list.mjs';
 import { GITHUB_BLOB_BASE, REPO_ROOT, SITE_SKILLS_DIR } from '../skills/paths.mjs';
+import { SKILL_GROUPS } from '../skills/curated-roster.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CANONICAL_SKILLS_DIR = resolve(REPO_ROOT, 'canonical', 'skills');
@@ -156,6 +157,10 @@ function makeTestChart(rawNodes, skill = 'aid-test') {
 //   (d) excerpt equals the verbatim file slice
 //   (e) detail, when present, satisfies (a)–(c) but is NOT excerpt-checked
 
+// Non-vacuity floor, derived: the corpus is the curated roster plus the catalog's family
+// skills, so a read that finds no more directories than the curated roster is broken.
+const CURATED_COUNT = new Set(SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name))).size;
+
 describe('AC-5 corpus sweep', () => {
   let skillDirNames;
   let allCharts;
@@ -167,8 +172,8 @@ describe('AC-5 corpus sweep', () => {
     );
   });
 
-  it('enumerates more than 50 skill directories (non-vacuity floor)', () => {
-    expect(skillDirNames.length).toBeGreaterThan(50);
+  it('enumerates more skill directories than the curated roster (non-vacuity floor)', () => {
+    expect(skillDirNames.length).toBeGreaterThan(CURATED_COUNT);
   });
 
   it('every node provenance.file starts with "canonical/"', () => {
@@ -743,14 +748,14 @@ describe('determinism — on-disk section equals a fresh render (whole corpus)',
 
   it('every generated page carries the section', () => {
     const dirs = getSkillDirNames();
-    expect(dirs.length).toBeGreaterThan(50);
+    expect(dirs.length).toBeGreaterThan(CURATED_COUNT);
     const without = dirs.filter((d) => onDiskSection(d) === null);
     expect(without).toEqual([]);
   });
 
   it('each on-disk section is byte-identical to a fresh render', () => {
     const dirs = getSkillDirNames();
-    expect(dirs.length).toBeGreaterThan(50);
+    expect(dirs.length).toBeGreaterThan(CURATED_COUNT);
 
     const differing = [];
     let compared = 0;

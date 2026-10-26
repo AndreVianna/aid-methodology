@@ -793,43 +793,35 @@ description: ${LONG_DESC}
 
 // ── R5 real doorway skills ────────────────────────────────────────────────────
 
-// `aid-set-connector` and `aid-unset-connector` were in this list and no longer
-// belong: they DO have authored steps, and R3 now finds them. They were only
-// falling to R5 because R3 matched `###` alone while both skills mix levels —
-// `### Step 0` followed by `## Step 1` onward — so R3 saw one heading, failed its
-// two-heading minimum, and gave up, discarding 7 and 4 steps.
-//
-// The list was re-pointed when the alias skills were retired. Two separate causes,
-// both measured against the live tree rather than inferred from the names:
-//
-//   1. `aid-audit`, `aid-add-document`, `aid-investigate` and `aid-spike` no longer
-//      exist on disk. `loadSkill` runs at describe-body scope, so the ENOENT threw
-//      during collection and took the whole FILE down — every block in it collected
-//      as zero, behind a failure count that named only the other two suites.
-//   2. `aid-ask` and `aid-update-document` still exist but are no longer R5 cases:
-//      each absorbed a retired skill's authored steps, so R3 now claims both.
-//      Leaving them here would have turned a load failure into a wrong assertion,
-//      which is worse, because it looks green.
-//
-// The replacements are real doorway skills, which is the property this rung needs
-// and the same property the retired aliases supplied: a real SKILL.md that R1–R4
-// all decline (no state map, no `## Mode`, no `### Step`, no verb-led ordered list).
-// That population is exactly the doorway skills, engine and sibling alike; no
-// residual, inline-states or dispatch-table skill is in it. The six below span both
-// doorway kinds and both naming forms, so the cases are not near-duplicates of one
-// generated template. Counts are deliberately absent: nothing guards a count stated
-// in a comment under `site/scripts/` (check-skill-counts.mjs does not scan this tree
-// and the site-side guard walks only `.md`/`.mdx`), so a number here would be
-// unguarded drift.
+// Real SKILL.md files that R1–R4 all decline (no state map, no `## Mode`, no `### Step`,
+// no verb-led ordered list): the generated engine doorways, and family skills whose body
+// only routes to a reference. A sibling doorway — a thin skill delegating to another —
+// declines them too, but none is left in the corpus, so that case is a fixture. Counts
+// are deliberately absent: a number in a comment here is unguarded drift.
+const R5_SIBLING_FIXTURE = `---
+name: aid-fixture-sibling
+description: A thin kind-sibling of aid-test.
+---
+
+# Security kind-sibling of /aid-test
+
+\`/aid-fixture-sibling\` is a thin **kind-sibling** of **\`/aid-test\`**
+(\`.agents/skills/aid-test/SKILL.md\`). It carries **no logic of its own.**
+
+Execute \`.agents/skills/aid-test/SKILL.md\` exactly as written, with the
+**kind bound to security**. Findings route to \`/aid-fix\`.
+`;
+
 describe.each([
-  'aid-create',            // engine doorway, bare verb (the retired `aid-add`'s form)
-  'aid-update-api',        // engine doorway, verb-noun
+  'aid-create',            // engine doorway, bare verb that lists its kinds
+  'aid-update',            // engine doorway, the other grid verb
   'aid-deprecate',         // engine doorway, non-CRUD verb
-  'aid-document',          // sibling doorway, bare
-  'aid-document-runbook',  // sibling doorway, verb-noun
-  'aid-test-security',     // sibling doorway, hand-authored rather than generated
+  'aid-document',          // family skill routing to its references
+  'aid-fixture-sibling',   // sibling doorway (fixture)
 ])('R5 — %s falls to 3-node spine', (skillName) => {
-  const params = loadSkill(skillName);
+  const params = skillName === 'aid-fixture-sibling'
+    ? parseSkill(R5_SIBLING_FIXTURE, skillName)
+    : loadSkill(skillName);
   const chart = extractResidual(params);
 
   it('produces exactly 3 nodes', () => {

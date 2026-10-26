@@ -68,6 +68,8 @@ _GENERATED_MARKER = (
 
 # The fixed "when to use" clause every generated doorway description ends with.
 _DESCRIPTION_WHEN = "Plans the work; /aid-execute builds it."
+# The same clause for a family whose kinds include hand-authored ones that do their own work.
+_DESCRIPTION_WHEN_KINDS = "Code is planned for /aid-execute to build."
 
 _ALLOWED_TOOLS = "Read Glob Grep Bash Shell Terminal Write Edit Agent"
 
@@ -77,7 +79,7 @@ _ARGUMENT_HINT_FALLBACK_VERB = "work on"
 
 
 
-def _argument_hint(row: dict) -> str:
+def _argument_hint(row: dict, kinds: list[dict] | None = None) -> str:
     """Derive a verb-appropriate `argument-hint` for one catalog row.
 
     Every row already carries a natural-English `verb` (fix, create, change,
@@ -90,6 +92,8 @@ def _argument_hint(row: dict) -> str:
     """
     verb = row.get("verb") or _ARGUMENT_HINT_FALLBACK_VERB
     phrase = f"what to {verb}"
+    if kinds:
+        return f"[kind] [description]  -- kind: {', '.join(k['artifact'] for k in kinds)}; {phrase}"
     return f"[description]  -- {phrase}; runs straight to a graded flattened Lite work"
 
 
@@ -245,8 +249,13 @@ def validate_unique_names(rows: list[dict]) -> None:
 # Doorway rendering
 # ---------------------------------------------------------------------------
 
-def render_doorway(row: dict) -> str:
-    """Render the full SKILL.md content (frontmatter + body) for one catalog row."""
+def render_doorway(row: dict, kinds: list[dict] | None = None) -> str:
+    """Render the full SKILL.md content (frontmatter + body) for one catalog row.
+
+    ``kinds`` are the rows whose ``kind_of`` names this row: they have no directory of their
+    own, so the doorway routes them by the argument's first word.
+    """
+    kinds = kinds or []
     name = row["name"]
     verb = row["verb"]
     artifact = row["artifact"] or ""
@@ -259,7 +268,8 @@ def render_doorway(row: dict) -> str:
     # fixed clause says when to use it. Engine mechanics (the {verb, artifact} bindings and
     # the state sequence) live in the body below, never here.
     what = row.get("summary") or intent
-    description = f"{what} {_DESCRIPTION_WHEN}"
+    when = _DESCRIPTION_WHEN_KINDS if any(k.get("repurpose", False) for k in kinds) else _DESCRIPTION_WHEN
+    description = f"{what} {when}"
 
     frontmatter = (
         "---\n"
@@ -268,7 +278,7 @@ def render_doorway(row: dict) -> str:
         + textwrap.fill(description, width=90, initial_indent="  ", subsequent_indent="  ")
         + "\n"
         f"allowed-tools: {_ALLOWED_TOOLS}\n"
-        f'argument-hint: "{_argument_hint(row)}"\n'
+        f'argument-hint: "{_argument_hint(row, kinds)}"\n'
         "---\n"
     )
 
@@ -293,6 +303,23 @@ def render_doorway(row: dict) -> str:
         "`.aid/runtime/templates/shortcut-catalog.yml`.",
         "",
     ]
+    engine_kinds = [k["artifact"] for k in kinds if not k.get("repurpose", False)]
+    ref_kinds = [k["artifact"] for k in kinds if k.get("repurpose", False)]
+    if engine_kinds:
+        body_lines += [
+            "**Kinds.** When the argument starts with one of these kinds, take that word off the "
+            "description, bind **ARTIFACT** to it and use the catalog row "
+            f"`aid-{verb}-<kind>` as `{{name}}`: "
+            + ", ".join(f"`{k}`" for k in engine_kinds) + ".",
+            "",
+        ]
+    if ref_kinds:
+        body_lines += [
+            "When it starts with one of these, do not run the engine: read `references/<kind>.md` "
+            "in this skill's folder and follow it with the rest of the argument: "
+            + ", ".join(f"`{k}`" for k in ref_kinds) + ".",
+            "",
+        ]
     body = "\n".join(body_lines)
 
     return frontmatter + body
@@ -358,12 +385,17 @@ def main(argv: list[str] | None = None) -> int:
         for i, row in enumerate(rows):
             validate_row(row, i)
         validate_unique_names(rows)
+        names = {r["name"] for r in rows if not r.get("kind_of")}
+        for r in rows:
+            if r.get("kind_of") and r["kind_of"] not in names:
+                raise CatalogError(f"{r['name']}: kind_of {r['kind_of']!r} names no family row")
     except CatalogError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
-    generated_rows = [r for r in rows if not r.get("repurpose", False)]
-    skipped_repurpose = len(rows) - len(generated_rows)
+    generated_rows = [r for r in rows if not r.get("repurpose", False) and not r.get("kind_of")]
+    skipped_repurpose = sum(1 for r in rows if r.get("repurpose", False) and not r.get("kind_of"))
+    kinds_of = {r["name"]: [k for k in rows if k.get("kind_of") == r["name"]] for r in rows}
     current_names = {r["name"] for r in generated_rows}
 
     drift: list[str] = []
@@ -373,7 +405,7 @@ def main(argv: list[str] | None = None) -> int:
         name = row["name"]
         out_dir = SKILLS_ROOT / name
         out_path = out_dir / "SKILL.md"
-        content = render_doorway(row)
+        content = render_doorway(row, kinds_of[name])
         encoded = content.encode("utf-8")
 
         existing = out_path.read_bytes() if out_path.is_file() else None

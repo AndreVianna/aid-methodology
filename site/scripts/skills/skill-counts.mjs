@@ -42,7 +42,11 @@ const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
  * @property {number}   curated      Curated skills — classic plus the two above.
  * @property {number}   classic      Curated minus `/aid-triage` and `/aid-ask`.
  * @property {number}   shortcuts    Catalog rows that emit a shortcut skill.
- * @property {number}   catalogRows  All catalog rows, emitting or `repurpose`.
+ * @property {number}   catalogRows  All catalog rows, emitting or `repurpose`, family or kind.
+ * @property {number}   familyRows   Catalog rows that own a skill directory (no `kind_of`).
+ * @property {number}   kindRows     Kind rows (`kind_of`): no directory, routed by their family.
+ * @property {number}   doorways     Family rows that emit a generated doorway skill.
+ * @property {number}   familyRepurposed  Family rows that are hand-authored `repurpose` skills.
  * @property {number}   repurposed   Rows that re-register a hand-authored skill.
  * @property {number}   classicRepurposed  Repurpose rows naming a curated skill.
  * @property {number}   curatedOnly  Curated skills that are NOT catalog rows — the
@@ -52,7 +56,8 @@ const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
  * @property {number}   catalogAliases    Catalog rows that are aliases.
  * @property {string[]} directoryNames  Sorted directory names.
  * @property {string[]} curatedNames    Sorted curated skill names.
- * @property {string[]} shortcutNames   Sorted emitting shortcut names.
+ * @property {string[]} shortcutNames   Sorted emitting shortcut names, kind rows included.
+ * @property {string[]} familyNames     Sorted names of the catalog rows that own a directory.
  */
 
 /**
@@ -109,12 +114,17 @@ export function deriveSkillCounts(repoRoot) {
   // the catalog-row count double-counts exactly those, and the sentence
   // "classic + triage + ask + shortcuts" double-counts some of them AND omits the
   // collapse skills entirely. Excluding the overlap gives the figure that SUMS with the
-  // catalog rows to the corpus total, which is the decomposition every page on the site states.
+  // family catalog rows to the corpus total, which is the decomposition every page on the site states.
   //
   // No figures are written above on purpose: this file is the one place the numbers are
   // derived, so stating them in its own commentary is the defect it exists to prevent --
   // and stating them here is exactly what the guard caught twice. The identity is asserted
   // in skill-counts.test.mjs, so a future roster change cannot quietly break it.
+  //
+  // Only family rows own a directory: a kind row (`kind_of`) is invoked through its family
+  // skill as `/aid-<verb> <kind>`, so it is a catalog row but not a directory, and the
+  // decomposition sums with the family rows, not with every row.
+  const familyNames = rows.filter((r) => !r.kind_of).map((r) => r.name).sort();
   const catalogNameSet = new Set(rows.map((r) => r.name));
   const curatedOnlyNames = curatedNames.filter((n) => !catalogNameSet.has(n));
 
@@ -132,10 +142,15 @@ export function deriveSkillCounts(repoRoot) {
     classic: classicNames.length,
     shortcuts: shortcutNames.length,
     catalogRows: rows.length,
+    familyRows: familyNames.length,
+    kindRows: rows.length - familyNames.length,
+    doorways: emitting.filter((r) => !r.kind_of).length,
+    familyRepurposed: rows.filter((r) => !r.kind_of && r.repurpose === 'true').length,
     repurposed: rows.length - emitting.length,
     classicRepurposed,
     directoryNames,
     curatedNames,
     shortcutNames,
+    familyNames,
   };
 }

@@ -169,7 +169,9 @@ describe('the two curated rosters agree', () => {
 });
 
 const catalogRows = parseCatalogRows(readFileSync(SHORTCUT_CATALOG_FILE, 'utf8'));
-const catalogNames = catalogRows.map((r) => r.name);
+// Only family rows own a directory; a kind row (`kind_of`) is routed by its family skill.
+const catalogNames = catalogRows.filter((r) => !r.kind_of).map((r) => r.name);
+const kindRows = catalogRows.filter((r) => r.kind_of);
 const emittingNames = catalogRows.filter((r) => r.repurpose !== 'true').map((r) => r.name);
 
 describe('gen-reference: roster counts', () => {
@@ -178,8 +180,10 @@ describe('gen-reference: roster counts', () => {
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
 
-    // Every catalog row has a directory on disk.
+    // Every family row has a directory on disk; no kind row has one, and its family does.
     expect(catalogNames.filter((n) => !skillDirs.includes(n))).toEqual([]);
+    expect(kindRows.filter((r) => skillDirs.includes(r.name)).map((r) => r.name)).toEqual([]);
+    expect(kindRows.filter((r) => !catalogNames.includes(r.kind_of)).map((r) => r.name)).toEqual([]);
 
     // The clamp: no on-disk skill exists that the roster does not know about.
     // Adding a hand-authored skill without listing it here fails HERE, by name.
@@ -233,7 +237,7 @@ describe('gen-reference: roster counts', () => {
 
     // The shortcut count itself is still stated, and still derived.
     expect(skillsContent).toContain(
-      '**' + emittingNames.length + ' engine-driven verb-first shortcut skills**'
+      '**' + emittingNames.length + ' engine-driven verb-first shortcuts**'
     );
   });
 

@@ -85,10 +85,10 @@ assert_output_contains "$FIX_TXT" \
 # FFS-04: Ownership-boundary routing table (out-of-scope destinations).
 # The list is re-pointed, not resized: work-004 feature-005 rewrote fix.md's routing
 # table from the retired `aid-change`/`aid-change-infra` names to `aid-update` /
-# `aid-update-infra` (fix.md "New behavior / intent (not a defect)" -> `aid-update`,
-# "Infra provisioning to close an incident" -> `aid-update-infra`). Six routes before,
+# `aid-update infra` (fix.md "New behavior / intent (not a defect)" -> `aid-update`,
+# "Infra provisioning to close an incident" -> `aid-update infra`). Six routes before,
 # six after; the other four are unchanged, and no assertion here constrains the length.
-for route in "aid-test-security" "aid-document-runbook" "aid-test" "aid-update" "aid-refactor" "aid-update-infra"; do
+for route in "aid-test security" "aid-document runbook" "aid-test" "aid-update" "aid-refactor" "aid-update infra"; do
     assert_output_contains "$FIX_TXT" "$route" "FFS04 [${route}] named as a routing destination in the Ownership boundary"
 done
 
@@ -148,7 +148,7 @@ build_fix_fixture() {
 
 The exploit path exercised by the reproduction steps and the closure mechanism the patch
 applies. A deep SAST/DAST scan or dependency audit is out of scope for this task set --
-route that to aid-test-security.'
+route that to aid-test security.'
         task2_ac="Regression test proves the exploit path is closed (fails against the pre-fix code, passes against the post-fix code)."
     else
         task2_ac="Regression test fails against the pre-fix code and passes against the post-fix code."
