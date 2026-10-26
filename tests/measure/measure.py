@@ -163,7 +163,7 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
         u = r.get("usage", {})
         rec["user_turns"] += 1
         rec["agent_turns"] += r.get("num_turns", 0)
-        rec["cost_usd"] += r.get("total_cost_usd", 0.0)
+        rec["cost_usd"] = r.get("total_cost_usd", rec["cost_usd"])  # the session's running total, not the turn's
         rec["input_tokens"] += u.get("input_tokens", 0)
         rec["output_tokens"] += u.get("output_tokens", 0)
         rec["cache_read_tokens"] += u.get("cache_read_input_tokens", 0)

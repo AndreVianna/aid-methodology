@@ -109,7 +109,7 @@ def main() -> int:
         u = r.get("usage", {})
         rec["user_turns"] += 1
         rec["agent_turns"] += r.get("num_turns", 0)
-        rec["cost_usd"] += r.get("total_cost_usd", 0.0)
+        rec["cost_usd"] = r.get("total_cost_usd", rec["cost_usd"])  # the session's running total, not the turn's
         rec["output_tokens"] += u.get("output_tokens", 0)
         rec["cache_read_tokens"] += u.get("cache_read_input_tokens", 0)
         rec["cache_write_tokens"] += u.get("cache_creation_input_tokens", 0)
