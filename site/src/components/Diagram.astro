@@ -1,0 +1,75 @@
+---
+/**
+ * Diagram: one static, accessible diagram (FR-3). No JavaScript.
+ * Default slot: SVG shapes in a `width` x `height` viewBox. Slot "text": the text
+ * equivalent, an <ol> or a <table>, optionally followed by a <p>.
+ * Colours come from Starlight's theme variables, so both themes work.
+ */
+interface Props {
+  id: string;      // kebab-case, unique on the page; prefixes every element id
+  title: string;   // short name -> <title>
+  desc: string;    // one to three sentences on what the diagram shows -> <desc>
+  caption: string; // visible caption -> <figcaption>
+  width: number;   // viewBox width in user units, at most 480
+  height: number;  // viewBox height in user units
+}
+const { id, title, desc, caption, width, height } = Astro.props;
+if (!/^[a-z][a-z0-9-]*$/.test(id)) throw new Error(`Diagram: bad id "${id}"`);
+if (!(width > 0 && width <= 480 && height > 0)) throw new Error(`Diagram ${id}: bad size`);
+if (!title.trim() || !desc.trim() || !caption.trim()) throw new Error(`Diagram ${id}: empty text`);
+if (!Astro.slots.has('text')) throw new Error(`Diagram ${id}: no text equivalent`);
+const titleId = `dg-${id}-title`;
+const descId = `dg-${id}-desc`;
+---
+<figure class="diagram" id={`dg-${id}`}>
+  <figcaption>{caption}</figcaption>
+  <svg role="img" aria-labelledby={titleId} aria-describedby={descId}
+       viewBox={`0 0 ${width} ${height}`} width={width} height={height}
+       data-pagefind-ignore>
+    <title id={titleId}>{title}</title>
+    <desc id={descId}>{desc}</desc>
+    <defs>
+      <marker id={`dg-${id}-arrow`} viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" class="dg-arrowhead" />
+      </marker>
+    </defs>
+    <slot />
+  </svg>
+  <div class="diagram-text">
+    <p class="diagram-text-lead">The same information as text:</p>
+    <slot name="text" />
+  </div>
+</figure>
+<style>
+.diagram {
+  --dg-ink: var(--sl-color-white);         /* labels */
+  --dg-muted: var(--sl-color-gray-2);      /* notes, edge labels, lead line */
+  --dg-line: var(--sl-color-gray-3);       /* edges, outlines, arrowheads */
+  --dg-surface: var(--sl-color-gray-6);    /* node fill */
+  --dg-accent-surface: var(--sl-color-accent-low);
+  --dg-accent-line: var(--sl-color-accent);
+  --dg-bg: var(--sl-color-bg);
+  margin-block: 1.5rem;
+}
+.diagram figcaption { font-weight: 600; color: var(--dg-ink); margin-block-end: 0.5rem; }
+.diagram svg { display: block; max-inline-size: 100%; block-size: auto; }
+.diagram :global(text) { font-family: var(--sl-font); fill: var(--dg-ink); }
+.diagram :global(.dg-label) { font-size: 16px; }
+.diagram :global(.dg-note) { font-size: 14px; fill: var(--dg-muted); }
+.diagram :global(.dg-node) { fill: var(--dg-surface); stroke: var(--dg-line); stroke-width: 1.5; }
+.diagram :global(.dg-accent) { fill: var(--dg-accent-surface); stroke: var(--dg-accent-line); }
+.diagram :global(.dg-optional) { fill: var(--dg-bg); stroke-dasharray: 6 4; }
+.diagram :global(.dg-group) { fill: none; stroke: var(--dg-line); stroke-width: 1; }
+.diagram :global(.dg-edge) { fill: none; stroke: var(--dg-line); stroke-width: 2; }
+.diagram :global(.dg-edge.dg-optional) { stroke-dasharray: 6 4; }
+.diagram :global(.dg-label-bg) { fill: var(--dg-bg); }
+.diagram :global(.dg-arrowhead) { fill: var(--dg-line); }
+.diagram-text { border-inline-start: 3px solid var(--dg-accent-line); padding-inline-start: 1rem; }
+.diagram-text-lead { color: var(--dg-muted); font-size: var(--sl-text-sm); }
+@media (forced-colors: active) {
+  .diagram :global(.dg-node), .diagram :global(.dg-edge), .diagram :global(.dg-group) { stroke: CanvasText; }
+  .diagram :global(.dg-node), .diagram :global(.dg-label-bg) { fill: Canvas; }
+  .diagram :global(text), .diagram :global(.dg-arrowhead) { fill: CanvasText; }
+}
+</style>
