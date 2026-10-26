@@ -41,6 +41,26 @@ Target: close to the cost of a plain prompt (today about 100 times more through 
 | **The fix-and-break loop** | Bounded review: one pass, blocking defects with evidence only, at most one fix round. A fix that breaks a passing check is undone, not patched. Only the fix's own change is re-checked. Over the limit: stop and show the user |
 | **Losing control** | The user decides four times: the goal card, the plan, each milestone (progress, budget used, anything outside the goal), the result. Small decisions are taken and listed, not asked |
 
+### Review and tests that converge (draft, from the maintainer's challenge)
+
+Severity is the wrong axis: it mixes proof, impact and taste. A finding is sorted by **evidence and what it touches**:
+
+| Class | When | What happens |
+|---|---|---|
+| **Blocking** | Proven: a failing test or command, a broken acceptance criterion, a broken written project rule, or a risk category (security, data loss, public API) | Fixed. The finding must carry its proof; a claim with no proof is dropped, not argued |
+| **Decision** | Real but not proven to break anything (most of today's "Medium") | The reviewer states the risk if left and the cost to fix. Cheap and local: fixed in the one fix round. Otherwise listed for the user at the milestone, never looped on |
+| **Note** | Taste and style (today's "Minor"/"Low") | Never blocks. Fixed only on lines the fix already touches. A note that keeps recurring becomes a lint rule or a card rule, and from then on it is Blocking by rule, not by mood |
+
+Tests are judged by effect, not count:
+- written from the acceptance criteria, before the code, by a different agent than the builder;
+- each new test must **fail on the old code** (checked by running it), or it tests nothing;
+- small mutations of the changed lines must be caught (mutation check on the diff), which measures test strength;
+- the review flags tests that are redundant, test wording or internals, or trace to no criterion: **unneeded is a finding**.
+
+The loop stops by rule: one review pass, one fix round; the second look checks only the fixes and the full test run; a
+fix that breaks a passing check is reverted; no new Notes or Decisions in the second look. Thresholds (what "cheap"
+means, the size budget) are tuned on the benchmark by counting escaped defects against cost.
+
 Plan: deliveries as vertical slices, each with its criteria and tests; tasks as lines in the plan, not files.
 State: one small file, written by script in batches.
 
