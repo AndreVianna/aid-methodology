@@ -129,7 +129,7 @@ def main() -> int:
         rec["dispatches"] += t["dispatches"]
         rec["writer_calls"] += t["writer_calls"]
         text = r.get("result", "") or ""
-        edits = sum(t["tools"].get(k, 0) for k in ("Edit", "Write")) + t["dispatches"]
+        acted = sum(t["tools"].values())  # any tool call; work can happen inside a resumed helper agent
         print(f"  turn {rec['user_turns']}: ${rec['cost_usd']:.2f}, {round(time.time() - start)}s, "
               f"{rec['dispatches']} dispatches; last line: {text.strip().splitlines()[-1][:100] if text.strip() else '-'}",
               file=sys.stderr, flush=True)
@@ -144,8 +144,8 @@ def main() -> int:
             message = phase
         elif asks(text):
             message = REPLY
-        elif message == GO_ON and edits == 0:
-            rec["stopped"] = "finished"  # no question, asked to go on, and changed nothing: the work is done
+        elif message == GO_ON and acted == 0:
+            rec["stopped"] = "finished"  # no question, asked to go on, and did nothing: the work is done
             break
         else:
             message = GO_ON
