@@ -301,3 +301,11 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q3
+    category: Measurement
+    impact: High
+    state: Pending
+    context: 'Is this enough measuring to set the baseline and start the changes?'
+    suggested: '1: yes; the gap is about 100 times the cost and 60 times the time, and each heavy run costs about $24 or more without changing the decision'
+    answer: --
+    applied_to: --
