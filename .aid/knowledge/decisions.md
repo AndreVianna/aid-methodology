@@ -240,7 +240,7 @@ review-criteria:
   prune AID's own stale files in place with no risk to user files.
 - **Root regions:** `AGENTS.md` carries the one region for every tool: a SESSION START block that makes a Read of
   `.aid/runtime/rules.md` the first action, plus a short rules summary with a single source (the `AID:SUMMARY` block
-  of `canonical/aid/rules.md`). While Claude Code is installed, `CLAUDE.md` always carries the same body plus an
+  of `canonical/aid/rules.md`). While Claude Code is installed, `CLAUDE.md` carries only an
   `@.aid/runtime/rules.md` line, with no `@AGENTS.md` import, so each file holds the rules alone and deleting one
   leaves the other. The block is explicit because a plain read pointer is advisory: Codex and Cursor obeyed a
   later "do not read any files" prompt and skipped it. `CLAUDE.md` is always written because Claude Code reads it in

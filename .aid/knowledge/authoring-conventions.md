@@ -63,6 +63,7 @@ load-bearing core.
 - [Citation Rule (Durable Anchors)](#citation-rule-durable-anchors)
 - [Signature Exception](#signature-exception)
 - [Resolved Items Leave No Trace](#resolved-items-leave-no-trace)
+- [No Work References](#no-work-references)
 - [Reviewer Ledger Convention](#reviewer-ledger-convention)
 - [Plan-First (Review then Fix)](#plan-first-review-then-fix)
 - [Concern Model (Doc-Set Derivation)](#concern-model-doc-set-derivation)
@@ -82,7 +83,7 @@ Every KB document MUST follow this top-to-bottom order (kb-authoring P10):
 |----------|---------|------|
 | 1 | Frontmatter | YAML block between `---` markers; first content in the file (no BOM, no blank line before). |
 | 2 | Title | a single `# Doc Title`. |
-| 3 | Index / contents | required when the doc has more than 3 sections. |
+| 3 | Index / contents | required when the doc has more than 3 sections (the project card is exempt: it is one page). |
 | 4 | Content sections | the concern's substance. |
 
 **There is no history section.** A KB doc carries no `## Change Log` / `## Revision History`
@@ -143,7 +144,7 @@ for *any* file that exhausted the expressible rows, including a genuine orphan e
 the corpus — reporting as merely undecided the very defect `G-07` exists to catch.
 `template-own` is the catch-all over that same path space, so it is unreachable behind
 `template-payload` and is inexpressible as a consequence of its neighbour rather than of
-anything about itself. **Eight rows are fully expressible; those two are not.**
+anything about itself. **Nine rows are fully expressible; those two are not.**
 
 > **`Selector` and `Match` are one unit.** Changing either without the other is a defect.
 > They state the same rule in two notations, so an edit to the prose that forgets the
@@ -157,6 +158,7 @@ anything about itself. **Eight rows are fully expressible; those two are not.**
 | `state` | any `STATE.md`, at any depth in any folder | `path **/STATE.md` | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
 | `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`) | `path .aid/knowledge/*.md AND fm source == generated` | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
 | `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | `path .aid/knowledge/*.md AND fm kb-category == meta` | spot-check of top-level fields only |
+| `kb-card` | the project card, `.aid/knowledge/PROJECT.md`: the one page every session reads first | `path .aid/knowledge/PROJECT.md` | emitted from `canonical/aid/templates/project-card.md`; ahead of `kb-doc`, so the card is held to the card criteria (`PC-`) and not to the per-concern ones |
 | `kb-doc` | any other `.md` under `.aid/knowledge/` | `path .aid/knowledge/*.md` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
 | `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | `path canonical/skills/*/SKILL.md AND name-in canonical/aid/templates/shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
 | `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | `path canonical/skills/*/SKILL.md` | hand-authored; may carry a file-level block |
@@ -212,15 +214,15 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-14 | `work-artifact` | validate | Every citation in a work artifact's prose is a durable anchor (a path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE`. Membership: a `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` or `deliveries/*/BLUEPRINT.md` under `.aid/works/`. A reviewer ledger's `Line` cell is a column, not prose, and is never a citation | LOW | the same drift `G-02` names, in the artifacts a later phase reads most closely; `G-02` cannot reach them because it is scoped to the registry's corpus and a work folder is not in it |
 | G-15 | `work-artifact` | validate | A span presented as a quotation from a named source appears verbatim in that source. Membership: as `G-14` | MEDIUM | a misquoted requirement propagates into every artifact derived from it, and unlike a stale line number it reads as correct; the reader has no signal to re-check |
 | G-16 | `*` | validate | When a section is rewritten, every cross-reference pointing at it still states a purpose the new content supports. Membership: any reference naming another section of the same document, by heading or by number | MEDIUM | a pointer that resolves but now names the opposite of what it points at is worse than a dead one, because a dead pointer is visibly dead and this one reads as checked; and it is invisible to the sweep that catches the rest, since grepping a claim's own words finds every place that states it and no place that points at it |
-| KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
+| KB-01 | `kb-doc`, `kb-card` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
 | KB-02 | `kb-doc` | validate | Exactly one concern per doc, and the layout holds: frontmatter, title, index, content sections, and no history section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract, and a history section drifts from git |
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
 | KB-04 | `kb-meta` | validate | Only the top-level fields are checked -- that they are present and current; the body is not content-graded | LOW | a meta doc orients a reader to the KB rather than asserting project facts, so there is little in its body that can be wrong about the project |
 | KB-05 | `kb-doc` | validate | The optional classification fields `audience:`, `owner:`, and `tags:` are present when the doc belongs to the confirmed doc set | LOW | missing classification fields prevent concern-routing and audience-targeting; widespread absence degrades KB navigability |
 | KB-06 | `kb-doc` | validate | The `tags:` field includes the concern or dimension id (e.g. `C3`) that anchors this doc to exactly one spine dimension | LOW | a doc without a concern id in `tags:` cannot be verified to own exactly one spine dimension, making the concern-model mapping untestable |
 | KB-07 | `kb-doc` | validate | The body contains no diagram blocks -- no Mermaid, no SVG, and no ASCII-art diagram | LOW | diagrams degrade in plain-text reading and cannot be grepped, harming the agent half of the dual audience |
-| KB-08 | `kb-doc` | validate | The doc satisfies the dual-audience standard: prose is plain and junior-clear for the human reader, and operational guidance is in named, greppable sections for the agent consumer | MEDIUM | a doc that loses one audience fails for half its consumers; jargon-dense prose and ungreppable structure each fail a different half |
-| KB-09 | `kb-doc` | validate | No statement in this doc contradicts another statement in the same doc, any other KB doc, or a named higher-authority source | HIGH | a contradiction forces agents to choose silently, producing non-reproducible plan failures; a cross-source contradiction misleads every consumer of the doc |
+| KB-08 | `kb-doc`, `kb-card` | validate | The doc satisfies the dual-audience standard: prose is plain and junior-clear for the human reader, and operational guidance is in named, greppable sections for the agent consumer | MEDIUM | a doc that loses one audience fails for half its consumers; jargon-dense prose and ungreppable structure each fail a different half |
+| KB-09 | `kb-doc`, `kb-card` | validate | No statement in this doc contradicts another statement in the same doc, any other KB doc, or a named higher-authority source | HIGH | a contradiction forces agents to choose silently, producing non-reproducible plan failures; a cross-source contradiction misleads every consumer of the doc |
 | KB-10 | `kb-doc` | validate | All information needed to assemble a correct task plan for the doc's subject area is present without requiring the reader to infer or reach outside the doc | MEDIUM | a KB doc that cannot source every plan step is incomplete for its declared purpose of enabling agent action |
 | KB-11 | `kb-doc` | validate | Every load-bearing operational contract is stated inline or behind a precise grep-recoverable anchor, not deferred to a bare `sources:` pointer | HIGH | an agent that must reach outside the KB to infer a contract may infer incorrectly, producing a conformance failure with no KB trail |
 | KB-12 | `kb-doc` | validate | Every invariant the doc's subject area carries is stated positively and explicitly, not left for the agent to guess | HIGH | an agent that guesses an unstated invariant and is wrong produces a conformance failure with no KB trail |
@@ -230,6 +232,9 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | KB-16 | `kb-doc` | validate | Every load-bearing claim is grounded -- the reader can reach what makes it true | MEDIUM | an ungrounded load-bearing claim sends agents and reviewers to act on unsupported assertions |
 | KB-17 | `kb-doc` | validate | The body contains no drift-prone content beyond cosmetic counts (covered by G-01): no dates without semantic anchor, no version strings that will change silently | LOW | drift-prone values are correct at write time but become wrong without a signal; the defect is latent and corrects with a remove-or-pin edit |
 | KB-18 | `kb-doc` | validate | Where prose suffices to explain a convention or rule, prose is used; a code or script block appears only when real logic warrants it | MINOR | a code block where prose suffices adds noise but the doc remains usable |
+| PC-01 | `kb-card` | validate | The card fits one page (about 60 lines) and holds exactly: what the project is, stack and versions, build/test/lint commands, where things live, at most 10 non-negotiable rules, and pointers to the KB docs that hold the detail | MEDIUM | the card is loaded in every session, so each line it carries is paid for by every task; a longer card stops being read |
+| PC-02 | `kb-card` | validate | Every command and path on the card exists and runs as written, from the repo root; a version is the one the named manifest declares | HIGH | a card is trusted without checking, so a command that fails or a path that is gone sends every agent the wrong way at its first step |
+| PC-03 | `kb-card` | validate | Each rule on the card is one line naming what enforces it (a test, lint, hook) or the KB doc that explains it; the card restates no detail that doc holds | MEDIUM | a copied detail drifts from its source (`KB-09`), and a rule with no check or pointer cannot be verified |
 | SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
 | SR-01 | `skill-reference`, `template-own` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | both types are procedure bodies an agent follows at run time, so a broken pointer is followed rather than noticed |
@@ -375,6 +380,23 @@ visible anywhere (including in the generated `kb.html`) is a defect.
 
 ---
 
+## No Work References
+
+A KB doc names no work: no work id, no work-folder path (`.aid/works/...`), no "specified by" or
+"added in" a work, in prose, tables, headings or frontmatter. Two reasons, each sufficient: a work
+folder is pruned when its work ships, so the citation is a dangling pointer by design; and the KB
+states only the **current state of the project's sources**, whereas which work produced a change is
+history. Cite the durable artifact the work left on disk instead. It follows that a KB doc carries no
+`## Change Log` / `## Revision History` section and no `changelog:` field (see
+[KB Document Layout](#kb-document-layout)): git records per-doc history, with author, date and diff.
+
+The rule binds `.aid/knowledge/` alone. Skills, templates and pipeline scripts name works legitimately,
+because they operate on them; and no permanent artifact (code, tests, docs, the KB) may depend on the
+contents of a specific work folder, since tests build their own fixtures. `tests/canonical/test-kb-no-work-ids.sh`
+enforces the KB half.
+
+---
+
 ## Reviewer Ledger Convention
 
 Every review output -- dispatched sub-agent, script validator, or ad-hoc -- is
@@ -490,7 +512,7 @@ content.**
   and records it in the install manifest.
 - **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed region
   (a SESSION START block plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
-  with the same body plus an `@.aid/runtime/rules.md` import line (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
+  holding only an `@.aid/runtime/rules.md` import line (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
   installer updates only the content **in place** inside that region; content outside it (the user's own
   instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
   **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,

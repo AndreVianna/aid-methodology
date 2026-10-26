@@ -565,7 +565,7 @@ mkdir -p "$V3_SPEC" "$V3_PRE"
 RULES_SUMMARY="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "${REPO_ROOT}/canonical/aid/rules.md" | sed '1d;$d')"
 REGION_HEAD=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nSESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:\n'
 POINTER_REGION="${REGION_HEAD}${RULES_SUMMARY}"$'\n<!-- AID:END -->\n'
-IMPORT_REGION="${REGION_HEAD}${RULES_SUMMARY}"$'\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+IMPORT_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
 V3_REGION_BODY='<!-- Managed by the AID CLI. Do not edit between the AID markers. -->'
 
 # v3_tool_root <tool>: the tool's old root directory (relative to the project root).

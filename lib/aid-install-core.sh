@@ -1111,11 +1111,12 @@ PY
 
 
 # Fixed root context regions. Keep these LF-only constants in both install cores.
-# AGENTS.md and CLAUDE.md carry the same body: the SESSION START block (a written "read first" rule
-# is advisory, so it names the first action, forbids answering before that Read and pre-empts
-# "do not read files" prompts; no '@' line in AGENTS.md: only Claude Code expands '@' imports)
-# followed by the summary bullets lifted from the installed runtime rules; CLAUDE.md adds the single
-# Claude-only import line '@.aid/runtime/rules.md' last.
+# AGENTS.md: the SESSION START block (a written "read first" rule is advisory, so it names the first
+# action, forbids answering before that Read and pre-empts "do not read files" prompts; no '@' line:
+# only Claude Code expands '@' imports) followed by the summary bullets lifted from the installed
+# runtime rules.
+# CLAUDE.md: only the single import line '@.aid/runtime/rules.md'; Claude Code loads the rules through
+# it, so the SESSION START block and the summary would repeat them.
 # Under rules_inline both regions hold the whole rules text instead, with no '@' line. Either root
 # file alone therefore carries the AID rules.
 _AID_REGION_OPEN=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'
@@ -1146,7 +1147,8 @@ END { if (bad || nb != 1 || ne != 1 || st != 2 || n < 1) exit 1; for (i = 1; i <
 }
 
 # _aid_root_region <rules-file> <inline:0|1> <agents|claude> - print the root region (ends with a
-# newline) for AGENTS.md or CLAUDE.md. Fails when the installed rules (or their summary block) are unusable.
+# newline) for AGENTS.md or CLAUDE.md. Fails when the installed rules (or, for AGENTS.md, their summary
+# block) are unusable; the CLAUDE.md region outside rules_inline reads no rules.
 _aid_root_region() {
     local rules="$1" inline="$2" kind="$3" summary
     if [[ "$inline" == 1 ]]; then
@@ -1154,10 +1156,12 @@ _aid_root_region() {
         printf '%s' "$_AID_REGION_OPEN"; cat "$rules"; printf '<!-- AID:END -->\n'
         return
     fi
+    if [[ "$kind" == claude ]]; then
+        printf '%s%s\n<!-- AID:END -->\n' "$_AID_REGION_OPEN" "$_AID_CLAUDE_RULES_IMPORT"
+        return
+    fi
     summary="$(_aid_rules_summary "$rules")" || return 1
-    printf '%s%s\n' "$_AID_AGENTS_REGION_HEAD" "$summary"
-    [[ "$kind" == claude ]] && printf '%s\n' "$_AID_CLAUDE_RULES_IMPORT"
-    printf '<!-- AID:END -->\n'
+    printf '%s%s\n<!-- AID:END -->\n' "$_AID_AGENTS_REGION_HEAD" "$summary"
 }
 
 # _repair_root_region <file> <region> [project-root] [recorded-region-sha]
@@ -3919,7 +3923,7 @@ _uninstall_tool_v3() {
         region="$(_aid_root_region "${target}/.aid/runtime/rules.md" "$inline" agents)" || return 1
         region+=$'\n'
         _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" "$agents_region_sha" || return 1
-        # CLAUDE.md follows the inline state: the same rules text as AGENTS.md while the rules are inline, else the summary region.
+        # CLAUDE.md follows the inline state: the same rules text as AGENTS.md while the rules are inline, else the import region.
         if [[ -n "$claude_left" && "$inline_before" != "$inline" && -f "${target}/CLAUDE.md" ]]; then
             claude_resync="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline" "$claude_sha")" || return 1
         fi

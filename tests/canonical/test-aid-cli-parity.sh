@@ -6144,13 +6144,13 @@ tfx_row1() {
 tfx_row1
 
 # The decided root regions, built independently of the CLIs from the rules summary block:
-# AGENTS.md = header + SESSION START block + bullets; CLAUDE.md = the same body + the rules import line.
+# AGENTS.md = header + SESSION START block + bullets; CLAUDE.md = header + the rules import line.
 tfx_regions() {  # -> TFX_REGION_A / TFX_REGION_C (each ends with a newline)
     local summary
     summary="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "${REPO_ROOT}/canonical/aid/rules.md" | sed '1d;$d')"
     TFX_SESSION_START=$'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:'
     TFX_REGION_A="$(printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' "$TFX_SESSION_START" "$summary" '<!-- AID:END -->')"$'\n'
-    TFX_REGION_C="${TFX_REGION_A%'<!-- AID:END -->'$'\n'}@.aid/runtime/rules.md"$'\n''<!-- AID:END -->'$'\n'
+    TFX_REGION_C="$(printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' '@.aid/runtime/rules.md' '<!-- AID:END -->')"$'\n'
 }
 tfx_row3() {
     local id="FIX-C" shell home tgt pre post region_c region_a ex
@@ -6293,9 +6293,9 @@ tfx_row6to9() {
 tfx_row6to9
 
 # FIX-E: both root files stay self-sufficient. Without an inline tool AGENTS.md holds the read instruction and
-# the rules summary (no @ line) and CLAUDE.md the same body plus the single @.aid/runtime/rules.md import;
+# the rules summary (no @ line) and CLAUDE.md only the single @.aid/runtime/rules.md import;
 # while a tool's rules are inline both hold the same inline rules text (no @ line); leaving rules_inline
-# restores the summary regions; deleting either root file and running update restores it. Bytes equal in both shells.
+# restores those regions; deleting either root file and running update restores it. Bytes equal in both shells.
 tfx_row_claude_inline() {
     local id="FIX-E" shell home tgt inl_stage="${TMP}/tfx-inline-stage-e"
     local -A seen_a=() seen_b=() seen_c=() seen_m=() seen_d=()
@@ -6305,11 +6305,11 @@ tfx_row_claude_inline() {
         home="$(tfx_home "$shell")"; tgt="$(newtarget)"
         tfx_aid "$shell" "$home" "$tgt" add claude-code
         assert_exit_eq "$RC" 0 "${id} ${shell} add claude-code -> exit 0"
-        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} CLAUDE.md is the AGENTS.md body plus the rules import" || fail "${id} ${shell} CLAUDE.md is the AGENTS.md body plus the rules import"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} CLAUDE.md is only the rules import" || fail "${id} ${shell} CLAUDE.md is only the rules import"
         [[ "$(cat "$tgt/AGENTS.md"; printf x)" == "${TFX_REGION_A}x" ]] && pass "${id} ${shell} AGENTS.md is the read instruction plus the rules summary" || fail "${id} ${shell} AGENTS.md is the read instruction plus the rules summary"
         assert_eq "$(grep -c '^@' "$tgt/AGENTS.md")" "0" "${id} ${shell} AGENTS.md region has no @ line"
         assert_eq "$(grep -c '^@' "$tgt/CLAUDE.md") $(grep -c '@AGENTS.md' "$tgt/CLAUDE.md")" "1 0" "${id} ${shell} CLAUDE.md has exactly one @ line and no @AGENTS.md"
-        assert_eq "$(sed '$d' "$tgt/AGENTS.md")" "$(sed '$d' "$tgt/CLAUDE.md" | sed '$d')" "${id} ${shell} both regions share the same body"
+        assert_eq "$(grep -c 'SESSION START\|Valid first action\|^- ' "$tgt/CLAUDE.md")" "0" "${id} ${shell} CLAUDE.md has no read-first block and no summary bullets"
         seen_a[$shell]="$(cat "$tgt/CLAUDE.md")"
         # Either root file alone carries the rules: delete one, update restores it.
         rm -f "$tgt/AGENTS.md"; tfx_aid "$shell" "$home" "$tgt" update
@@ -6328,7 +6328,7 @@ tfx_row_claude_inline() {
         assert_output_not_contains "$OUT" "CLAUDE.md" "${id} ${shell} status reports no CLAUDE.md drift under rules_inline"
         tfx_remove "$shell" "$home" "$tgt" cursor
         assert_exit_eq "$RC" 0 "${id} ${shell} remove cursor -> exit 0"
-        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} leaving rules_inline restores the CLAUDE.md summary region" || fail "${id} ${shell} leaving rules_inline restores the CLAUDE.md summary region"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} leaving rules_inline restores the CLAUDE.md import region" || fail "${id} ${shell} leaving rules_inline restores the CLAUDE.md import region"
         [[ "$(cat "$tgt/AGENTS.md"; printf x)" == "${TFX_REGION_A}x" ]] && pass "${id} ${shell} leaving rules_inline restores the AGENTS.md summary region" || fail "${id} ${shell} leaving rules_inline restores the AGENTS.md summary region"
         seen_c[$shell]="$(cat "$tgt/CLAUDE.md")"
         tfx_status "$shell" "$home" "$tgt"

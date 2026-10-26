@@ -48,8 +48,8 @@ SUMMARY_LINES="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -
 # The decided SESSION START block (13 lines, ending with the blank line and 'Summary:'), written out independently of the CLI.
 SESSION_START=$'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:'
 POINTER_REGION="$(printf '%s\n%s\n%s\n%s\n<!-- AID:END -->\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' "$SESSION_START" "$SUMMARY_LINES")"$'\n'
-CLAUDE_REGION="${POINTER_REGION%'<!-- AID:END -->'$'\n'}@.aid/runtime/rules.md"$'\n''<!-- AID:END -->'$'\n'
-assert_eq "$(printf '%s\n' "$SUMMARY_LINES" | wc -l | tr -d ' ')" "8" "summary block: seven bullets (one wraps onto a continuation line)"
+CLAUDE_REGION="$(printf '%s\n%s\n%s\n<!-- AID:END -->\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' '@.aid/runtime/rules.md')"$'\n'
+assert_eq "$(printf '%s\n' "$SUMMARY_LINES" | wc -l | tr -d ' ')" "7" "summary block: seven bullets, one line each"
 AGENT="$ROOT_FIX/AGENTS.md"
 CLAUDE="$ROOT_FIX/CLAUDE.md"
 assert_eq "$(_root_agent_file claude-code) $(_root_agent_file codex) $(_root_agent_file cursor) $(_root_agent_file copilot-cli) $(_root_agent_file antigravity)" "AGENTS.md AGENTS.md AGENTS.md AGENTS.md AGENTS.md" "root region: every tool uses AGENTS.md"
@@ -60,10 +60,12 @@ assert_eq "$(grep -c '^@' "$AGENT")" "0" "root region: AGENTS.md pointer region 
 if [[ "$(_aid_root_region "$ROOT_FIX/.aid/runtime/rules.md" 0 agents; printf x)" == "${POINTER_REGION}x" ]]; then pass "root region: builder output equals the independently built AGENTS.md region"; else fail "root region: builder output equals the independently built AGENTS.md region"; fi
 if [[ "$(_aid_root_region "$ROOT_FIX/.aid/runtime/rules.md" 0 claude; printf x)" == "${CLAUDE_REGION}x" ]]; then pass "root region: builder output equals the independently built CLAUDE.md region"; else fail "root region: builder output equals the independently built CLAUDE.md region"; fi
 assert_eq "$(printf '%s' "$POINTER_REGION" | sed '1,15d;$d')" "$SUMMARY_LINES" "root region: AGENTS.md region bullets equal the rules.md summary block byte for byte"
-assert_eq "$(printf '%s' "$CLAUDE_REGION" | sed '1,15d;$d' | sed '$d')" "$SUMMARY_LINES" "root region: CLAUDE.md region bullets equal the rules.md summary block byte for byte"
-assert_eq "$(printf '%s' "$POINTER_REGION" | sed '$d')" "$(printf '%s' "$CLAUDE_REGION" | sed '$d' | sed '$d')" "root region: AGENTS.md and CLAUDE.md regions share the same body"
+assert_eq "$(printf '%s' "$CLAUDE_REGION" | grep -c 'SESSION START\|Valid first action\|^- ') $(printf '%s' "$CLAUDE_REGION" | wc -l | tr -d ' ')" "0 4" "root region: CLAUDE.md region is the markers, the managed line and the import: no read-first block, no summary bullets"
 assert_eq "$(printf '%s' "$CLAUDE_REGION" | grep -c '^@') $(printf '%s' "$CLAUDE_REGION" | grep -c '^@.aid/runtime/rules.md$')" "1 1" "root region: CLAUDE.md region has exactly one @ line, the rules import"
 assert_eq "$(printf '%s' "$CLAUDE_REGION" | tail -n 2 | head -n 1)" "@.aid/runtime/rules.md" "root region: the rules import is the last line before the end marker"
+# The CLAUDE.md region reads no rules: unusable rules do not affect it.
+BAD_CLAUDE_RULES="$WORK/bad-claude-rules.md"; printf '## Summary\n' > "$BAD_CLAUDE_RULES"
+if [[ "$(_aid_root_region "$BAD_CLAUDE_RULES" 0 claude; printf x)" == "${CLAUDE_REGION}x" && "$(_aid_root_region "$WORK/no-such-rules.md" 0 claude; printf x)" == "${CLAUDE_REGION}x" ]]; then pass "root region: CLAUDE.md region does not depend on the rules summary block"; else fail "root region: CLAUDE.md region does not depend on the rules summary block"; fi
 # A missing or malformed summary block fails clearly: never an empty summary.
 BAD_RULES="$WORK/bad-rules.md"
 printf '## Summary\n' > "$BAD_RULES"
@@ -73,7 +75,7 @@ assert_output_contains "$bad_err" "AID rules summary block missing or malformed"
 printf '<!-- AID:SUMMARY:BEGIN -->\n<!-- AID:SUMMARY:END -->\n' > "$BAD_RULES"
 _aid_root_region "$BAD_RULES" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: empty block fails"
 printf '<!-- AID:SUMMARY:BEGIN -->\n- a\n' > "$BAD_RULES"
-_aid_root_region "$BAD_RULES" 0 claude >/dev/null 2>&1; assert_eq "$?" "1" "summary block: missing end marker fails"
+_aid_root_region "$BAD_RULES" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: missing end marker fails"
 printf '<!-- AID:SUMMARY:BEGIN -->\nnot a bullet\n<!-- AID:SUMMARY:END -->\n' > "$BAD_RULES"
 _aid_root_region "$BAD_RULES" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: a non-bullet line fails"
 _aid_root_region "$WORK/no-such-rules.md" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: missing rules file fails"
@@ -150,7 +152,7 @@ _ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 1 >/dev/null
 assert_eq "$(sha256_file "$CLAUDE")" "$inline_sha" "Claude region: rules_inline repair is idempotent"
 # ... and back (the remove path passes the recorded region hash): the summary region is restored in place.
 claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 0 "$inline_hash")"
-if cmp -s "$CLAUDE" <(printf '%s' "$CLAUDE_REGION"); then pass "Claude region: leaving rules_inline restores the summary region"; else fail "Claude region: leaving rules_inline restores the summary region"; fi
+if cmp -s "$CLAUDE" <(printf '%s' "$CLAUDE_REGION"); then pass "Claude region: leaving rules_inline restores the import region"; else fail "Claude region: leaving rules_inline restores the import region"; fi
 _remove_claude_md_region "$CLAUDE" "$claude_hash" "$ROOT_FIX"
 if [[ ! -e "$CLAUDE" ]]; then pass "Claude region: add/remove deletes a created-only file"; else fail "Claude region: add/remove deletes a created-only file — still present"; fi
 printf 'user-content\n' > "$CLAUDE"
@@ -215,6 +217,7 @@ if command -v pwsh >/dev/null 2>&1; then
                 $threw = $false; try { script:Get-AidRootRegion -RulesPath $badRules -Inline $false -Kind "agents" | Out-Null } catch { $threw = $true }
                 if (-not $threw) { throw "PowerShell malformed summary block did not fail" }
             }
+            if ((script:Get-AidRootRegion -RulesPath $badRules -Inline $false -Kind "claude") -cne $claudeRegion) { throw "PowerShell CLAUDE.md region depends on the rules summary block" }
             $agents = Join-Path $root "ps-AGENTS.md"
             script:Repair-AidRootRegion -File $agents -Region $agentsRegion -Root $root
             Assert-Bytes $agents $agentsRegion "missing AGENTS.md"

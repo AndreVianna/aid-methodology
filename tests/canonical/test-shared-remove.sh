@@ -225,7 +225,7 @@ if grep -qF 'MY IMPORTANT NOTE' "$SEVENTH/AGENTS.md"; then fail 'The live AGENTS
 assert_file_contains "$SEVENTH/AGENTS.md" 'Valid first action: Read `.aid/runtime/rules.md`.' 'The remaining tool keeps its managed region'
 
 # CLAUDE.md follows the rules_inline state: it holds the inline rules text (no @ line) while a tool's rules
-# are inline, and the summary region plus the rules import again (manifest hash refreshed) once the last
+# are inline, and only the rules import again (manifest hash refreshed) once the last
 # inline tool leaves.
 EIGHTH="${TMP}/claude-inline-transition"; mkdir -p "$EIGHTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$EIGHTH" >/dev/null 2>&1 || exit 1
@@ -246,10 +246,8 @@ assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.m
 if python3 - "$EIGHTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
-rules=(r/'.aid/runtime/rules.md').read_text(encoding='utf-8').split('\n')
-bullets='\n'.join(rules[rules.index('<!-- AID:SUMMARY:BEGIN -->')+1:rules.index('<!-- AID:SUMMARY:END -->')])
-head='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:'+'\n'
-region=(head+bullets+'\n@.aid/runtime/rules.md\n<!-- AID:END -->\n').encode()
+head='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'
+region=(head+'@.aid/runtime/rules.md\n<!-- AID:END -->\n').encode()
 assert (r/'CLAUDE.md').read_bytes()==region
 assert d['shared']['claude_md']['region_sha256']==hashlib.sha256(region).hexdigest()
 PY

@@ -770,11 +770,12 @@ function Copy-AidFileGuarded {
 }
 
 # Fixed LF root-context regions. These are install-core constants, never payload files.
-# AGENTS.md and CLAUDE.md carry the same body: the SESSION START block (a written "read first" rule
-# is advisory, so it names the first action, forbids answering before that Read and pre-empts
-# "do not read files" prompts; no '@' line in AGENTS.md: only Claude Code expands '@' imports)
-# followed by the summary bullets lifted from the installed runtime rules; CLAUDE.md adds the single
-# Claude-only import line '@.aid/runtime/rules.md' last.
+# AGENTS.md: the SESSION START block (a written "read first" rule is advisory, so it names the first
+# action, forbids answering before that Read and pre-empts "do not read files" prompts; no '@' line:
+# only Claude Code expands '@' imports) followed by the summary bullets lifted from the installed
+# runtime rules.
+# CLAUDE.md: only the single import line '@.aid/runtime/rules.md'; Claude Code loads the rules through
+# it, so the SESSION START block and the summary would repeat them.
 # Under rules_inline both regions hold the whole rules text instead, with no '@' line. Either root
 # file alone therefore carries the AID rules.
 $script:_AidRegionOpen = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n"
@@ -809,7 +810,8 @@ function script:Get-AidRulesSummary {
 }
 
 # The root region (ends with a newline) for AGENTS.md or CLAUDE.md ($Kind 'agents' | 'claude'),
-# built from the installed rules. Throws when the rules (or their summary block) are unusable.
+# built from the installed rules. Throws when the rules (or, for AGENTS.md, their summary block) are
+# unusable; the CLAUDE.md region outside rules_inline reads no rules.
 function script:Get-AidRootRegion {
     param([string]$RulesPath, [bool]$Inline, [string]$Kind)
     if ($Inline) {
@@ -817,10 +819,9 @@ function script:Get-AidRootRegion {
         $rules = [System.IO.File]::ReadAllText($RulesPath, (New-Object System.Text.UTF8Encoding($false)))
         return ($script:_AidRegionOpen + $rules + "<!-- AID:END -->`n")
     }
+    if ($Kind -ceq 'claude') { return ($script:_AidRegionOpen + $script:_AidClaudeRulesImport + "`n<!-- AID:END -->`n") }
     $summary = script:Get-AidRulesSummary -RulesPath $RulesPath
-    $region = $script:_AidAgentsRegionHead + $summary + "`n"
-    if ($Kind -ceq 'claude') { $region += $script:_AidClaudeRulesImport + "`n" }
-    return ($region + "<!-- AID:END -->`n")
+    return ($script:_AidAgentsRegionHead + $summary + "`n<!-- AID:END -->`n")
 }
 
 # ---------------------------------------------------------------------------
