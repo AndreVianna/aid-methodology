@@ -309,6 +309,14 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q15
+    category: Scope
+    impact: High
+    state: Pending
+    context: 'The AID site run stopped on the maintainer''s usage limit after 2 h 13 min and $55.92, still writing plan tasks, no site code yet (plain finished the whole job for about $11.50). Resume it, or stop and record the result?'
+    suggested: 'Stop here and record it: the result is already clear, and building it would cost much more of the usage limit'
+    answer: ''
+    applied_to: ''
   - id: Q14
     category: Scope
     impact: High
