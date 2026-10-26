@@ -59,6 +59,14 @@ def run(cmd, cwd, env, stdin=None):
     return subprocess.run(cmd, cwd=cwd, env=env, input=stdin, capture_output=True, text=True, timeout=TIMEOUT)
 
 
+def child_env(env: dict) -> dict:
+    """Drop the calling session's own identity, so a nested claude run starts a session of its own."""
+    return {k: v for k, v in env.items()
+            if not (k.startswith(("CLAUDE_CODE_SESSION", "CLAUDE_CODE_REMOTE", "CLAUDE_CODE_CHILD", "CCR_",
+                                  "SESSION_INGRESS", "CLAUDE_SESSION_INGRESS", "CLAUDE_CODE_SYNC",
+                                  "CLAUDE_CODE_POST_FOR_SESSION")))}
+
+
 def setup(work: Path, aid: bool, bundle: Path) -> tuple[Path, dict]:
     project, home = work / "project", work / "home"
     shutil.copytree(FIXTURE, project)
@@ -68,8 +76,8 @@ def setup(work: Path, aid: bool, bundle: Path) -> tuple[Path, dict]:
     creds = Path.home() / ".claude/.credentials.json"
     if creds.is_file() and not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
         shutil.copy2(creds, home / ".claude/.credentials.json")
-    env = dict(os.environ, HOME=str(home), AID_HOME=str(work / "aid-state"), AID_NO_UPDATE_CHECK="1",
-               PYTHONDONTWRITEBYTECODE="1")
+    env = child_env(dict(os.environ, HOME=str(home), AID_HOME=str(work / "aid-state"), AID_NO_UPDATE_CHECK="1",
+                         PYTHONDONTWRITEBYTECODE="1"))
     if aid:
         out = run(["bash", str(ROOT / "bin/aid"), "add", "claude-code", "--target", str(project),
                    "--from-bundle", str(bundle)], project, env)

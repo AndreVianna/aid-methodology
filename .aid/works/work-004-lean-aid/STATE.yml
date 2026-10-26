@@ -312,11 +312,11 @@ qa:
   - id: Q15
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'The AID site run stopped on the maintainer''s usage limit after 2 h 13 min and $55.92, still writing plan tasks, no site code yet (plain finished the whole job for about $11.50). Resume it, or stop and record the result?'
     suggested: 'Stop here and record it: the result is already clear, and building it would cost much more of the usage limit'
-    answer: ''
-    applied_to: ''
+    answer: '2'
+    applied_to: 'AID site run resumed to the end'
   - id: Q14
     category: Scope
     impact: High

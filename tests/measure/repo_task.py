@@ -10,6 +10,7 @@ Purpose:
 
 Usage:
     python3 tests/measure/repo_task.py --task site --out DIR [--no-aid] [--model M] [--turns N] [--max-cost USD]
+    python3 tests/measure/repo_task.py --task site --out DIR --resume SESSION --cwd DIR   (continue a stopped run)
 
 Output:
     stdout: one JSON object.  stderr: progress per turn.  The copy stays at DIR/project on branch <task>-<aid|plain>.
@@ -27,7 +28,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from measure import REPLY, ROOT, asks, next_phase, run, turn  # noqa: E402
+from measure import REPLY, ROOT, asks, child_env, next_phase, run, turn  # noqa: E402
 
 TASKS = {
     "site": ("Rework the product site in `site/` (published at aid.casuloailabs.com) completely. Check every page "
@@ -77,9 +78,12 @@ def setup(out: Path, task: str, aid: bool, commit: str) -> tuple[Path, dict]:
     creds = Path.home() / ".claude/.credentials.json"
     if creds.is_file() and not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
         shutil.copy2(creds, home / ".claude/.credentials.json")
-    env = dict(os.environ, HOME=str(home), AID_HOME=str(out / "aid-state"), AID_NO_UPDATE_CHECK="1",
-               PYTHONDONTWRITEBYTECODE="1")
-    return project, env
+    return project, run_env(out)
+
+
+def run_env(out: Path) -> dict:
+    return child_env(dict(os.environ, HOME=str(out / "home"), AID_HOME=str(out / "aid-state"), AID_NO_UPDATE_CHECK="1",
+                          PYTHONDONTWRITEBYTECODE="1"))
 
 
 def main() -> int:
@@ -91,17 +95,24 @@ def main() -> int:
     ap.add_argument("--turns", type=int, default=80)
     ap.add_argument("--max-cost", type=float, default=150.0, help="stop after the turn that passes this (USD)")
     ap.add_argument("--model", default=os.environ.get("AID_MEASURE_MODEL", "claude-sonnet-5-5"))
+    ap.add_argument("--resume", metavar="SESSION", help="continue this session of an earlier run in --out")
+    ap.add_argument("--cwd", help="with --resume: the folder the session last ran in (default: the copy)")
     a = ap.parse_args()
     out = Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     aid = not a.no_aid
     commit = run(["git", "rev-parse", a.commit], ROOT, os.environ).stdout.strip()
-    project, env = setup(out, a.task, aid, commit)
+    if a.resume:
+        project, env = Path(a.cwd or out / "project").resolve(), run_env(out)
+    else:
+        project, env = setup(out, a.task, aid, commit)
 
     rec = {"task": a.task, "aid": aid, "model": a.model, "commit": commit, "user_turns": 0, "agent_turns": 0,
            "cost_usd": 0.0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "tools": {},
            "dispatches": 0, "writer_calls": 0, "stopped": "turn limit"}
     session, message, text = None, ("/aid-describe " if aid else "") + TASKS[a.task], ""
+    if a.resume:
+        session, message = a.resume, "Your usage limit has reset. Continue the work from where you stopped."
     start = time.time()
     while rec["user_turns"] < a.turns:
         t = turn(project, env, a.model, message, session)
