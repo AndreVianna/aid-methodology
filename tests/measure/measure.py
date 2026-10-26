@@ -126,8 +126,12 @@ def next_phase(text: str) -> str | None:
     return found[-1] if found else None
 
 
+# AID asks in several forms; a question mark is only one of them.
+ASKS = re.compile(r"\?|ask me to explain|reply with|your own (words|answer)|\[1\]|^\s*1[.)] ", re.I | re.M)
+
+
 def asks(text: str) -> bool:
-    return "?" in tail(text) or "ask me to explain" in tail(text) or next_phase(text) is not None
+    return bool(ASKS.search(tail(text))) or next_phase(text) is not None
 
 
 def locations(project: Path) -> list[Path]:

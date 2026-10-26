@@ -134,7 +134,7 @@ def main() -> int:
         elif asks(text):
             message = REPLY
         elif message == GO_ON and edits == 0:
-            rec["stopped"] = "finished"  # asked to go on, and changed nothing: the work is done
+            rec["stopped"] = "finished"  # no question, asked to go on, and changed nothing: the work is done
             break
         else:
             message = GO_ON
