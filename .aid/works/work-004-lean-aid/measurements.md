@@ -110,3 +110,21 @@ One run each.
 
 Both results are correct. The pipeline adds more tests and documents, at about 35 times the time; the cost is not a
 fair ratio, since the plain run used only the cheap model while AID's helpers used Sonnet and Opus.
+
+## Complex task (note tags), maintainer's machine, 2026-10-26
+
+`claude-sonnet-5-5`. The latest run of each (the report's medians also include one earlier attempt each):
+
+| | Plain request, no AID | `/aid-describe`, today's full pipeline |
+|---|---|---|
+| Time | 23 s | 1,043 s (17 min) |
+| Cost | $0.08 | $10.74 |
+| User replies | 1 | 8 |
+| Helper agents | 0 | 13 |
+| State-writer calls | 0 | 34 |
+| Hidden checks | 12/12 | 12/12 |
+
+Cost by phase of the AID run (cumulative cost at each turn's end, differenced): name and interview $0.77
+(describe), $0.67 define, $1.10 specify, $1.56 plan, $2.33 detail, $4.31 execute. Writing the definition and plan
+documents (define through detail) cost $5.66, more than building and reviewing the code ($4.31). About 134 times the
+cost and 45 times the time of the plain request, for the same correct result.

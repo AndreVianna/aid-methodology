@@ -309,6 +309,14 @@ qa:
     suggested: '1: fresh from master'
     answer: '1'
     applied_to: 'Branch work-004 from master; work-003 stays on its branch, pieces ported one by one when measured'
+  - id: Q12
+    category: Scope
+    impact: High
+    state: Pending
+    context: 'The complex task through today''s pipeline cost $10.74 and 17 minutes against $0.08 and 23 seconds plain, both correct. Which step comes next?'
+    suggested: 'Step 2 (direct lane) as planned, then step 3 (planned lane) reusing its pieces'
+    answer: ''
+    applied_to: ''
   - id: Q11
     category: Scope
     impact: High
