@@ -72,7 +72,11 @@ def turn(project: Path, env: dict, model: str, message: str, session: str | None
            "--allowedTools", TOOLS, "--setting-sources", "project", "--model", model]
     if session:
         cmd += ["--resume", session]
-    out = run(cmd, project, env, stdin=message)
+    try:
+        out = run(cmd, project, env, stdin=message)
+    except subprocess.TimeoutExpired:
+        return {"session": session, "tools": {}, "dispatches": 0, "writer_calls": 0,
+                "result": {"is_error": True, "result": f"timed out after {TIMEOUT}s"}}
     t = {"session": session, "tools": {}, "dispatches": 0, "writer_calls": 0, "result": None}
     for line in out.stdout.splitlines():
         try:
@@ -125,6 +129,9 @@ def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> d
         rec["dispatches"] += t["dispatches"]
         rec["writer_calls"] += t["writer_calls"]
         text = r.get("result", "") or ""
+        print(f"  turn {rec['user_turns']}: ${rec['cost_usd']:.2f} so far, {round(time.time() - start)}s, "
+              f"{rec['dispatches']} dispatches; last line: {text.strip().splitlines()[-1][:100] if text.strip() else '-'}",
+              file=sys.stderr, flush=True)
         if r.get("is_error") or not asks(text):
             break
         message = EXECUTE if EXECUTE in text and EXECUTE not in message else REPLY
