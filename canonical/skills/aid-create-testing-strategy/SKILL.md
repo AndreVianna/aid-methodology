@@ -1,7 +1,7 @@
 ---
 name: aid-create-testing-strategy
 description: >
-  Write the testing-strategy documents (test landscape, merge gates) from a ready seed.
+  Write the testing-strategy KB documents (test landscape, merge gates) from a ready seed.
   Use when none exist.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the testing-strategy seed to realize"

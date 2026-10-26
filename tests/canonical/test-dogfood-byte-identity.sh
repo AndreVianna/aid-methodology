@@ -20,7 +20,7 @@
 #   DBI-MAN-*     .aid/.aid-manifest.json records shared.skills, shared.runtime,
 #                 shared.agents_md, shared.claude_md and the .claude/skills mirror.
 #   DBI-ROOT-*    the repo-root CLAUDE.md AID region is only the managed-by line and
-#                 @.aid/runtime/rules.md and its ## Project section is present;
+#                 @.aid/runtime/rules.md, @.aid/knowledge/PROJECT.md and its ## Project section is present;
 #                 AGENTS.md has exactly one <!-- AID:BEGIN --> line and its AID
 #                 region has no @ line.
 #   DBI-ABS-*     .claude/aid/, .cursor/aid/ and .cursor/skills/aid-* are absent.
@@ -262,13 +262,13 @@ dbi_root_context() {
     summary="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$rules" | sed '1d;$d')"
     head=$'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:'
     want_agents="<!-- Managed by the AID CLI. Do not edit between the AID markers. -->"$'\n'"${head}"$'\n'"${summary}"
-    want_claude="<!-- Managed by the AID CLI. Do not edit between the AID markers. -->"$'\n@.aid/runtime/rules.md'
+    want_claude="<!-- Managed by the AID CLI. Do not edit between the AID markers. -->"$'\n@.aid/runtime/rules.md\n@.aid/knowledge/PROJECT.md'
     begins="$(grep -cxF '<!-- AID:BEGIN -->' "$CLAUDE_MD" 2>/dev/null)"
     region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$CLAUDE_MD" 2>/dev/null)"
     if [[ "$begins" == "1" && "$region" == "$want_claude" ]]; then
-        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region is only the single @.aid/runtime/rules.md import"
+        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region is only the rules and project-card imports"
     else
-        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must be only the single @.aid/runtime/rules.md import (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
+        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must be only the rules and project-card imports (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
     fi
 
     if grep -qxF '## Project' "$CLAUDE_MD" 2>/dev/null; then

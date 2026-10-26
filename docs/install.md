@@ -514,14 +514,16 @@ of `.aid/runtime/rules.md`), forbids any answer before that Read returns, and pr
 prompts: the prohibition does not apply to that one file, and applies again to everything else once it has
 been read. The block is a constant of the CLI (the same bytes in both shells), not part of `rules.md`.
 
-While Claude Code is installed, `CLAUDE.md` also gets a region: one Claude-only line that imports the
-rules directly. Claude Code loads the rules through that import, so the region needs neither the
-SESSION START block nor the summary:
+While Claude Code is installed, `CLAUDE.md` also gets a region: two Claude-only lines that import the
+rules and the project card (`.aid/knowledge/PROJECT.md`; until a project has one, that line stays plain
+text). Claude Code loads the rules through the import, so the region needs neither the SESSION START
+block nor the summary:
 
 ```
 <!-- AID:BEGIN -->
 <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
 @.aid/runtime/rules.md
+@.aid/knowledge/PROJECT.md
 <!-- AID:END -->
 ```
 

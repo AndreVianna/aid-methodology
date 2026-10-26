@@ -4,12 +4,14 @@
 #
 #   LR01  canonical/aid/rules.md is at most 60 lines
 #   LR02  its summary block is valid "- " bullets, the first sends the reader to PROJECT.md
-#   LR03  the Knowledge Base section sends the reader to PROJECT.md first and INDEX.md only to find a document
+#   LR03  every rules line that names INDEX.md limits it to finding a document (no unconditional INDEX read)
 #   LR04  the project-card template carries the six sections the card promises
 #   LR05  this repo's card .aid/knowledge/PROJECT.md is at most 60 lines, has the six sections and at most 10 rules
 #   LR06  every repo path named in code spans on the card exists
 #   LR07  the card is routed by the KB index, and the type registry knows it (a kb-card row and PC- criteria)
 #   LR08  the path check is falsifiable (it reports a planted missing path)
+#   LR09  the skill list stays small: no description over 300 characters, at most 12 over 110,
+#         all together at most 16,000 characters (about 4k tokens), and no skill hidden from the model
 #
 # Usage: bash test-lean-rules-card.sh [--verbose]
 
@@ -45,10 +47,9 @@ assert_eq "$bad_summary" "" "LR02 summary block holds only bullets and indented 
 assert_eq "$(printf '%s\n' "$summary" | head -n 1 | grep -c 'knowledge/PROJECT.md')" "1" "LR02 the first summary bullet names the project card"
 
 # LR03
-kb_section="$(sed -n '/^## Knowledge Base$/,/^## /p' "$RULES")"
-assert_output_contains "$kb_section" 'Read the project card `.aid/knowledge/PROJECT.md` first' "LR03 Knowledge Base section reads the card first"
-assert_output_contains "$kb_section" 'only to find a specific document' "LR03 INDEX.md is opened only to find a document"
-assert_file_not_contains "$RULES" 'Read `.aid/knowledge/INDEX.md`.' "LR03 the old unconditional INDEX.md read is gone"
+index_lines="$(grep -c 'knowledge/INDEX\.md' "$RULES")"
+unbounded="$(grep 'knowledge/INDEX\.md' "$RULES" | grep -v 'only to find' || true)"
+assert_eq "$unbounded" "" "LR03 every rules line naming INDEX.md opens it only to find a document (${index_lines} line(s))"
 
 # LR04, LR05: sections in order, rule count, size.
 check_sections() { # <file> <label>
@@ -100,5 +101,36 @@ scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 printf 'Run `bash no/such/script.sh` and read `tests/run-all.sh`.\n' > "$scratch/card.md"
 assert_eq "$(missing_paths "$scratch/card.md")" "no/such/script.sh" "LR08 the path check reports a planted missing path and accepts a real one"
+
+# LR09: description budget over canonical/skills/*/SKILL.md (description plus when_to_use).
+budget="$(python3 - "${REPO_ROOT}/canonical/skills" <<'PY'
+import pathlib, re, sys
+sizes, hidden = {}, []
+for f in sorted(pathlib.Path(sys.argv[1]).glob("*/SKILL.md")):
+    fm = f.read_text(encoding="utf-8").split("\n---", 1)[0].splitlines()[1:]
+    total, i = 0, 0
+    while i < len(fm):
+        m = re.match(r"(description|when_to_use|disable-model-invocation):\s*(.*)$", fm[i])
+        i += 1
+        if not m:
+            continue
+        key, val = m.groups()
+        if key == "disable-model-invocation":
+            hidden += [f.parent.name] if val.strip().lower() == "true" else []
+            continue
+        parts = [] if val.strip() in (">", "|", ">-", "|-") else [val.strip().strip('"')]
+        while i < len(fm) and fm[i].startswith("  "):
+            parts.append(fm[i].strip()); i += 1
+        total += len(" ".join(parts))
+    sizes[f.parent.name] = total
+long = sorted(n for n, s in sizes.items() if s > 110)
+print(len(sizes), max(sizes.values()), len(long), sum(sizes.values()), ",".join(hidden) or "-")
+PY
+)"
+read -r n_skills max_len n_long total hidden <<< "$budget"
+if [[ "$n_skills" -gt 0 && "$max_len" -le 300 ]]; then pass "LR09 longest description is ${max_len} characters (limit 300, ${n_skills} skills)"; else fail "LR09 longest description is ${max_len} characters, over 300 (${n_skills} skills)"; fi
+if [[ "$n_long" -le 12 ]]; then pass "LR09 ${n_long} descriptions are over 110 characters (limit 12)"; else fail "LR09 ${n_long} descriptions are over 110 characters, limit 12"; fi
+if [[ "$total" -le 16000 ]]; then pass "LR09 descriptions total ${total} characters (limit 16000)"; else fail "LR09 descriptions total ${total} characters, over 16000"; fi
+assert_eq "$hidden" "-" "LR09 no skill is hidden from the model (disable-model-invocation)"
 
 test_summary

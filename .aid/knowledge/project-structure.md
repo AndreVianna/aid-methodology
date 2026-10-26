@@ -200,7 +200,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `tests/run-all.sh` | Aggregate runner for the canonical test suites. |
 | `.github/workflows/test.yml` | CI for the canonical helper suites (runs on master). |
 | `.github/workflows/release.yml` | CI release pipeline. |
-| `CLAUDE.md` | Repo-level Claude Code instructions: an AID:BEGIN/END managed region (the `AGENTS.md` region body plus an `@.aid/runtime/rules.md` import line), plus the user's own text. |
+| `CLAUDE.md` | Repo-level Claude Code instructions: an AID:BEGIN/END managed region (the `@.aid/runtime/rules.md` and `@.aid/knowledge/PROJECT.md` import lines), plus the user's own text. |
 | `README.md` | Project overview, install instructions, pipeline diagram. |
 
 CONFIRMED. Purpose lines verified by reading each file's header comment (e.g.

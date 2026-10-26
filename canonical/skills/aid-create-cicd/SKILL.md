@@ -1,7 +1,7 @@
 ---
 name: aid-create-cicd
 description: >
-  Write the CI/CD (shipping) document from a ready seed. Use when none exists yet.
+  Write the CI/CD (shipping) KB document from a ready seed. Use when none exists yet.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the CI/CD seed to realize"
 ---

@@ -1,8 +1,8 @@
 ---
 name: aid-experiment
 description: >
-  Design, run, and analyze a controlled experiment or A/B test. Use when the target is
-  known; plans only.
+  Design, run, and analyze a controlled experiment or A/B test. Plans the work; /aid-
+  execute builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to experiment; runs straight to a graded flattened Lite work"
 ---

@@ -36,7 +36,7 @@ export function skillSummary(record) {
     return `AID skill ${record.dirName} \u2014 declared frontmatter contract, generated from canonical/.`;
   }
 
-  const description = String(descField.value);
+  const description = String(descField.value).trim();
 
   // First sentence: text up to and including the first '. ' (period-space).
   // When no '. ' is present the whole value is the sentence.

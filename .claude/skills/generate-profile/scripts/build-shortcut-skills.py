@@ -67,7 +67,7 @@ _GENERATED_MARKER = (
 )
 
 # The fixed "when to use" clause every generated doorway description ends with.
-_DESCRIPTION_WHEN = "Use when the target is known; plans only."
+_DESCRIPTION_WHEN = "Plans the work; /aid-execute builds it."
 
 _ALLOWED_TOOLS = "Read Glob Grep Bash Shell Terminal Write Edit Agent"
 

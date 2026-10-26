@@ -37,15 +37,14 @@ Run from the repo root.
 
 ## Rules that never bend
 
-1. Edit `canonical/`, then resync and commit the resync output alone; CI fails when `profiles/` drifts from a fresh render.
+1. Edit `canonical/`, then resync and commit the resync output alone (CI job `render-drift` in `.github/workflows/test.yml`).
 2. Every change ships with its tests, in the same change (`test-landscape.md`).
 3. Bash and PowerShell twins change in the same commit and print byte-identical output (`tests/canonical/test-aid-cli-parity.sh`).
 4. Shipped PowerShell is ASCII-only and 5.1-compatible; shipped `.sh` is LF-only (`ps51-compat-check.ps1`, CI).
 5. `.aid/knowledge/**` names no work id or work-folder path and keeps no history (`tests/canonical/test-kb-no-work-ids.sh`).
 6. Resolve a file's review criteria before writing it (`authoring-conventions.md`).
-7. Record every state change in the work's STATE file at once; work folders are transient.
+7. Record every state change in the work's STATE file at once; work folders are transient (`canonical/aid/rules.md`).
 8. Read settings only through `read-setting.sh`, never by parsing `settings.yml` (`coding-standards.md`).
-9. AID never merges: the merge is the user's own step.
 
 ## Detail
 

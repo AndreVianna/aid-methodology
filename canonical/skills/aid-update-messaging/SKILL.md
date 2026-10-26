@@ -1,8 +1,8 @@
 ---
 name: aid-update-messaging
 description: >
-  Update an existing message/event schema or its emission. Use when the target is known;
-  plans only.
+  Update an existing message/event schema or its emission. Plans the work; /aid-execute
+  builds it.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

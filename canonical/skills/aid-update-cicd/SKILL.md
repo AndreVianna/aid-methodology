@@ -1,7 +1,8 @@
 ---
 name: aid-update-cicd
 description: >
-  Revise the CI/CD (shipping) document. Use when stages, triggers or environments changed.
+  Revise the CI/CD (shipping) KB document. Use when stages, triggers or environments
+  changed.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the delivery-pipeline record"
 ---

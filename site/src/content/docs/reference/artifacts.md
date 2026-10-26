@@ -83,7 +83,7 @@ These files are written by the `aid add` command into the target project.
 |----------|------|-------------|-------------|
 | AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records the top-level `aid_version` (the installed AID release), the shared files (skills, runtime, root regions, mirrors) with their owners and checksums, and each tool's own agent files. Drives `aid update`, `aid status` and `aid remove`. |
 | Settings | `.aid/settings.yml` | `aid add` | Project settings. Created when missing. The standalone `.aid/.aid-version` marker file is retired: the installed version is recorded in the manifest. |
-| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Root instruction file for Claude Code. AID writes one region into it: an `@.aid/runtime/rules.md` import, so Claude Code loads the AID rules even without `AGENTS.md`. Text outside the AID markers is yours and is kept. |
+| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Root instruction file for Claude Code. AID writes one region into it: the `@.aid/runtime/rules.md` and `@.aid/knowledge/PROJECT.md` (project card) imports, so Claude Code loads the AID rules and the card even without `AGENTS.md`. Text outside the AID markers is yours and is kept. |
 | `AGENTS.md` | `AGENTS.md` (project root) | `aid add <tool>` (every tool) | Root instruction file for every tool. AID writes one region into it: a SESSION START block that makes a Read of `.aid/runtime/rules.md` the first action, forbids answering before that Read and pre-empts "do not read files" prompts, plus the rules summary lifted from that file. Text outside the AID markers is yours and is kept. |
 
 ## Pipeline-scoped delivery artifacts

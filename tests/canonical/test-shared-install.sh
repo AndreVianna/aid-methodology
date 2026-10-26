@@ -63,7 +63,7 @@ SESSION_START=$'SESSION START (non-negotiable)\nYour first action in this sessio
 region_head() { printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' "$SESSION_START"; }
 write_regions() {  # <rules-file> <agents-region-out> <claude-region-out>
     { region_head; summary_lines "$1"; printf '<!-- AID:END -->\n'; } > "$2"
-    printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' '@.aid/runtime/rules.md' '<!-- AID:END -->' > "$3"
+    printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' '@.aid/runtime/rules.md' '@.aid/knowledge/PROJECT.md' '<!-- AID:END -->' > "$3"
 }
 no_aid_dirs() { local r="$1" d; for d in .claude .codex .cursor .github .agent; do [[ ! -d "$r/$d/aid" ]] || return 1; done; }
 echo '== test-shared-install.sh =='
@@ -142,9 +142,9 @@ cat "$TMP/pointer-region" "$TMP/import-region" > "$TMP/owned-lines"
 if cmp -s "$target/CLAUDE.md" "$TMP/import-region"; then pass 'AC-14(a) missing CLAUDE.md equals the LF CLAUDE.md region'; else fail 'AC-14(a) missing CLAUDE.md equals the LF CLAUDE.md region'; fi
 if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) missing AGENTS.md equals the LF AGENTS.md region'; else fail 'AC-14(a) missing AGENTS.md equals the LF AGENTS.md region'; fi
 assert_eq "$(grep -c '^@' "$target/AGENTS.md")" 0 'AC-14(a) AGENTS.md region contains no @ line'
-assert_eq "$(grep -c '^@' "$target/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$target/CLAUDE.md") $(grep -c '@AGENTS.md' "$target/CLAUDE.md")" '1 1 0' 'AC-14(a) CLAUDE.md has exactly one @ line (the rules import) and no @AGENTS.md'
+assert_eq "$(grep -c '^@' "$target/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$target/CLAUDE.md") $(grep -c '@AGENTS.md' "$target/CLAUDE.md")" '2 1 0' 'AC-14(a) CLAUDE.md has the two import lines (rules and card) and no @AGENTS.md'
 assert_eq "$(sed '1,15d;$d' "$target/AGENTS.md")" "$(summary_lines "$target/.aid/runtime/rules.md")" 'AC-14(a) AGENTS.md region bullets equal the installed rules.md summary block byte for byte'
-assert_eq "$(grep -c 'SESSION START\|Valid first action\|^- ' "$target/CLAUDE.md") $(wc -l < "$target/CLAUDE.md" | tr -d ' ')" '0 4' 'AC-14(a) CLAUDE.md region holds only the markers, the managed line and the import: no read-first block, no summary bullets'
+assert_eq "$(grep -c 'SESSION START\|Valid first action\|^- ' "$target/CLAUDE.md") $(wc -l < "$target/CLAUDE.md" | tr -d ' ')" '0 5' 'AC-14(a) CLAUDE.md region holds only the markers, the managed line and the two imports: no read-first block, no summary bullets'
 # Either root file alone carries the rules: delete one, update restores it (and vice versa).
 state_a="$state"
 rm -f "$target/AGENTS.md"; out="$(run_aid "$target" "$state_a" update 2>&1)"; rc=$?

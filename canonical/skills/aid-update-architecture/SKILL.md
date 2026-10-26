@@ -1,7 +1,7 @@
 ---
 name: aid-update-architecture
 description: >
-  Revise the architecture document. Use when it exists and part of it changed.
+  Revise the architecture KB document. Use when it exists and part of it changed.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the architecture record"
 ---

@@ -1,7 +1,7 @@
 ---
 name: aid-update-stack
 description: >
-  Revise the technology-stack document. Use when a technology choice changed.
+  Revise the technology-stack KB document. Use when a technology choice changed.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the technology-stack record"
 ---

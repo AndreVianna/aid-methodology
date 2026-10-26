@@ -1,7 +1,7 @@
 ## Summary
 
 <!-- AID:SUMMARY:BEGIN -->
-- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
+- Read the project card `.aid/knowledge/PROJECT.md` first, when the project has one; open `.aid/knowledge/INDEX.md` only to find a specific document.
 - Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
 - Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately, `/aid-execute` included.
 - Work folders (`.aid/works/`) are transient: nothing permanent may depend on them; `.aid/knowledge/**` never names a work id or path.
@@ -28,9 +28,7 @@ Every project, task and deliverable is tracked in a state file: the work's `.aid
 
 ## Knowledge Base
 
-This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
-- Read the project card `.aid/knowledge/PROJECT.md` first; open `.aid/knowledge/INDEX.md` only to find a specific document.
-  Consult the relevant KB documents before making changes: the KB is the single source of truth for architecture, conventions and patterns.
+This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology). The KB holds its architecture, conventions and patterns.
 
 ## Connectors
 
@@ -57,4 +55,4 @@ at `.aid/.temp/review-pending/<scope>.md`, with no narrative.
 
 ## Permissions
 
-Read any file in the project; write only inside the project directory; run build and test commands (Python, Bash, PowerShell).
+Read any file in the project; run build and test commands (Python, Bash, PowerShell).
