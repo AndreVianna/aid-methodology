@@ -1933,29 +1933,26 @@ Feature 001's (`slug: 'releases/changelog'`).
 **4. The contact form, without JavaScript.** `src/components/ReportForm.astro` is rewritten as a plain HTML
 form. Its client `<script>` is removed: NFR-2 allows no page script except search, the theme toggle and
 navigation. The audit lead "/contact/* ... form works only with JavaScript" is settled here. The `Props`
-interface stays (`kind: 'site' | 'bug' | 'feedback' | 'contact'`). One constant drives the markup:
+interface stays (`kind: 'site' | 'bug' | 'feedback' | 'contact'`). One constant drives the markup of the three GitHub forms:
 
 | `kind` | `<form method="get" action=...>` | Hidden fields | Visible fields (each with a `<label for>`) | Submit text |
 |---|---|---|---|---|
 | `site` | `https://github.com/AndreVianna/aid-methodology/issues/new` | `labels=site issue` | `title` (text, `required`, starts as `[Site] `), `body` (textarea, `required`, starts as `**Page:** ` + blank line + `**Problem:** `) | Continue on GitHub |
 | `bug` | same | `labels=bug` | `title` (starts as `[Bug] `), `body` (starts as `**What happened:**`, `**What I expected:**`, `**AID version and environment:**`, separated by blank lines) | Continue on GitHub |
 | `feedback` | same | `labels=feedback` | `title` (starts as `[Feedback] `), `body` (empty, `required`) | Continue on GitHub |
-| `contact` | `mailto:andre.vianna.rj@hotmail.com` | `subject=AID: request for a conversation` | `body` (textarea, `required`, label "What would you like to talk about?") | Open your email app |
 
 - The GitHub forms send the query parameters `title`, `body` and `labels` to the new-issue page. That page
-  honours them, because `.github/ISSUE_TEMPLATE/config.yml` sets `blank_issues_enabled: true`. For the
-  `mailto:` form (GET, no `enctype`), the HTML Standard's "mail with headers" submission rule applies: it
-  serialises `subject` and `body` as `application/x-www-form-urlencoded` and then replaces every `+` with
-  `%20`, so spaces reach the mail client as spaces (a typed `+` was already encoded as `%2B`). The form must
-  not set `enctype="text/plain"`, which switches to the "mail as body" rule and drops `subject`. Build case
-  B4 asserts both. A browser that ignores the rule would show `+` for spaces; the audit's row for
-  `/contact/contact-request/` records one manual submit in a current browser, with the subject line seen
-  in the mail client.
-- One sentence above each form says where it leads. For the three GitHub forms: "Continue on GitHub opens a
+  honours them, because `.github/ISSUE_TEMPLATE/config.yml` sets `blank_issues_enabled: true`.
+- A GET form cannot encode spaces as `%20` without JavaScript: Chromium sends `application/x-www-form-urlencoded`
+  `+` for a space, so a `mailto:` form showed literal plus signs in the subject (seen in the real-browser run).
+  The `contact` kind is therefore not a form: it renders one `<a class="rf-button">Open your email app</a>`
+  whose `href` is `mailto:andre.vianna.rj@hotmail.com?subject=AID%3A%20request%20for%20a%20conversation`
+  (spaces encoded by hand as `%20`), with no field, no hidden input and no `<form`. Build case B4 asserts it.
+- One sentence above each form (or the contact link) says where it leads. For the three GitHub forms: "Continue on GitHub opens a
   new issue with your text filled in; nothing is sent until you submit it there, with a free GitHub
-  account." For the contact form: "Open your email app starts an email to the maintainer with your text
-  filled in; nothing is sent until you send it."
-- Two things go away: the separate name and email fields (GitHub or the mail client identifies the sender),
+  account." For the contact link: "Write your message in the email that opens. Nothing is sent until you
+  send it from your email app."
+- The three GitHub forms keep one `<form>` each. Two things go away: the separate name and email fields (GitHub or the mail client identifies the sender),
   and the client-side `?page=` prefill.
 - No `target="_blank"`. Required fields use the native `required` attribute. Styling is a short scoped
   `<style>` that uses Feature 004's tokens.
@@ -2120,7 +2117,7 @@ export function findBrokenLinks(dist = DIST) /* -> string[] */;
 | B1 | `dist/index.html` and `dist/404.html` exist, and the set of `url`s of the pages from `builtPages()` whose `redirectTo` is null, minus `/404.html`, equals the set of URLs derived from the files under `src/content/docs/` (each `.md`/`.mdx` path without its extension, a trailing `index` dropped, wrapped in `/…/`; `index.mdx` gives `/`). A missing or an extra page fails by name; redirect pages are checked by L1, which follows each one |
 | B2 | FR-9 kept functions: `dist/pagefind/pagefind.js` exists, `dist/sitemap-index.xml` exists, `dist/favicon.svg` exists, `dist/robots.txt` contains `Sitemap: https://aid.casuloailabs.com/sitemap-index.xml`, and `dist/CNAME` trimmed equals `aid.casuloailabs.com` |
 | B3 | version display: with `v = readFileSync(join(REPO,'VERSION'),'utf8').trim().replace(/^v/,'')`, both `dist/index.html` and `dist/releases/changelog/index.html` contain `v${v}`. The changelog also contains `href="https://github.com/AndreVianna/aid-methodology/releases"` |
-| B4 | contact pages: each of `dist/contact/{site-issue,methodology-bug,feedback,contact-request}/index.html` contains exactly one `<form` with `method="get"` and no `enctype` attribute. The first three have `action="https://github.com/AndreVianna/aid-methodology/issues/new"`; `contact-request` has `action="mailto:andre.vianna.rj@hotmail.com"` and a hidden `subject` input |
+| B4 | contact pages: each of `dist/contact/{site-issue,methodology-bug,feedback}/index.html` contains exactly one `<form` with `method="get"` and no `enctype` attribute, and `action="https://github.com/AndreVianna/aid-methodology/issues/new"`. `dist/contact/contact-request/index.html` has no `<form` and has an `<a` whose `href` starts with `mailto:`, contains `subject=AID%3A%20request` and contains no `+` |
 | B5 | AC-2, second half: the number of directories in `dist/skills/` equals the number of directories in `REPO/canonical/skills` |
 
 These rows give the "How it is checked" column of the audit's FR-9 table. A leftover Mermaid fence is

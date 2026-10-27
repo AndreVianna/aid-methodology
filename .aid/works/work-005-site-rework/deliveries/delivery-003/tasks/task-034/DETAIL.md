@@ -39,9 +39,8 @@ first bullet)
     the theme select, or at 320 px, where it sits in the menu, by `localStorage['starlight-theme']` plus a
     reload, which is what the select stores), saves a viewport screenshot named
     `<home|aid-define>-<320|1280>-<light|dark>.png` into `.aid/works/work-005-site-rework/screenshots/` and
-    prints `document.documentElement.scrollWidth <= window.innerWidth`; (4) submits the `contact-request` form
-    with a body containing spaces and records the `mailto:` URL the browser navigates to (intercepted, nothing
-    sent).
+    prints `document.documentElement.scrollWidth <= window.innerWidth`; (4) reads the `href` of the `contact-request` page's "Open your email app" link (nothing is clicked or sent)
+    and records it; it must start with `mailto:`, contain `subject=AID%3A%20request` and contain no `+`.
   - **Path B, manual checklist (maintainer).** When no browser can be launched without a download, the
     executor writes the checklist into the audit (below) with every cell of the "Keyboard check (AC-9)" and
     "Screenshots (AC-11)" tables exactly `awaiting maintainer run`; adds "Manual mailto submit: awaiting
@@ -70,7 +69,8 @@ first bullet)
     screenshot steps of Feature 004 § UI Specs and the unproven note.
   - The `src/content/docs/contact/contact-request.mdx` row: one sentence with the observed `mailto:` URL (or, by
     hand, the subject line seen in the mail client), showing `subject=AID%3A%20request%20for%20a%20conversation`
-    or the subject text with spaces, not `+`; Path B: the sentence "Manual mailto submit: awaiting maintainer
+    or the subject text with spaces, not `+`; the sentence also records that the first run, with a GET form, observed
+    `+` for spaces and that this is why the form became a plain link; Path B: the sentence "Manual mailto submit: awaiting maintainer
     run." added to the row's Correction cell.
 - On Path A, a failing stop, a clipped text or a `false` is not fixed here: the task ends `Failed`, naming the
   task that owns the cause (task-024 styles, task-025 header, task-032 footer/form). That is a real defect,

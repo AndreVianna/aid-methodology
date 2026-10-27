@@ -44,7 +44,7 @@
       that open status into the final report.
   - **Contact submit, when `src-touched: yes` and the diff above lists `site/src/components/ReportForm.astro` or
     a file under `site/src/content/docs/contact/`:** re-run the contact-request submit that task-034 records
-    (Path A, step 4 of its script) and rewrite the Correction cell of the
+    (Path A, step 4 of its script: read the link's `href`) and rewrite the Correction cell of the
     `src/content/docs/contact/contact-request.mdx` row of § Pages with the newly observed `mailto:` URL and the
     new date. On Path B, append to that cell the sentence `Re-check after a form change awaiting maintainer run
     (unproven).`, leaving the earlier observation in place. When neither file changed, the row is untouched.

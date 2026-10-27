@@ -110,22 +110,14 @@ for (const [label, path] of pages) {
   }
 }
 
-// (4) contact form mailto
+// (4) contact request: a plain mailto link, no form (a GET form encoded spaces as +)
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
   await page.goto(BASE + '/contact/contact-request/');
-  await page.fill('#rf-body', 'hello there, a body with spaces');
-  const seen = [];
-  page.on('request', (r) => seen.push(r.url()));
-  page.on('framenavigated', (f) => seen.push('nav:' + f.url()));
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Page.enable');
-  cdp.on('Page.frameRequestedNavigation', (e) => seen.push('cdp:' + e.url));
-  await page.click('.rf-button');
-  await page.waitForTimeout(1000);
-  const m = seen.filter((u) => u.includes('mailto:'));
-  console.log(`MAILTO ${m.length ? m[0] : 'not observed; seen=' + JSON.stringify(seen)}`);
+  const href = await page.getAttribute('a.rf-button', 'href');
+  const ok = href && href.startsWith('mailto:') && href.includes('subject=AID%3A%20request') && !href.includes('+');
+  console.log(`MAILTO ${ok ? 'ok' : 'BAD'} ${href}`);
   await ctx.close();
 }
 await browser.close();

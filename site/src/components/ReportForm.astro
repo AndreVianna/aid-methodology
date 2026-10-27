@@ -1,7 +1,8 @@
 ---
-// A plain HTML form, one per Contact Us page. It works without JavaScript: a GET submit
-// sends the typed text to GitHub's new-issue page (or to the reader's email app).
-// Nothing is sent until the reader submits there.
+// One per Contact Us page. It works without JavaScript. The GitHub kinds are plain GET forms that
+// send the typed text to GitHub's new-issue page; the contact kind is a plain mailto link (a GET
+// form cannot encode spaces as %20, so its subject would show plus signs). Nothing is sent until
+// the reader sends it from GitHub or from their email app.
 interface Props {
   kind: 'site' | 'bug' | 'feedback' | 'contact';
 }
@@ -14,7 +15,9 @@ const GITHUB_NOTE =
 type Field = { name: string; label: string; start: string; rows?: number; required?: boolean };
 type Form = { action: string; note: string; hidden: [string, string]; fields: Field[]; submit: string };
 
-const FORMS: Record<Props['kind'], Form> = {
+const MAILTO = 'mailto:andre.vianna.rj@hotmail.com?subject=AID%3A%20request%20for%20a%20conversation';
+
+const FORMS: Record<Exclude<Props['kind'], 'contact'>, Form> = {
   site: {
     action: GITHUB,
     note: GITHUB_NOTE,
@@ -50,18 +53,17 @@ const FORMS: Record<Props['kind'], Form> = {
     ],
     submit: 'Continue on GitHub',
   },
-  contact: {
-    action: 'mailto:andre.vianna.rj@hotmail.com',
-    note: 'Open your email app starts an email to the maintainer with your text filled in; nothing is sent until you send it.',
-    hidden: ['subject', 'AID: request for a conversation'],
-    fields: [{ name: 'body', label: 'What would you like to talk about?', start: '', rows: 8, required: true }],
-    submit: 'Open your email app',
-  },
 };
 
-const form = FORMS[kind];
+const form = kind === 'contact' ? undefined : FORMS[kind];
 ---
 
+{kind === 'contact' ? (
+  <div class="rf">
+    <p class="rf-note">Write your message in the email that opens. Nothing is sent until you send it from your email app.</p>
+    <a class="rf-button" href={MAILTO}>Open your email app</a>
+  </div>
+) : form && (
 <form class="rf" method="get" action={form.action}>
   <p class="rf-note">{form.note}</p>
   <input type="hidden" name={form.hidden[0]} value={form.hidden[1]} />
@@ -77,6 +79,7 @@ const form = FORMS[kind];
   ))}
   <button class="rf-button" type="submit">{form.submit}</button>
 </form>
+)}
 
 <style>
   .rf {
@@ -117,6 +120,8 @@ const form = FORMS[kind];
   }
   .rf-input:user-invalid { border-color: var(--aid-color-danger); }
   .rf-button {
+    display: inline-block;
+    text-decoration: none;
     margin-top: var(--aid-space-5);
     padding: var(--aid-space-2) var(--aid-space-4);
     border: 1px solid var(--aid-color-accent);
