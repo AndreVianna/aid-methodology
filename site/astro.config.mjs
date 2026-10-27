@@ -31,6 +31,10 @@ export default defineConfig({
     '/reference/skills': '/skills/',
   },
 
+  // Without this, pipe tables in .mdx pages render as raw text (Starlight's MDX integration
+  // does not turn GitHub-flavoured tables on by itself). Tables in .md pages work either way.
+  markdown: { gfm: true },
+
   integrations: [
     starlight({
       title: 'AID — AI Integrated Development',
