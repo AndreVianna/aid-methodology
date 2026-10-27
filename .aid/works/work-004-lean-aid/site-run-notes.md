@@ -48,6 +48,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 03:49-04:06 | delivery 3 gate found two more problems, fixed in two commits: pipe tables were not rendering in the MDX pages, and the header, footer link and contact wording | $114.40 reported | the turn that ran from delivery 2's gate to here cost $21.13 with 30 helper runs, and again ended on "I'm waiting for its verdict". The table bug is a real, visible defect found only by checking the built result |
 | 04:06-04:22 | still in delivery 3's gate: a third gate fix (code broken mid-word in table cells) | $114.40+ | the gate is iterating: three fix commits so far, each a real visual defect |
 | 04:22-04:39 | delivery 3 gated (grade A+); delivery 4 started: tasks 36-37 add an accessibility test and a colour-contrast test | $114.40+ | the re-adding of tests has begun, right after the machinery cut |
+| 04:39-04:56 | delivery 4: tasks 38-39 done (build and link tests; page and component fixes for what the new suite found) | $114.40+ | the new accessibility and link tests found real defects in pages that delivery gates had graded A and A+: the automated checks caught what the reviews missed |
 
 ## AID run: red tape observed so far
 
