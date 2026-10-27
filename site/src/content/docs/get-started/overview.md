@@ -8,7 +8,7 @@ sidebar:
 
 This page explains what [AID](/reference/glossary/#aid) is, who it is for, and how its pipeline takes your work from an idea to delivered code.
 
-AID stands for AI Integrated Development. It is a method for building software with AI coding agents. You and the agents work through the same phases on the full path, and you approve the result of each phase before the next one starts. A shortcut runs them in one pass and stops once for your approval.
+AID stands for AI Integrated Development. It is a method for building software with AI coding agents. You and the agents work through the same phases on the full path, and you approve the result of each phase before the next one starts. A [shortcut](/reference/glossary/#shortcut) runs them in one pass and stops once for your approval.
 
 ## What problem does AID solve?
 
@@ -26,7 +26,7 @@ Work moves through these phases, in order: Discover, Describe, Define, Specify, 
 
 Discover builds the [Knowledge Base](/reference/glossary/#knowledge-base), a set of documents that describes your project. The agents read it before they act. An existing codebase is a [brownfield](/reference/glossary/#brownfield) project, and you start it with Discover. A new project with no code is [greenfield](/reference/glossary/#greenfield), and it starts at Describe.
 
-For a small, well-scoped change you can use the [lite path](/reference/glossary/#lite-path). You name the change with a [shortcut](/reference/glossary/#shortcut) such as `/aid-fix`. One run plans the work, and you approve the plan before `/aid-execute` builds it.
+For a small, well-scoped change you can use the [lite path](/reference/glossary/#lite-path). You name the change with a shortcut such as `/aid-fix`. One run plans the work, and you approve the plan before `/aid-execute` builds it.
 
 The [pipeline page](/concepts/pipeline/) explains each phase in depth.
 

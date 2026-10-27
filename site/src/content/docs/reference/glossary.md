@@ -88,7 +88,7 @@ A file `.aid/design/<artifact>.md` that records a direction you have settled bef
 
 ### Shortcut engine
 
-The shared state machine that the shortcuts that plan work use (hand-written shortcuts such as `aid-review` do not): INTAKE, CAPTURE, SPEC, PLAN, DETAIL, GATE, APPROVAL-HALT. It is defined in `canonical/aid/templates/shortcut-engine.md`. It skips no phase. It gathers the information for each phase in one run, without asking you at every step. You are asked only when a gap matters, and at the final approval. A mechanical GATE grades every generated document before that approval. The engine never executes the work. You start `/aid-execute` yourself after you approve.
+The shared state machine that the shortcuts that plan work use (hand-written shortcuts such as `aid-review` do not): INTAKE, CAPTURE, SPEC, PLAN, DETAIL, GATE, APPROVAL-HALT. It is defined in `canonical/aid/templates/shortcut-engine.md`. It skips no phase. It gathers the information for each phase in one run, without asking you at every step. The engine may ask whether this is new work or a continuation (at INTAKE) and, when a gap matters, a question in CAPTURE. It stops for your approval at the final halt. A mechanical GATE grades every generated document before that approval. The engine never executes the work. You start `/aid-execute` yourself after you approve.
 
 ### /aid-triage
 

@@ -1045,12 +1045,12 @@ No diagram states a count that changes when the repository changes (Feature 001'
 **D8 — AID compared with spec-driven development** (`id="aid-vs-sdd"`, viewBox 400 x 600)
 - Sources: `canonical/aid/rules.md` § Workflow; the skill descriptions cited for D1.
 - Sources for the SDD column (only these): the SDD entry in `reference/glossary.md`, `docs/faq.md`,
-  `.aid/knowledge/decisions.md` D2 and D3. They support: specifications drive code generation; SDD
+  `.aid/knowledge/decisions.md` D2 and D3, `docs/aid-methodology.md` § 9. They support: specifications drive code generation; SDD
   starts spec-first; on change it re-specs from scratch. The page does not state that as a fact about the method: it
-  attributes it to AID's decision record (`decisions.md` D3, "Re-spec-from-scratch on change (SDD's model)").
+  attributes it to AID's methodology document (`docs/aid-methodology.md` § 9, Comparison with SDD: "Rebuild spec from scratch").
 - viewBox 400 x 480.
 - desc: "Spec-driven development starts with a spec, and specifications drive code generation. A change
-  AID's decision record describes spec-driven development as re-specifying from scratch on change.
+  AID's methodology document describes spec-driven development as rebuilding the spec from scratch on change.
   AID starts with knowledge: /aid-discover builds the Knowledge Base
   for an existing project. Then come Describe, Define, Specify, Plan, Detail and Execute, with your
   approval at each phase of the full path. A change goes back through the phases that need it. AID
@@ -1058,7 +1058,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
 - caption: "Spec-driven development and AID, side by side."
 - Drawing: two columns. The left column is titled "Spec-driven development": Start with a spec →
   Specifications drive code generation → A change means re-specifying from scratch, with the note
-  "(as AID's decision record describes it)" and a dashed arrow from the last box back to the first. The right column is titled "AID (AI Integrated
+  "(as AID's methodology document describes it)" and a dashed arrow from the last box back to the first. The right column is titled "AID (AI Integrated
   Development)": Knowledge first (`/aid-discover` builds the Knowledge Base, existing project) →
   Describe, Define, Specify, Plan, Detail, Execute → You approve each phase (full path) → A change
   goes back through the phases that need it, and a note "Includes a spec-and-build layer".
@@ -1068,7 +1068,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   |---|---|---|
   | Where it starts | with a spec | with knowledge: `/aid-discover` builds the Knowledge Base for an existing project |
   | How the work proceeds | specifications drive code generation | Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path; AID also includes a spec-and-build layer |
-  | When something changes | re-specifying from scratch, as AID's decision record describes spec-driven development | the work goes back through the phases that need it |
+  | When something changes | rebuilding the spec from scratch, as AID's methodology document describes spec-driven development | the work goes back through the phases that need it |
 
 - Today's diagram titles the AID column "AI-Assisted Development". The product name is "AI
   Integrated Development" (`.aid/knowledge/PROJECT.md`). Feature 001 records the correction.

@@ -6,7 +6,7 @@ const arrow = `url(#dg-${id}-arrow)`;
 ---
 <Diagram id={id} width={400} height={480}
   title="AID compared with spec-driven development"
-  desc="Spec-driven development starts with a spec, and specifications drive code generation. AID's decision record describes spec-driven development as re-specifying from scratch on change. AID starts with knowledge: /aid-discover builds the Knowledge Base for an existing project. Then come Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path. A change goes back through the phases that need it. AID also includes a spec-and-build layer."
+  desc="Spec-driven development starts with a spec, and specifications drive code generation. AID's methodology document describes spec-driven development as rebuilding the spec from scratch on change. AID starts with knowledge: /aid-discover builds the Knowledge Base for an existing project. Then come Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path. A change goes back through the phases that need it. AID also includes a spec-and-build layer."
   caption="Spec-driven development and AID, side by side.">
   <text class="dg-label" x="8" y="28">Spec-driven<tspan x="8" dy="1.25em">development</tspan></text>
   <rect class="dg-node" x="8" y="72" width="160" height="48" rx="6" />
@@ -17,7 +17,7 @@ const arrow = `url(#dg-${id}-arrow)`;
   <path class="dg-edge" d="M88 216 V248" marker-end={arrow} />
   <rect class="dg-node" x="8" y="248" width="160" height="64" rx="6" />
   <text class="dg-label" x="88" y="265" text-anchor="middle">A change means<tspan x="88" dy="1.25em">re-specifying</tspan><tspan x="88" dy="1.25em">from scratch</tspan></text>
-  <text class="dg-note" x="88" y="332" text-anchor="middle">(as AID's decision<tspan x="88" dy="1.25em">record describes it)</tspan></text>
+  <text class="dg-note" x="88" y="332" text-anchor="middle">(as AID's<tspan x="88" dy="1.25em">methodology</tspan><tspan x="88" dy="1.25em">document</tspan><tspan x="88" dy="1.25em">describes it)</tspan></text>
   <path class="dg-edge dg-optional" d="M168 280 H176 V96 H168" marker-end={arrow} />
 
   <text class="dg-label" x="184" y="28">AID (AI Integrated<tspan x="184" dy="1.25em">Development)</tspan></text>
@@ -39,7 +39,7 @@ const arrow = `url(#dg-${id}-arrow)`;
     <tbody>
       <tr><th scope="row">Where it starts</th><td>with a spec</td><td>with knowledge: <code>/aid-discover</code> builds the Knowledge Base for an existing project</td></tr>
       <tr><th scope="row">How the work proceeds</th><td>specifications drive code generation</td><td>Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path; AID also includes a spec-and-build layer</td></tr>
-      <tr><th scope="row">When something changes</th><td>re-specifying from scratch, as AID's decision record describes spec-driven development</td><td>the work goes back through the phases that need it</td></tr>
+      <tr><th scope="row">When something changes</th><td>rebuilding the spec from scratch, as AID's methodology document describes spec-driven development</td><td>the work goes back through the phases that need it</td></tr>
     </tbody>
   </table>
 </Diagram>
