@@ -310,6 +310,10 @@ lifecycle_history:
     event: 'Stopped after first fix round'
     grade: Pending
     notes: 'C4 requires stopping with unresolved findings: the raw-table scanner cannot evaluate external CSS visibility; Claude hook invocation and broader protection remain unproven. Q17 asks how to continue before benchmarks.'
+  - date: '2026-10-27'
+    event: 'Managed resync failed'
+    grade: Pending
+    notes: 'Generator profile render and deterministic verification passed, but dogfood resync failed because native Python passed Windows paths to WSL Bash. The stray staged artifacts were preserved under .aid/.temp/failed-sync-stage-004; installed lean files are not synced. Nine generated Codex profile files have line-ending-only physical changes and no Git content diff.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -357,8 +361,8 @@ qa:
     category: Approval
     impact: High
     state: Pending
-    context: 'May I do another focused fix round for the remaining table-visibility issue and verify the Claude safeguard before running the cheaper benchmarks?'
-    suggested: 'Yes: address and verify these two open items before measuring the lean workflow'
+    context: 'May I do another focused fix round for the remaining table-visibility issue, restore the local resync and verify the Claude safeguard before running the cheaper benchmarks?'
+    suggested: 'Yes: address and verify the open items before measuring the lean workflow'
     answer: ''
     applied_to: 'STEP-2.md C4 and C8; lean-build-review.md; site-grader-review.md'
   - id: Q16
