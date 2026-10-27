@@ -36,3 +36,12 @@ Leave the tree clean (`git status --short` empty) except for files the task says
 
 ## 6. Report (short)
 Task id, State written, files changed (paths), each criterion with its actual result, commit hash, deviations, anything the next task needs to know.
+
+## 7. Lessons from delivery 1-2 (apply BEFORE you report; the reviewers caught these many times)
+- No absolute or generalisation ("every/all/none/never/always/only/each/most/few/N skills") unless a repo source states it exactly; check the exceptions (hand-written `repurpose: true` skills are not engine-driven; some skills dispatch agents in prose; some settings apply only to review-state skills).
+- No time or quantity figures, and no claims about other methodologies or tools, unless a repo source states them.
+- When a built-in help text and the code disagree, state what the CODE does.
+- Never delete a statement you cannot disprove; correct it from the code, or remove it only if unprovable, and record the reason.
+- Astro scoped styles add a class to elements (`class="diagram-text astro-xxxx"`): built-markup greps must tolerate extra classes (`class="diagram-text[ "]`).
+- The sandbox may refuse compound or `. file` shell commands: write small runner scripts in the scratchpad directory (not in the repo) and run them.
+- Run `git add` and `git commit` as plain separate commands from the worktree root. Quick-check reviewers run after you; the delivery gate reviews the whole delivery.
