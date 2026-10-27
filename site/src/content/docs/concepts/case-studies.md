@@ -1,57 +1,53 @@
 ---
 title: 'Case studies'
-description: 'Three real projects and the path each took through the AID pipeline.'
+description: 'This page shows you how three projects moved through the AID pipeline, so you can see which way in fits yours.'
 ---
 
-## 8. Case Studies
+This page shows you how three projects moved through the AID pipeline, so you can see which way in fits yours.
 
-*Three real projects, three different paths through the pipeline.*
+The accounts come from the [methodology document](https://github.com/AndreVianna/aid-methodology/blob/master/docs/aid-methodology.md) in the AID repository. They are the project's own summaries. Read them as examples of how the phases fit together, not as measurements.
 
-| **Case study** | Path used | Key phases | Key insight |
-|---------------|-----------|------------|-------------|
-| VivaVoz Desktop App | Greenfield · full path | Describe → Define → Specify → Plan → Detail → Execute | Two-level planning (Plan = strategy, Detail = tactics) prevented planning sessions from bogging down in micro-decisions before macro-structure was settled |
-| Brownfield Enterprise Java | Brownfield · full path | Discover → Describe → Define → Specify | Without Discovery, an agent dropped into a 21 GB Java codebase hallucinates; the KB gave agents context to work within the existing OSGi architecture rather than against it |
-| Zac Pipeline | Brownfield · full path + lite path | All phases; Monitor → `/aid-fix` → Execute for post-launch fixes | After the initial build, individual brand-specific issues were handled as `/aid-fix` shortcut works — 20–30 minutes end to end vs. the multi-day cycle a full path would require |
+| Case study | Path used | Phases named in the account |
+|------------|-----------|-----------------------------|
+| VivaVoz desktop app | [Greenfield](/reference/glossary/#greenfield), full path | Describe, Define, Specify, Plan, Detail, Execute, Deploy |
+| Enterprise Java search engine | [Brownfield](/reference/glossary/#brownfield), full path | Discover, Describe, Define, Specify |
+| Zac pipeline | Brownfield, full path, then the [lite path](/reference/glossary/#lite-path) | Describe, Define, Specify, Execute, Monitor, then `/aid-fix` |
 
-### Greenfield — VivaVoz Desktop Application
+For the phases themselves, see [The pipeline](/concepts/pipeline/).
 
-**Context:** MVVM desktop app (Avalonia/.NET) for voice recording and transcription. Built from scratch.
+## A new desktop app: VivaVoz
 
-**How AID applied:**
+VivaVoz is a desktop app, built with Avalonia and .NET, that records voice and transcribes it. It was built from scratch.
 
-- **Discovery:** Skipped (greenfield). Minimal KB populated during interview.
-- **Describe → Define:** Full requirements gathering. User personas, feature priority, platform constraints. Multiple features and multi-week scope — the full path, entered directly via `/aid-describe`.
-- **Specify:** Detailed architecture decisions per feature: MVVM pattern, SQLite storage, Whisper integration. Agent proposed based on community conventions, not open-ended prompting.
-- **Plan:** Sequenced the roadmap — MVP (core recording), v2 (transcription), v3 (export) — into ordered, independently shippable deliveries.
-- **Detail:** Decomposed each delivery into task specs, each carrying explicit C# interface contracts.
-- **Execute:** Agent-per-task execution with the built-in review loop — parallel work on independent features, a full unit + E2E test suite graded against the rubric.
-- **Deploy:** Incremental deliveries. Each delivery merged independently.
+- **Discover:** skipped, because there was no code. The interview that `/aid-describe` runs on a new project seeded a small [Knowledge Base](/reference/glossary/#knowledge-base).
+- **Describe and Define:** full requirements gathering covered user personas, feature priority and platform constraints. The work had several features, so it took the full path, entered with `/aid-describe`.
+- **Specify:** each feature got detailed architecture decisions, such as the MVVM pattern, SQLite storage and Whisper integration. The agent proposed them from community conventions rather than from an open-ended prompt.
+- **Plan:** the roadmap became ordered deliveries that each ship on their own: a first version that records, then transcription, then export.
+- **Detail:** each delivery became task specifications, and each one carried explicit C# interface contracts.
+- **Execute:** each task ran through the review loop of `/aid-execute`, and the project had a unit and end-to-end test suite graded against the rubric.
+- **Deploy:** the deliveries shipped one at a time, and each was merged on its own.
 
-**What worked:** The two-level planning (Plan → Detail) meant strategic decisions were separated from tactical decomposition. The plan defined "what goes in MVP" while detail defined "how to build each piece." Without this separation, planning sessions routinely get bogged down debating implementation micro-decisions before the macro-structure is settled.
+**What worked.** Planning in two levels separated strategy from tactics. The plan decided what went into the first version, and the detail phase decided how to build each piece. This kept planning from stalling on implementation choices before the overall structure was settled.
 
-**What would have been faster with lite path:** Individual bug fixes discovered during Execute were routed through `/aid-fix` — a diagnosis from Monitor plus a single IMPLEMENT task, no re-spec, no re-plan.
+**Where the lite path would have fit.** Bugs found along the way could go through `/aid-fix`, which takes a diagnosis and writes one task to implement the fix. It does not re-specify or re-plan. The [shortcuts page](/get-started/lite-path/) explains this way of working.
 
-### Brownfield Enterprise Java
+## An existing enterprise Java codebase
 
-**Context:** 21 GB enterprise Java codebase (Maven/Tycho, OSGi bundles). Client needed a developer to understand and extend the search engine.
+The second project is a very large enterprise Java codebase built with Maven and Tycho, using OSGi bundles. A client needed a developer to understand and extend its search engine.
 
-**How AID applied:**
+- **Discover:** a full analysis of the codebase. The Knowledge Base recorded the OSGi bundle manifest structure, the search indexing pattern, the key extension points, the naming conventions and the deployment model.
+- **Describe and Define:** the interview was short and aimed at business context and search requirements, because Discover had already recorded the technical context. Each question came with a suggested answer grounded in the Knowledge Base. For example: "Based on `architecture.md`: the search service extends `org.eclipse.search.ui.ISearchPage`. Does the new feature plug in at this extension point?"
+- **Specify:** the specification was grounded in the Knowledge Base. It named real packages, existing interfaces and OSGi service bindings.
 
-- **Discovery:** Full codebase analysis. Module listing across hundreds of packages. Architecture report covering 15 sections. The KB captured: OSGi bundle manifest structure, search indexing pattern, key extension points, naming conventions, and the deployment model (target platform).
-- **Describe → Define:** Targeted — client explained business context, search requirements. Short interview because Discovery pre-filled all technical context. The agent's questions came with suggested answers: "Based on `architecture.md`: the search service extends `org.eclipse.search.ui.ISearchPage`. Does the new feature plug in at this extension point? [Y/N/custom]"
-- **Specify:** Spec grounded in the KB. Referenced actual package names, existing interfaces, OSGi service bindings.
+**What worked.** According to the account, an agent dropped into this codebase without Discover would have hallucinated. The Knowledge Base gave the agents the context to work within the existing architecture instead of against it. It also surfaced constraints on the OSGi service lifecycle that open-ended exploration would not have caught.
 
-**Key insight:** Without Discovery, an agent dropped into this codebase would have hallucinated. The KB gave agents the context they needed to work within the existing architecture rather than against it. The Specify session took 40 minutes; the equivalent effort without a KB would have been a multi-day exploration that still wouldn't have caught the OSGi service lifecycle constraints that the KB surfaced in its first section.
+## An automation pipeline: Zac
 
-### Operational Automation — Zac Pipeline
+Zac is an e-commerce advertising pipeline. It pulls data from Meta, Google and Klaviyo, validates it, processes it with specialist AI agents and grades the quality of the output.
 
-**Context:** E-commerce advertising pipeline. Pull data from Meta/Google/Klaviyo, validate, process with specialist AI agents, grade output quality.
+- **Describe and Define:** the interview asked one question at a time: "What are your brands?", "What platforms?", "What does a good report look like?", "What data don't you agree with?" The last question uncovered a timezone bug in the existing data aggregation before any specification was written.
+- **Specify:** the specification covered the data flow, the agent roles and the grading criteria.
+- **Execute:** the build used several specialist agents with an orchestrator and an executive-summary generator. A domain-specific quality gate at grade A checked each report for a match with its source, traceability and consistency across agents.
+- **Monitor:** `/aid-monitor` watched the quality-gate results across brands. When a report failed, it sorted the failure. A data-processing bug went to `/aid-fix` and then Execute. A change in a source format needed new requirements and a new specification, which is the full path again.
 
-**How AID applied:**
-
-- **Describe → Define:** One question at a time. "What are your brands?" → "What platforms?" → "What does a good report look like?" → "What data don't you agree with?" That last question discovered a timezone bug in the existing data aggregation — before a line of spec was written.
-- **Specify:** Pipeline spec with data flow, agent roles, grading criteria.
-- **Execute:** Multi-agent orchestration — 4 specialist agents + orchestrator + executive-summary generator — validated against a domain-specific quality gate (Grade A): source match (1% tolerance), traceability, cross-agent consistency.
-- **Monitor:** Watches quality-gate results across brands. When a report fails, Monitor classifies it — a data-processing bug (short path: `/aid-fix` → Execute) or a source-format change (full cycle: new requirements → new spec). Nothing falls through.
-
-**The lite path in practice:** After the initial build, individual brand-specific issues were handled as `/aid-fix` shortcut works — each a single IMPLEMENT task taking 20-30 minutes end to end, vs. the multi-day cycle the full path would require.
+**The lite path in practice.** After the first build, brand-specific issues were handled as `/aid-fix` shortcut works. Each was a single task to implement the fix, so it avoided the longer cycle of the full path. For the routing from Monitor, see [Feedback loops](/concepts/feedback-loops/#routing-from-monitor).

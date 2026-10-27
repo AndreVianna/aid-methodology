@@ -1,82 +1,72 @@
 ---
 title: 'FAQ'
-description: 'Frequently asked questions about adopting and running AID.'
+description: 'This page answers the questions newcomers ask most about what AID is, how to install it and how to use it.'
 sourceDoc: 'docs/faq.md'
 ---
+
+This page answers the questions newcomers ask most about what AID is, how to install it and how to use it.
 
 ## General
 
 ### What does AID stand for?
-**AI Integrated Development.** "Integrated" captures the core philosophy: human and AI co-execute every phase. Not "AI-driven" (human is the pilot) and not "AI-assisted" (AI does more than assist).
+
+AI Integrated Development. You and the AI work through the phases together, as described in [the methodology](/concepts/methodology/). The AI amplifies what you can do, and you stay the pilot: you set the direction and make the decisions.
 
 ### How is AID different from SDD (Spec-Driven Development)?
-SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](/concepts/aid-and-sdd/#9-comparison-with-sdd).
+
+[SDD](/reference/glossary/#sdd) is a method where specifications drive code generation. AID includes it as the spec-and-build layer and adds discovery, two-level planning, feedback loops and the optional deploy and monitor skills. [AID and spec-driven development](/concepts/aid-and-sdd/) compares them in full.
 
 ### Is this just Waterfall rebranded?
-Yes — and that's the point. Waterfall's phases were sound. Waterfall failed because humans were too slow to execute them with rigor. Agile solved that by dropping the rigor. AI changes the economics: discovery takes hours not weeks, going back costs tokens not sprints. The rigor becomes viable again.
 
-### Do I need all six phases?
-No. Use what applies:
-- **Greenfield project with clear requirements?** Skip Discover, start at Describe.
-- **Quick bug fix or small change?** Skip Describe entirely — run the matching shortcut (e.g. `/aid-fix`) directly, or `/aid-triage` if you're not sure which one fits.
-- **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
+AID follows the Waterfall sequence on purpose and has AI agents do the heavy work in each phase. It adds [feedback loops](/concepts/feedback-loops/), so going back to an earlier phase is a defined step. It does not replace sprints, backlogs or retrospectives. See [Waterfall plus AI](/concepts/methodology/#waterfall-plus-ai).
 
-The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional, separately-invoked paths, not steps in the numbered sequence (which ends at Execute); many projects ship by other means and never invoke them. But know what you're skipping and why.
+### Do I need every phase?
+
+No. You choose one of three ways in, and each fits a different kind of work:
+
+- **A new project with clear requirements.** Skip Discover and start at `/aid-describe`.
+- **A small, well-scoped change.** Skip Describe and run the matching shortcut, such as `/aid-fix`. Run `/aid-triage` if you are not sure which shortcut fits.
+- **Broad or risky work on existing code.** Start at `/aid-discover`, then take the full path.
+
+`/aid-deploy` and `/aid-monitor` are optional and you invoke each one on its own. The numbered sequence ends at Execute. [The pipeline](/concepts/pipeline/#three-ways-in) explains the three ways in.
 
 ### How do I start a new project?
-Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-describe` (new project).
 
----
+Run `/aid-config` once. It shows your project settings and, on the first run, creates `.aid/settings.yml`. Then start at `/aid-discover` if you have code, or at `/aid-describe` if you do not. [Your first work](/get-started/first-work/) walks through both starts.
 
 ## Adoption
 
 ### What AI tools does AID work with?
-AID ships install bundles for five host tools:
-1. **Claude Code** — installs to `.claude/`
-2. **OpenAI Codex CLI** — installs to `.codex/`
-3. **Cursor** — installs to `.cursor/`
-4. **GitHub Copilot CLI** — installs to `.github/`
-5. **Antigravity** — installs to `.agent/`
 
-Skills and the runtime are shared, not per tool: every tool gets the same `aid-*` skill set in `.agents/skills/` and the same runtime in `.aid/runtime/`. Claude Code also gets a byte-identical mirror of the skills in `.claude/skills/`. Only the agents differ per tool: each tool has its own agents folder, and Codex writes its agents as TOML while the other tools use Markdown.
+AID ships install bundles for these host tools. Each one gets its own agents folder:
+
+1. **Claude Code**, with agents in `.claude/agents/`
+2. **OpenAI Codex CLI**, with agents in `.codex/agents/`
+3. **Cursor**, with agents in `.cursor/agents/`
+4. **GitHub Copilot CLI**, with agents in `.github/agents/`
+5. **Antigravity**, with agents in `.agent/agents/`
+
+The skills and the runtime are shared, not per tool. Every tool gets the same `aid-*` skills in `.agents/skills/` and the same runtime in `.aid/runtime/`. Claude Code also gets a byte-identical copy of the skills in `.claude/skills/`. Codex writes its agents as TOML, and the other tools use Markdown. The [Installation guide](/guides/installation/) has the details.
 
 ### How do I install AID into my project?
 
-First, bootstrap the `aid` CLI once per machine, then use `aid add` inside the repo.
-
-**Bootstrap (one of four channels):**
-
-```bash
-# Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
-
-# Windows PowerShell
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
-
-# npm (Node >=22)
-npm i -g aid-installer
-
-# PyPI (Python >=3.8)
-pipx install aid-installer
-```
-
-**Add AID to a project (run inside the repo):**
+First install the `aid` CLI once per machine. The [Installation guide](/guides/installation/#choose-your-install-channel) shows the install channels: a shell script for Linux and macOS, a PowerShell script for Windows, npm and PyPI. Then add AID inside your repository:
 
 ```bash
 aid add claude-code      # or: codex  cursor  copilot-cli  antigravity
-aid add codex,cursor     # multiple tools at once
+aid add codex,cursor     # several tools at once
 ```
 
-Re-running `aid add` is safe — identical files are skipped. Root agent files you edited yourself are protected (see [docs/install.md](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md#root-agent-files-and-the-aid-region)). See the [full install guide](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md) for offline installs, version pinning, and the complete subcommand reference.
+Running `aid add` again is safe. It is idempotent. Root agent files you edited yourself are protected: see [Root agent files and the AID region](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md#root-agent-files-and-the-aid-region). The [CLI reference](/reference/cli/) lists the commands and their flags.
 
 ### How do I update AID?
 
 ```bash
-aid update             # update all installed tools in the current project
+aid update             # inside a project: update the CLI, then all installed tools
 aid update self        # update the aid CLI itself
 ```
 
-`aid update self` is channel-aware: it detects how `aid` was installed (curl/irm, npm, or PyPI) and prints the correct upgrade command automatically.
+`aid update self` is channel-aware. It detects how you installed `aid` (the shell or PowerShell script, npm or PyPI) and runs the matching upgrade. See [Update](/guides/installation/#update).
 
 ### How do I remove AID?
 
@@ -86,93 +76,100 @@ aid remove claude-code # remove one tool
 aid remove self        # remove the aid CLI itself (asks to confirm)
 ```
 
-Uninstall is manifest-driven — only files that `aid add` wrote are removed. Files you edited yourself are left in place.
+Removal is manifest-driven: it removes only files that `aid add` wrote. A file you edited after AID wrote it is moved to `.aid/.trash/` instead of being deleted, and files AID never wrote are not touched. See [Remove](/guides/installation/#remove).
 
 ### How do I use the skills?
-The skills run as slash commands inside your AI coding tool. There are three ways in:
+
+Skills run as slash commands inside your AI coding tool. There are three ways in:
+
 ```
-/aid-fix, /aid-create api, ...  # shortcut: name your change, go straight to the lite path
-/aid-triage                     # not sure which shortcut fits? describe it, get routed
-/aid-describe                   # broad or new-project work: full requirements interview
+/aid-fix "login crash"   # a shortcut: name your change and go straight to the lite path
+/aid-triage              # not sure which shortcut fits? Describe your change and get a suggestion
+/aid-describe            # broad or new work: a requirements interview
 ```
-Once you're on the full path:
+
+On the full path you then run one skill for each phase:
+
 ```
-/aid-config      # always first
-/aid-discover    # brownfield: understand the existing code
-/aid-describe    # full requirements interview (on approval, run /aid-define)
-/aid-define      # decompose approved requirements into features (full path only)
-/aid-execute     # implement tasks with built-in review
+/aid-config      # once, to set up and view your settings
+/aid-discover    # existing code: build the Knowledge Base
+/aid-describe    # requirements interview
+/aid-define      # split approved requirements into features
+/aid-specify     # write the technical specification for each feature
+/aid-plan        # group features into deliveries
+/aid-detail      # break a delivery into tasks
+/aid-execute     # build and review one task
 ```
-Each skill is a state-machine instruction document that your host AI tool executes. No plugins required.
+
+Each skill is a state-machine instruction document that your AI tool follows, so you install no plugin. Each one stops when it finishes, so you read the result and start the next. That stop is the [phase gate](/reference/glossary/#phase-gate). [Working the pipeline](/guides/pipeline/) gives the steps for each phase.
 
 ### Can I use AID with a team, not just solo?
-Yes. The Knowledge Base and formal artifacts (REQUIREMENTS.md, the STATE files, IMPEDIMENT files) are designed for team collaboration. Multiple people can work on different phases simultaneously. The artifacts are the coordination mechanism.
+
+The [Knowledge Base](/reference/glossary/#knowledge-base) and the work files are plain files under `.aid/` in your repository, so a team can share them the way it shares code. The Knowledge Base outlives any single session or team member: a new member reads it and gets the project's context.
 
 ### How long does adoption take?
-Start with one delivery. Use the templates. See if the structure helps. Most teams report that Discovery alone (building the KB) pays for itself within the first week — every subsequent task is faster because the context is documented.
 
----
+Start small. Run a shortcut for one small change, or run `/aid-discover` on a project you already know and read the Knowledge Base it drafts. Then decide whether the structure helps.
 
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** — `/aid-fix`, `/aid-create api`, `/aid-update ui`, and 31 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
 
-### When should I use the lite path vs. the full path?
-Pick the entry yourself: if you know exactly what you want (one focused change, no new requirements gathering needed), run the matching shortcut directly. If you're not sure which shortcut fits, run `/aid-triage` — it's a stateless, suggest-only router: describe the work in a sentence, it infers scope, and suggests either a specific shortcut or the full path via `/aid-describe`. Broad, multi-target, or ambiguous work (multiple features, design decisions to make, formal requirements and a delivery plan needed) belongs on the full path either way.
+The [lite path](/reference/glossary/#lite-path) is a shorter way to do small, well-scoped work. You enter it by naming your change with a [shortcut](/reference/glossary/#shortcut), such as `/aid-fix` or `/aid-create api`, instead of running `/aid-describe`. A shortcut that plans work hands over to the shared [shortcut engine](/reference/glossary/#shortcut-engine). The engine runs the Describe, Define, Specify, Plan and Detail phases in one pass, writes `REQUIREMENTS.md` and `tasks/task-NNN/DETAIL.md` at the work root, and halts for your approval before `/aid-execute`. See [Small changes with shortcuts](/get-started/lite-path/).
+
+### When should I use the lite path instead of the full path?
+
+If you know exactly what you want to change, run the matching shortcut. If you are not sure which shortcut fits, run `/aid-triage`. It only suggests: it names one shortcut, or the full path through `/aid-describe`, and it writes nothing. Broad, multi-part or unclear work belongs on the full path either way.
 
 ### How do shortcuts work under the hood?
-The 34 shortcuts come from a catalog (`shortcut-catalog.yml`) of canonical names, with no alias or synonym form and no runtime redirect. A bare verb is its own skill (`/aid-fix`); a kind is the first word of its family's argument — `/aid-create api` names the API-creation shortcut directly. Each shortcut delegates to the shared shortcut engine, which consults a family-specific `shortcut-scaffolding/<family>.md` for SPEC/PLAN/DETAIL scaffolding appropriate to the kind of change (API, UI, CLI, data model, infra, and so on). The engine runs autonomously through CAPTURE/SPEC/PLAN/DETAIL — no per-phase human checkpoint — with a mechanical GATE grading every generated document before the terminal approval halt. It never executes; `/aid-execute` is a separate, user-initiated run after you approve.
 
----
+Each shortcut is a row of the shortcut catalog, `shortcut-catalog.yml`. A shortcut that is a skill of its own, such as `/aid-fix`, runs by its bare verb. A kind is the first word of the argument, as in `/aid-create api`. Shortcuts that plan work delegate to the shortcut engine, which uses scaffolding for the family of the change, such as an API or a UI. A few shortcuts are hand-written skills that do not use the engine. The engine grades every document it writes before it halts, and it never executes: you start `/aid-execute` yourself after you approve. [The shortcut engine](/get-started/lite-path/#the-shortcut-engine) lists its states.
 
 ## Technical
 
-### What's the Knowledge Base?
-The 14 standard markdown documents that capture the living understanding of a project: `architecture.md`, `coding-standards.md`, `domain-glossary.md`, `external-sources.md`, `feature-inventory.md`, `infrastructure.md`, `integration-map.md`, `module-map.md`, `pipeline-contracts.md`, `project-structure.md`, `schemas.md`, `tech-debt.md`, `technology-stack.md`, and `test-landscape.md`. Templates live at [`canonical/aid/templates/knowledge-base/`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/knowledge-base/).
+### What is the Knowledge Base?
 
-The count is configurable per project via `discovery.doc_set` in `.aid/settings.yml`; 14 is the default seed.
+The Knowledge Base is a set of Markdown documents in `.aid/knowledge/` that records what your project is and how it works. `/aid-discover` builds it. [The Knowledge Base page](/concepts/knowledge-base/) explains it, and the [Knowledge Base documents reference](/reference/kb/) lists the standard documents. You declare the set of documents in `.aid/settings.yml` under `discovery.doc_set`.
 
 ### What are feedback loops?
-Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](/concepts/feedback-loops/#6-feedback-loops).
 
-### What's the Grade A gate?
-AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist. Define your project's specific quality gates in `REQUIREMENTS.md § 9` and the review criteria.
+A [feedback loop](/reference/glossary/#feedback-loop) is the formal way for a later phase to send a finding back to the phase that owns it. When implementation shows that the specification was wrong, you do not work around it silently: the loop leaves a record that you resolve. See [Feedback loops](/concepts/feedback-loops/).
 
-### How do I handle the "spec was wrong" problem?
-That's what feedback loops are for. When implementation discovers a spec error:
-1. Create `IMPEDIMENT.md` describing what the spec assumed vs. what's true
-2. Route back to the appropriate phase (Specify, Plan, or Discover)
-3. Revise the upstream artifact with a formal change record
-4. Resume implementation from the corrected spec
+### What is the minimum grade?
 
-The impediment artifact creates an audit trail. You can always answer "why did this change?"
+Reviews grade work on a scale from A+ to F, as the [glossary](/reference/glossary/#grading) explains. A script computes the grade from the issues a reviewer finds. The reviewer does not set it. Work must reach the minimum grade before a skill finishes. The default is A. Run `/aid-config minimum_grade` to change it. See the [settings reference](/reference/settings/).
 
-### What does `aid-housekeep` do?
-`aid-housekeep` is an on-demand, off-pipeline skill for keeping the Knowledge Base current. Run it whenever you suspect the KB has drifted from the codebase (after a large merge, a major refactor, etc.). It runs: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE on a dedicated `aid/housekeep-*` branch.
+### What if the spec turns out to be wrong?
+
+That is what feedback loops are for. When `/aid-execute` meets a contradiction it cannot resolve inside the task, it stops the task and writes an `IMPEDIMENT-task-NNN.md` file. The file holds the type, a description, the options and a recommendation. You choose how to resolve it, and the type tells you where the work goes next: back to `/aid-specify`, back to `/aid-detail`, or to `/aid-discover` for a Knowledge Base gap. After the cause is fixed, the impediment file is deleted and the task runs again. See [Impediments](/concepts/feedback-loops/#impediments).
+
+### What does `/aid-housekeep` do?
+
+[`/aid-housekeep`](/reference/glossary/#aid-housekeep) is an on-demand skill outside the pipeline. It re-syncs a Knowledge Base that has drifted from the code, for example after a large merge or refactor. It runs these states: PREFLIGHT, KB-DELTA, SUMMARY-DELTA, CLEANUP and DONE, on an `aid/housekeep-*` branch.
 
 ### Where does AID store its state?
-All AID runtime state lives under `.aid/` in your project. Key locations:
-- `.aid/knowledge/` — the Knowledge Base (14 standard docs + meta)
-- `.aid/knowledge/STATE.md` — discovery-area state (Q&A, review history)
-- `.aid/works/{work}/STATE.yml` — work-area state for each work item
-- `.aid/works/{work}/REQUIREMENTS.md` — the requirements, with one `### Feature NNN` section per feature under § 11
-- `.aid/works/{work}/PLAN.md` `### delivery-NNN` stanzas (full path; the Lite path writes no `PLAN.md` at all) — delivery definition
-- `.aid/works/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
-- `.aid/settings.yml` — project configuration (including `discovery.doc_set`)
 
-#### Anti-Patterns
+AID keeps its state under `.aid/` in your project. The main locations are:
 
-- **Skipping Discovery on brownfield.** Agents will hallucinate about your architecture. The 40-minute Discovery investment eliminates hours of review-reject-redo cycles.
-- **Treating the spec as sacred.** It is a hypothesis. Revise it when implementation proves it wrong — formally, with the revision trail.
-- **Ignoring impediments.** If an agent reports an impediment, stop and decide. Do not let it work around the problem. The impediment file is not bureaucracy — it is the agent saying "I found a contradiction and I am not going to silently paper over it."
-- **Bypassing Execute's review loop.** "The tests pass" is not enough. Execute dispatches a separate adversarial reviewer that catches spec, architecture, and convention issues tests cannot detect. The deterministic grade gate is what makes that bite. Do not lower the minimum grade to dodge it.
-- **Not maintaining the KB.** A stale KB is worse than no KB. Every phase should update it when new knowledge is acquired. Run `/aid-housekeep` periodically to catch drift.
-- **Sending agents blind.** Including TASK + SPEC without the KB INDEX means the agent does not know what context exists. It will guess instead of look. Always include INDEX.md.
-- **Auto-advancing between phases.** The human approves every transition. That is the checkpoint that keeps the methodology safe.
-- **Using the full path for every change.** A two-line bug fix does not need Specify, Plan, and Detail. A direct-entry shortcut — or `/aid-triage` if you're unsure which one — routes proportionately. Trust it.
+- `.aid/knowledge/`: the Knowledge Base.
+- `.aid/knowledge/STATE.md`: the Knowledge Base's state, with its Q&A and review history.
+- `.aid/works/{work}/STATE.yml`: the state of each work.
+- `.aid/works/{work}/REQUIREMENTS.md`: the requirements, with one `### Feature NNN` section for each feature under section 11.
+- `.aid/works/{work}/PLAN.md`: one `### delivery-NNN` stanza for each delivery. The lite path writes no `PLAN.md`.
+- `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` on the full path, or `.aid/works/{work}/tasks/{task}/DETAIL.md` on the lite path: the task definition.
+- `.aid/settings.yml`: your project settings.
 
----
+The [Artifacts reference](/reference/artifacts/) describes each file.
 
-*AID V3.2 — June 2026*
-*Built from practice, not theory. Every phase, every template, every feedback loop was born from real projects.*
+## Anti-Patterns
+
+These habits work against AID.
+
+- **Skipping Discover on existing code.** Without a Knowledge Base, an agent has no map of your architecture and may guess to fill the gaps. Build the Knowledge Base first.
+- **Treating the spec as sacred.** It is a hypothesis. Revise it when implementation proves it wrong, and do it through a feedback loop so the change is recorded.
+- **Ignoring impediments.** When an agent reports an impediment, stop and decide. Do not let it work around the problem. The file is the agent telling you it found a contradiction.
+- **Bypassing the review loop in Execute.** "The tests pass" is not enough. A separate reviewer agent checks the work against the specification, the architecture and the conventions, and a script turns its findings into a grade. Do not lower the minimum grade to get past it.
+- **Letting the Knowledge Base go stale.** A Knowledge Base that differs from the code misleads every agent that reads it. Run `/aid-housekeep` when the project has drifted.
+- **Sending agents in blind.** An agent that does not read the Knowledge Base cannot know what context exists, so it guesses. It should read `PROJECT.md` first, when the project has one, and open `INDEX.md` to find a specific document.
+- **Moving between phases without reading the result.** AID never starts the next phase by itself. The phase gate is the point where you read the output and approve it, so keep it.
+- **Using the full path for every change.** A two-line bug fix does not need Specify, Plan and Detail. Use a shortcut, or run `/aid-triage` if you are unsure which one.
