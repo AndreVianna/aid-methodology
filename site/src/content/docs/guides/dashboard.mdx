@@ -79,7 +79,7 @@ The project page is a live view of one project. It refreshes on its own.
 
 ### Pipelines
 
-Each work in the project is listed as a pipeline card. The card shows the phase the work is in. Open a card to see the work, then open a task to see its detail. The dashboard also finds works that live on other git worktrees of the project.
+Each work in the project is listed as a pipeline card. The card shows the phase the work is in. Open a card to see the work, then open a task to see its detail. The dashboard also finds works that live on other git worktrees of the project. When the same work appears on more than one worktree, it shows one entry. Each task takes the most advanced state found on any worktree, and the work's own pipeline state comes from the copy with the newest `Updated` value. Tasks and the other lists are combined from all the copies.
 
 ### Knowledge Base card
 

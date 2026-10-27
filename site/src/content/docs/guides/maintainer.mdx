@@ -34,7 +34,7 @@ A single pushed `v*` tag triggers `release.yml`, which runs these jobs:
 
 The npm and PyPI jobs both wait for the GitHub Release job and run in parallel. The GitHub Release artifacts, npm, PyPI and the [offline bundle](/reference/glossary/#offline-bundle) all come from the same tag in one workflow run.
 
-A pre-release tag, such as `v2.2.3-beta.1`, creates a GitHub Release marked as a pre-release and publishes to PyPI. The npm job is skipped.
+A pre-release tag, such as `v2.2.3-beta.1`, creates a GitHub Release marked as a pre-release. It also publishes to PyPI, but only when `PYPI_ENABLED` is `true`. The npm job is skipped.
 
 <ReleaseFlow />
 
