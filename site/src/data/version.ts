@@ -1,12 +1,10 @@
-// site/src/data/version.ts — the site's version-injection layer.
-// The raw version comes from feature-002's canonical accessor (single source):
-// getAidVersion() resolves process.env.AID_VERSION → falls back to reading the
-// repo-root VERSION file. This module does NOT read env or fs itself; it adds
-// the version-pinned install commands + labels + components on top of that value.
-import { getAidVersion } from '../lib/release-data';
+// site/src/data/version.ts -- the site's version value and install commands.
+// The version is read once from the repo-root VERSION file by astro.config.mjs
+// and injected at build time as the compile-time constant __AID_VERSION__.
+declare const __AID_VERSION__: string;
 
-/** Bare current version, e.g. "1.0.0" (no leading "v"). Sourced from feature-002's accessor. */
-export const VERSION: string = getAidVersion();
+/** Bare current version, e.g. "1.0.0" (no leading "v"). */
+export const VERSION: string = __AID_VERSION__;
 
 /** Tag form, e.g. "v1.0.0" — used in release-asset URLs. */
 export const VERSION_TAG: string = `v${VERSION}`;
@@ -32,13 +30,4 @@ export const installCommands: Record<InstallChannel, string> = {
     `pipx install aid-installer==${VERSION}`,
   offline:
     `curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/${VERSION_TAG}/aid-shared-${VERSION_TAG}.tar.gz\ncurl -LO https://github.com/AndreVianna/aid-methodology/releases/download/${VERSION_TAG}/aid-claude-code-${VERSION_TAG}.tar.gz`,
-};
-
-/** Human label per channel, for tab/heading reuse by 004. */
-export const channelLabels: Record<InstallChannel, string> = {
-  curl: 'curl (Linux / macOS)',
-  irm: 'irm (Windows PowerShell)',
-  npm: 'npm',
-  pypi: 'PyPI (pipx)',
-  offline: 'Offline bundle',
 };
