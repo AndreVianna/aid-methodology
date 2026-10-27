@@ -262,6 +262,18 @@ lifecycle_history:
     event: 'Lean build approved; goal card prepared'
     grade: Pending
     notes: 'Q14 answered 1 with whole-result check; STEP-2.md replaces the direct-lane draft and awaits approval under Q16'
+  - date: '2026-10-27'
+    event: 'Goal card approved; build in progress'
+    grade: Pending
+    notes: 'Q16 approved; independent plan review and behavior-test authoring started; site benchmark spending still requires separate approval'
+  - date: '2026-10-27'
+    event: 'Plan reviewed and corrected'
+    grade: Pending
+    notes: 'Independent review identified hook coverage and review-impact measurement omissions; STEP-2.md now includes both; independent script tests failed on the missing implementation'
+  - date: '2026-10-27'
+    event: 'First implementation under review'
+    grade: Pending
+    notes: 'Independent review identified six pending findings covering red-first, skipped test counts, baseline identity, historical benchmark setup and unproven host hooks; corrections and verification required'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -308,10 +320,10 @@ qa:
   - id: Q16
     category: Approval
     impact: High
-    state: Pending
+    state: Answered
     context: 'Do you approve the goal card and plan for building and measuring lean AID, including a whole-result check against the original request and repository?'
     suggested: 'Approve: it keeps the existing skills, makes the checks and targets measurable, and asks separately before site benchmark spending'
-    answer: ''
+    answer: 'I approve'
     applied_to: 'STEP-2.md'
   - id: Q1
     category: Direction
