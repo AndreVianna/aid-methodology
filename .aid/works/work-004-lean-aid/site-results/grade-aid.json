@@ -1,0 +1,18 @@
+{
+ "build_ok": true,
+ "pages": 74,
+ "stale_commands": [],
+ "unknown_commands": [],
+ "broken_links": [],
+ "a11y_pages_with_serious": 0,
+ "a11y_violations": {},
+ "a11y_scanned": 68,
+ "redirect_pages": 5,
+ "machinery": {
+  "script_lines": 271,
+  "test_lines": 619,
+  "content_lines": 4132,
+  "npm_scripts": 8,
+  "dependencies": 8
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "build_ok": true,
+ "pages": 62,
+ "stale_commands": [],
+ "unknown_commands": [
+  "aid-add-api",
+  "aid-change-ui",
+  "aid-tool"
+ ],
+ "broken_links": [],
+ "a11y_pages_with_serious": 0,
+ "a11y_violations": {},
+ "a11y_scanned": 61,
+ "redirect_pages": 0,
+ "machinery": {
+  "script_lines": 278,
+  "test_lines": 213,
+  "content_lines": 7048,
+  "npm_scripts": 6,
+  "dependencies": 4
+ }
+}

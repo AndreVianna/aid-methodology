@@ -111,7 +111,7 @@ def main() -> int:
     rec = {"task": a.task, "aid": aid, "model": a.model, "commit": commit, "user_turns": 0, "agent_turns": 0,
            "cost_usd": 0.0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "tools": {},
            "dispatches": 0, "writer_calls": 0, "stopped": "turn limit"}
-    session, message, text = None, ("/aid-describe " if aid else "") + TASKS[a.task], ""
+    session, message, text, repeats = None, ("/aid-describe " if aid else "") + TASKS[a.task], "", 0
     if a.resume:
         session, message = a.resume, "Continue the work from where you stopped. " + GO_ON
     start = time.time()
@@ -129,7 +129,8 @@ def main() -> int:
             rec["tools"][k] = rec["tools"].get(k, 0) + v
         rec["dispatches"] += t["dispatches"]
         rec["writer_calls"] += t["writer_calls"]
-        text = r.get("result", "") or ""
+        last, text = text, r.get("result", "") or ""
+        repeats = repeats + 1 if text.strip() and text.strip() == last.strip() else 0
         acted = sum(t["tools"].values())  # any tool call; work can happen inside a resumed helper agent
         print(f"  turn {rec['user_turns']}: ${rec['cost_usd']:.2f}, {round(time.time() - start)}s, "
               f"{rec['dispatches']} dispatches; last line: {text.strip().splitlines()[-1][:100] if text.strip() else '-'}",
@@ -139,6 +140,9 @@ def main() -> int:
             break
         if rec["cost_usd"] > a.max_cost:
             rec["stopped"] = f"cost limit ${a.max_cost:.0f}"
+            break
+        if repeats >= 2:
+            rec["stopped"] = "finished"  # the same closing message three times: it waits on a user step (merge, PR)
             break
         phase = next_phase(text)
         if phase and phase != message:

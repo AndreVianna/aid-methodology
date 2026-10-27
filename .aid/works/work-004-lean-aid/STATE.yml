@@ -118,9 +118,9 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-10-26T00:18:44Z'
+updated: '2026-10-27T12:45:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Handed off to Codex (maintainer usage limit); see HANDOFF.md in this folder. Waiting on Q14.'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -250,6 +250,14 @@ lifecycle_history:
     event: 'Step 1 approved'
     grade: --
     notes: 'Start context +24% (C1 met), 12 of 12 hidden checks pass, 112 to 37 skills (Q10)'
+  - date: '2026-10-27'
+    event: 'Site benchmark finished and graded'
+    grade: --
+    notes: 'Plain about $11.50 and 25 min, today''s AID about $176 and 10.5 h; quality a tie in two blind reviews; see site-run-notes.md'
+  - date: '2026-10-27'
+    event: 'Paused: handed off to Codex'
+    grade: --
+    notes: 'HANDOFF.md written; site results pushed as branches work-004-site-plain and work-004-site-aid; Q14 pending'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -340,7 +348,7 @@ qa:
     context: 'The complex task through today''s pipeline cost $10.74 and 17 minutes against $0.08 and 23 seconds plain, both correct. Which step comes next?'
     suggested: 'Step 2 (direct lane) as planned, then step 3 (planned lane) reusing its pieces'
     answer: ''
-    applied_to: ''
+    applied_to: 'Superseded by Q14 (asked before the site evidence existed); do not ask again'
   - id: Q11
     category: Scope
     impact: High
