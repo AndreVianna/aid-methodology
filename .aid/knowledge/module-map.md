@@ -32,9 +32,9 @@ review-criteria:
     why: "These three counts are load-bearing: the generator, the catalog parity suites and the site build all derive from the same directories, so a stale count here contradicts a test"
   - id: F-03
     kind: validate
-    criterion: "site/ is described as deriving its skill content from canonical/ at build time, with the generators failing on corpus drift"
+    criterion: "site/ is described as taking its skill, agent and settings facts from canonical/ through site/scripts/gen-facts.mjs, whose --check fails docs.yml and the site suite when the committed pages drift"
     severity: MEDIUM
-    why: "It is why a canonical change can break the site build, which is otherwise a surprising failure"
+    why: "It is why a canonical change can turn the site's CI red, which is otherwise a surprising failure"
 ---
 
 # Module Map
@@ -92,12 +92,8 @@ it produces. The modules fall into four planes:
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
 | `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.yml hierarchy -- work/delivery/task levels; the discovery-area `STATE.md` ledger stays markdown -- plus settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py` + `state_schema.py` (new: the single hand-rolled parser for the permitted YAML subset -- `parse_state_document` -- plus the KB ledger's original fenced-frontmatter scan, kept unchanged as an explicit opt-in for that one caller). |
 | `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`/`state_schema`) must be mirrored in `reader.mjs`; behavior-equal, no import. `reader.mjs` has no separate `state_schema.mjs` file -- its `parseStateDocument` function is the inline twin of `state_schema.py`, living in the same single file. |
-| `site/` | Observation | Astro marketing + docs website. **Derives its skill content from `canonical/` at build time** (see the Skill Explorer rows below). | own `package.json`; `canonical/skills/`, `canonical/agents/`, `canonical/aid/templates/` | large | tested (`site/**/__tests__`, ~2765 vitest) | Independent of the **CLI** (`bin/`, `lib/`), NOT of the toolkit. Separate `node_modules`/`dist`. |
-| `site/scripts/gen-skills.mjs` + `site/scripts/skills/*` (12) | Observation | **Skill Explorer generator**. Emits the `/skills/` section — one index page plus a detail page per skill directory — from `canonical/skills/` and the shortcut catalog. Modules: discovery, frontmatter parse, grouping (four groups; Definition subdivided by verb family), card/summary/value rendering, index + page render, path resolution, catalog read, and the shared curated roster. | `canonical/skills/`, `shortcut-catalog.yml` | large | tested (`skills-*.test.mjs`, `gen-skills*.test.mjs`) | **Throws** on corpus drift: an on-disk skill that is neither a catalog row nor a curated-roster member fails the build BY NAME. |
-| `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor**. Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
-| `site/scripts/gen-reference.mjs` | Observation | Generates the four reference pages (`skills`, `agents`, `kb`, `settings`) from `canonical/` + `.aid/settings.yml`. Since delivery-006 its skills page carries only the **shortcut-engine narrative** — the roster moved to `/skills/`. | `canonical/`, `.aid/settings.yml` | medium | tested (`gen-reference.test.mjs`) | Not frozen. |
-| `site/scripts/skills/skill-counts.mjs` | Observation | **The** derivation of the skill-count triple (`directories`, `curatedOnly`, `shortcuts`, `catalogRows`, …). The public-facing docs are checked against it; counts elsewhere are a declared review criterion rather than a guarded assertion. | `canonical/skills/`, `shortcut-catalog.yml` | small | tested (`skill-counts.test.mjs`) + `tests/canonical/test-doc-counts.sh` | Pure, no import-time side effect — deliberately does not import `gen-reference.mjs`, which runs `main()` at module scope. |
-| `site/public/skill-node-panel.mjs` (runtime) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
+| `site/` | Observation | Astro marketing + docs website. Its skill, agent and settings pages are **generated from `canonical/` by `site/scripts/gen-facts.mjs` and committed**; every other page is hand-written Markdown. | own `package.json`; the repo-root `VERSION` at build time | medium | tested (the site suite: build, internal links, facts check, accessibility and structure of `dist/`) | Independent of the CLI (`bin/`, `lib/`). Separate `node_modules`/`dist`. The build reads no `canonical/` file; only the facts script does. |
+| `site/scripts/gen-facts.mjs` | Observation | **Site facts script.** Writes one page per `canonical/skills/*` directory, plus the skills index, the agents page and the settings-keys page, under `site/src/content/docs/`; each page carries a "generated - do not edit" marker. `--check` writes nothing. It exits 0 when every page is current, 1 when a committed page differs from what `canonical/` produces now, and 2 on an input or usage error (for example a skill directory with neither a catalog family row nor a `GROUPS` entry) or an internal error. | `canonical/skills/*/SKILL.md`, `canonical/agents/*/AGENT.md`, `canonical/aid/templates/shortcut-catalog.yml`, `canonical/aid/templates/settings.yml`; Node built-ins only | small | tested (the facts group of the site suite) | Not run by `npm run build`. Run it by hand (`npm run facts` in `site/`) after a `canonical/` change and commit its output. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 | `chat-node/server/` | Runtime | The agent chat hub: an HTTP server over `node:sqlite` holding sessions, channels and messages, plus the inter-hub TCP link, peer registry and outbox that make a channel span machines. | `node:sqlite`, `node:http`, `node:net`, `node:dgram` — no third-party dependency | medium | `tests/canonical/test-chat-node-{core,store,hub,federation,retention,integration,lifecycle,endtoend}}.sh` | Per-speaker FIFO delivery; channels replicated across every hub holding a member and authoritative nowhere. |
@@ -143,37 +139,39 @@ dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
 dashboard/reader/*          -> .aid/ artifact schemas (STATE.yml, settings.yml, KB)
 dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
-site/                       -> canonical/skills/, canonical/agents/,
-                               canonical/aid/templates/{shortcut-catalog.yml,knowledge-base/}
-                               (generators read the toolkit at build time)
+site/scripts/gen-facts.mjs  -> canonical/skills/, canonical/agents/,
+                               canonical/aid/templates/{shortcut-catalog.yml,settings.yml}
+                               (run by hand and as a CI check; not part of the build)
+site/ (astro build)         -> site/ , VERSION
 site/                       -> (independent of the CLI: bin/, lib/, install.sh)
 ```
 
-**`site/` DOES consume `canonical/` — this was a non-dependency and is no longer.**
+**`site/` depends on `canonical/` through one script, and the dependency is checked.**
 
 ```
-site/  ->  canonical/       (hard build-time dependency, and enforced)
+site/  ->  canonical/       (through site/scripts/gen-facts.mjs; checked, not built)
 ```
 
-The website derives its content from the toolkit rather than restating
-it. **Two** generators — `gen-reference.mjs` and `gen-skills.mjs` — read `canonical/`
-on every `prebuild`, and the coupling is *enforced*, not incidental. (The third generator,
-`sync-docs.mjs`, reads `docs/` only and is NOT part of this coupling — it is named here
-because an earlier revision of this row wrongly counted it, and overstating a dependency to
-justify reversing a non-dependency is the same defect as understating it.)
+The skill pages, the skills index, the agents page and the settings-keys page restate facts from the
+toolkit, so `site/scripts/gen-facts.mjs` writes them from `canonical/` and they are committed like any
+other page. The build does not run the script, so `astro build` renders exactly the committed pages.
 
-- `gen-skills.mjs` and `gen-reference.mjs` **throw** when the on-disk skill set diverges from
-  the catalog plus curated roster, so a canonical change that the site cannot account for
-  fails the build rather than silently emitting a stale page.
-- `.github/workflows/docs.yml` lists `canonical/**` on both path filters — a canonical-only
-  commit must still rebuild the site.
-- `tests/canonical/test-doc-counts.sh` compares the counts stated in the public-facing docs
-  (root `README.md`, `docs/`, the profile READMEs) against a derivation rooted in `canonical/`.
-  Counts stated elsewhere are governed by criterion `G-01` instead of by a guard.
+- `node site/scripts/gen-facts.mjs --check` exits 1 when a committed page differs from what
+  `canonical/` produces now, and 2 on an input error (for example a skill directory with neither a
+  catalog family row nor an entry in the script's `GROUPS` table) or an internal error. It runs as its own step in `.github/workflows/docs.yml` and
+  inside the site suite.
+- `.github/workflows/docs.yml` lists `canonical/**` on both path filters, so a canonical-only commit
+  still runs the check.
+- `tests/canonical/test-doc-counts.sh` compares the counts stated in the public-facing docs (root
+  `README.md`, `docs/`, the profile READMEs) against a derivation rooted in `canonical/`. Counts
+  stated elsewhere are governed by criterion `G-01` instead of by a guard.
 
-**Consequence for any change:** a `canonical/skills/` addition or removal is now a `site/`
-change too. Adding a skill directory without a catalog row or curated-roster entry turns the
-site build red by design.
+**Consequence for any change:** some `canonical/` changes are `site/` changes too. These are: adding,
+removing or renaming a skill or an agent; editing a skill's `description`, `argument-hint` or
+`allowed-tools`; editing an agent's `description`, `tier` or `tools`; changing a catalog family row's
+`group`; and editing a key or comment of the settings template. After any of them, run
+`node site/scripts/gen-facts.mjs` and commit its output in the same change. A new skill directory with
+neither a catalog family row nor a `GROUPS` entry fails the check by name.
 
 ---
 

@@ -439,9 +439,7 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 4. User-facing skills — `/aid-*` slash commands resolving to installed `SKILL.md` files.
 5. Dashboard servers — `dashboard/server/server.mjs` (Node) / `dashboard/server/server.py`.
 6. The maintainer build — `run_generator.py`; the release runbook — `release.sh`.
-7. The website — `site/` (Astro build; independent of the CLI, but it DOES consume
-   `canonical/` at build time via `gen-reference.mjs` and `gen-skills.mjs` — see module-map.md
-   § Dependency Graph. The third generator, `sync-docs.mjs`, reads `docs/` only).
+7. The website — `site/` (Astro build; independent of the CLI. Its skill, agent and settings pages are generated from `canonical/` by `site/scripts/gen-facts.mjs` and committed; the build itself reads no `canonical/` file — see module-map.md § Dependency Graph).
 
 ---
 
@@ -553,6 +551,4 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
   requires.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
   for it in `canonical/skills/` (the 37 shipped skills).
-- **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
-  branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
-  claiming green. (Project memory: master-ci-only-on-master.)
+- **Heavy CI gates run only on `master`** (`tests/run-all.sh`), and the site gate (`docs.yml`) runs on `master` and on pull requests to it; a feature branch with no open PR skips both. Run `tests/run-all.sh` (HOME-pinned) and the site gate (`test-landscape.md` § Test Commands) locally before claiming green. (Project memory: master-ci-only-on-master.)
