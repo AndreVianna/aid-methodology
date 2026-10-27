@@ -38,7 +38,7 @@ The [pipeline page](/concepts/pipeline/) explains each phase in depth.
 
 ## Which AI tools does AID work with?
 
-AID works with Claude Code, Codex CLI, Cursor, GitHub Copilot CLI and Antigravity. All five tools share the same skills and [runtime](/reference/glossary/#runtime). The command `aid add <tool>` adds the agents for the tool you name.
+AID works with Claude Code, Codex CLI, Cursor, GitHub Copilot CLI and Antigravity. All five tools share the same skills and [runtime](/reference/glossary/#runtime). The [`aid` command](/reference/glossary/#aid-cli) adds the agents for the tool you name: `aid add <tool>`.
 
 ## Next steps
 

@@ -6,7 +6,7 @@ sidebar:
   order: 2
 ---
 
-This page shows you which channel to use to install the AID command on Linux, macOS or Windows.
+This page shows you which channel to use to install the [AID command](/reference/glossary/#aid-cli) on Linux, macOS or Windows.
 
 AID reaches your machine through one of four [install channels](/reference/glossary/#install-channel). Every channel installs the same `aid` command. The channels differ only in how `aid` gets onto your PATH. Pick one channel per machine.
 
