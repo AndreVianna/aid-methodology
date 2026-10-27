@@ -45,11 +45,7 @@ export default defineConfig({
         },
       ],
 
-      // Self-hosted Inter + casulo brand token overrides (task-002)
-      customCss: [
-        './src/styles/casulo.css',
-        './src/styles/shell.css',
-      ],
+      customCss: ['./src/styles/tokens.css', './src/styles/site.css'],
 
       favicon: '/favicon.svg',
 

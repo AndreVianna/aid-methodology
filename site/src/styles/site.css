@@ -1,0 +1,99 @@
+/* Site rules on top of tokens.css. Tokens only: no colour literal here. */
+
+/* 1. Focus ring */
+:where(a, button, select, input, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--aid-focus-width) solid var(--aid-color-focus);
+  outline-offset: var(--aid-focus-offset);
+}
+
+/* 2. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 3. Content text: links never depend on colour alone; long strings wrap */
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+  text-decoration-thickness: 2px;
+}
+.sl-markdown-content :is(p, td, th, dd) {
+  overflow-wrap: break-word;
+}
+.sl-markdown-content code {
+  overflow-wrap: anywhere;
+}
+
+/* 4. Inline code */
+.sl-markdown-content :not(pre) > code {
+  background: var(--aid-color-surface);
+  border-radius: var(--aid-radius-sm);
+  padding: 0.1em 0.35em;
+}
+
+/* 5. Tables */
+.sl-markdown-content table {
+  border-collapse: collapse;
+}
+.sl-markdown-content :is(th, td) {
+  border: 1px solid var(--aid-color-border);
+  padding: var(--aid-space-2) var(--aid-space-3);
+}
+.sl-markdown-content thead th,
+.sl-markdown-content tr:first-child th {
+  background: var(--aid-color-surface);
+}
+
+/* 6. Code blocks, cards and asides */
+.expressive-code .frame,
+.sl-markdown-content .starlight-aside,
+.sl-markdown-content .card {
+  border-radius: var(--aid-radius-md);
+}
+.sl-markdown-content .card {
+  border: 1px solid var(--aid-color-border);
+}
+
+/* 7. Headings */
+.sl-markdown-content h2 {
+  margin-top: var(--aid-space-6);
+}
+.sl-markdown-content h1 {
+  font-weight: 700;
+}
+.sl-markdown-content :is(h2, h3, h4, h5, h6) {
+  font-weight: 600;
+}
+
+/* 8. Version badge */
+.version-badge {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  border: 1px solid var(--aid-color-border-strong);
+  border-radius: var(--aid-radius-sm);
+  background: var(--aid-color-accent-soft);
+  color: var(--aid-color-accent);
+  font-size: var(--aid-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* 9. Report-a-problem paragraph in the footer */
+.aid-report-issue {
+  margin-top: var(--aid-space-5);
+  border-top: 1px solid var(--aid-color-border);
+  color: var(--aid-color-text-muted);
+  font-size: var(--aid-text-sm);
+}
+
+/* 10. Narrow screens */
+@media (max-width: 30rem) {
+  :root { --sl-content-pad-x: var(--aid-space-3); }
+}

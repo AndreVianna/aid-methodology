@@ -1,0 +1,120 @@
+/* Design tokens. Dark is the default; the light block holds colours only.
+ * Both blocks are unlayered, so they beat Starlight's palette in both themes. */
+:root {
+  --aid-color-bg: #0a0e1a;
+  --aid-color-nav: #111827;
+  --aid-color-surface: #1a2035;
+  --aid-color-text: #e2e8f0;
+  --aid-color-text-strong: #f8fafc;
+  --aid-color-text-muted: #a3b1c6;
+  --aid-color-accent: #d4a853;
+  --aid-color-accent-strong: #e6bc6a;
+  --aid-color-accent-soft: #2b2414;
+  --aid-color-on-accent: #0a0e1a;
+  --aid-color-border: #2d3748;
+  --aid-color-border-strong: #718096;
+  --aid-color-focus: #e6bc6a;
+  --aid-color-note: #93c5fd;
+  --aid-color-note-bg: #172554;
+  --aid-color-tip: #d8b4fe;
+  --aid-color-tip-bg: #2e1065;
+  --aid-color-caution: #fcd34d;
+  --aid-color-caution-bg: #3b2a06;
+  --aid-color-danger: #fca5a5;
+  --aid-color-danger-bg: #450a0a;
+
+  /* Type scale, spacing, radius, focus ring, layout. No web font. */
+  --aid-text-xs: 0.8125rem;
+  --aid-text-sm: 0.875rem;
+  --aid-text-base: 1rem;
+  --aid-text-lg: 1.125rem;
+  --aid-text-xl: 1.375rem;
+  --aid-text-2xl: 1.75rem;
+  --aid-text-3xl: 2.25rem;
+  --aid-leading-body: 1.7;
+  --aid-leading-heading: 1.25;
+  --aid-space-1: 0.25rem;
+  --aid-space-2: 0.5rem;
+  --aid-space-3: 0.75rem;
+  --aid-space-4: 1rem;
+  --aid-space-5: 1.5rem;
+  --aid-space-6: 2rem;
+  --aid-space-7: 3rem;
+  --aid-radius-sm: 0.25rem;
+  --aid-radius-md: 0.5rem;
+  --aid-radius-lg: 0.75rem;
+  --aid-focus-width: 3px;
+  --aid-focus-offset: 2px;
+  --aid-content-width: 46rem;
+
+  /* Starlight mapping */
+  --sl-color-bg: var(--aid-color-bg);
+  --sl-color-black: var(--aid-color-bg);
+  --sl-color-bg-nav: var(--aid-color-nav);
+  --sl-color-bg-sidebar: var(--aid-color-nav);
+  --sl-color-gray-7: var(--aid-color-nav);
+  --sl-color-bg-inline-code: var(--aid-color-surface);
+  --sl-color-gray-6: var(--aid-color-surface);
+  --sl-color-text: var(--aid-color-text);
+  --sl-color-gray-2: var(--aid-color-text);
+  --sl-color-white: var(--aid-color-text-strong);
+  --sl-color-gray-1: var(--aid-color-text-strong);
+  --sl-color-gray-3: var(--aid-color-text-muted);
+  --sl-color-gray-4: var(--aid-color-border-strong);
+  --sl-color-gray-5: var(--aid-color-border);
+  --sl-color-hairline: var(--aid-color-border);
+  --sl-color-hairline-light: var(--aid-color-border);
+  --sl-color-hairline-shade: var(--aid-color-border);
+  --sl-color-accent: var(--aid-color-accent);
+  --sl-color-text-accent: var(--aid-color-accent);
+  --sl-color-bg-accent: var(--aid-color-accent);
+  --sl-color-accent-high: var(--aid-color-accent-strong);
+  --sl-color-accent-low: var(--aid-color-accent-soft);
+  --sl-color-text-invert: var(--aid-color-on-accent);
+  --sl-color-blue: var(--aid-color-note);
+  --sl-color-blue-high: var(--aid-color-note);
+  --sl-color-blue-low: var(--aid-color-note-bg);
+  --sl-color-purple: var(--aid-color-tip);
+  --sl-color-purple-high: var(--aid-color-tip);
+  --sl-color-purple-low: var(--aid-color-tip-bg);
+  --sl-color-orange: var(--aid-color-caution);
+  --sl-color-orange-high: var(--aid-color-caution);
+  --sl-color-orange-low: var(--aid-color-caution-bg);
+  --sl-color-red: var(--aid-color-danger);
+  --sl-color-red-high: var(--aid-color-danger);
+  --sl-color-red-low: var(--aid-color-danger-bg);
+  --sl-text-h1: var(--aid-text-3xl);
+  --sl-text-h2: var(--aid-text-2xl);
+  --sl-text-h3: var(--aid-text-xl);
+  --sl-text-h4: var(--aid-text-lg);
+  --sl-text-h5: var(--aid-text-base);
+  --sl-text-xs: var(--aid-text-sm);
+  --sl-text-2xs: var(--aid-text-xs);
+  --sl-line-height: var(--aid-leading-body);
+  --sl-line-height-headings: var(--aid-leading-heading);
+  --sl-content-width: var(--aid-content-width);
+}
+
+:root[data-theme='light'] {
+  --aid-color-bg: #ffffff;
+  --aid-color-nav: #f8fafc;
+  --aid-color-surface: #f1f5f9;
+  --aid-color-text: #1e293b;
+  --aid-color-text-strong: #0f172a;
+  --aid-color-text-muted: #475569;
+  --aid-color-accent: #7a5814;
+  --aid-color-accent-strong: #5c420f;
+  --aid-color-accent-soft: #f7efdc;
+  --aid-color-on-accent: #ffffff;
+  --aid-color-border: #e2e8f0;
+  --aid-color-border-strong: #64748b;
+  --aid-color-focus: #7a5814;
+  --aid-color-note: #1e40af;
+  --aid-color-note-bg: #eff6ff;
+  --aid-color-tip: #6b21a8;
+  --aid-color-tip-bg: #faf5ff;
+  --aid-color-caution: #92400e;
+  --aid-color-caution-bg: #fffbeb;
+  --aid-color-danger: #991b1b;
+  --aid-color-danger-bg: #fef2f2;
+}
