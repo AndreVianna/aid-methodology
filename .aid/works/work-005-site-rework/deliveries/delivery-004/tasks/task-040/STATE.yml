@@ -45,13 +45,13 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: 'In Review'
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'AC-9/AC-11 re-run on Path A (Playwright, Chromium), 2026-10-27: both keyboard rows pass (85/85 and 90/90 stops, same stop order), 8 screenshots re-taken, all scrollWidth <= innerWidth: true; src-touched: yes agrees with task-039; contact files not changed so contact row untouched'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
