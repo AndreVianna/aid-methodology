@@ -41,6 +41,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 01:50-02:10 | stuck on task 23: each turn the main agent resumed the task's helper by message, then ended its turn, and the helper was stopped with it (cut off 3 times, nothing committed). Driver restarted at 02:10 telling it to wait for its helpers | $87.57 reported | design point: AID hands work to background helpers and ends the turn; whenever the session ends (headless run, closed window, restart), the helpers die and their work is redone. Same cause as the 11 helpers lost in planning |
 | 02:10-02:26 | task 23 (delivery 2's gate checks) done and recorded; the delivery 2 gate reviewer started | $93.27 reported | the turn still ended with "I'm waiting for its verdict": told to wait for helpers, it still handed off and ended the turn |
 | 02:26-02:43 | delivery 2 gate review found more mismatches after all the per-task reviews; two gate fix commits (diagrams against the skills, pages against the code) | $93.27+ | the per-task reviews did not catch everything: cross-page consistency only shows when the delivery is checked as a whole. This turn kept working instead of ending |
+| 02:43-02:59 | delivery 2 gate passed; delivery 3 (new look and machinery cut) started: tasks 24-26 done (design tokens and stylesheet, header, social links and copy buttons) | $93.27+ | it wrote "executor brief lessons" between deliveries: more process text. Pace back to 3 tasks per 15 min while it works in one turn |
 
 ## AID run: red tape observed so far
 
