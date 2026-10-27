@@ -63,7 +63,8 @@ aid update self --dry-run        # print the command it would run, change nothin
 aid update all                   # update every registered project
 ```
 
-- Inside a project, `aid update` moves all installed tools to one version. It takes no per-tool selection.
+- Inside a project, `aid update` moves all installed tools to one version, because the shared files have one version.
+- You can name tools, as in `aid update claude-code` or `aid update codex,cursor`. The command still updates every other installed tool and prints `aid update: added to commit set: <tools>` for the ones it added. The built-in help says that a tool name is an error; the behaviour follows the code and the install guide.
 - Outside a project, `aid update` updates the CLI only.
 - `aid update --dry-run` prints the full plan (tools updated, files copied, paths pruned) and exits.
 - `aid update all` downloads the tool packages once and applies them to each registered project. It continues past a project that fails, prints a summary at the end, and does not accept `--target`.
@@ -89,7 +90,7 @@ aid remove self                  # remove the aid CLI (asks to confirm)
 aid remove self --dry-run        # print the commands it would run, change nothing
 ```
 
-Removal is manifest-driven: `aid remove` touches only files that `aid add` recorded in `.aid/.aid-manifest.json`. A recorded file that is unchanged is deleted. A recorded file you edited is moved to `.aid/.trash/`. An `AGENTS.md` that differs from what AID wrote is left in place, and the command prints `Left in place (modified or not AID-owned): AGENTS.md`. When the last tool is removed, the project leaves the projects registry.
+Removal is manifest-driven: `aid remove` works from the files that `aid add` recorded in `.aid/.aid-manifest.json`, plus AID's marked regions in root files such as `AGENTS.md` and `CLAUDE.md`. A recorded file that is unchanged is deleted. A recorded file you edited is moved to `.aid/.trash/`. An `AGENTS.md` that differs from what AID wrote is left in place, and the command prints `Left in place (modified or not AID-owned): AGENTS.md`. When the last tool is removed, the project leaves the projects registry.
 
 `aid remove self` is channel-aware: it runs `npm uninstall -g` for the npm channel and `pipx uninstall` for PyPI. For the `curl` channel it removes the install folder and unwires the PATH entry.
 
@@ -292,7 +293,7 @@ aid chat show|audit|evict|retention|reap ...     operator surface
 - A channel closes when its last member leaves, and its messages go with it.
 
 :::caution[`aid chat hook --install` writes your host tool's settings]
-It is the only AID command that writes a host tool's configuration. It writes user-scope settings only, merges into the existing file rather than overwriting it, takes a backup, refuses a settings file that git tracks, and asks before writing. `--uninstall` removes only AID's own entry. Running either again is safe.
+This is the AID command that edits your host tool's own settings file, to add or remove the stop hook. `aid add` and `aid update` write other files: the project's AID folders and the AID regions of `AGENTS.md` and `CLAUDE.md`. The hook command writes user-scope settings, not project files. It merges into the existing file rather than overwriting it, takes a backup, refuses a settings file that git tracks, and asks before writing. `--uninstall` removes AID's own entry. Running either again leaves the file unchanged when nothing needs to change.
 :::
 
 :::note[The operator verbs are not in the chat skill]
