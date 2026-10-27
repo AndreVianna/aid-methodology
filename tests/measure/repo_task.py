@@ -38,7 +38,8 @@ TASKS = {
              "tests) to what a static documentation site needs: keep only what earns its place. Do not deploy or "
              "publish anything."),
 }
-GO_ON = "Go on with the next step until the work is finished."
+GO_ON = ("Go on with the next step until the work is finished. Wait for any helper agent you start to finish before you "
+         "end your turn: a helper still running when the turn ends is stopped.")
 AID_PATHS = [".claude/skills", ".claude/agents", ".agents", ".aid/runtime", ".aid/.aid-manifest.json"]
 
 
@@ -112,7 +113,7 @@ def main() -> int:
            "dispatches": 0, "writer_calls": 0, "stopped": "turn limit"}
     session, message, text = None, ("/aid-describe " if aid else "") + TASKS[a.task], ""
     if a.resume:
-        session, message = a.resume, "Your usage limit has reset. Continue the work from where you stopped."
+        session, message = a.resume, "Continue the work from where you stopped. " + GO_ON
     start = time.time()
     while rec["user_turns"] < a.turns:
         t = turn(project, env, a.model, message, session)
