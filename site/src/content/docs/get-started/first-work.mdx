@@ -1,203 +1,127 @@
 ---
 title: Your first work
-description: A guided walkthrough from configuring AID to running your first full work through the pipeline.
+description: This page shows you how to start your first piece of work in AID and follow it through the pipeline to built code.
 sidebar:
+  label: Your first work
   order: 3
 ---
 
-import { Steps } from '@astrojs/starlight/components';
+This page shows you how to start your first piece of work in AID and follow it through the pipeline to built code.
 
-This walkthrough takes you from a fresh AID install to a completed, delivered work item. It follows
-the **full path** — the complete six-phase pipeline. If your change is small and well-scoped,
-see [Lite path quickstart](/get-started/lite-path/) instead.
+Where you start depends on your project. A project that already has code is [brownfield](/reference/glossary/#brownfield), and you start it with `/aid-discover`. A new project with no code is [greenfield](/reference/glossary/#greenfield), and you start it with `/aid-describe`. After that, both follow the same phases, one after another. Each phase ends at a [phase gate](/reference/glossary/#phase-gate), where you review the result and approve it before the next phase begins.
 
-**Prerequisites:** `aid` is installed and on your PATH. See [Install AID](/get-started/install/)
-if you haven't done that yet.
+For a small, well-scoped change you do not need every phase. See [Small changes with shortcuts](/get-started/lite-path/).
 
-## 1. Configure AID (once per project)
+## Before you start
 
-<Steps>
+Install the `aid` command and add AID to your project. The [Install page](/get-started/install/) shows both steps.
 
-1. **Open a terminal in your project root.**
+Then run this command in your AI tool:
 
-   This is the git repository where you want to use AID. All `aid` commands operate on the
-   current directory.
+```
+/aid-config
+```
 
-2. **Add AID for your AI tool.**
+[`/aid-config`](/reference/glossary/#aid-config) shows your project settings, such as the project name and the minimum grade. On the first run it copies the settings template to `.aid/settings.yml`. Run `/aid-config <key>` to change one setting, for example `/aid-config minimum_grade`.
 
-   ```bash
-   aid add claude-code
-   ```
+## Start with an existing project (Brownfield)
 
-   Replace `claude-code` with your tool's canonical id: `codex`, `cursor`, `copilot-cli`, or
-   `antigravity`. This installs the AID skills and agents into the correct location for your tool.
-
-   Run `aid status` to confirm the install.
-
-3. **Scaffold the Knowledge Base.**
-
-   In your AI coding tool, run the `/aid-config` skill (it was installed by the previous step):
-
-   ```
-   /aid-config
-   ```
-
-   This scaffolds the `.aid/` directory — the Knowledge Base root — and records your project
-   defaults. Run it once per project; re-running it is safe and non-destructive.
-
-</Steps>
-
-## 2. Scope your work: Discover and Describe
-
-<Steps>
-
-1. **Discover (brownfield projects only).**
+1. Run `/aid-config`, as above.
+2. Build the [Knowledge Base](/reference/glossary/#knowledge-base), the set of documents that describes your project:
 
    ```
    /aid-discover
    ```
 
-   Scans the codebase and builds the Knowledge Base under `.aid/knowledge/`. This phase is
-   mandatory for existing codebases; skip it for greenfield projects.
+   Discover reads your code and writes the Knowledge Base to `.aid/knowledge/`. Where the code does not answer a question, it asks you. At the end, it asks you to approve the Knowledge Base.
+3. For each piece of work, choose how to start:
+   - You know the kind of change: run a [shortcut](/reference/glossary/#shortcut), such as `/aid-fix "login crash on special characters"`.
+   - You are not sure: run [`/aid-triage`](/reference/glossary/#aid-triage) with a one-sentence description. It suggests one next step and writes nothing.
+   - The work is broad or has several parts: run `/aid-describe`.
+   - You only have a question: run [`/aid-ask`](/reference/glossary/#aid-ask).
 
-   When Discover reaches its APPROVAL state, it presents a summary (overall grade, Q&A totals,
-   fix cycles, remaining minor issues) directly in the conversation and asks you to confirm the
-   Knowledge Base under `.aid/knowledge/` is ready for the next phase. Approve it before moving on.
+   The shortcuts are described on [Small changes with shortcuts](/get-started/lite-path/). For broad work, continue with the phases below.
+4. When the project drifts from its Knowledge Base, run [`/aid-housekeep`](/reference/glossary/#aid-housekeep). It re-syncs the Knowledge Base and clears stale work files.
 
-2. **Run the Describe skill.**
+## Start a new project (Greenfield)
 
-   In your AI tool, invoke:
+1. Run `/aid-config`, as above.
+2. Run `/aid-describe`:
 
    ```
    /aid-describe
    ```
 
-   Describe is a full-path-only skill — every run proceeds through all the phases below;
-   there is no lite branch inside it. Answer the intake questions about your work item —
-   what you want to change, what's in scope, and how it should be built.
+   Describe interviews you, one question at a time. Because a greenfield project has no code to read, it also writes a first set of Knowledge Base documents from your answers. They are marked `source: forward-authored`, which means the design is the source of truth and the code is built to match it.
+3. Continue with the phases below.
+4. As the code grows, run `/aid-housekeep` now and then. It flags places where the code differs from the design and leaves the decision to you. It never overwrites the design on its own.
 
-   If your change is small and well-scoped, you don't need this walkthrough at all: invoke
-   the matching shortcut (`/aid-fix`, `/aid-create api`, …) or ask `/aid-triage` instead, and
-   follow the [Lite path quickstart](/get-started/lite-path/).
+## Follow the phases
 
-3. **Review the REQUIREMENTS document.**
+Run the phases in this order: Discover, Describe, Define, Specify, Plan, Detail, Execute. Brownfield work has already done Discover. Each phase is a skill. Read what a phase produced and approve it before you start the next one.
 
-   At the end of Describe, the agent produces a `REQUIREMENTS.md` in `.aid/`. Read it, confirm
-   it captures your intent, and approve to advance.
-
-</Steps>
-
-## 3. Walk the phases
-
-Each phase produces an artifact. Read it, approve it, and the next phase begins.
-
-<Steps>
-
-1. **Specify.**
+1. **Describe.** `/aid-describe` interviews you and writes `REQUIREMENTS.md` in a new work folder, `.aid/works/work-001-<name>/`. When you approve the requirements, Describe tells you to run `/aid-define`.
+2. **Define.** `/aid-define` splits the approved requirements into features. Each feature is a [feature section](/reference/glossary/#feature-section) in section 11 of `REQUIREMENTS.md`.
+3. **Specify.** Run this command once for each feature:
 
    ```
-   /aid-specify
+   /aid-specify work-001/feature-001
    ```
 
-   Writes a grounded technical specification into each feature's section of
-   `REQUIREMENTS.md` § 11, from the Knowledge Base and the requirements.
-   Review the spec carefully — this is where "what we're building" is locked down.
-
-   Approve the spec to advance to planning.
-
-2. **Plan.**
+   Specify writes the technical specification into that feature's section, together with you. This is where you settle what will be built.
+4. **Plan.**
 
    ```
    /aid-plan
    ```
 
-   Sequences your feature specs into a delivery roadmap (`PLAN.md`) — each delivery a
-   functional, standalone MVP — and creates a `deliveries/delivery-NNN/` folder per delivery
-   with its own `### delivery-NNN` stanza in `PLAN.md` (the delivery definition: scope, gate
-   criteria, dependencies) and `STATE.yml` (delivery lifecycle). Review the plan for scope,
-   dependencies, and
-   sequencing.
-
-   Approve the plan to advance to detailing.
-
-3. **Detail.**
+   Plan groups the features into deliveries and writes them to `PLAN.md`, one [delivery stanza](/reference/glossary/#delivery-stanza) for each. It also creates a `deliveries/delivery-NNN/` folder with a [`STATE.yml`](/reference/glossary/#state-file) for each delivery.
+5. **Detail.**
 
    ```
    /aid-detail
    ```
 
-   Breaks each delivery into small, typed tasks. Each task gets its own
-   `deliveries/delivery-NNN/tasks/task-NNN/` folder with a `DETAIL.md` (the task definition:
-   type, acceptance criteria, scope, dependencies) and a `STATE.yml` (task lifecycle). Review
-   and approve.
-
-4. **Execute.**
+   Detail breaks a delivery into small, typed tasks. Each task gets a folder `deliveries/delivery-NNN/tasks/task-NNN/` with a [`DETAIL.md`](/reference/glossary/#detailmd) that holds its type, scope and acceptance criteria.
+6. **Execute.** Run this command once for each task:
 
    ```
-   /aid-execute
+   /aid-execute work-001 task-001
    ```
 
-   Implements the tasks in sequence, grades its own output, and loops until each task passes.
-   You review each task's output and approve advancement. Repeat until all tasks are done.
+   Execute carries out the task by its type, then has it reviewed and fixed until it meets the minimum grade. `work-001` is optional when you have only one work.
 
-</Steps>
+If you have more than one work, add the work id to the command, as in `/aid-plan work-001`.
 
-## 4. What you get at each gate
+### What each phase produces
 
-| Phase | Artifact | Gate action |
-|-------|----------|-------------|
-| Discover | Knowledge Base (`.aid/knowledge/`) | Approve discovery |
-| Describe | `REQUIREMENTS.md` | Confirm requirements |
-| Specify | `#### Technical Specification` in each `REQUIREMENTS.md` § 11 feature section | Approve spec |
-| Plan | `PLAN.md`, one `### delivery-NNN` definition stanza per delivery | Approve plan |
-| Detail | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` | Approve each task |
-| Execute | Code + test output | Review, approve, or request revision |
+| Phase | What you get | Where |
+|-------|--------------|-------|
+| Discover | The Knowledge Base | `.aid/knowledge/` |
+| Describe | `REQUIREMENTS.md` | `.aid/works/work-NNN-name/` |
+| Define | Feature sections in `REQUIREMENTS.md` | section 11 of `REQUIREMENTS.md` |
+| Specify | A technical specification in each feature section | the same feature section |
+| Plan | `PLAN.md` and a `STATE.yml` for each delivery | `.aid/works/work-NNN-name/` and `deliveries/delivery-NNN/` |
+| Detail | A `DETAIL.md` for each task | `deliveries/delivery-NNN/tasks/task-NNN/` |
+| Execute | The built task, reviewed and graded | your repository |
 
-Every gate is a human decision. The pipeline never advances without your explicit approval.
+AID never moves to the next phase without you.
 
-#### Starting with an Existing Project (Brownfield)
+## After the work is built
 
-1. Run `/aid-config` to initialize the workspace (once per project).
-2. Run `/aid-discover` on the codebase. This produces your Knowledge Base.
-3. Review the KB. Fill gaps with human knowledge during the Q&A state.
-4. For the next piece of work: if you know what kind of change it is, run the matching direct-entry shortcut (`/aid-fix`, `/aid-create api`, …). Not sure? Run `/aid-triage` and describe it in a sentence — it suggests the right door. Broad or multi-feature work: run `/aid-describe` directly. Just have a question, not a change? Run `/aid-ask`.
-5. **Full path:** Run `/aid-define` to decompose requirements into features. Run `/aid-specify` to add a technical spec to each feature. Run `/aid-plan` to sequence features into deliveries. Run `/aid-detail` to decompose deliveries into typed tasks. Run `/aid-execute` for each task.
-6. **Lite path:** the shortcut you ran drives the shared shortcut engine straight through to an approval halt, then hands off task(s) directly to `/aid-execute`.
-7. Optionally run `/aid-deploy` to verify, package, and ship; then `/aid-monitor` once the delivery is in production.
-8. Run `/aid-housekeep` periodically to reconcile KB drift without a full discovery cycle.
+`/aid-deploy` and `/aid-monitor` are optional. You run each one yourself, after Execute. `/aid-deploy` packages completed deliveries into a release. `/aid-monitor` watches production and routes what it finds to `/aid-fix` or `/aid-triage`.
 
-#### Starting a New Project (Greenfield)
+## Adopt AID one step at a time
 
-1. Run `/aid-config`, then `/aid-describe` for the initial, broad requirements gathering — greenfield projects with multiple features start on the full path.
-2. On the full path, `aid-describe` runs its DESCRIBE-SEED state: it forward-authors a five-element KB seed (domain language, intended architecture, conventions, technology stack, and key decisions) from intent before any code exists. The seed is stamped `source: forward-authored` — the design is the source of truth, and code is built to conform to it.
-3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
-4. **Lite path (small greenfield change):** run the matching direct-entry shortcut (or `/aid-triage` first if unsure); the shortcut engine halts for approval, then run `/aid-execute`.
-5. As the codebase develops, run `/aid-housekeep` periodically. Its conformance lane will check whether as-built code diverges from the forward-authored design and surface any gaps for your decision — it never overwrites the design automatically.
+You can start small and add steps as you trust the result.
 
-#### Using the Direct-Entry Shortcuts
-
-For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
-
-1. Run the matching shortcut directly (`/aid-fix "login crash on special characters"`, `/aid-create api "an /orders endpoint"`, …) — or run `/aid-triage` first if you're not sure which one fits; it suggests the canonical shortcut (or the full path) from a one-sentence description and stops.
-2. The shortcut engine runs INTAKE → CAPTURE → SPEC → PLAN → DETAIL autonomously (a rare CAPTURE question aside), producing the flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`).
-3. GATE grades every document mechanically, then APPROVAL-HALT presents the flattened work for your approval. Nothing has executed yet.
-4. Run `/aid-execute`.
-
-#### Adopting Incrementally
-
-You do not need to use all six phases from day one — though `/aid-config` always runs once first:
-
-| **Starting point** | Add-on | What you gain |
-|-------------------|--------|---------------|
-| Detail + Execute | — | Formalized task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop |
-| + Plan | — | Separate delivery strategy from tactical decomposition with two-level planning |
-| + Discover | — | For brownfield projects, build the Knowledge Base before specifying anything |
-| + Describe → Define + Specify | — | For client engagements, gather requirements through the adaptive interview, then refine each feature technically |
-| + Deploy + Monitor | — | Once shipping regularly, formalize delivery and production monitoring |
-| Full pipeline | All phases | Sequenced phases with feedback loops — the complete AID experience |
+- Run `/aid-discover` alone to build the Knowledge Base, then ask questions with `/aid-ask`.
+- Use shortcuts for small changes, as described in [Small changes with shortcuts](/get-started/lite-path/).
+- Use the full phases for broad or risky work.
+- Add `/aid-deploy` and `/aid-monitor` when you ship regularly.
 
 ## Next steps
 
-- [Lite path quickstart](/get-started/lite-path/) — for small changes that skip the middle phases.
-- [Installation guide](/guides/installation/) — if you need to reinstall or switch channels.
-- [Methodology](/concepts/methodology/) — the full philosophy and decision logic behind each phase.
+- [Small changes with shortcuts](/get-started/lite-path/) shows the fast way to make one well-scoped change.
+- [Working the pipeline](/guides/pipeline/) gives a step-by-step guide to every phase.
+- [The methodology](/concepts/methodology/) explains the thinking behind the phases.
