@@ -1548,7 +1548,7 @@ const LIMIT = 150 * 1024;   // bytes; AC-15 and NFR-2
 
 1. **Build.** `astro build` loads `customCss` in order `tokens.css`, then `site.css`. Starlight renders every
    page with its own components except `Header` (this feature's override) and `Footer` (Feature 005's
-   rewrite). Expressive Code renders code blocks without a copy button, so it ships no script.
+   rewrite). Expressive Code renders code blocks without a copy button; its one script (`ec.*.js`, on pages with code blocks) makes overflowing code blocks reachable by keyboard (purpose `codeScroll`).
 2. **First paint.** Starlight's inline `ThemeProvider` script reads `localStorage['starlight-theme']`; when it
    is empty ("Auto"), it reads `matchMedia('(prefers-color-scheme: light)')` and sets `html[data-theme]`
    before the body paints. The tokens switch with that attribute. Without JavaScript the page stays dark
@@ -1596,8 +1596,12 @@ components: {
 ```
 
 The Casulo AI Labs entry leaves `social` because the header logo already links to casuloailabs.com. The copy
-button goes because its script is none of the three kinds NFR-2 allows; a command stays copyable by
+button goes because its script is none of the four kinds NFR-2 allows; a command stays copyable by
 selection. `PageTitle` leaves the map here; `Banner` and `Head` leave it in Feature 005's change.
+Two more changes remove scripts that no NFR-2 purpose covers: `prefetch: false` in `astro.config.mjs` (Astro's
+link-prefetch client script) and an empty `LanguageSelect` override at
+`src/components/overrides/LanguageSelect.astro`, registered under `components` (the site has one locale, so
+Starlight's language picker and its inline script have nothing to offer).
 
 **`Header.astro`.** Why an override is kept at all: Starlight's own header puts search before the links and
 the theme select, and it shows the full site title, which is clipped at 320 px. This one keeps every
