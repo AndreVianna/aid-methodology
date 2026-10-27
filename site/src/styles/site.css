@@ -28,7 +28,7 @@
   overflow-wrap: break-word;
 }
 .sl-markdown-content code {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* 4. Inline code */

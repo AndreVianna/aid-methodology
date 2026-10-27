@@ -1739,7 +1739,8 @@ uses. Feature 003 owns the diagram markup that U1 to U7 enforce.
    scroll-behavior: auto !important; } }`.
 3. Content text: links underlined (`text-underline-offset: 0.2em`; 2px thick on hover), so a link never
    depends on colour alone (WCAG 1.4.1); `:is(p, td, th, dd)` get `overflow-wrap: break-word` and inline `code`
-   gets `overflow-wrap: anywhere`, so long paths wrap at 320 px instead of widening the page.
+   gets `overflow-wrap: break-word` too, so long paths wrap at 320 px instead of widening the page, while
+   short code in a table cell is not split in the middle of a word (`anywhere` did that).
 4. Inline code: `surface` background, `--aid-radius-sm`, padding `0.1em 0.35em`.
 5. Tables: header row `surface`, cell borders `border`, padding `--aid-space-2 --aid-space-3`. A wide table
    scrolls inside its own box (Starlight sets `display: block; overflow: auto` on content tables), which WCAG
