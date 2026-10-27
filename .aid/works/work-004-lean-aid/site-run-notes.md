@@ -36,6 +36,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 00:49-01:00 | delivery 2: task 18 done, task 19 in review (feedback loops, AID vs SDD, case studies, FAQ) | n/a mid-turn | task 18 needed a redraw of a diagram "with sourced facts only": the first version had unsourced claims |
 | 01:00-01:17 | delivery 2: task 19 done, task 20 in review (FAQ, Reference overview, CLI commands, KB documents) | n/a mid-turn | task 19 needed a fix commit after review; pace has slowed to about 1 task per 15 min on the bigger audit tasks |
 | 01:17-01:34 | delivery 2: tasks 20-21 done, task 22 in review (CLI, artifacts, repository structure, Contact) | n/a mid-turn | tasks 20 and 21 each needed a fix commit after review; content tasks with a fix commit so far: 10 of 14 |
+| 01:38 | the cloud container restarted and killed the run (22 tasks done, task 23 in progress); resumed in the same session | unknown | a second killed turn whose cost must be estimated from the transcript |
 
 ## AID run: red tape observed so far
 
