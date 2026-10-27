@@ -31,6 +31,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 23:32-23:50 | delivery 2: tasks 9-10 done (diagrams D3-D9) | n/a mid-turn | task 9's review caught two wrong facts in the diagrams and they were fixed in a second commit: a real, result-changing finding. Task 9 also removed an image ("Iron Man") the request did not mention |
 | 23:50-00:08 | delivery 2: tasks 11-14 done (glossary anchors and audit, Home / What is AID / Install / first-work pages audited and rewritten) | n/a mid-turn | task 13 needed a second, fix commit (the home page's full path must start at discover for existing code): another review catch on content. Task 12 added an "audit-checks helper": more test machinery |
 | 00:08-00:25 | delivery 2: tasks 14-15 done (first-work, shortcuts and Guides pages) | n/a mid-turn | both tasks needed a fix commit after review: one wrong claim about the shortcut engine, and a Guides rewrite that had dropped real facts (dashboard worktree merge, PyPI publishing condition). Pattern so far: on content tasks the review catches real errors about half the time |
+| 00:25-00:43 | delivery 2: tasks 16-17 done (Concepts landing, pipeline, KB and Agents pages) | n/a mid-turn | task 16 took three commits (page, two diagram corrections, then review fixes); task 17 two. 6 of the last 8 content tasks needed at least one fix commit |
 
 ## AID run: red tape observed so far
 
