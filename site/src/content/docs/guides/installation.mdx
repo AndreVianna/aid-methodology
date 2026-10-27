@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-import { Tabs, TabItem, Steps, Aside, LinkButton } from '@astrojs/starlight/components';
+import { Steps, Aside, LinkButton } from '@astrojs/starlight/components';
 import InstallCommand from '../../../components/InstallCommand.astro';
 
 This page shows you how to install, update and remove AID on Linux, macOS or Windows.
@@ -46,35 +46,35 @@ You do not need to be inside a project directory.
 
 ### curl / irm channel
 
-<Tabs syncKey="os">
-  <TabItem label="Linux">
-    <InstallCommand channel="curl" />
+#### Linux
 
-    - Installs to `~/.aid/` (override with `$AID_HOME`).
-    - Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
-    - Pass `--no-path` to skip the profile edit and wire PATH yourself.
+<InstallCommand channel="curl" />
 
-    **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
-  </TabItem>
-  <TabItem label="macOS">
-    <InstallCommand channel="curl" />
+- Installs to `~/.aid/` (override with `$AID_HOME`).
+- Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
+- Pass `--no-path` to skip the profile edit and wire PATH yourself.
 
-    - Installs to `~/.aid/` (override with `$AID_HOME`).
-    - Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
-    - Pass `--no-path` to skip the profile edit and wire PATH yourself.
+**After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
 
-    **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
-  </TabItem>
-  <TabItem label="Windows">
-    <InstallCommand channel="irm" />
+#### macOS
 
-    - Installs to `%LOCALAPPDATA%\aid\` (override with `$env:AID_HOME`).
-    - Adds `%LOCALAPPDATA%\aid\bin` to your **User** PATH (no admin required).
-    - Pass `-NoPath` to skip the PATH edit.
+<InstallCommand channel="curl" />
 
-    **After bootstrap, open a new PowerShell session** to pick up the updated PATH.
-  </TabItem>
-</Tabs>
+- Installs to `~/.aid/` (override with `$AID_HOME`).
+- Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
+- Pass `--no-path` to skip the profile edit and wire PATH yourself.
+
+**After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
+
+#### Windows
+
+<InstallCommand channel="irm" />
+
+- Installs to `%LOCALAPPDATA%\aid\` (override with `$env:AID_HOME`).
+- Adds `%LOCALAPPDATA%\aid\bin` to your **User** PATH (no admin required).
+- Pass `-NoPath` to skip the PATH edit.
+
+**After bootstrap, open a new PowerShell session** to pick up the updated PATH.
 
 ### npm channel
 
@@ -146,25 +146,25 @@ For machines without internet access. Download the shared payload, your tool's a
 
 2. **Verify the checksum.**
 
-   <Tabs syncKey="os">
-     <TabItem label="Linux">
-       ```bash
-       sha256sum --check --ignore-missing SHA256SUMS
-       ```
-     </TabItem>
-     <TabItem label="macOS">
-       ```bash
-       shasum -a 256 -c SHA256SUMS
-       ```
-     </TabItem>
-     <TabItem label="Windows">
-       ```powershell
-       $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
-       $actual   = (Get-FileHash .\aid-claude-code-vX.Y.Z.tar.gz -Algorithm SHA256).Hash.ToLower()
-       if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
-       ```
-     </TabItem>
-   </Tabs>
+   #### Linux
+
+   ```bash
+   sha256sum --check --ignore-missing SHA256SUMS
+   ```
+
+   #### macOS
+
+   ```bash
+   shasum -a 256 -c SHA256SUMS
+   ```
+
+   #### Windows
+
+   ```powershell
+   $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
+   $actual   = (Get-FileHash .\aid-claude-code-vX.Y.Z.tar.gz -Algorithm SHA256).Hash.ToLower()
+   if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
+   ```
 
 3. **After bootstrapping the CLI (Step 1), add from the bundle.**
 
@@ -189,63 +189,65 @@ For machines without internet access. Download the shared payload, your tool's a
 After bootstrap, `cd` into the project repo and use subcommands directly. No re-downloading.
 No re-piping.
 
-<Tabs syncKey="tool">
-  <TabItem label="Claude Code">
-    ```bash
-    aid add claude-code
-    ```
+### Claude Code
 
-    **What gets installed:**
-    - `.agents/skills/` and `.claude/skills/` — the shared AID skills (and Claude Code's mirror)
-    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
-    - `.claude/agents/` — agent markdown files
-    - `AGENTS.md` and `CLAUDE.md` — the AID regions in the root instruction files
-  </TabItem>
-  <TabItem label="Codex">
-    ```bash
-    aid add codex
-    ```
+```bash
+aid add claude-code
+```
 
-    **What gets installed:**
-    - `.agents/skills/` — the shared AID skills
-    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
-    - `.codex/agents/` — agent TOML files
-    - `AGENTS.md` — the AID region in the root instruction file
-  </TabItem>
-  <TabItem label="Cursor">
-    ```bash
-    aid add cursor
-    ```
+**What gets installed:**
+- `.agents/skills/` and `.claude/skills/` — the shared AID skills (and Claude Code's mirror)
+- `.aid/runtime/` — the shared scripts, templates and `rules.md`
+- `.claude/agents/` — agent markdown files
+- `AGENTS.md` and `CLAUDE.md` — the AID regions in the root instruction files
 
-    **What gets installed:**
-    - `.agents/skills/` — the shared AID skills
-    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
-    - `.cursor/agents/` — agent markdown files
-    - `AGENTS.md` — the AID region in the root instruction file
-  </TabItem>
-  <TabItem label="Copilot CLI">
-    ```bash
-    aid add copilot-cli
-    ```
+### Codex
 
-    **What gets installed:**
-    - `.agents/skills/` — the shared AID skills
-    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
-    - `.github/agents/` — agent markdown files
-    - `AGENTS.md` — the AID region in the root instruction file
-  </TabItem>
-  <TabItem label="Antigravity">
-    ```bash
-    aid add antigravity
-    ```
+```bash
+aid add codex
+```
 
-    **What gets installed:**
-    - `.agents/skills/` — the shared AID skills
-    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
-    - `.agent/agents/` — agent markdown files
-    - `AGENTS.md` — the AID region in the root instruction file
-  </TabItem>
-</Tabs>
+**What gets installed:**
+- `.agents/skills/` — the shared AID skills
+- `.aid/runtime/` — the shared scripts, templates and `rules.md`
+- `.codex/agents/` — agent TOML files
+- `AGENTS.md` — the AID region in the root instruction file
+
+### Cursor
+
+```bash
+aid add cursor
+```
+
+**What gets installed:**
+- `.agents/skills/` — the shared AID skills
+- `.aid/runtime/` — the shared scripts, templates and `rules.md`
+- `.cursor/agents/` — agent markdown files
+- `AGENTS.md` — the AID region in the root instruction file
+
+### Copilot CLI
+
+```bash
+aid add copilot-cli
+```
+
+**What gets installed:**
+- `.agents/skills/` — the shared AID skills
+- `.aid/runtime/` — the shared scripts, templates and `rules.md`
+- `.github/agents/` — agent markdown files
+- `AGENTS.md` — the AID region in the root instruction file
+
+### Antigravity
+
+```bash
+aid add antigravity
+```
+
+**What gets installed:**
+- `.agents/skills/` — the shared AID skills
+- `.aid/runtime/` — the shared scripts, templates and `rules.md`
+- `.agent/agents/` — agent markdown files
+- `AGENTS.md` — the AID region in the root instruction file
 
 **Check the install:**
 
@@ -277,24 +279,24 @@ markers, so text you wrote outside them is kept. No side file is written.
 
 Bootstrap the CLI **and** add a tool to the current project in a single command:
 
-<Tabs syncKey="os">
-  <TabItem label="Linux">
-    ```bash
-    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
-    ```
-  </TabItem>
-  <TabItem label="macOS">
-    ```bash
-    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
-    ```
-  </TabItem>
-  <TabItem label="Windows">
-    ```powershell
-    $env:AID_TOOL = 'claude-code'
-    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
-    ```
-  </TabItem>
-</Tabs>
+### Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
+```
+
+### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
+```
+
+### Windows
+
+```powershell
+$env:AID_TOOL = 'claude-code'
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+```
 
 ## Update
 

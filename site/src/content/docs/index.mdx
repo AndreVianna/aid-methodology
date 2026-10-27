@@ -3,7 +3,7 @@ title: AI Integrated Development
 description: AID (AI Integrated Development) is a method for building software with AI coding agents, and this page shows you where to start.
 ---
 
-import { Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 import InstallCommand from '../../components/InstallCommand.astro';
 import VersionBadge from '../../components/VersionBadge.astro';
 import Pipeline from '../../components/diagrams/Pipeline.astro';
@@ -43,12 +43,21 @@ Every skill has its own page in the [skills list](/skills/).
 
 Install the [`aid` command](/reference/glossary/#aid-cli) once per machine. Then add AID to a repository with `aid add <tool>`, which writes the skills, the agents and the [runtime](/reference/glossary/#runtime) into that repository. Pick the command for your platform.
 
-<Tabs syncKey="install-channel">
-  <TabItem label="macOS / Linux"><InstallCommand channel="curl" /></TabItem>
-  <TabItem label="Windows"><InstallCommand channel="irm" /></TabItem>
-  <TabItem label="npm"><InstallCommand channel="npm" /></TabItem>
-  <TabItem label="PyPI"><InstallCommand channel="pypi" /></TabItem>
-</Tabs>
+### macOS / Linux
+
+<InstallCommand channel="curl" />
+
+### Windows
+
+<InstallCommand channel="irm" />
+
+### npm
+
+<InstallCommand channel="npm" />
+
+### PyPI
+
+<InstallCommand channel="pypi" />
 
 The current release is <VersionBadge href="/releases/changelog/" />. Then run this command inside your repository (use another tool name if you do not use Claude Code):
 

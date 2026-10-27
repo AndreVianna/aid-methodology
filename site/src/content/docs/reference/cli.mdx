@@ -6,8 +6,6 @@ sidebar:
   label: CLI commands
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 This page lists the commands, flags, exit codes and environment variables of the [aid CLI](/reference/glossary/#aid-cli), so you can look up how to call it.
 
 To install the CLI, follow the [Installation guide](/guides/installation/).
@@ -302,8 +300,7 @@ This is the AID command that edits your host tool's own settings file, to add or
 
 ## Flags
 
-<Tabs>
-  <TabItem label="Bash / Linux / macOS">
+### Bash / Linux / macOS
 
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
@@ -315,8 +312,7 @@ This is the AID command that edits your host tool's own settings file, to add or
 | `--target <dir>` | `add`, `update`, `remove`, `status` | `.` (current folder) | Project root. It must exist, or the command exits with `2`. `update all` does not accept it. |
 | `--no-path` | bootstrap (`install.sh`), `remove self` | off | Skip wiring the PATH entry during bootstrap, or unwiring it in `remove self`. |
 
-  </TabItem>
-  <TabItem label="PowerShell (Windows)">
+### PowerShell (Windows)
 
 PowerShell flags use the same words. The help text of the PowerShell CLI spells them with a `-` prefix and PascalCase: `-Force`, `-Verbose`, `-Version <v>`, `-FromBundle <path>`, `-Target <dir>`, `-DryRun`, `-NoPath`. The `--` forms are accepted too.
 
@@ -329,9 +325,6 @@ PowerShell flags use the same words. The help text of the PowerShell CLI spells 
 | `-Verbose` | `add`, `update`, `remove`, `status`, `projects`, `dashboard` | off | Verbose per-file output. |
 | `-Target <dir>` | `add`, `update`, `remove`, `status` | `.` (current folder) | Project root. |
 | `-NoPath` | bootstrap (`install.ps1`), `remove self` | off | Skip PATH wiring or unwiring. |
-
-  </TabItem>
-</Tabs>
 
 ## Exit codes
 

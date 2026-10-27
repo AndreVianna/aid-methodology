@@ -45,13 +45,13 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: 'In Review'
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'counts.before: index fences=2 install=4 steps=0; cli fences=28 install=0 steps=0; maintainer fences=38 install=0 steps=2; installation fences=56 install=6 steps=1; pipeline fences=4 install=0 steps=1. labels: index [macOS / Linux, Windows, npm, PyPI]; cli [Bash / Linux / macOS, PowerShell (Windows)]; maintainer [CI path (primary), Manual path (release.sh)]; installation [Linux, macOS, Windows, Linux, macOS, Windows, Claude Code, Codex, Cursor, Copilot CLI, Antigravity, Linux, macOS, Windows]; pipeline [].'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.

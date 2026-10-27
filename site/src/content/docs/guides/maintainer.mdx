@@ -6,7 +6,7 @@ sidebar:
 ---
 
 import ReleaseFlow from '../../../components/diagrams/ReleaseFlow.astro';
-import { Steps, Tabs, TabItem, Aside, LinkCard } from '@astrojs/starlight/components';
+import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
 
 This page shows maintainers of AID how to cut a release and how to regenerate the per-tool agent trees.
 
@@ -63,8 +63,7 @@ python .claude/skills/generate-profile/scripts/run_generator.py && git diff --ex
 
 ### Primary path (tag-triggered CI) and manual path (release.sh)
 
-<Tabs syncKey="release-path">
-<TabItem label="CI path (primary)">
+#### CI path (primary)
 
 <Steps>
 1. **Verify preconditions**
@@ -106,8 +105,7 @@ python .claude/skills/generate-profile/scripts/run_generator.py && git diff --ex
    failure, see [Recovery and idempotency](#recovery-and-idempotency).
 </Steps>
 
-</TabItem>
-<TabItem label="Manual path (release.sh)">
+#### Manual path (release.sh)
 
 Use `release.sh` directly when you need to cut a release outside of CI (for example, a
 hotfix). It produces the same GitHub Release assets as the CI path but does **not**
@@ -192,9 +190,6 @@ publish to npm or PyPI.
    gh release edit "v$(cat VERSION)" --draft=false
    ```
 </Steps>
-
-</TabItem>
-</Tabs>
 
 ### What a release produces
 
