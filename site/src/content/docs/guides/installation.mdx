@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install, update, and remove AID across curl/irm, npm, PyPI, and offline bundle channels — with per-OS and per-tool instructions.
+description: This page shows you how to install, update and remove AID on Linux, macOS or Windows.
 sidebar:
   order: 1
 ---
@@ -8,15 +8,17 @@ sidebar:
 import { Tabs, TabItem, Steps, Aside, LinkButton } from '@astrojs/starlight/components';
 import InstallCommand from '../../../components/InstallCommand.astro';
 
+This page shows you how to install, update and remove AID on Linux, macOS or Windows.
+
 ## How it works (two layers)
 
-AID separates into two install layers:
+AID installs in two layers:
 
-1. **The `aid` CLI** — a persistent, global command installed once per machine into
+1. **The [`aid` CLI](/reference/glossary/#aid-cli)** — a global command you install once per machine into
    `~/.aid` (Unix) or `%LOCALAPPDATA%\aid` (Windows). It never changes when you add or
-   remove AID from a project. Bootstrap it once with the one-liners in Step 1 below.
+   remove AID from a project. [Bootstrap](/reference/glossary/#bootstrap) it once with the one-liners in Step 1 below.
 
-2. **Per-project AID files** — the shared skills and runtime (`.agents/skills/`,
+2. **Per-project AID files** — the [shared skills](/reference/glossary/#shared-skills) and [runtime](/reference/glossary/#runtime) (`.agents/skills/`,
    `.aid/runtime/`), each tool's agents (for example `.claude/agents/`), and the root
    instruction regions (`AGENTS.md`, plus `CLAUDE.md` while Claude Code is installed) that
    `aid add <tool>` installs into a repo. Each repo tracks what was installed in its own
@@ -24,15 +26,15 @@ AID separates into two install layers:
 
 ## Choose your install channel
 
-All channels deliver the same `aid` CLI. The difference is only how `aid` lands on your PATH.
-Pick one channel per machine.
+All [install channels](/reference/glossary/#install-channel) deliver the same `aid` CLI. They differ only in how `aid` lands on your PATH.
+Pick one channel per machine. The [Install page](/get-started/install/) gives the short version.
 
 | Channel | Requires | When to use |
 |---------|----------|-------------|
 | **curl / irm** (online bootstrap) | Bash or PowerShell 5.1+ | Most users — Linux, macOS, Windows |
-| **npm** | Node >=18 | Node-heavy environments; global install via npm |
+| **npm** | Node >=22 | Node-heavy environments; global install via npm |
 | **PyPI (pipx)** | Python >=3.8 | Python environments; isolated install via pipx |
-| **Offline bundle** | Bash or PowerShell 5.1+ | Air-gapped machines; teams pinning to a specific release |
+| **[Offline bundle](/reference/glossary/#offline-bundle)** | Bash or PowerShell 5.1+ | Air-gapped machines; teams pinning to a specific release |
 
 If `aid` is installed via more than one channel, PATH order determines which one runs.
 Pick one and remove the others to avoid confusion.
@@ -49,7 +51,7 @@ You do not need to be inside a project directory.
     <InstallCommand channel="curl" />
 
     - Installs to `~/.aid/` (override with `$AID_HOME`).
-    - Adds `~/.aid/bin` to your PATH via `~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`.
+    - Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
     - Pass `--no-path` to skip the profile edit and wire PATH yourself.
 
     **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
@@ -58,7 +60,7 @@ You do not need to be inside a project directory.
     <InstallCommand channel="curl" />
 
     - Installs to `~/.aid/` (override with `$AID_HOME`).
-    - Adds `~/.aid/bin` to your PATH via `~/.zshrc` or `~/.bash_profile`.
+    - Adds `~/.aid/bin` to your PATH in each of `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` and `~/.profile` that exists. If none exists, it creates `~/.profile`.
     - Pass `--no-path` to skip the profile edit and wire PATH yourself.
 
     **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
@@ -76,7 +78,7 @@ You do not need to be inside a project directory.
 
 ### npm channel
 
-Requires Node >=18.
+Requires Node >=22.
 
 <InstallCommand channel="npm" />
 
@@ -92,11 +94,10 @@ npx aid-installer add claude-code
 npm install -g aid-installer@latest
 ```
 
-Or via `aid`:
+Or let `aid` do it. On the npm channel, `aid update self` runs that same command:
 
 ```bash
 aid update self
-# Prints: npm install -g aid-installer@latest
 ```
 
 ### PyPI channel
@@ -119,17 +120,16 @@ pip install --user aid-installer
 pipx upgrade aid-installer
 ```
 
-Or via `aid`:
+Or let `aid` do it. On the PyPI channel, `aid update self` runs that same command, so it needs `pipx`:
 
 ```bash
 aid update self
-# Prints: pipx upgrade aid-installer
 ```
 
 ### Offline / air-gapped install
 
 For machines without internet access. Download the shared payload, your tool's artifact and
-`SHA256SUMS` into one directory from the [Releases page](/releases/changelog/), then install with
+`SHA256SUMS` into one directory from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), then install with
 `--from-bundle` pointing at that directory.
 
 <Steps>
@@ -138,10 +138,10 @@ For machines without internet access. Download the shared payload, your tool's a
 
    <InstallCommand channel="offline" />
 
-   Also download the checksum file into the same directory:
+   Also download the checksum file into the same directory. Use the same version number as in the commands above:
 
    ```bash
-   curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/$(aid version)/SHA256SUMS
+   curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/vX.Y.Z/SHA256SUMS
    ```
 
 2. **Verify the checksum.**
@@ -180,7 +180,7 @@ For machines without internet access. Download the shared payload, your tool's a
    aid add codex,cursor --from-bundle ./bundles/
    ```
 
-   The live per-release asset list (all five tools) is on the [Releases page](/releases/changelog/).
+   The asset list of each release is on the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases).
 
 </Steps>
 
@@ -269,7 +269,7 @@ Without `--version`, the installer resolves the latest GitHub Release.
 
 <Aside type="note">
 Root instruction files — `AGENTS.md`, and `CLAUDE.md` while Claude Code is installed — may hold
-your own instructions. AID writes only between its `<!-- AID:BEGIN -->` and `<!-- AID:END -->`
+your own instructions. AID writes only inside its [AID region](/reference/glossary/#aid-region), between the `<!-- AID:BEGIN -->` and `<!-- AID:END -->`
 markers, so text you wrote outside them is kept. No side file is written.
 </Aside>
 
@@ -309,7 +309,7 @@ aid update --version X.Y.Z
 ```
 
 All installed tools in a repo move to one version together, because the shared files have one
-version. Naming a tool (`aid update claude-code`) also updates the other installed tools.
+version. Inside a project, `aid update` updates the CLI first, then every installed tool.
 
 ### Update the aid CLI itself
 
@@ -317,14 +317,13 @@ version. Naming a tool (`aid update claude-code`) also updates the other install
 aid update self
 ```
 
-The command is channel-aware: it detects how `aid` was installed and prints the correct
-upgrade instruction.
+The command is channel-aware: it detects how `aid` was installed and updates it the same way.
 
 | Install channel | What `aid update self` does |
 |----------------|------------------------------|
 | `curl` / `irm` bootstrap | Re-runs the bootstrap script to fetch and install the latest CLI |
-| npm | Prints: `npm install -g aid-installer@latest` |
-| PyPI / pipx | Prints: `pipx upgrade aid-installer` |
+| npm | Runs `npm install -g aid-installer@latest` |
+| PyPI / pipx | Runs `pipx upgrade aid-installer` |
 
 ## Remove
 
@@ -350,15 +349,16 @@ only files that `aid add` wrote are removed. A file you edited since AID wrote i
 aid remove self
 ```
 
-Prompts for confirmation before removing `~/.aid` (or `%LOCALAPPDATA%\aid`) and the PATH
-wiring block. Does not touch per-project AID installs — run `aid remove` inside each project
-first if you want to clean those up too.
+Asks for confirmation, then removes the CLI the way it was installed. On the `curl` or `irm` channel,
+it removes `~/.aid` (or `%LOCALAPPDATA%\aid`) and the PATH wiring block. On npm it runs
+`npm uninstall -g aid-installer`, and on PyPI it runs `pipx uninstall aid-installer`. It does not touch
+per-project AID installs. Run `aid remove` inside each project first if you want to clean those up too.
 
 ## Next steps
 
 <LinkButton href="/get-started/first-work/" variant="primary" icon="right-arrow">
   Your first work
 </LinkButton>
-<LinkButton href="/reference/overview/" variant="secondary" icon="open-book">
+<LinkButton href="/reference/cli/" variant="secondary" icon="open-book">
   CLI Reference
 </LinkButton>

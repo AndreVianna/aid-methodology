@@ -1,221 +1,136 @@
 ---
 title: Working the pipeline
-description: An end-to-end, task-oriented walkthrough of running a real piece of work through AID — aid-config plus the six numbered phases (Discover → Execute) and the optional Deliver skills.
+description: This page shows you how to run a piece of work through the AID phases, from /aid-config to /aid-execute, and which command to run at each step.
 sidebar:
   label: Working the pipeline
 ---
 
-import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 import TaskLoop from '../../../components/diagrams/TaskLoop.astro';
+
+This page shows you how to run a piece of work through the AID phases, from /aid-config to /aid-execute, and which command to run at each step.
 
 ## Before you start
 
-This page is the **how** — a step-by-step guide to driving a real piece of work through
-the AID methodology from discovery to deployment.
+This page gives the steps. Install AID and add it to your project first. The [Installation guide](/guides/installation/) shows how.
 
-Before running the pipeline, make sure AID is installed and added to your project. See the
-[Installation guide](/guides/installation) for the one-liner bootstrap and the `aid add <tool>` step.
-
-For the **why** behind each phase — the mental model, the philosophy, the full methodology
-explanation — read the [Methodology](/concepts/methodology) concept page. This guide does not
-duplicate that depth; it points you at the right command and artifact for each step.
+To learn why the phases exist, read the [pipeline concept page](/concepts/pipeline/). This guide only names the command and the result of each step.
 
 ## The pipeline at a glance
 
-The full diagram, with a text version of every step, is on the [pipeline concept page](/concepts/pipeline/).
+The [pipeline concept page](/concepts/pipeline/) has the full diagram, with a text version of every step.
 
-The diagram shows three ways in: a **shortcut** if you already know your change, `/aid-triage`
-if you're not sure, or `/aid-describe` for broad or new-project work. `/aid-config` bootstraps
-the project once; brownfield projects run `/aid-discover` before Describe, greenfield projects
-go directly from Configure to Describe. A shortcut runs the shared **shortcut engine** — a
-collapsed, autonomous Describe→Detail — straight to the approval halt; `/aid-describe` walks
-each phase through its own human gate instead. Both converge on the same halt before Execute.
-The Deliver skills (deploy + monitor) are optional; Monitor routes bug findings to `/aid-fix`
-and change-request findings to `/aid-triage`, closing the loop.
+There are three ways in:
+
+- A [shortcut](/reference/glossary/#shortcut), such as `/aid-fix`, when you know the kind of change.
+- [`/aid-triage`](/reference/glossary/#aid-triage), when you are not sure which skill fits. It suggests a step and writes nothing.
+- `/aid-describe`, for broad work or a new project.
+
+A project that already has code ([brownfield](/reference/glossary/#brownfield)) runs `/aid-discover` first. A new project ([greenfield](/reference/glossary/#greenfield)) goes from `/aid-config` straight to `/aid-describe`.
+
+A shortcut runs the shared [shortcut engine](/reference/glossary/#shortcut-engine), which does the work of Describe through Detail in one mostly autonomous run. It stops at an approval halt before Execute. `/aid-describe` instead takes each phase through its own [phase gate](/reference/glossary/#phase-gate), where you approve the result.
 
 ## Step 0 — Configure (`/aid-config`)
 
-Run `/aid-config` once before starting any new piece of work. It scaffolds or inspects
-`.aid/settings.yml` and lets you set the project name, review grade threshold, and other
-workspace-level options.
+Run `/aid-config` before you start your first piece of work. It shows your project settings, and it copies the settings template to `.aid/settings.yml` on the first run. It is not a numbered phase.
 
 <Steps>
-1. **Invoke the skill** — type `/aid-config` in your AI tool.
+1. **Run the skill.** Type `/aid-config` in your AI tool. It prints all settings.
 
-2. **Review the generated settings file** — the skill creates or updates
-   `.aid/settings.yml`. Confirm the `project.name` and `review.grade` fields.
-
-3. **Commit the settings file** — `.aid/settings.yml` is checked in. All agents read
-   it; keep it accurate.
+2. **Change a setting.** Run `/aid-config <key>` to view and update one setting, for example `/aid-config name` or `/aid-config minimum_grade`.
 </Steps>
 
 <Aside type="tip">
-Re-run `/aid-config` any time you want to inspect or change workspace settings. It is
-idempotent — running it on an existing project does not reset your configuration.
+Run `/aid-config` again whenever you want to look at your settings. Every AID skill reads `.aid/settings.yml`, so keep it accurate.
 </Aside>
 
-## The six phases
+## The phases
 
-Each phase has a corresponding `/aid-*` skill. Invoke the skill in your AI tool; the
-skill runs its state machine and produces the named artifact.
+Each phase is a skill. Run the skill in your AI tool. It works through its steps and produces the result named below.
 
 ### Phase 1 — Discover (`/aid-discover`)
 
-**Brownfield projects only.** The Discover skill analyses an existing repository and
-populates the Knowledge Base with what it finds (architecture, conventions, existing
-patterns). State machine: GENERATE → REVIEW → … → DONE.
+**Brownfield projects.** Discover reads your existing code, configuration and documents. It builds the [Knowledge Base](/reference/glossary/#knowledge-base) with what it finds: architecture, conventions and patterns. When the code does not answer a question, it asks you instead of guessing. It grades the documents and fixes them until they meet the minimum grade.
 
-**Artifact produced:** `.aid/knowledge/` entries describing the existing codebase.
+**Result:** documents in `.aid/knowledge/` that describe your project.
 
 <Aside type="note">
-**Greenfield projects skip this phase.** If you are starting a brand-new repository with
-no existing code, go directly to Phase 2 (Describe → Define).
+A greenfield project has no code to read, so it skips Discover. Start at Phase 2a, Describe.
 </Aside>
-
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
 
 ### Phase 2a — Describe (`/aid-describe`)
 
-The Describe skill gathers requirements conversationally — full path only. It asks you
-structured questions about your goals, constraints, and scope through its elicitation engine,
-then writes `REQUIREMENTS.md`. State machine:
-`FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION [PAUSE → /aid-define]`. It no longer triages or
-produces lite work — for a small, well-scoped change, invoke a shortcut or ask `/aid-triage`
-instead (see [Lite path quickstart](/get-started/lite-path/)).
+Describe interviews you about what you want to build. It adapts its questions to your answers, then writes the requirements.
 
-**Artifact produced:** `REQUIREMENTS.md`.
+**Result:** `REQUIREMENTS.md` in a new work folder, `.aid/works/work-NNN-<name>/`.
+
+For a small, well-scoped change, run a shortcut or ask `/aid-triage` instead. See [Small changes with shortcuts](/get-started/lite-path/).
 
 ### Phase 2b — Define (`/aid-define`)
 
-The Define skill (full path only) begins from an approved `REQUIREMENTS.md` and
-decomposes requirements into feature files under `.aid/<work>/features/`, then cross-references
-and grades the decomposition.
+Define starts from approved requirements. It splits them into features and cross-checks the result against the Knowledge Base and the code.
 
-**Artifact produced:** `REQUIREMENTS.md` + `features/feature-NNN-*.md` stubs.
-
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
+**Result:** one `### Feature NNN` section per feature in section 11 of `REQUIREMENTS.md`. Features are sections, not separate files.
 
 ### Phase 3 — Specify (`/aid-specify`)
 
-The Specify skill writes a technical specification for one feature at a time. Point it at
-a feature file; it reads `REQUIREMENTS.md`, the Knowledge Base, and the feature stub,
-then appends a `#### Technical Specification` subsection with design decisions and an
-acceptance-criteria mapping.
+Specify writes the technical specification for one feature, together with you. Name the feature:
 
-**Artifact produced:** a `#### Technical Specification` subsection appended to that
-feature's `### Feature NNN` section in `REQUIREMENTS.md` § 11.
+```
+/aid-specify work-001/feature-001
+```
 
-**Run once per feature** — repeat this phase for each feature before moving to Plan.
+**Result:** a `#### Technical Specification` subsection in that feature's section of `REQUIREMENTS.md`.
 
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
+Run it once for each feature.
 
 ### Phase 4 — Plan (`/aid-plan`)
 
-The Plan skill reads all your feature specs and sequences them into a delivery roadmap.
-It decides which features go into which delivery, respecting dependencies, writes `PLAN.md`
-with the strategy, and creates a `deliveries/delivery-NNN/` folder per delivery with its
-A `### delivery-NNN` stanza in `PLAN.md` — the delivery definition (scope, gate criteria,
-dependencies).
+Plan groups the specified features into deliveries, in an order where each delivery stands on its own.
 
-**Artifact produced:** `PLAN.md` — the delivery sequence and dependency graph — plus one
-one `### delivery-NNN` stanza in `PLAN.md` per delivery.
-
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
+**Result:** `PLAN.md`, with one `### delivery-NNN` stanza for each delivery, and a `deliveries/delivery-NNN/STATE.yml` file for each one.
 
 ### Phase 5 — Detail (`/aid-detail`)
 
-The Detail skill breaks a delivery into typed tasks and produces an execution graph. Each
-task gets its own `deliveries/delivery-NNN/tasks/task-NNN/` folder with a `DETAIL.md` — the
-task definition — covering one of the eight task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
-DOCUMENT, MIGRATE, REFACTOR, CONFIGURE), acceptance criteria, and dependencies.
+Detail breaks a delivery into small, typed tasks and orders them by dependency. A task has one of eight types: RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE.
 
-**Artifact produced:** `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + an
-execution graph.
+**Result:** a `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` file for each task, and an execution graph in `PLAN.md`.
 
-**Run once per delivery** — repeat for each delivery in your plan.
-
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
+Run it once for each delivery.
 
 ### Phase 6 — Execute (`/aid-execute`)
 
-The Execute skill picks up a typed task and implements it on a per-delivery branch, with
-a built-in review loop. The Developer agent writes the code; the Reviewer agent grades it
-against the task's acceptance criteria; failing grades loop back for revision.
+Execute carries out one task by its type, reviews the result and fixes the issues the review finds. Name the task:
 
-**Artifact produced:** committed code on a delivery branch, graded and merged.
+```
+/aid-execute work-001 task-001
+```
 
-**Run once per task** — repeat for each task in the execution graph, respecting the
-dependency order.
+**Result:** the built task, reviewed against its acceptance criteria. Code goes on one branch for the delivery, named `aid/<work>-delivery-NNN`. A task that only writes `.aid/` files may skip the branch.
 
-<Aside type="tip">
-The Execute skill tracks the current delivery branch automatically. Run tasks in
-dependency order; the skill warns you if a dependency is not yet complete.
-</Aside>
-
-<LinkCard
-  title="All skills"
-  description="Every AID skill, one card each — grouped by skill group and verb family."
-  href="/skills/"
-/>
+Run it once for each task, in dependency order. If a task depends on one that is not done, Execute stops and lists what is pending.
 
 <TaskLoop />
 
-## Delivering: deploy and monitor (optional)
+## Deliver: deploy and monitor (optional)
 
-After all Execute tasks are complete, the optional **Deliver** skills package and observe
-the work.
+After Execute, the optional Deliver skills package the work and watch it. You run each one yourself.
 
 ### Deploy (`/aid-deploy`)
 
-The Deploy skill packages completed deliveries into a release — tarballs, changelogs, and
-registry publishes. It reads the delivery branch state and the `VERSION` file, and
-invokes the release pipeline.
+Deploy packages completed deliveries into a release. It checks the build, packages the release the way your Knowledge Base says to, and writes release notes into a package file in the work folder.
 
 ### Monitor (`/aid-monitor`)
 
-The Monitor skill observes the deployed system, classifies incoming findings, and routes
-actionable items to the entry point that fits: a finding classified **BUG** routes to
-`/aid-fix`; a finding classified **change request** routes to `/aid-triage`. This closes the
-feedback loop.
+Monitor watches the running system, classifies what it finds and routes each finding. A bug goes to `/aid-fix`. A change request goes to `/aid-triage`.
 
 <Aside type="note">
-Neither Deliver skill is required to use AID. Many teams run the six core phases and
-handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
-`/aid-monitor`.
+You do not need either Deliver skill to use AID. Many teams run the phases and ship through their own CI/CD pipeline.
 </Aside>
 
-## Lite vs full path
+## Short path or full path
 
-Not every change needs all six phases. For small, well-scoped work, skip the full pipeline
-entirely: invoke the matching **shortcut** (`/aid-fix`, `/aid-create api`, …), or ask
-`/aid-triage` if you're not sure which one fits. The shortcut engine collapses Describe
-through Detail into one fast, mostly-autonomous run and produces the same flattened artifact
-set before halting for your approval — see [Lite path quickstart](/get-started/lite-path/)
-for the flow and the [Methodology](/concepts/methodology) page for when a shortcut is the
-right call versus the full pipeline.
-
-The [Installation guide](/guides/installation) also covers the quick-start flow for new
-adopters who want to get something working before reading the full pipeline.
+Not every change needs every phase. For a small, well-scoped change, run the matching shortcut (`/aid-fix`, `/aid-create api` and others), or ask `/aid-triage` which one fits. The shortcut engine writes a flat work folder, and it halts for your approval before `/aid-execute`. [Small changes with shortcuts](/get-started/lite-path/) shows the flow.
 
 ## Next steps
 
@@ -227,17 +142,17 @@ adopters who want to get something working before reading the full pipeline.
   />
   <LinkCard
     title="All skills"
-    description="Every AID skill, one card each — grouped by skill group and verb family."
+    description="Every AID skill, one card each, grouped by skill group and verb family."
     href="/skills/"
   />
   <LinkCard
     title="Agents reference"
-    description="The specialist agents that AID dispatches during Execute."
+    description="The specialist agents that AID dispatches."
     href="/reference/agents/"
   />
   <LinkCard
     title="Methodology"
-    description="The why behind the pipeline — mental model and design decisions."
+    description="The why behind the pipeline: mental model and design decisions."
     href="/concepts/methodology/"
   />
   <LinkCard

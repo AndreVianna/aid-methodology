@@ -1,58 +1,40 @@
 ---
 title: Maintainer
-description: Runbooks for contributing to AID itself — cutting a release and regenerating the per-tool agent trees.
+description: This page shows maintainers of AID how to cut a release and how to regenerate the per-tool agent trees.
 sidebar:
   label: Maintainer
 ---
 
 import ReleaseFlow from '../../../components/diagrams/ReleaseFlow.astro';
-import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Steps, Tabs, TabItem, Aside, LinkCard } from '@astrojs/starlight/components';
+
+This page shows maintainers of AID how to cut a release and how to regenerate the per-tool agent trees.
 
 ## Who this is for
 
-This page is for **maintainers and contributors to AID itself** — people who cut releases
-or modify the canonical source and need to keep the five per-tool agent trees and the shared payload in sync.
+This page is for **maintainers and contributors to AID itself**: people who cut releases or change the [canonical](/reference/glossary/#canonical) source and need to keep the five per-tool agent trees and the [shared payload](/reference/glossary/#shared-payload) in sync.
 
-End users of AID (adopters running the pipeline in their own projects) do not need this
-page. See the [pipeline guide](/guides/pipeline) instead.
-
-<CardGrid>
-  <LinkCard
-    title="Cut a release"
-    description="Tag-triggered CI path and manual release.sh fallback."
-    href="#cut-a-release"
-  />
-  <LinkCard
-    title="Regenerate the host-tool trees/profiles"
-    description="Run the generator after canonical/ edits; assert no render drift."
-    href="#regenerate-the-host-tool-treesprofiles"
-  />
-</CardGrid>
-
----
+If you use AID in your own projects, you do not need this page. Read the [pipeline guide](/guides/pipeline/) instead.
 
 ## Cut a release
 
 The primary release path is a single pushed `v*` tag that triggers the `release.yml` CI
-workflow. The manual `release.sh` path is available as a fallback when CI is not
-accessible.
+workflow. The manual `release.sh` path is a fallback for when CI is not available.
+
+The maintainer-only skill `/release-aid <level>` runs the whole sequence for you. The level is `major`, `minor`, `patch` or `beta`. The skill lives only in this repository, at `.claude/skills/release-aid/`, and is not shipped to adopters. The steps below are the manual runbook.
 
 ### How releases work
 
-A single pushed `v*` tag triggers `release.yml`, which runs four sequential stages:
+A single pushed `v*` tag triggers `release.yml`, which runs these jobs:
 
-1. **Gate** — re-runs the full correctness suite (render-drift + canonical helper suites
-   + generator self-tests + FR10 version-sync) on the tagged commit.
-2. **GitHub Release** — builds the shared payload, five agents-only tool artifacts, the
-   `aid-cli` bundle, two install-core library files, and `SHA256SUMS`; creates the GitHub
-   Release with all assets via `release.sh`.
-3. **npm** — publishes `aid-installer` to npm with OIDC provenance (gated by the
-   `NPM_ENABLED` repo variable).
-4. **PyPI** — publishes `aid-installer` to PyPI via Trusted Publishing (OIDC; gated by
-   the `PYPI_ENABLED` repo variable).
+1. **gate**: re-runs the version-sync check, the render-drift check, the canonical helper suites and the generator self-tests on the tagged commit.
+2. **github-release**: runs only after the gate passes. It runs `release.sh`, which builds the shared payload, the agents-only tool artifacts, the `aid-cli` bundle, two install-core library files and `SHA256SUMS`, and creates the GitHub Release with all assets.
+3. **npm-publish**: publishes `aid-installer` to npm with OIDC provenance. It runs only when the repository variable `NPM_ENABLED` is `true` and the version is not a pre-release.
+4. **pypi-publish**: publishes `aid-installer` to PyPI through Trusted Publishing (OIDC). It runs only when the repository variable `PYPI_ENABLED` is `true`.
 
-All four channels — GitHub Release artifacts, npm, PyPI, and the offline bundle — are produced
-from the same tag in one workflow run.
+The npm and PyPI jobs both wait for the GitHub Release job and run in parallel. The GitHub Release artifacts, npm, PyPI and the [offline bundle](/reference/glossary/#offline-bundle) all come from the same tag in one workflow run.
+
+A pre-release tag, such as `v2.2.3-beta.1`, creates a GitHub Release marked as a pre-release and publishes to PyPI. The npm job is skipped.
 
 <ReleaseFlow />
 
@@ -60,15 +42,15 @@ from the same tag in one workflow run.
 
 Before running either release path:
 
-- **`VERSION` file is set to the intended release version.** `release.yml` enforces that
-  the tag, `VERSION`, `packages/npm/package.json`, and `packages/pypi/pyproject.toml` all
-  agree (FR10 version-sync gate).
+- **`VERSION` file is set to the intended release version.** The gate fails unless the tag,
+  `VERSION`, `packages/npm/package.json` and `packages/pypi/pyproject.toml` all agree
+  (for a pre-release, the npm file is exempt).
 - **Clean, passing CI on master.** Push the tag only from a commit where `test.yml` is
   green.
 - **Render-drift clean.** `profiles/` must be in sync with `canonical/`. See the
   [Regenerate trees](#regenerate-the-host-tool-treesprofiles) section below. The gate
   re-runs the check and fails the workflow if they diverge.
-- **No existing tag `v<VERSION>`.** Both paths fail early on a collision.
+- **No tag `v<VERSION>` on another commit.** On the manual path, `release.sh` fails with exit code `4` if the tag already points at a different commit.
 - **`gh` CLI authenticated.** `gh auth status` must show write access to the repo.
 
 ```bash
@@ -111,8 +93,8 @@ python .claude/skills/generate-profile/scripts/run_generator.py && git diff --ex
    git push origin "v$(cat VERSION)"
    ```
 
-   This triggers the full `release.yml` run: gate → github-release → npm-publish +
-   pypi-publish (in parallel).
+   This starts the `release.yml` run: gate, then github-release, then npm-publish and
+   pypi-publish in parallel.
 
 4. **Monitor the workflow**
 
@@ -134,7 +116,8 @@ publish to npm or PyPI.
 <Steps>
 1. **Verify preconditions**
 
-   Run `--dry-run` to validate without creating a tag or release:
+   Run `--dry-run` to validate without creating a release. It runs the generator first, so
+   review and commit any files it changes:
 
    ```bash
    bash release.sh --dry-run
@@ -143,18 +126,18 @@ publish to npm or PyPI.
    Expected output:
 
    ```
-   release.sh: version=1.0.0  tag=v1.0.0
+   release.sh: version=X.Y.Z  tag=vX.Y.Z
    release.sh: verifying render state (python3 .claude/skills/generate-profile/scripts/run_generator.py) ...
    release.sh: checking for render drift (git diff -- profiles/) ...
    release.sh: render state is clean.
-   release.sh: staging dir: .aid/.temp/release-1.0.0
-   release.sh:   done: aid-shared-v1.0.0.tar.gz
-   release.sh:   done: aid-claude-code-v1.0.0.tar.gz
+   release.sh: staging dir: .aid/.temp/release-X.Y.Z
+   release.sh:   done: aid-shared-vX.Y.Z.tar.gz
+   release.sh:   done: aid-claude-code-vX.Y.Z.tar.gz
      ...
-   release.sh:   done: aid-cli-v1.0.0.tar.gz
+   release.sh:   done: aid-cli-vX.Y.Z.tar.gz
    release.sh: SHA256SUMS written:
    release.sh: --dry-run: staging complete. Tarballs and SHA256SUMS are in:
-     .aid/.temp/release-1.0.0
+     .aid/.temp/release-X.Y.Z
    ```
 
    Common failures:
@@ -164,7 +147,7 @@ publish to npm or PyPI.
    | Dirty worktree | `working tree has uncommitted changes` | `git stash` or commit the changes |
    | Render drift | `profiles/ is out of sync with canonical/` | Run the generator and commit (see [Regenerate trees](#regenerate-the-host-tool-treesprofiles)) |
    | Version mismatch | `--version X does not match VERSION file (Y)` | Drop `--version` or update `./VERSION` |
-   | Tag already exists | `tag v1.0.0 already exists` | See [Recovery and idempotency](#recovery-and-idempotency) |
+   | Tag at another commit | `Git tag vX.Y.Z already exists at a different commit` (exit `4`) | See [Recovery and idempotency](#recovery-and-idempotency) |
 
 2. **Inspect staged artifacts**
 
@@ -219,7 +202,7 @@ publish to npm or PyPI.
 `.aid/.temp/release-<VERSION>/` and uploads them to the GitHub Release:
 
 **One shared payload:** `aid-shared-v<VERSION>.tar.gz`. It holds `aid-payload.conf` (the version),
-`skills/` (a byte-for-byte copy of `canonical/skills/`, all 37 skills) and `runtime/` (a byte-for-byte copy of
+`skills/` (a byte-for-byte copy of `canonical/skills/`) and `runtime/` (a byte-for-byte copy of
 `canonical/aid/`, `rules.md` included).
 
 **Five tool artifacts, agents only:**
@@ -251,33 +234,29 @@ other member.
 ### Recovery and idempotency
 
 <Aside type="caution">
-**Read this section before re-running a failed release.** The npm-publish and
-pypi-publish jobs are idempotent (they skip with a notice if the version is already
-published), but the GitHub Release step is not automatically cleaned up.
+**Read this section before you re-run a failed release.** The npm-publish and pypi-publish jobs skip a version that is already published. A re-run of `release.sh` for the same commit refreshes the assets of an existing GitHub Release.
 </Aside>
 
-**Dry run is always safe to re-run.** `--dry-run` never creates a tag, never calls `gh`,
-and overwrites the staging directory on each run.
+**A dry run is safe to re-run.** `--dry-run` never creates a tag and never creates a release.
 
-**If the CI workflow fails mid-publish:** Re-triggering `workflow_dispatch` with the same
-tag is safe for the npm/PyPI jobs. If `github-release` fails mid-upload:
-
-1. Delete the draft release: GitHub web UI → Releases → Edit → Delete.
-2. Delete the local tag: `git tag -d v1.0.0`
-3. Delete the remote tag: `git push origin :refs/tags/v1.0.0`
-4. Fix the root cause and re-run from Step 1.
-
-**If the tag already exists but no release exists:**
+**If the CI workflow fails after the tag is pushed,** fix the cause, then start the workflow again for the same tag:
 
 ```bash
-git tag -d v1.0.0
-git push origin :refs/tags/v1.0.0
-# Then re-run
-git tag v1.0.0 && git push origin v1.0.0
+gh workflow run release.yml --ref master -f ref="v$(cat VERSION)"
 ```
 
+**If the tag points at the wrong commit,** delete it locally and on the remote, fix the cause, and tag again:
+
+```bash
+git tag -d "v$(cat VERSION)"
+git push origin ":refs/tags/v$(cat VERSION)"
+git tag "v$(cat VERSION)" && git push origin "v$(cat VERSION)"
+```
+
+If a GitHub Release was already created from the wrong commit, delete it on GitHub before you tag again.
+
 **Staging directory cleanup:** the staging directory at `.aid/.temp/release-<VERSION>/`
-is gitignored. Clean it up when no longer needed:
+is gitignored. Delete it when you do not need it:
 
 ```bash
 rm -rf ".aid/.temp/release-$(cat VERSION)/"
@@ -293,9 +272,9 @@ bash release.sh [--version X.Y.Z] [--sign] [--draft] [--prerelease]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--version X.Y.Z` | content of `VERSION` file | Release version. Must match `VERSION` file; fails on mismatch (exit 3). |
-| `--sign` | off | Emit a detached signature over `SHA256SUMS`. Currently exits non-zero — signing is deferred. Do not use. |
-| `--draft` | off | Create the GitHub Release as a draft. Recommended: always draft first, review, then publish. |
-| `--dry-run` | off | Assemble the artifacts and `SHA256SUMS`, stop before `gh release create`. Runs the generator first. No network I/O; no tag created. |
+| `--sign` | off | Emit a detached signature over `SHA256SUMS`. Signing is deferred, so the script exits with an error. Do not use it. |
+| `--draft` | off | Create the GitHub Release as a draft, so you can review it before you publish. |
+| `--dry-run` | off | Assemble the artifacts and `SHA256SUMS`, then stop before `gh release create`. Runs the generator first. No network I/O. |
 | `--stage-only` | off | Stage the artifacts from the working tree as it is. Skips the clean-tree, tag, render and network checks. |
 | `--out DIR` | `.aid/.temp/release-<VERSION>` | Staging directory for `--stage-only`. Must be empty. |
 | `--prerelease` | off | Mark the GitHub Release as a pre-release, so `/releases/latest` skips it. |
@@ -310,7 +289,7 @@ bash release.sh [--version X.Y.Z] [--sign] [--draft] [--prerelease]
 | `1` | General failure (dirty worktree, render-drift, `gh` error). |
 | `2` | Usage / argument error. |
 | `3` | Version mismatch (`--version` does not match `VERSION` file). |
-| `4` | Tag already exists (local git tag or GitHub Release). |
+| `4` | The git tag already exists at a different commit. |
 
 ---
 
@@ -339,7 +318,7 @@ block releases. See the [Cut a release → Prerequisites](#prerequisites) sectio
 |------|--------------|
 | **VALIDATE** | Reads each `profiles/*.toml` and checks its keys. A bad descriptor stops the run. |
 | **RENDER** | Wipes each `profiles/<tool>/` and renders that tool's agents and `aid-tool.conf` from `canonical/agents/`. |
-| **VERIFY** | The deterministic check covers stable re-rendering, exact output contents, frontmatter and TOML syntax, canonical-token neutralization, and descriptor placement data; any failure fails the run. The advisory check reports warnings without failing the run. |
+| **VERIFY** | The deterministic check must pass, or the run fails. The advisory check prints how many files it checked and how many warnings it found, and never fails the run. |
 | **DOGFOOD RESYNC** | Runs `sync_dogfood.py`. It runs `release.sh --stage-only` to build the artifacts from the working tree, then `aid update --from-bundle` to refresh this repo's own install: `.agents/skills/`, `.claude/skills/aid-*`, `.aid/runtime/`, the agents, and the `AGENTS.md` and `CLAUDE.md` regions. |
 
 The dogfood resync can change files outside `profiles/`, so a run is not finished until you have
@@ -365,10 +344,8 @@ dogfood byte-identity test in the canonical helper suites.
 
 When `run_generator.py` completes, check the output for:
 
-- **VERIFY (deterministic): PASS.** The byte-identical re-render check passed. If this fails, the
-  generator output is non-deterministic; do not commit.
-- **VERIFY (advisory).** Review `skipped_count` (URLs pending fetch) and `warning_count`. Advisory
-  warnings do not block commits.
+- **`VERIFY (deterministic): PASS`.** If this check fails, the run stops with an error. Do not commit.
+- **`VERIFY (advisory): checked=N warnings=N`.** Read the warnings. Advisory warnings do not fail the run.
 - **`Done. Profile trees regenerated and dogfood trees resynced.`** This line ends a successful run.
 
 Confirm the scope of the change with:

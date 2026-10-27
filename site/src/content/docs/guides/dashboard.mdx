@@ -1,53 +1,39 @@
 ---
 title: Using the web dashboard
-description: How to start the AID web dashboard, navigate the machine-level project home, read per-project pipeline state and Knowledge-Base freshness, drill into task forensics, and expose the dashboard over a private tailnet.
+description: This page shows you how to start the AID web dashboard, follow your projects in a browser and share it on your private tailnet.
 sidebar:
   label: Web dashboard
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
+This page shows you how to start the AID web dashboard, follow your projects in a browser and share it on your private tailnet.
+
 ## What the dashboard is
 
-The AID web dashboard is a local, read-only browser UI for your AID projects. It is
-**not** the same as running `aid` (no arguments), which shows a text status screen in
-the terminal. The web dashboard must be started explicitly and runs as a background
-server process.
+The AID web dashboard is a local browser page for the AID projects on your machine. It is not the text status screen that bare `aid` prints in the terminal. You start it yourself, and it runs as a background server.
 
-It shows:
+One dashboard serves every project registered on this machine. It shows:
 
-- A **machine-level home** listing every project this `aid` installation manages, with
-  click-through to each project.
-- A **per-project live view** with pipeline status, installed tools, and a five-state
-  Knowledge-Base freshness card.
-- A **task drill-down forensic panel** for inspecting individual task findings, the
-  review ledger, raw state, and logs.
-- A **four-level breadcrumb** (machine home / project / work / task) so you always know
-  where you are.
+- A **home page** that lists the registered projects, each with its AID version and a Knowledge Base chip.
+- A **project page** with the sections Tools, Knowledge Base, Connectors, External Sources and Pipelines.
+- A **task page** with the findings, the review ledger, the raw state file and the logs of one task.
+- A **breadcrumb** at the top that shows where you are: Home, then the project, then the pipeline, then the task.
 
-The dashboard is served from `127.0.0.1` (localhost) only and never contacts the network
-on its own. It reads your project `.aid/` directories and the CLI registry; it never
-writes anything.
+The server listens on `127.0.0.1` only. It does not bind to a public address.
 
----
-
-## Starting the dashboard
+## Start the dashboard
 
 <Steps>
 
 1. **Choose a server runtime.**
 
-   The dashboard ships a vendored server that can run under either Node or Python.
-   Use whichever is available on your machine.
+   The dashboard ships one server written for Node and one written for Python. Use whichever is installed. The command needs `node` or `python3` on your PATH, and the Python server needs Python 3.11 or later.
 
    ```bash
-   aid dashboard start node    # requires node on PATH
-   aid dashboard start python  # requires python3 on PATH
+   aid dashboard start node
+   aid dashboard start python
    ```
-
-   If neither is installed, install one first. On most systems:
-   - Node: https://nodejs.org/ or via your package manager.
-   - Python: https://python.org/ (3.8 or later) or via your package manager.
 
 2. **Open the URL the command prints.**
 
@@ -57,161 +43,112 @@ writes anything.
 
    Open that URL in your browser. The default port is `8787`.
 
-3. **Use a custom port if needed.**
+3. **Use another port if you need one.**
 
    ```bash
    aid dashboard start node --port 9000
    ```
 
-   The port must be an integer between `1024` and `65535`.
+   The port must be a whole number from `1024` to `65535`.
 
 </Steps>
 
-The dashboard runs in the background until you stop it or reboot. It works from any
-directory — it is not tied to the current project.
+The dashboard keeps running until you stop it. It works from any directory, because it is not tied to the current project.
 
 <Aside type="note" title="Already running?">
-If a dashboard is already running, `aid dashboard start` prints a message with the
-existing URL and exits without starting a second instance. Run `aid dashboard stop`
-first to restart on a different port or runtime.
+If a dashboard is already running, `aid dashboard start` prints its URL and exits with code `8` without starting a second one. Run `aid dashboard stop` first if you want a different port or runtime.
 </Aside>
 
----
-
-## Stopping the dashboard
+## Stop the dashboard
 
 ```bash
 aid dashboard stop
 ```
 
-This is idempotent — it is safe to call when the dashboard is already stopped. If the
-dashboard was started with `--remote`, `stop` also tears down the tailnet exposure.
+Stopping is safe to repeat: it does nothing when the dashboard is not running. It also removes the tailnet exposure if you started the dashboard with `--remote`.
 
----
+## The home page
 
-## The machine-level home
+The home page lists every project registered on this machine. Open a project to see its page.
 
-Visiting `http://127.0.0.1:8787/` (or whichever port you chose) shows the
-**machine-level home**: a list of every project this `aid` installation manages,
-drawn from the CLI registry (`~/.aid/registry.yml`).
+A project appears here once it is registered. Running `aid add <tool>` inside a project is one way to get it registered. You can also run `aid projects add` or `aid projects scan`. Run `aid projects list` in a terminal to see the registry. If a registered folder is missing, its card is marked unavailable and shows the `aid projects remove` command that untracks it.
 
-Each row shows:
-- Project name (from `.aid/settings.yml`) and path.
-- The current pipeline status across all in-flight works.
-- Installed tool IDs.
-- AID version installed in that project.
+## The project page
 
-Click any project row to open the **per-project view**.
+The project page is a live view of one project. It refreshes on its own.
 
-<Aside type="note" title="Registered projects only">
-Only projects registered in the CLI registry appear here. A project is registered when
-you run `aid add <tool>` inside it, or manually with `aid projects add`. Projects not
-in the registry do not appear. Run `aid projects list` in a terminal to see the current
-registry state.
-</Aside>
+### Pipelines
 
----
+Each work in the project is listed as a pipeline card. The card shows the phase the work is in. Open a card to see the work, then open a task to see its detail. The dashboard also finds works that live on other git worktrees of the project.
 
-## The per-project view
+### Knowledge Base card
 
-The per-project view shows a live snapshot of one project.
-
-### Pipeline status
-
-Each in-flight work (`work-NNN`) is listed with its current phase and status (Pending,
-In Progress, Done, Blocked, etc.). Works are read directly from `.aid/work-NNN/STATE.md`
-at request time, so the view is always current.
-
-The dashboard also discovers works that exist only on a git worktree branch: those appear
-labeled by branch name. When the same work appears on multiple branches, the most-advanced
-state wins and the branches are merged into a single entry.
-
-### Installed tools
-
-A compact list of host-tool IDs installed in this project (for example, `claude-code`,
-`codex`), with the tool version from the project manifest.
-
-### Knowledge-Base freshness card
-
-The KB freshness card reports whether the project's Knowledge Base is up to date. It can
-be in one of five states:
+The [Knowledge Base](/reference/glossary/#knowledge-base) card shows one of five states:
 
 | State | Meaning |
 |-------|---------|
-| **Current** | KB summary exists and was generated from the current codebase. |
-| **Outdated** | KB summary exists but the codebase has changed since it was generated. Run `/aid-summarize` to refresh. |
-| **Missing** | No KB summary exists. Run `/aid-discover` then `/aid-summarize`. |
-| **Empty** | `.aid/knowledge/` exists but has no documents. |
-| **No KB** | The `.aid/knowledge/` directory is absent. AID is installed but the KB phase has not run. |
+| **No KB** | There is no Knowledge Base yet. Run `/aid-discover` to build it. |
+| **Building** | Discovery is building the Knowledge Base. |
+| **Preparing** | The Knowledge Base is approved and its summary is being generated. |
+| **Ready** | The Knowledge Base is approved and current. |
+| **Outdated** | The branch has moved past the point the Knowledge Base was approved at. Run [`/aid-housekeep`](/reference/glossary/#aid-housekeep) to bring the documents up to date. |
 
-"Outdated" detection compares the KB baseline timestamp (recorded in
-`.aid/knowledge/kb_baseline`) against the most recent file-change time in the
-project. When the project is newer than the baseline, the card turns Outdated.
+The card also lists any documents marked suspect.
 
----
+## The task page
 
-## Task drill-down forensic panel
+Open a task from its pipeline to see the task page. It has four parts:
 
-Click any task within a work to open the **forensic panel** — a Level-3 view with four
-sections:
+- **Findings**: what the reviewer found in this task.
+- **Review ledger**: the graded review results for the task.
+- **Raw STATE.yml**: the raw text of the task's state file, collapsed until you open it.
+- **Logs**: the log output captured for the task.
 
-- **Findings** — the reviewer's graded finding list for this task.
-- **Review ledger** — the full structured ledger (all severity/status pairs).
-- **Raw STATE** — the raw content of this task's state block in `STATE.md`.
-- **Logs** — any log output captured during execution.
+Use the breadcrumb to go back. Each level above the task is a link.
 
-The panel loads on demand (`?detail=` query parameter) without refreshing the rest of the
-page. Use the **four-level breadcrumb** at the top to navigate back:
+## Changing things from the dashboard
 
-```
-Machine home > Project name > Work NNN > Task NNN
-```
+When you start the dashboard on its own machine, it is writable. The page footer says `writable`. From the pages you can register a project, update the CLI, change the minimum grade, add or remove connectors, rename a task and delete a pipeline. When the dashboard is read-only, the footer says `read-only` and these controls are hidden.
 
-Each level is a live link, so you can jump directly from a task panel back to the
-machine home in one click.
+## Share the dashboard over a private tailnet
 
----
-
-## Exposing the dashboard over a private tailnet
-
-`--remote` exposes the dashboard to other devices on your [Tailscale](https://tailscale.com/)
-tailnet. The exposure is **always private to your tailnet** — it never binds to a public
-address.
+`--remote` exposes the dashboard to other devices on your [Tailscale](https://tailscale.com/) tailnet. It never binds to a public address.
 
 ```bash
 aid dashboard start node --remote
 ```
 
-On success, the command prints both URLs:
+On success, the command prints the local URL and the private one:
 
 ```
 Dashboard (node) running at http://127.0.0.1:8787 -- stop with: aid dashboard stop
 Remote (private): https://your-host.tail12345.ts.net/
 ```
 
-The `https://` URL has a trusted Let's Encrypt certificate provided by Tailscale. Use
-it from any device on the same tailnet without a browser warning.
-
-`aid dashboard stop` tears down both the local server and the tailnet exposure.
+`aid dashboard stop` removes both the local server and the tailnet exposure.
 
 ### Requirements
 
-- Tailscale must be installed, running, and logged in on this machine (`tailscale status`
-  should show `Running`).
-- If Tailscale is absent or not running, `--remote` fails with an explicit error message
-  and exits with code `10`. The local server continues running.
+- Tailscale must be installed on this machine, running and logged in.
+- If Tailscale is missing or not running, `--remote` prints an error and exits with code `10`. The local server keeps running at `127.0.0.1`.
 
-### Restricting tailnet access
+### Writes over the tailnet
 
-By default, every device on your tailnet can reach the dashboard host once `--remote` is
-active. To restrict access to only your identity, add an ACL grant in your tailnet policy
-file at https://login.tailscale.com/admin/acls/file:
+Under `--remote` the dashboard is read-only. To allow changes from other devices, add `--allow-writes`:
+
+```bash
+aid dashboard start node --remote --allow-writes
+```
+
+### Limit who can reach it
+
+By default, every device on your tailnet can reach this machine once `--remote` is on. To limit access to your own identity, add a grant like this to your tailnet policy file, on the access-controls page of the Tailscale admin console:
 
 ```json
 {
   "grants": [
     {
-      "src": ["your@email.com"],
+      "src": ["you@example.com"],
       "dst": ["your-host-short-name"],
       "ip": ["tcp:443"]
     }
@@ -219,12 +156,8 @@ file at https://login.tailscale.com/admin/acls/file:
 }
 ```
 
-Replace `your@email.com` with your Tailscale login identity and `your-host-short-name`
-with the short machine name from `tailscale status`. The `aid dashboard start --remote`
-output prints this guidance to stderr automatically.
+Replace `you@example.com` with your Tailscale login and `your-host-short-name` with this machine's short name. The `--remote` command prints the same guidance to stderr.
 
-<Aside type="caution" title="What tailnet-granted identities can see">
-Anyone who can reach the host over the tailnet sees the full list of registered project
-paths and names shown on the machine-level home, plus each project's pipeline state,
-tools, and KB status. Grant access only to identities you trust with that information.
+<Aside type="caution" title="What people on your tailnet can see">
+Anyone you grant access sees the names and paths of all registered projects, plus each project's pipelines, tools and Knowledge Base status. With `--allow-writes` they can also change project state. Grant access only to people you trust with that.
 </Aside>
