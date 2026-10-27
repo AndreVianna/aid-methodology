@@ -1,70 +1,80 @@
 ---
 title: Artifacts
-description: Every named file the AID methodology produces — what each artifact is, what it contains, and where it lives.
+description: This page lists the named files AID produces, what each one is, and where it lives, so you can find any of them quickly.
 sidebar:
   order: 7
   label: Artifacts
 ---
 
-AID produces a well-defined set of named artifacts during its pipeline phases. Each artifact has a fixed path convention, a clear owner (the phase/skill that writes it), and a defined consumer (the next phase or skill that reads it).
+This page lists the named files AID produces, what each one is, and where it lives, so you can find any of them quickly.
 
-See [Repository Structure](/reference/repository-structure/) for the layout of the repository itself. See [Knowledge Base doc types](/reference/kb/) for the 14 KB document templates.
+Each artifact has a path, a skill that writes it and a purpose. To see how the pieces fit together, read [the pipeline](/concepts/pipeline/). For the layout of the repository itself, see [Repository Structure](/reference/repository-structure/). For the [Knowledge Base](/reference/glossary/#knowledge-base) document types, see [Knowledge Base documents](/reference/kb/).
 
-## Work-area artifacts
+## Work artifacts
 
-These artifacts live under `.aid/{work-id}/` for each active work item. The **full path**
-(entered via `/aid-describe`) nests delivery- and task-level artifacts under
-`deliveries/delivery-NNN/`; the **lite path** (entered via a shortcut or `/aid-triage`)
-flattens them to the work root — see [Lite-path artifact shape](#lite-path-artifact-shape)
-below.
+These artifacts live under `.aid/works/{work}/`, one folder for each work item. The full path nests delivery and task artifacts under `deliveries/delivery-NNN/`. The [Lite path](/reference/glossary/#lite-path) flattens them to the work root. See [Lite-path artifact shape](#lite-path-artifact-shape) below.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| `REQUIREMENTS.md` | `.aid/{work}/REQUIREMENTS.md` | `aid-describe` (full path) or the shortcut engine (lite path) | Functional and non-functional requirements. Contains user stories, acceptance criteria, constraints, assumptions, and priority rankings. |
-| `PLAN.md` | `.aid/{work}/PLAN.md` | `aid-plan` (full path) or the shortcut engine (lite path) | The delivery plan: ordered deliverables (each a functional MVP), feature-to-delivery mapping, and the sequencing rationale. On the lite path there is a single implicit delivery. |
-| Feature section | `.aid/{work}/REQUIREMENTS.md` § 11, one `### Feature NNN` per feature | `aid-define` (created) / `aid-specify` (technical specification appended) | The feature definition. A SECTION, not a file: there is no per-feature `SPEC.md` and no `features/` folder. |
-| Delivery stanza | `.aid/{work}/PLAN.md`, one `### delivery-NNN` per delivery | `aid-plan` | The delivery definition -- objective, scope, gate criteria, dependencies -- in the document that already orders the deliveries. |
-| `STATE.yml` (delivery-area) | `.aid/{work}/deliveries/{delivery}/STATE.yml` | `aid-plan` (created) / `aid-execute` (updated) | Full-path only. Delivery lifecycle state and gate criteria for one delivery. On the lite path, the sole delivery's lifecycle and gate are promoted into the work-area `STATE.md` instead. |
-| `DETAIL.md` (task definition) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) or `.aid/{work}/tasks/{task}/DETAIL.md` (lite path) | `aid-detail` (full path) or the shortcut engine (lite path) | Individual task definition. Each task has one of the eight types (`RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`), acceptance criteria, scope, and dependencies. Tasks are the unit of execution for `aid-execute`. |
-| `STATE.yml` (task-area) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/STATE.yml` | `aid-detail` (created) / `aid-execute` (updated) | Full-path only. Task lifecycle state and review history for one task. The lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle`. |
-| `STATE.yml` (work-area) | `.aid/{work}/STATE.yml` | all skills | State machine state for the current work item. Records which phase the work is in, what has been completed, and Q&A/review history for re-entrant skill invocations. On the lite path, the sole delivery's gate and Q&A are promoted directly into this file. |
-| `IMPEDIMENT-task-NNN.md` | `.aid/{work}/IMPEDIMENT-task-NNN.md` | `aid-execute` (developer agent) | Formal escalation artifact, produced by the Execute phase. Created when implementation reveals a spec contradiction or impossible acceptance criterion. Contains: type, evidence, blocked task, and proposed resolution. Triggers the appropriate feedback loop. |
+| `REQUIREMENTS.md` | `.aid/works/{work}/REQUIREMENTS.md` | `aid-describe` (full path) or the [shortcut engine](/reference/glossary/#shortcut-engine) (Lite path) | The requirements document. It holds the objective, problem statement, users, scope, functional and non-functional requirements, constraints, assumptions, acceptance criteria and priorities. Section 11 holds the features. |
+| [Feature section](/reference/glossary/#feature-section) | `.aid/works/{work}/REQUIREMENTS.md`, section 11, one `### Feature NNN` for each feature | `aid-define` creates it, `aid-specify` adds the technical specification | The definition of one feature. It is a section of `REQUIREMENTS.md`, not a file of its own. |
+| `PLAN.md` | `.aid/works/{work}/PLAN.md` | `aid-plan` (full path) | The delivery plan. It holds the ordered deliveries and the execution graph. The Lite path writes no `PLAN.md`. |
+| [Delivery stanza](/reference/glossary/#delivery-stanza) | `.aid/works/{work}/PLAN.md`, one `### delivery-NNN` for each delivery | `aid-plan` | The definition of one delivery: its objective, scope and gate criteria. |
+| [`DETAIL.md`](/reference/glossary/#detailmd) | Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`. Lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md` | `aid-detail` (full path) or the shortcut engine (Lite path) | The definition of one task. A task has one type: `RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR` or `CONFIGURE`. It also has a source, acceptance criteria, scope and dependencies. `aid-execute` runs tasks. |
+| [`STATE.yml`](/reference/glossary/#state-file) (work) | `.aid/works/{work}/STATE.yml` | `aid-describe` or the shortcut engine creates it, and later skills update it | The state of the work: its pipeline identity, lifecycle, phase and approval, and the interview and feature cells. On the Lite path it also holds the delivery lifecycle, the delivery gate, the task cells and the question-and-answer entries. |
+| `STATE.yml` (delivery) | `.aid/works/{work}/deliveries/delivery-NNN/STATE.yml` | `aid-plan` creates it, `aid-specify` and `aid-execute` update it | Full path only. The delivery lifecycle, from `Pending-Spec` through `Done` or `Blocked`, plus the gate result and the delivery's own question-and-answer entries. |
+| `STATE.yml` (task) | `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` | `aid-detail` creates it, `aid-execute` updates it | Full path only. The task `state`, its `review` result, the quick-check findings and the dispatch log. |
+| `delivery-NNN-issues.md` | `.aid/works/{work}/delivery-NNN-issues.md` | `aid-execute`, in the delivery gate | The `[HIGH]` findings that task quick checks deferred to the gate. The gate reviewer reads it, and each row ends as `Resolved` or `Accepted`. |
+| `IMPEDIMENT-task-NNN.md` | `.aid/works/{work}/IMPEDIMENT-task-NNN.md` | `aid-execute` | Written when the executor meets something it cannot resolve. It records the type (`wrong-assumption`, `missing-dependency`, `architecture-conflict` or `kb-gap`), a description, the options and a recommendation. See [feedback loops](/concepts/feedback-loops/) for how each type is routed. |
+| `known-issues.md` | `.aid/works/{work}/known-issues.md` | `aid-specify`, when it registers the first issue | Problems found in code that a feature touches. `aid-plan`, `aid-execute`, `aid-deploy` and `aid-monitor` read it. |
 
 ### Lite-path artifact shape
 
-The lite path (entered via a shortcut such as `/aid-fix` or `/aid-create-api`, or via
-`/aid-triage`) flattens the tree above: a single implicit delivery, no `deliveries/` folder,
-no `delivery-001/` folder.
+You enter the Lite path with a shortcut such as `/aid-fix` or `/aid-create api`, and `/aid-triage` can suggest one. It has a single implicit delivery, so there is no `deliveries/` folder.
 
 ```
 .aid/
-  work-NNN-name/
-    STATE.yml         # work lifecycle, with the sole delivery's gate + Q&A promoted into it
-    REQUIREMENTS.md   # § 11 carries the single feature section
-    tasks/
-      task-NNN/
-        DETAIL.md      # task definition — the flattened path has NO per-task STATE.yml;
-                       #   each task's cells live in the work-root STATE.yml `tasks_lifecycle`
+  works/
+    work-NNN-name/
+      STATE.yml         # work state, with the delivery lifecycle, gate and task cells in it
+      REQUIREMENTS.md   # section 11 holds the single feature section
+      tasks/
+        task-NNN/
+          DETAIL.md     # task definition; there is no per-task STATE.yml
 ```
 
-The Lite path writes exactly TWO artifact types: `REQUIREMENTS.md` and one `DETAIL.md`
-per task. There is no `SPEC.md` (the feature's technical specification is a section of
-`REQUIREMENTS.md`) and no `PLAN.md` — with one feature and one delivery there is no
-sequencing decision to record.
+The shortcut engine writes `REQUIREMENTS.md` and one `DETAIL.md` for each task, and it keeps their state in `STATE.yml`. It writes no `PLAN.md`: one delivery leaves no sequencing to record. The feature's technical specification is a section of `REQUIREMENTS.md`.
 
-Terminology across both paths: **feature definition = a `REQUIREMENTS.md` § 11 section**,
-**delivery definition = a `PLAN.md` `### delivery-NNN` stanza** (full path only), **task
-definition = `DETAIL.md`**.
+Across both paths, a feature definition is a section of `REQUIREMENTS.md`, a delivery definition is a `### delivery-NNN` stanza of `PLAN.md` (full path only), and a task definition is a `DETAIL.md`.
+
+### Review results
+
+During `aid-execute`, the reviewer lists its findings in a ledger under `.aid/.temp/review-pending/`, and `canonical/aid/scripts/grade.sh` scores that ledger. The task's `STATE.yml` records the `state` and `review` result. On the Lite path, the same cells sit in the work `STATE.yml`, in the `tasks_lifecycle` entry for the task.
 
 ## Knowledge Base artifacts
 
-These artifacts live under `.aid/knowledge/` and represent the living understanding of the project.
+These artifacts live under `.aid/knowledge/`. They hold the living understanding of the project. See [the Knowledge Base](/concepts/knowledge-base/) for how they are built and used.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| KB documents (14 types) | `.aid/knowledge/{doc-type}.md` | `aid-discover`, `aid-housekeep` | The 14 standard Knowledge Base documents — architecture, coding-standards, domain-glossary, and more. See [KB doc types](/reference/kb/) for the full list. |
-| `STATE.md` (knowledge-area) | `.aid/knowledge/STATE.md` | `aid-discover` | Discovery state: Q&A log, approval history, and the last-approved KB snapshot timestamp. Drives re-entrant discovery runs and `aid-housekeep` delta logic. |
-| `knowledge-summary.html` | `.aid/knowledge/knowledge-summary.html` | `aid-summarize` | Self-contained HTML summary of the entire Knowledge Base with inlined Mermaid diagrams, light/dark theme, and click-to-expand lightbox. Generated on demand. |
+| Knowledge Base documents | `.aid/knowledge/{document}.md` | `aid-discover`, `aid-update-kb`, `aid-housekeep` | The documents that describe your project. See [Knowledge Base documents](/reference/kb/) for the standard types. |
+| `PROJECT.md` | `.aid/knowledge/PROJECT.md` | You write it, from the project card template | The optional one-page project card. When it exists, it is read first. |
+| `README.md` and `INDEX.md` | `.aid/knowledge/README.md`, `.aid/knowledge/INDEX.md` | `aid-discover` regenerates them, `aid-describe` refreshes them | The completeness overview and the index of summaries. Open `INDEX.md` to find a document. |
+| `STATE.md` (Knowledge Base) | `.aid/knowledge/STATE.md` | `aid-discover` creates it from the template, and `aid-discover` and `aid-summarize` update it | Discovery state: the question-and-answer log, the review history and the summarization history. |
+| KB-DELTA question entry | `.aid/knowledge/STATE.md`, under `## Q&A (Pending)` | `aid-housekeep` | An entry that `aid-housekeep` appends when it finds a Knowledge Base gap. A targeted `/aid-discover` run resolves it. |
+| `kb.html` | `.aid/knowledge/kb.html` | `aid-summarize` | A single self-contained HTML tour of the Knowledge Base. |
+| `project-index.md` | `.aid/generated/project-index.md` | `aid-discover` (pre-pass) | The file inventory that the discovery sub-agents read. It sits outside the Knowledge Base. |
+
+## Delivery and release artifacts
+
+| Artifact | Path | Produced by | Description |
+|----------|------|-------------|-------------|
+| Delivery branch | `aid/{work}-delivery-NNN` (git branch) | `aid-execute` | One git branch for each delivery. `aid-execute` creates it, and every task of the delivery commits to it. |
+| Release package | `.aid/works/{work}/packages/package-NNN-{name}.md` | `aid-deploy` | One file for each release package. |
+| Deploy record | The `deploy` entries of `.aid/works/{work}/STATE.yml` | `aid-deploy` | One entry for each delivery: its state, pull request, whether the Knowledge Base was updated, tag and notes. |
+| Pull request | A pull request on your git host | `aid-deploy` (the `aid-operator` agent), when the release is pull-request based | The pull request that carries the release, with a structured description. |
+
+`aid-monitor` has no state file of its own. It keeps its findings in the context of the run.
 
 ## Generator artifacts (manifests)
 
@@ -77,52 +87,18 @@ These files are committed derived output, outside the content collection root.
 
 ## Install artifacts
 
-These files are written by the `aid add` command into the target project.
+The `aid add` command writes these files into your project. See [the Installation guide](/guides/installation/) for the steps.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records the top-level `aid_version` (the installed AID release), the shared files (skills, runtime, root regions, mirrors) with their owners and checksums, and each tool's own agent files. Drives `aid update`, `aid status` and `aid remove`. |
-| Settings | `.aid/settings.yml` | `aid add` | Project settings. Created when missing. The standalone `.aid/.aid-version` marker file is retired: the installed version is recorded in the manifest. |
-| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Root instruction file for Claude Code. AID writes one region into it: an `@.aid/runtime/rules.md` import, plus `@.aid/knowledge/PROJECT.md` when the project card exists, so Claude Code loads the AID rules and the card even without `AGENTS.md`. Text outside the AID markers is yours and is kept. |
+| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records the top-level `aid_version` (the installed AID release), the shared files (skills, runtime, root regions, mirrors) with their owners and checksums, and each tool's own agent files. `aid update`, `aid status` and `aid remove` read it. |
+| Settings | `.aid/settings.yml` | `aid add` | Project settings. `aid add` creates it when it is missing. See [Settings keys](/reference/settings/). |
+| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Root instruction file for Claude Code. AID writes one [region](/reference/glossary/#aid-region) into it: an `@.aid/runtime/rules.md` import, plus `@.aid/knowledge/PROJECT.md` when the project card exists. Text outside the AID markers is yours and is kept. |
 | `AGENTS.md` | `AGENTS.md` (project root) | `aid add <tool>` (every tool) | Root instruction file for every tool. AID writes one region into it: a SESSION START block that makes a Read of `.aid/runtime/rules.md` the first action, forbids answering before that Read and pre-empts "do not read files" prompts, plus the rules summary lifted from that file. Text outside the AID markers is yours and is kept. |
 
-## Pipeline-scoped delivery artifacts
+## Templates
 
-These artifacts are produced during `aid-execute` delivery branches.
-
-| Artifact | Path | Produced by | Description |
-|----------|------|-------------|-------------|
-| Delivery branch | `aid/{work}-delivery-NNN` (git branch) | `aid-execute` | One git branch per delivery. `aid-execute` creates it, commits implementation work to it, and the delivery is merged when the review loop exits at grade ≥ minimum. |
-| Delivery PR | GitHub Pull Request | `aid-operator` | The pull request that merges the delivery branch. `aid-operator` creates it with release notes and links to the tasks it closes. |
-
-## Core Artifacts
-
-| **Artifact** | Location | Produced By | Consumed By | Lifecycle |
-|-------------|----------|------------|-------------|-----------|
-| Knowledge Base (14 standard docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
-| INDEX.md | `.aid/knowledge/` | Init, Discover, Describe | All phases | Seeded at init; regenerated by Discovery; maintained by Describe |
-| STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
-| project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
-| REQUIREMENTS.md | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
-| STATE.md (work area) | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
-| Feature section | `REQUIREMENTS.md § 11` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes the requirements side, Specify adds the technical spec |
-| known-issues.md | `.aid/works/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
-| PLAN.md | `.aid/works/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
-| Delivery stanza (delivery definition) | A `### delivery-NNN` section of `PLAN.md` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
-| STATE.md (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.md § Delivery Lifecycle` | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
-| DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/works/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
-| STATE.md (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.md § Tasks lifecycle` | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
-| IMPEDIMENT-task-NNN.md | `.aid/works/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
-| package-NNN-{slug}.md | `.aid/works/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
-| DEPLOYMENT-STATE.md | `.aid/works/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
-| MONITOR-STATE.md _(deferred)_ | `.aid/works/{work}/` | Monitor | `/aid-fix` (bugs), `/aid-triage` (change requests) | Planned — currently an in-memory observation log across runs |
-| KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
-
-Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own `STATE.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: the work-root `STATE.md § Tasks lifecycle` row). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
-
-## Templates Reference
-
-Each artifact starts from a template in the repository. Open the template to see its exact shape:
+Each artifact starts from a template in the repository. Open the template to see its exact shape.
 
 - [requirements/requirements-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/requirements/requirements-template.md): the template for `REQUIREMENTS.md`.
 - [specs/technical-specification-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/specs/technical-specification-template.md): the template for the Technical Specification body of a feature section.
@@ -130,6 +106,9 @@ Each artifact starts from a template in the repository. Open the template to see
 - [task-state-template.yml](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/task-state-template.yml): the template for a task `STATE.yml`.
 - [delivery-state-template.yml](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/delivery-state-template.yml): the template for a delivery `STATE.yml`.
 - [work-state-template.yml](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-state-template.yml): the template for a work `STATE.yml`.
+- [delivery-issues.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/delivery-issues.md): the template for `delivery-NNN-issues.md`.
 - [known-issues.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/known-issues.md): the template for `known-issues.md`.
 - [feedback-artifacts/IMPEDIMENT.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/feedback-artifacts/IMPEDIMENT.md): the template for an `IMPEDIMENT-task-NNN.md`.
 - [package.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/package.md): the template for a release package.
+- [discovery-state-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/discovery-state-template.md): the template for the Knowledge Base `STATE.md`.
+- [project-card.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/project-card.md): the template for `PROJECT.md`.
