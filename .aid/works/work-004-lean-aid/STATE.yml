@@ -258,6 +258,10 @@ lifecycle_history:
     event: 'Paused: handed off to Codex'
     grade: --
     notes: 'HANDOFF.md written; site results pushed as branches work-004-site-plain and work-004-site-aid; Q14 pending'
+  - date: '2026-10-27'
+    event: 'Lean build approved; goal card prepared'
+    grade: Pending
+    notes: 'Q14 answered 1 with whole-result check; STEP-2.md replaces the direct-lane draft and awaits approval under Q16'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -301,6 +305,14 @@ delivery_gate:
 #     state: Pending | Answered | Skipped /
 #     context / suggested / answer / applied_to
 qa:
+  - id: Q16
+    category: Approval
+    impact: High
+    state: Pending
+    context: 'Do you approve the goal card and plan for building and measuring lean AID, including a whole-result check against the original request and repository?'
+    suggested: 'Approve: it keeps the existing skills, makes the checks and targets measurable, and asks separately before site benchmark spending'
+    answer: ''
+    applied_to: 'STEP-2.md'
   - id: Q1
     category: Direction
     impact: High
@@ -328,11 +340,11 @@ qa:
   - id: Q14
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'Proposal to keep the result and simplify the process: context first; a size and risk test; a direct lane for small work; for big work one goal card, acceptance tests first by a separate agent, one plan of milestones, milestone reviews by evidence class with one fix round; one state file; hard rules as hooks. Built beside today''s skills as one entry skill (aid-change) with lane references, three agents (builder, test writer, reviewer) and scripts for the mechanics, reviews at two checkpoints with the proof rule, and proven on the tags and site benchmarks before the old phase skills retire. Approve it as the goal of the next step?'
     suggested: 'Approve; build it as one step (steps 2 and 3 together), beside the current skills'
-    answer: ''
-    applied_to: ''
+    answer: '1; include a whole-result check against the original request and the repository, and show the goal card before proceeding'
+    applied_to: 'Build the lean design beside current skills as one step; prepare STEP-2.md for approval before implementation'
   - id: Q13
     category: Scope
     impact: High

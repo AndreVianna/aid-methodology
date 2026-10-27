@@ -1,22 +1,19 @@
-# Step 2: the direct lane (goal card, draft)
+# Step 2: lean AID (goal card for approval)
 
-**Goal:** a small task typed as a skill (`/aid-fix`, `/aid-create`, any doorway) costs close to the same request asked
-in plain words, and still ends correct: a test for the change, the project checks passing, the user's yes before the
-commit. Today a typed `/aid-fix` ran more than 31 minutes, cost about $24 and changed no code.
+**Goal:** make small work fast and keep complex work on track, with results at least as good as a plain agent and less process than today's AID. Build the design in `DESIGN.md` alongside the current skills; keep the project card, relevant Knowledge Base context and independent review.
 
-**How:** the shortcut engine gets a first state, SIZE: a short written test (few files, one capability, no schema,
-data, security, dependency or public-API change). Small goes to DIRECT, the six steps of `DESIGN.md` § B, run by the
-main agent itself. Anything else goes to today's path, which step 3 replaces.
+**Out of scope:** retiring existing skills, changing the benchmark's starting commit or grading away failures, deploying or merging. Retirement is a separate decision after results are shown.
 
-**Out of scope:** the planned lane (step 3); hooks (step 3); removing today's engine states.
-
-| # | Criterion | How it is checked |
+| # | Acceptance criterion | Evidence |
 |---|---|---|
-| C1 | `/aid-fix` on the measurement fixture: tests pass, at most 2 user turns, 0 helper agents, no work folder, cost at most 2 times the plain request (plain today $0.22) | `tests/measure/measure.py --scenario fix-skill` |
-| C2 | `/aid-create` for the small feature: the same bar (plain today $0.09) | `measure.py --scenario feature-skill` |
-| C3 | For a bug, a failing test comes before the fix; the change ends with the project's checks run and shown | the fix run's transcript: a test file changes and the tests run before the source edit |
-| C4 | A request that fails the size test (for example a schema change) goes to the existing path, not DIRECT | one routing scenario in `measure.py` |
-| C5 | Tracking binds works: a direct-lane change has no work folder and no STATE file; its commit is its record | `rules.md` says so; static check |
-| C6 | The engine does not grow: SIZE and DIRECT together are at most about 60 lines, and the engine's total line count does not rise | static check |
+| C1 | One `/aid-change` entry routes small work directly and larger or riskier work to a goal card and plan. Planned work gets at most two approvals: plan and result. | Routing behavior tests and benchmark transcripts, including approval counts. |
+| C2 | Bugs get a failing test before the fix; planned work has acceptance tests written by a different agent. The build runs in the foreground and runs the relevant checks. | Behavior tests and ordered run evidence; record when a check cannot run. |
+| C3 | `checks` records each starting failure and message and the number of tests run; it reports existing failures and blocks new failures, changed messages or fewer tests. `trace`, `red-first` and `state` enforce the contracts in `DESIGN.md`. | Behavior tests including passing, failing and missing-test cases. |
+| C4 | An independent review checks the plan against the request, and the result against reality at milestones. It also checks the whole result against the original request and repository, including cross-page consistency and rendered output where relevant. Findings block only with the specified evidence; after one fix round, unresolved findings are shown to the user. | Review records cite the request, repository or failing check; site grade and blind review inspect the built result. |
+| C5 | The entry skill is at most about 100 lines and its review brief at most about 60, held by a test. New rules respond to benchmark evidence and replace or remove something. | Line-budget test and recorded rationale for any new rule. |
+| C6 | Fix, feature, tags and site benchmarks use the same scenarios, starting commits and graders as the comparisons, with a raw-table rendering check added to the site grader. Record correctness, cost, elapsed time, approvals, helper runs and interrupted or repeated work. | Saved results and transcripts; re-grade both existing site results with the updated grader. |
+| C7 | Lean results are as good as or better than plain on hidden checks and blind review, with cost about 1.5–2 times plain. Show measured results and any misses; do not treat the target as already met. | Side-by-side benchmark report, with estimates distinguished from measured cost. |
 
-**Budget:** about one day of agent time; one independent review of the whole change; measurement runs about $3.
+**Plan:** (1) add the site raw-table check and re-grade existing results (C6); (2) build the entry skill, lane references, three agent roles and four scripts with behavior tests (C1–C5); (3) add lean mode to the measurement drivers and run the cheaper scenarios (C6–C7); (4) with separate approval for site-run spend, run and grade the site benchmark, review the whole result, and report all targets and misses (C4, C6–C7).
+
+**Budget and safeguards:** keep the design and instructions short. No paid site benchmark starts until the maintainer sees its estimated cost and agrees; check that Claude CLI is installed and signed in before any benchmark. Preserve the old results and disclose unavailable checks. Stop and report a remaining evidenced defect after the one fix round; do not call it accepted.
