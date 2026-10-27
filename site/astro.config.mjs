@@ -29,19 +29,8 @@ export default defineConfig({
     starlight({
       title: 'AID — AI Integrated Development',
 
-      // Persistent social links in header/footer chrome (AC3)
-      social: [
-        {
-          icon: 'github',
-          label: 'GitHub',
-          href: 'https://github.com/AndreVianna/aid-methodology',
-        },
-        {
-          icon: 'external',
-          label: 'Casulo AI Labs',
-          href: 'https://casuloailabs.com',
-        },
-      ],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AndreVianna/aid-methodology' }],
+      expressiveCode: { frames: { showCopyToClipboardButton: false } },
 
       customCss: ['./src/styles/tokens.css', './src/styles/site.css'],
 
