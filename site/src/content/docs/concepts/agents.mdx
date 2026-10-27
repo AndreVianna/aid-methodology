@@ -22,7 +22,7 @@ The rules for choosing come from one shared rubric, [the agent dispatch tiering 
 
 The rubric defaults low and escalates only for the hard cases. Routine work runs on medium at medium effort. Retrieval-heavy work, such as research or Knowledge Base writing, runs on medium at low effort, because deeper thinking does not help retrieval. Mechanical work runs on small. Hard and frontier work moves to large.
 
-On the Codex tool, the effort is fixed per tier in the tool's profile. On Claude Code, Cursor, GitHub Copilot CLI and Antigravity, the skill that dispatches the agent sets the effort.
+On the Codex tool, the effort is fixed per tier in the tool's profile. On Claude Code, Cursor and GitHub Copilot CLI, the skill that dispatches the agent sets the effort. The Antigravity profile renders no effort field, so the table below gives it a model per tier only.
 
 ## Models per tool
 
@@ -30,9 +30,9 @@ Each host tool maps the three tiers to its own models in `profiles/<tool>.toml`.
 
 | **Tier** | Claude Code | Codex CLI | Cursor | Copilot CLI | Antigravity |
 |---------|------------|-----------|--------|-------------|-------------|
-| **Large** | `opus` | `gpt-5.5`, high effort | `opus` | `claude-opus-4.8` | `gemini-3-pro`, high effort |
-| **Medium** | `sonnet` | `gpt-5.4`, medium effort | `sonnet` | `claude-sonnet-4.6` | `gemini-3-pro`, low effort |
-| **Small** | `haiku` | `gpt-5.4-mini`, low effort | `haiku` | `claude-haiku-4.5` | `gemini-3-flash`, low effort |
+| **Large** | `opus` | `gpt-5.5`, high effort | `opus` | `claude-opus-4.8` | `gemini-3-pro` |
+| **Medium** | `sonnet` | `gpt-5.4`, medium effort | `sonnet` | `claude-sonnet-4.6` | `gemini-3-pro` |
+| **Small** | `haiku` | `gpt-5.4-mini`, low effort | `haiku` | `claude-haiku-4.5` | `gemini-3-flash` |
 
 The generator renders the agents once per tool from the single source in `canonical/`. Where each tool's agents are installed is on the [repository structure page](/reference/repository-structure/), and the commands that install them are in the [Installation guide](/guides/installation/).
 
@@ -51,7 +51,7 @@ During `/aid-execute`, these reviews work differently:
 
 A skill with a state machine has a Dispatch table. Each row is one state of the skill, and it names the worker for that state: an agent, or `inline` when the skill does the step itself. A simpler skill dispatches its agent in plain steps instead. `/aid-review`, for example, dispatches `aid-reviewer` once, in a clean context. Examples of Dispatch tables:
 
-- `/aid-discover` hands GENERATE, REVIEW and FIX to `aid-architect`, and runs ELICIT, Q-AND-A and APPROVAL inline.
+- `/aid-discover` hands GENERATE and FIX to `aid-architect`, REVIEW to `aid-reviewer`, and runs ELICIT, Q-AND-A and APPROVAL inline.
 - `/aid-specify` hands INITIALIZE and CONTINUE to `aid-architect` and REVIEW to `aid-reviewer`.
 - `/aid-update-kb` sends ANALYZE to `aid-researcher` and SCOPE to `aid-architect`, each in a clean context that does not see the conversation so far.
 - `/aid-execute` runs the quick check with `aid-reviewer` at the small tier.

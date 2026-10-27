@@ -22,7 +22,7 @@ Then run this command in your AI tool:
 /aid-config
 ```
 
-[`/aid-config`](/reference/glossary/#aid-config) shows your project settings, such as the project name and the minimum grade. On the first run it copies the settings template to `.aid/settings.yml`. Run `/aid-config <key>` to change one setting, for example `/aid-config minimum_grade`.
+[`/aid-config`](/reference/glossary/#aid-config) shows your project settings, such as the project name and the [minimum grade](/reference/glossary/#grading). On the first run it copies the settings template to `.aid/settings.yml`. Run `/aid-config <key>` to change one setting, for example `/aid-config minimum_grade`.
 
 ## Start with an existing project (Brownfield)
 
@@ -89,7 +89,7 @@ Run the phases in this order: Discover, Describe, Define, Specify, Plan, Detail,
    /aid-execute work-001 task-001
    ```
 
-   Execute carries out the task by its type, then has it reviewed and fixed until it meets the minimum grade. `work-001` is optional when you have only one work.
+   Execute carries out the task by its type, then gives it a quick check. The delivery gate grades the delivery against the minimum grade. `work-001` is optional when you have only one work.
 
 If you have more than one work, add the work id to the command, as in `/aid-plan work-001`.
 

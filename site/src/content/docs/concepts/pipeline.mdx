@@ -88,9 +88,9 @@ A shortcut skips `/aid-describe` through `/aid-detail`. It runs the shortcut eng
 INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
 ```
 
-The engine collapses the five definition phases into one run. It does not skip them. CAPTURE, SPEC, PLAN and DETAIL run without a stop between them. The only times it speaks to you are a rare question in CAPTURE and the halt at the end.
+The engine collapses the five definition phases into one run. It does not skip them. CAPTURE, SPEC, PLAN and DETAIL run without a stop between them. It can ask you a question at INTAKE (new work or continuation) and, rarely, in CAPTURE, and it stops for your approval at the halt at the end.
 
-GATE grades every generated document. The shortcut path's own floor is `A+`, unless the project lowers it with a `minimum_grade` setting for that skill. APPROVAL-HALT then presents the work and stops. The engine never builds anything. You run `/aid-execute` yourself after you approve.
+GATE grades every generated document. It grades against the `minimum_grade` setting: a per-skill value if the project sets one, otherwise the global value (the shipped default is `A`). APPROVAL-HALT then presents the work and stops. The engine never builds anything. You run `/aid-execute` yourself after you approve.
 
 If works already exist, INTAKE first asks whether this is new work or a continuation. For a continuation it hands you to that work's own command and does not run.
 
@@ -112,9 +112,9 @@ Two things differ from the full path. There is no `STATE.yml` per task, because 
 
 ## Execute and review
 
-`/aid-execute` takes one task and works by its type. You name the task, for example `/aid-execute work-001 task-001`. Its states are EXECUTE, REVIEW, FIX and DONE, plus a delivery gate.
+`/aid-execute` takes one task and works by its type. You name the task, for example `/aid-execute work-001 task-001`. Its states are EXECUTE, REVIEW and DONE for a task, plus a delivery gate that has its own FIX loop.
 
-A separate reviewer agent checks each task with a quick check. When a delivery's tasks are done, a delivery-gate review grades the whole delivery and loops with fixes until the grade meets the minimum. If the grade does not improve for three cycles in a row, the loop stops and shows you your options.
+A separate reviewer agent gives each task a quick check: a CRITICAL finding is fixed on the spot, once, and a HIGH finding is deferred to the gate. When a delivery's tasks are done, a delivery-gate review grades the whole delivery and loops with fixes until the grade meets the minimum. If the grade does not improve for three cycles in a row, the loop stops and shows you your options.
 
 All tasks in a delivery share one branch, named `aid/<work>-delivery-NNN`. When you run Execute on a whole delivery, it runs several independent tasks at once. The limit is the `execution.max_parallel_tasks` setting, which is 5 when the setting is absent.
 

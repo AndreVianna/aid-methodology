@@ -23,9 +23,9 @@ Each shortcut that plans work (such as `/aid-fix`) hands over to the same [short
 INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT
 ```
 
-The engine skips no phase. It gathers the information for each phase in one run. CAPTURE, SPEC, PLAN and DETAIL run without a checkpoint after each one. You are asked only for a gap that matters, in CAPTURE, and at the final approval.
+The engine skips no phase. It gathers the information for each phase in one run. CAPTURE, SPEC, PLAN and DETAIL run without a checkpoint after each one. It can ask whether this is new work or a continuation at INTAKE, and a gap that matters in CAPTURE. It stops for your approval at the end.
 
-GATE then grades every document the engine wrote. It repeats review and fix until each document meets the minimum grade, which is A+ for shortcuts unless your settings lower it. APPROVAL-HALT then shows you the work and stops.
+GATE then grades every document the engine wrote. It repeats review and fix until each document meets the [minimum grade](/reference/glossary/#grading), which is the `minimum_grade` setting (the shipped default is `A`). APPROVAL-HALT then shows you the work and stops.
 
 The engine never builds anything. You start `/aid-execute` yourself after you approve.
 
@@ -48,7 +48,7 @@ Each run writes one new work. If works already exist, the engine first asks whet
    /aid-execute work-001 task-001
    ```
 
-   Execute carries out the task, reviews it, and fixes it until it meets the minimum grade. You can leave out `work-001` when you have only one work.
+   Execute carries out the task and gives it a quick check. The delivery gate grades the delivery against the minimum grade. You can leave out `work-001` when you have only one work.
 
 ## What a shortcut work looks like on disk
 
@@ -65,7 +65,7 @@ A shortcut writes a flat work: one implicit delivery, with no `deliveries/` fold
           DETAIL.md      # the task definition
 ```
 
-It has no `PLAN.md` and no `STATE.yml` for each task. The full phases write a nested layout instead. It is described in [Your first work](/get-started/first-work/).
+It has no `PLAN.md` and no [`STATE.yml`](/reference/glossary/#state-file) for each task. The full phases write a nested layout instead. It is described in [Your first work](/get-started/first-work/).
 
 ## Shortcuts and the full phases
 
@@ -77,7 +77,7 @@ It has no `PLAN.md` and no `STATE.yml` for each task. The full phases write a ne
 | Files | `REQUIREMENTS.md` and `tasks/task-NNN/DETAIL.md` | `REQUIREMENTS.md`, `PLAN.md`, and `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
 | Approvals | One, at the halt | One at the end of each phase |
 
-A shortcut does not lower the quality bar. GATE grades every document, and `/aid-execute` reviews every task.
+A shortcut does not lower the quality bar. GATE grades every document, and `/aid-execute` quick-checks every task and the delivery gate grades the delivery.
 
 ## The shortcut doorways
 

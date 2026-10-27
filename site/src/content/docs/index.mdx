@@ -16,7 +16,7 @@ AID carries a piece of work from the first idea to delivered code. You and the A
 
 ## The pipeline at a glance
 
-Every piece of work moves through phases. Each phase leaves a document you can read, and each ends at a [phase gate](/reference/glossary/#phase-gate) where you approve it.
+On the full path, work moves through phases. Each phase leaves a document you can read, and each ends at a [phase gate](/reference/glossary/#phase-gate) where you approve it.
 
 <Pipeline />
 
@@ -25,24 +25,23 @@ You choose one of two paths:
 - **Full path.** For broad, new or unclear work, run the phases one by one. Start with `/aid-discover` if the project already has code but no [Knowledge Base](/reference/glossary/#knowledge-base) yet, or with `/aid-describe` if you are starting fresh.
 - **Shortcut path.** For one known change, name it with a [shortcut](/reference/glossary/#shortcut) such as `/aid-fix`. The [shortcut engine](/reference/glossary/#shortcut-engine) plans the work in one run and stops once for your approval.
 
-If you are not sure which path fits, run `/aid-triage`. It suggests an entry point and writes nothing.
+If you are not sure which path fits, run [`/aid-triage`](/reference/glossary/#aid-triage). It suggests an entry point and writes nothing.
 
-The full path has these phases, in order:
+Before the numbered phases, [`/aid-config`](/reference/glossary/#aid-config) bootstraps the project and shows or changes your AID settings. It is not a phase. The full path has these phases, in order:
 
-1. **Set up.** `/aid-config` shows or changes your AID settings.
-2. **Discover.** `/aid-discover` builds the [Knowledge Base](/reference/glossary/#knowledge-base) from an existing codebase. A new project with no code skips this phase.
-3. **Describe.** `/aid-describe` gathers your requirements in an interview and writes `REQUIREMENTS.md`.
-4. **Define.** `/aid-define` splits the approved requirements into features.
-5. **Specify.** `/aid-specify` writes the technical specification of one feature with you.
-6. **Plan.** `/aid-plan` groups the specified features into deliveries.
-7. **Detail.** `/aid-detail` breaks a delivery into small tasks.
-8. **Execute.** `/aid-execute` carries out each task and reviews it until it meets the minimum grade.
+1. **Discover.** `/aid-discover` builds the [Knowledge Base](/reference/glossary/#knowledge-base) from an existing codebase. A new project with no code skips this phase.
+2. **Describe.** `/aid-describe` gathers your requirements in an interview and writes `REQUIREMENTS.md`.
+3. **Define.** `/aid-define` splits the approved requirements into features.
+4. **Specify.** `/aid-specify` writes the technical specification of one feature with you.
+5. **Plan.** `/aid-plan` groups the specified features into deliveries.
+6. **Detail.** `/aid-detail` breaks a delivery into small tasks.
+7. **Execute.** `/aid-execute` carries out each task, gives it a quick check, and grades the delivery at the delivery gate against the minimum grade.
 
 Every skill has its own page in the [skills list](/skills/).
 
 ## Install
 
-Install the `aid` command once per machine. Then add AID to a repository with `aid add <tool>`, which writes the skills, the agents and the runtime into that repository. Pick the command for your platform.
+Install the [`aid` command](/reference/glossary/#aid-cli) once per machine. Then add AID to a repository with `aid add <tool>`, which writes the skills, the agents and the [runtime](/reference/glossary/#runtime) into that repository. Pick the command for your platform.
 
 <Tabs syncKey="install-channel">
   <TabItem label="macOS / Linux"><InstallCommand channel="curl" /></TabItem>

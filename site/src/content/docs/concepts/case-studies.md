@@ -24,7 +24,7 @@ VivaVoz is a desktop app, built with Avalonia and .NET, that records voice and t
 - **Specify:** each feature got detailed architecture decisions, such as the MVVM pattern, SQLite storage and Whisper integration. The agent proposed them from community conventions rather than from an open-ended prompt.
 - **Plan:** the roadmap became ordered deliveries that each ship on their own: a first version that records, then transcription, then export.
 - **Detail:** each delivery became task specifications, and each one carried explicit C# interface contracts.
-- **Execute:** each task ran through the review loop of `/aid-execute`, and the project had a unit and end-to-end test suite graded against the rubric.
+- **Execute:** each task ran through `/aid-execute`, with its quick check and the delivery gate, and the project had a unit and end-to-end test suite graded against the rubric.
 - **Deploy:** the deliveries shipped one at a time, and each was merged on its own.
 
 **What worked.** Planning in two levels separated strategy from tactics. The plan decided what went into the first version, and the detail phase decided how to build each piece. This kept planning from stalling on implementation choices before the overall structure was settled.

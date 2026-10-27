@@ -41,7 +41,7 @@ Run `/aid-config` before you start your first piece of work. It shows your proje
 </Steps>
 
 <Aside type="tip">
-Run `/aid-config` again whenever you want to look at your settings. Every AID skill reads `.aid/settings.yml`, so keep it accurate.
+Run `/aid-config` again whenever you want to look at your settings. The skills that grade, review or dispatch agents read `.aid/settings.yml` (`/aid-triage` and `/aid-chat` do not), so keep it accurate.
 </Aside>
 
 ## The phases
@@ -100,13 +100,13 @@ Run it once for each delivery.
 
 ### Phase 6 — Execute (`/aid-execute`)
 
-Execute carries out one task by its type, reviews the result and fixes the issues the review finds. Name the task:
+Execute carries out one task by its type and gives it a quick check. The quick check fixes a CRITICAL finding on the spot, once, and defers HIGH findings to the delivery gate. The gate runs the full graded review and the fix loop once the delivery's tasks are done. Name the task:
 
 ```
 /aid-execute work-001 task-001
 ```
 
-**Result:** the built task, reviewed against its acceptance criteria. Code goes on one branch for the delivery, named `aid/<work>-delivery-NNN`. A task that only writes `.aid/` files may skip the branch.
+**Result:** the built task, quick-checked against its acceptance criteria. Code goes on one branch for the delivery, named `aid/<work>-delivery-NNN`. A task that only writes `.aid/` files may skip the branch.
 
 Run it once for each task, in dependency order. If a task depends on one that is not done, Execute stops and lists what is pending.
 

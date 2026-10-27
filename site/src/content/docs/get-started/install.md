@@ -17,7 +17,7 @@ AID reaches your machine through one of four [install channels](/reference/gloss
 | curl or irm | Bash, or PowerShell 5.1 or later | Most people, on Linux, macOS or Windows |
 | npm | Node 22 or later | Machines that already use Node |
 | PyPI | Python 3.8 or later | Machines that already use Python, with `pipx` |
-| Offline bundle | Bash, or PowerShell 5.1 or later | Machines without network access, or teams that pin one release |
+| [Offline bundle](/reference/glossary/#offline-bundle) | Bash, or PowerShell 5.1 or later | Machines without network access, or teams that pin one release |
 
 ## Install the command
 

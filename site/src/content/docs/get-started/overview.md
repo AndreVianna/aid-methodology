@@ -8,7 +8,7 @@ sidebar:
 
 This page explains what [AID](/reference/glossary/#aid) is, who it is for, and how its pipeline takes your work from an idea to delivered code.
 
-AID stands for AI Integrated Development. It is a method for building software with AI coding agents. You and the agents work through the same phases every time, and you approve the result of each phase before the next one starts.
+AID stands for AI Integrated Development. It is a method for building software with AI coding agents. You and the agents work through the same phases on the full path, and you approve the result of each phase before the next one starts. A shortcut runs them in one pass and stops once for your approval.
 
 ## What problem does AID solve?
 
@@ -38,7 +38,7 @@ The [pipeline page](/concepts/pipeline/) explains each phase in depth.
 
 ## Which AI tools does AID work with?
 
-AID works with Claude Code, Codex CLI, Cursor, GitHub Copilot CLI and Antigravity. All five tools share the same skills and runtime. The command `aid add <tool>` adds the agents for the tool you name.
+AID works with Claude Code, Codex CLI, Cursor, GitHub Copilot CLI and Antigravity. All five tools share the same skills and [runtime](/reference/glossary/#runtime). The command `aid add <tool>` adds the agents for the tool you name.
 
 ## Next steps
 

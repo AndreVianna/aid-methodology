@@ -44,7 +44,7 @@ The skill that shows or changes your AID settings, such as the project name or t
 | **Specify** | Definition | A technical specification added to each feature's section in `REQUIREMENTS.md § 11` (full path only) |
 | **Plan** | Definition | `PLAN.md`: the delivery order, with one `### delivery-NNN` stanza per delivery (full path only) |
 | **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`, the task definition (full path only) |
-| **Execute** | Execution | Reviewed, graded work. Each task has a type (IMPLEMENT, TEST, RESEARCH, DESIGN, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE) and goes through a review loop. |
+| **Execute** | Execution | Reviewed, graded work. Each task has a type (IMPLEMENT, TEST, RESEARCH, DESIGN, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE) and gets a quick check, then the delivery gate grades the delivery. |
 
 > *Deploy and Monitor are **optional** delivery skills. You run each one on its own, when your project needs it. They are not numbered phases: the numbered sequence ends at Execute.*
 
@@ -52,7 +52,7 @@ The skill that shows or changes your AID settings, such as the project name or t
 
 ### Lite Path
 
-A shorter workflow for small, well-scoped work. You enter it by running a verb-first **shortcut**, such as `/aid-fix` or `/aid-create api`. Every shortcut hands over to the shared **shortcut engine**. The engine runs Describe, Define, Specify, Plan and Detail in one fast, mostly autonomous pass. It writes a flat set of files: `REQUIREMENTS.md` and `tasks/task-NNN/DETAIL.md` in the work folder, with no `features/` and no `deliveries/`. Then it stops and waits for your approval before `/aid-execute`.
+A shorter workflow for small, well-scoped work. You enter it by running a verb-first **shortcut**, such as `/aid-fix` or `/aid-create api`. A shortcut that plans work hands over to the shared **shortcut engine**; a few hand-written shortcuts do not. The engine runs Describe, Define, Specify, Plan and Detail in one fast, mostly autonomous pass. It writes a flat set of files: `REQUIREMENTS.md` and `tasks/task-NNN/DETAIL.md` in the work folder, with no `features/` and no `deliveries/`. Then it stops and waits for your approval before `/aid-execute`.
 
 ### workType
 
@@ -88,7 +88,7 @@ A file `.aid/design/<artifact>.md` that records a direction you have settled bef
 
 ### Shortcut engine
 
-The shared state machine that every shortcut uses: INTAKE, CAPTURE, SPEC, PLAN, DETAIL, GATE, APPROVAL-HALT. It is defined in `canonical/aid/templates/shortcut-engine.md`. It skips no phase. It gathers the information for each phase in one run, without asking you at every step. You are asked only when a gap matters, and at the final approval. A mechanical GATE grades every generated document before that approval. The engine never executes the work. You start `/aid-execute` yourself after you approve.
+The shared state machine that the shortcuts that plan work use (hand-written shortcuts such as `aid-review` do not): INTAKE, CAPTURE, SPEC, PLAN, DETAIL, GATE, APPROVAL-HALT. It is defined in `canonical/aid/templates/shortcut-engine.md`. It skips no phase. It gathers the information for each phase in one run, without asking you at every step. You are asked only when a gap matters, and at the final approval. A mechanical GATE grades every generated document before that approval. The engine never executes the work. You start `/aid-execute` yourself after you approve.
 
 ### /aid-triage
 
@@ -118,7 +118,7 @@ The record of progress for one area. The Knowledge Base uses `.aid/knowledge/STA
 
 ### IMPEDIMENT.md
 
-A file written when the build finds that the plan or spec is wrong. It records what was assumed, what is true, the proposed revision and the impact. `/aid-execute` writes it as `IMPEDIMENT-task-NNN.md` in the work folder.
+A file written when the build finds that the plan or spec is wrong. It records the type of the impediment, a description, the options and a recommendation. `/aid-execute` writes it as `IMPEDIMENT-task-NNN.md` in the work folder.
 
 ### Grading
 
@@ -139,7 +139,7 @@ AID supports five host AI tools. Each tool gets its own agents folder, and all o
 
 | Tool | Agents folder | Root instruction files |
 |------|---------------|------------------------|
-| **Claude Code** | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (imports `AGENTS.md`) |
+| **Claude Code** | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (imports the runtime `rules.md` and the project card) |
 | **Codex CLI** | `.codex/agents/` | `AGENTS.md` |
 | **Cursor** | `.cursor/agents/` | `AGENTS.md` |
 | **GitHub Copilot CLI** | `.github/agents/` | `AGENTS.md` |
