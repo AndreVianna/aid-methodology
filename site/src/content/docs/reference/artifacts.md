@@ -8,7 +8,7 @@ sidebar:
 
 This page lists the named files AID produces, what each one is, and where it lives, so you can find any of them quickly.
 
-Each artifact has a path, a skill that writes it and a purpose. To see how the pieces fit together, read [the pipeline](/concepts/pipeline/). For the layout of the repository itself, see [Repository Structure](/reference/repository-structure/). For the [Knowledge Base](/reference/glossary/#knowledge-base) document types, see [Knowledge Base documents](/reference/kb/).
+Each artifact has a path, a writer (a skill, an agent, a command, a script, or you) and a purpose. To see how the pieces fit together, read [the pipeline](/concepts/pipeline/). For the layout of the repository itself, see [Repository Structure](/reference/repository-structure/). For the [Knowledge Base](/reference/glossary/#knowledge-base) document types, see [Knowledge Base documents](/reference/kb/).
 
 ## Work artifacts
 
@@ -24,7 +24,7 @@ These artifacts live under `.aid/works/{work}/`, one folder for each work item. 
 | [`STATE.yml`](/reference/glossary/#state-file) (work) | `.aid/works/{work}/STATE.yml` | `aid-describe` or the shortcut engine creates it, and later skills update it | The state of the work: its pipeline identity, lifecycle, phase and approval, and the interview and feature cells. On the Lite path it also holds the delivery lifecycle, the delivery gate, the task cells and the question-and-answer entries. |
 | `STATE.yml` (delivery) | `.aid/works/{work}/deliveries/delivery-NNN/STATE.yml` | `aid-plan` creates it, `aid-specify` and `aid-execute` update it | Full path only. The delivery lifecycle, from `Pending-Spec` through `Done` or `Blocked`, plus the gate result and the delivery's own question-and-answer entries. |
 | `STATE.yml` (task) | `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` | `aid-detail` creates it, `aid-execute` updates it | Full path only. The task `state`, its `review` result, the quick-check findings and the dispatch log. |
-| `delivery-NNN-issues.md` | `.aid/works/{work}/delivery-NNN-issues.md` | `aid-execute`, in the delivery gate | The `[HIGH]` findings that task quick checks deferred to the gate. The gate reviewer reads it, and each row ends as `Resolved` or `Accepted`. |
+| `delivery-NNN-issues.md` | `.aid/works/{work}/delivery-NNN-issues.md` | `aid-execute`, in the delivery gate | The `[HIGH]` findings that task quick checks deferred to the gate. The gate reviewer reads it, and after the gate passes its rows are marked `Resolved` or `Accepted`. |
 | `IMPEDIMENT-task-NNN.md` | `.aid/works/{work}/IMPEDIMENT-task-NNN.md` | `aid-execute` | Written when the executor meets something it cannot resolve. It records the type (`wrong-assumption`, `missing-dependency`, `architecture-conflict` or `kb-gap`), a description, the options and a recommendation. See [feedback loops](/concepts/feedback-loops/) for how each type is routed. |
 | `known-issues.md` | `.aid/works/{work}/known-issues.md` | `aid-specify`, when it registers the first issue | Problems found in code that a feature touches. `aid-plan`, `aid-execute`, `aid-deploy` and `aid-monitor` read it. |
 
@@ -69,7 +69,7 @@ These artifacts live under `.aid/knowledge/`. They hold the living understanding
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| Delivery branch | `aid/{work}-delivery-NNN` (git branch) | `aid-execute` | One git branch for each delivery. `aid-execute` creates it, and every task of the delivery commits to it. |
+| Delivery branch | `aid/{work}-delivery-NNN` (git branch) | `aid-execute` | One git branch for each delivery. `aid-execute` creates it, and the delivery's tasks commit to it. |
 | Release package | `.aid/works/{work}/packages/package-NNN-{name}.md` | `aid-deploy` | One file for each release package. |
 | Deploy record | The `deploy` entries of `.aid/works/{work}/STATE.yml` | `aid-deploy` | One entry for each delivery: its state, pull request, whether the Knowledge Base was updated, tag and notes. |
 | Pull request | A pull request on your git host | `aid-deploy` (the `aid-operator` agent), when the release is pull-request based | The pull request that carries the release, with a structured description. |
@@ -98,7 +98,7 @@ The `aid add` command writes these files into your project. See [the Installatio
 
 ## Templates
 
-Each artifact starts from a template in the repository. Open the template to see its exact shape.
+Artifacts that have a template link to it below, so you can see their exact shape. The others have no template and are produced by the writer named in the tables above. That covers the delivery branch, the pull request, the deploy record, `README.md`, `INDEX.md`, `kb.html`, the question entry, `project-index.md`, the AID manifest, the root instruction regions and the two generator manifests.
 
 - [requirements/requirements-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/requirements/requirements-template.md): the template for `REQUIREMENTS.md`.
 - [specs/technical-specification-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/specs/technical-specification-template.md): the template for the Technical Specification body of a feature section.
@@ -109,6 +109,8 @@ Each artifact starts from a template in the repository. Open the template to see
 - [delivery-issues.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/delivery-issues.md): the template for `delivery-NNN-issues.md`.
 - [known-issues.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/known-issues.md): the template for `known-issues.md`.
 - [feedback-artifacts/IMPEDIMENT.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/feedback-artifacts/IMPEDIMENT.md): the template for an `IMPEDIMENT-task-NNN.md`.
+- [knowledge-base/](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/knowledge-base/): the templates for the Knowledge Base documents.
+- [settings.yml](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/settings.yml): the template for `.aid/settings.yml`.
 - [package.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/package.md): the template for a release package.
 - [discovery-state-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/discovery-state-template.md): the template for the Knowledge Base `STATE.md`.
 - [project-card.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/project-card.md): the template for `PROJECT.md`.

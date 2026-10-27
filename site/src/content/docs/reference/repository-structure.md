@@ -26,7 +26,7 @@ aid-methodology/
 |   |-- skills/                 <- one directory for each skill
 |   |-- agents/                 <- one directory for each agent
 |   `-- aid/                    <- the AID toolkit root (installed at .aid/runtime/)
-|       |-- rules.md            <- the AID rules every tool reads through AGENTS.md
+|       |-- rules.md            <- the AID rules, read through the AGENTS.md region
 |       |-- templates/          <- Knowledge Base templates, document templates, shortcut engine and catalog
 |       `-- scripts/            <- helper scripts, grouped by purpose
 |-- profiles/                   <- rendered per-tool agent trees (generated; do not edit)
@@ -73,17 +73,17 @@ aid-methodology/
 
 `bin/aid` is the CLI dispatcher. It has a PowerShell sibling, `bin/aid.ps1`, and a `bin/aid.cmd` shim for `cmd.exe`. The install-core libraries in `lib/` hold the install, update and remove logic.
 
-`install.sh` and `install.ps1` are the bootstrap installers that put the `aid` CLI on your machine. The [Installation guide](/guides/installation/) walks you through them. The [CLI commands](/reference/cli/) page lists every command.
+`install.sh` and `install.ps1` are the bootstrap installers that put the `aid` CLI on your machine. The [Installation guide](/guides/installation/) walks you through them. The [CLI commands](/reference/cli/) page lists the commands.
 
 `packages/npm/` and `packages/pypi/` are the wrappers published to npm and PyPI under the package name `aid-installer`. Each one puts an `aid` command on your PATH. Both copy the CLI source from the repository root when the package is built.
 
 ### `canonical/`: the source of truth
 
-All skill, agent, runtime and template content lives here. The profile generator renders the agents in `canonical/` into the trees under `profiles/`. `release.sh` copies the skills and the runtime from `canonical/` into the shared payload as they are. Edit `canonical/`, never `profiles/` or the installed copies, because the next generator run overwrites them.
+The AID skills, agents, runtime and templates that ship to users are authored here. The two maintainer-only skills, `generate-profile` and `release-aid`, live under `.claude/skills/`. The profile generator renders the agents in `canonical/` into the trees under `profiles/`. `release.sh` copies the skills and the runtime from `canonical/` into the shared payload as they are. Edit `canonical/`, never `profiles/` or the installed copies, because the next generator run overwrites them.
 
 - `canonical/skills/` holds one directory per skill. See [Skills](/skills/) for the list.
 - `canonical/agents/` holds one directory per agent. See [Agents](/reference/agents/) for the list.
-- `canonical/aid/templates/` holds the Knowledge Base templates, the grading rubric and the task and state templates. It also holds the shortcut system: `shortcut-catalog.yml` (the catalog every shortcut and `/aid-triage` resolve against), `shortcut-engine.md` (the shared state machine every shortcut hands over to) and `shortcut-scaffolding/` (the scaffolding for each shortcut family).
+- `canonical/aid/templates/` holds the Knowledge Base templates, the grading rubric and the task and state templates. It also holds the shortcut system: `shortcut-catalog.yml` (the catalog that shortcuts and `/aid-triage` resolve against), `shortcut-engine.md` (the shared state machine that shortcuts hand over to) and `shortcut-scaffolding/` (the scaffolding for each shortcut family).
 - `canonical/aid/scripts/` holds the helper scripts that skills call at runtime. They sit in folders by purpose: `config`, `connectors`, `execute`, `housekeep`, `kb`, `migrate`, `release`, `summarize` and `works`. `grade.sh` sits beside them.
 - `canonical/aid/rules.md` holds the AID rules. It installs as `.aid/runtime/rules.md`, and the `AGENTS.md` region points at it.
 
@@ -128,7 +128,7 @@ This repository runs AID on itself. `.agents/skills/` holds the shared skills, `
 | Want to change... | Edit here |
 |---|---|
 | A skill or agent | `canonical/skills/` or `canonical/agents/`, then run the generator |
-| The AID rules every tool reads | `canonical/aid/rules.md`, then run the generator |
+| The AID rules | `canonical/aid/rules.md`, then run the generator |
 | A Knowledge Base template | `canonical/aid/templates/knowledge-base/` |
 | A shortcut | `canonical/aid/templates/shortcut-catalog.yml` and `canonical/aid/templates/shortcut-scaffolding/`, then run the generator |
 | The `aid` CLI or install logic | `bin/`, `lib/`, `install.sh`, `install.ps1` |
