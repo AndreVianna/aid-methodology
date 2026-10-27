@@ -337,7 +337,7 @@ qa:
   - id: Q&A-001
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: >
       Diagram D3 (ReviewLoop, Feature 003) says in `desc` "On the full path each phase runs a four-step
       loop" and in its page caption "inside every full-path phase". SK aid-specify, aid-plan and
@@ -346,17 +346,28 @@ qa:
     suggested: >
       Reword `desc` and `caption` to "Specify, Plan and Detail each run a four-step loop". The component
       is not edited by task-016; the page caption under it already says Specify, Plan and Detail.
-    answer: ""
-    applied_to: ""
+    answer: "Accepted as suggested."
+    applied_to: "site/src/components/diagrams (task-016 follow-up commit)"
   - id: Q&A-002
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: >
       Diagram D2 (TwoPaths, Feature 003) text-equivalent row "Start with" gives the shortcut form
       `/aid-<verb>[-<artifact>]`. SK aid-create (Kinds) and the catalog header type a kind as a word
       after the family: `/aid-<verb> [<kind>]` (for example `/aid-create api`).
     suggested: >
       Change the cell to `/aid-<verb> [<kind>]`.
-    answer: ""
-    applied_to: ""
+    answer: "Accepted as suggested."
+    applied_to: "site/src/components/diagrams (task-016 follow-up commit)"
+  - id: Q&A-003
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >
+      Diagram D4 (KbStructure, Feature 003) text-equivalent row "Meta-documents" says "every phase adds its
+      questions to STATE.md". SK aid-describe, aid-specify, aid-plan, aid-detail and aid-execute write Q&A
+      or KB status into `.aid/knowledge/STATE.md`; aid-define names no such write.
+    suggested: >
+      Reword the cell to "the phases that find a Knowledge Base gap add their questions to STATE.md".
+      The component is not edited by task-017.
