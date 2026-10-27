@@ -34,6 +34,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 00:25-00:43 | delivery 2: tasks 16-17 done (Concepts landing, pipeline, KB and Agents pages) | n/a mid-turn | task 16 took three commits (page, two diagram corrections, then review fixes); task 17 two. 6 of the last 8 content tasks needed at least one fix commit |
 | 00:49 | resumed again: my driver allowed 2 h per turn, and AID ran tasks 5-18 inside one turn | unknown | a killed turn reports no cost; that turn's cost will be estimated from the transcript tokens |
 | 00:49-01:00 | delivery 2: task 18 done, task 19 in review (feedback loops, AID vs SDD, case studies, FAQ) | n/a mid-turn | task 18 needed a redraw of a diagram "with sourced facts only": the first version had unsourced claims |
+| 01:00-01:17 | delivery 2: task 19 done, task 20 in review (FAQ, Reference overview, CLI commands, KB documents) | n/a mid-turn | task 19 needed a fix commit after review; pace has slowed to about 1 task per 15 min on the bigger audit tasks |
 
 ## AID run: red tape observed so far
 
