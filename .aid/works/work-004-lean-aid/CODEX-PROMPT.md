@@ -72,6 +72,15 @@ NEXT STEPS
 7. Report against the targets. Retiring the old phase skills (about 37 to 15) is a later, separate step, only after
    the maintainer approves the result.
 
+BEFORE RUNNING ANY BENCHMARK
+- The benchmark tools (`tests/measure/measure.py`, `tests/measure/repo_task.py`) drive the Claude Code command-line
+  tool (`claude -p`). They need `claude` installed and logged in on the machine, and every run spends the
+  maintainer's Claude usage, not yours. Check `claude --version` first; if it is missing or not logged in, stop and
+  tell the maintainer.
+- `repo_task.py` already stops a run when AID repeats the same closing message three times (AID ends by offering a
+  merge or a pull request, and the driver used to answer that forever). Other driver lessons are in HANDOFF.md
+  under "Harness lessons"; read them before changing the driver.
+
 HOW TO WORK WITH THE MAINTAINER
 - Record every state change and every question in STATE.yml before you show it (the writer script on this branch has
   no `--ask`; edit the `qa:` list directly, as earlier entries do).
