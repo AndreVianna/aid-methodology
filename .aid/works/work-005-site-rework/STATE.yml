@@ -388,7 +388,9 @@ qa:
   - id: Q&A-005
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
+    answer: 'D8 redrawn with sourced SDD facts only; aid-define does have an approval step'
+    applied_to: 'site/src/components/diagrams/AidVsSdd.astro; REQUIREMENTS.md Feature 003 Data Model D8'
     context: >
       Diagram D8 (AidVsSdd, Feature 003) states what spec-driven development does: `desc` "goes from a spec
       straight to AI-written code and a human review"; text-equivalent rows "Planning: none", "Review: a

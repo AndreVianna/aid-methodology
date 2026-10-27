@@ -1040,29 +1040,30 @@ No diagram states a count that changes when the repository changes (Feature 001'
 
 **D8 — AID compared with spec-driven development** (`id="aid-vs-sdd"`, viewBox 400 x 600)
 - Sources: `canonical/aid/rules.md` § Workflow; the skill descriptions cited for D1.
-- desc: "Spec-driven development goes from a spec straight to AI-written code and a human review.
-  AID adds a Knowledge Base that every phase from Discover on reads, separate planning phases,
-  reviews that grade each phase, your approval at each phase of the full path, and loops back to
-  the phase that caused a problem."
-- caption: "Spec-driven development and AID, step by step."
-- Drawing: two columns. The left column is titled "Spec-driven development": Write spec → AI writes
-  code → Human review → Ship, with a dashed arrow from review back to "Write spec" ("re-spec"). The
-  right column is titled "AID (AI Integrated Development)": the D1 phases in one column, with a
-  cylinder "Knowledge Base" beside it joined by a short arrow to each phase from `/aid-discover`
-  on (the arrow points into the KB at `/aid-discover`, which builds it, and into the phase for the
-  others, which read it; `/aid-config` does not touch it).
-- Text equivalent (`<table>`, header row Step | Spec-driven development | AID):
+- Sources for the SDD column (only these): the SDD entry in `reference/glossary.md`, `docs/faq.md`,
+  `.aid/knowledge/decisions.md` D2 and D3. They support: specifications drive code generation; SDD
+  starts spec-first; on change it re-specs from scratch.
+- viewBox 400 x 480.
+- desc: "Spec-driven development starts with a spec, and specifications drive code generation. A change
+  means re-specifying from scratch. AID starts with knowledge: /aid-discover builds the Knowledge Base
+  for an existing project. Then come Describe, Define, Specify, Plan, Detail and Execute, with your
+  approval at each phase of the full path. A change goes back through the phases that need it. AID
+  includes a spec-and-build layer."
+- caption: "Spec-driven development and AID, side by side."
+- Drawing: two columns. The left column is titled "Spec-driven development": Start with a spec →
+  Specifications drive code generation → A change means re-specifying from scratch, with a dashed
+  arrow from the last box back to the first. The right column is titled "AID (AI Integrated
+  Development)": Knowledge first (`/aid-discover` builds the Knowledge Base, existing project) →
+  Describe, Define, Specify, Plan, Detail, Execute → You approve each phase (full path) → A change
+  goes back through the phases that need it, and a note "Includes a spec-and-build layer".
+- Text equivalent (`<table>`, header row Topic | Spec-driven development | AID (AI Integrated Development)):
 
-  | Step | Spec-driven development | AID |
+  | Topic | Spec-driven development | AID |
   |---|---|---|
-  | Before the work | nothing | `/aid-config` once; on an existing codebase, `/aid-discover` builds the Knowledge Base |
-  | Requirements and spec | one spec, written up front | `/aid-describe`, `/aid-define`, `/aid-specify` |
-  | Planning | none | `/aid-plan`, `/aid-detail` |
-  | Building | an AI agent writes the code | `/aid-execute` builds and reviews each task |
-  | Review | a person reviews the result | a reviewer grades each phase; on the full path you approve each phase before the next |
-  | When something is wrong | rewrite the spec | a feedback loop returns to the phase that caused it |
-  | Memory between sessions | the spec | the Knowledge Base, built by `/aid-discover` and read by every later phase |
-  | After shipping | nothing | optional `/aid-deploy` and `/aid-monitor` |
+  | Where it starts | with a spec | with knowledge: `/aid-discover` builds the Knowledge Base for an existing project |
+  | How the work proceeds | specifications drive code generation | Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path |
+  | When something changes | re-specify from scratch | the work goes back through the phases that need it |
+  | Spec-and-build | specifications drive code generation | AID includes a spec-and-build layer |
 
 - Today's diagram titles the AID column "AI-Assisted Development". The product name is "AI
   Integrated Development" (`.aid/knowledge/PROJECT.md`). Feature 001 records the correction.
