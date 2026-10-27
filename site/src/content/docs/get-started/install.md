@@ -1,34 +1,50 @@
 ---
-title: Install AID
-description: Choose your install channel and follow the full instructions in the Installation guide.
+title: Install
+description: This page shows you which channel to use to install the AID command on Linux, macOS or Windows.
 sidebar:
+  label: Install
   order: 2
 ---
 
-AID is distributed across four install channels. All channels deliver the same `aid` CLI — the
-difference is only how `aid` lands on your PATH. Pick one channel per machine.
+This page shows you which channel to use to install the AID command on Linux, macOS or Windows.
+
+AID reaches your machine through one of four [install channels](/reference/glossary/#install-channel). Every channel installs the same `aid` command. The channels differ only in how `aid` gets onto your PATH. Pick one channel per machine.
 
 ## Choose your channel
 
 | Channel | Requires | Best for |
 |---------|----------|----------|
-| **curl / irm** (online bootstrap) | Bash or PowerShell 5.1+ | Most users — Linux, macOS, Windows |
-| **npm** | Node >=22 | Node-heavy environments; global install via npm |
-| **PyPI (pipx)** | Python >=3.8 | Python environments; isolated install |
-| **Offline bundle** | Bash or PowerShell 5.1+ | Air-gapped machines; teams pinning to a specific release |
+| curl or irm | Bash, or PowerShell 5.1 or later | Most people, on Linux, macOS or Windows |
+| npm | Node 22 or later | Machines that already use Node |
+| PyPI | Python 3.8 or later | Machines that already use Python, with `pipx` |
+| Offline bundle | Bash, or PowerShell 5.1 or later | Machines without network access, or teams that pin one release |
 
-## Follow the full install guide
+## Install the command
 
-The [Installation guide](/guides/installation/) has the complete per-channel and per-OS
-instructions, including:
+On Linux or macOS, run this command:
 
-- [Bootstrap the `aid` CLI (Step 1)](/guides/installation/#step-1--bootstrap-the-aid-cli) — pinned
-  one-liners for Linux, macOS, and Windows across all four channels.
-- [Add AID to your project (Step 2)](/guides/installation/#step-2--add-aid-to-your-project) — per-tool
-  tabs for Claude Code, Codex, Cursor, Copilot CLI, and Antigravity.
-- [Update and remove](/guides/installation/#update) — staying current and cleaning up.
+```bash
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+```
 
-## After install
+On Windows, run this command in PowerShell:
 
-Once `aid` is on your PATH, head to [Your first work](/get-started/first-work/) for a guided
-walkthrough of running your first work through the pipeline.
+```powershell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+```
+
+Open a new shell afterwards, so your PATH picks up the `aid` command.
+
+## Add AID to a project
+
+Run this command inside your repository. Use another tool name if you do not use Claude Code.
+
+```bash
+aid add claude-code
+```
+
+The [Installation guide](/guides/installation/) has the full steps. It covers the npm, PyPI and offline channels, [adding AID to a project](/guides/installation/#step-2--add-aid-to-your-project), and [updating and removing AID](/guides/installation/#update).
+
+## Next step
+
+Once `aid` is on your PATH, follow [Your first work](/get-started/first-work/) to run a first piece of work through the pipeline.

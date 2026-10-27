@@ -56,10 +56,10 @@ Verdict is `ok` (no change needed), `corrected` (the Correction cell says what c
 
 | Page | Source of truth | Verdict | Correction |
 |---|---|---|---|
-| `src/content/docs/index.mdx` (/) | SK, SC, RULES, CLI, INS, VER | pending | |
+| `src/content/docs/index.mdx` (/) | SK, SC, RULES, CLI, INS, VER | corrected | Removed the hand-written skill, shortcut-catalog and family counts (rule P4; SK, SC: `canonical/skills/`, `shortcut-catalog.yml`). Replaced the claim that `/aid-config` scaffolds the Knowledge Base: SK `aid-config` only views or changes settings, and `/aid-discover` builds the Knowledge Base (SK `aid-discover`). Replaced the claim that `aid add` drops in a Knowledge Base scaffold: INS lists the skills, agents, runtime and root regions only, and says the CLI never writes the Knowledge Base. Rewrote the phase list from the SK descriptions and RULES § Workflow, and dropped "six core phases" because RULES names seven phases. Fixed the card texts: the Reference card no longer lists skills (they have their own pages), and the Guides and Concepts cards match the sidebar. Install tabs, version badge and D1 diagram untouched. |
 | `src/content/docs/get-started/index.md` (/get-started/) | none (redirect stub) | removed | redirects to /get-started/overview/ |
-| `src/content/docs/get-started/overview.md` (/get-started/overview/) | SK, RULES, INS | pending | |
-| `src/content/docs/get-started/install.md` (/get-started/install/) | INS, CLI | pending | |
+| `src/content/docs/get-started/overview.md` (/get-started/overview/) | SK, RULES, INS | corrected | Removed "TRIAGE routes the work": SK `aid-triage` only suggests and writes nothing. Removed "four groups and six numbered phases": RULES § Workflow names seven phases and no groups. Replaced "drops in the right profile": INS shows `aid add <tool>` adds the shared skills and runtime plus that tool's agents, and the five tool names match INS. Removed the hand-written counts (P4). Frontmatter: label "What is AID?", order 1, description is the P1 sentence. |
+| `src/content/docs/get-started/install.md` (/get-started/install/) | INS, CLI | corrected | Install commands, channel names and requirements (Node 22 or later, Python 3.8 or later, PowerShell 5.1 or later) re-checked against `docs/install.md`, `install.sh`, `install.ps1`, `packages/npm/package.json` and `packages/pypi/pyproject.toml`: unchanged. Added the `aid add claude-code` step (CLI `aid -h`, INS). The page now states the install facts once and links to the Installation guide for the full steps (P9). Frontmatter: label "Install", order 2, description is the P1 sentence. |
 | `src/content/docs/get-started/first-work.mdx` (/get-started/first-work/) | SK (aid-config to aid-execute), TPL, RULES; DOC `docs/aid-methodology.md` § 10 | pending | planned: absorbs the methodology adoption guide |
 | `src/content/docs/get-started/lite-path.mdx` (/get-started/lite-path/) | SC, SK (aid-triage and the shortcut doorways) | pending | planned: absorbs the shortcut-engine text of /reference/skills/ |
 | `src/content/docs/guides/installation.mdx` (/guides/installation/) | INS, CLI, VER | pending | |
@@ -192,7 +192,7 @@ recorded in its page row above.
 | Page | Lead |
 |---|---|
 | /reference/settings/ | Built from the dogfood `.aid/settings.yml`, not from ST; every Description cell is empty or reads "Installed AI host tools". |
-| /, /get-started/overview/, /reference/overview/ | Hand-written skill and catalog counts (rule P4 bans them). |
+| /reference/overview/ | Hand-written skill and catalog counts (rule P4 bans them). |
 | /concepts/methodology/ | Says a task's review history lives in its own `STATE.md`; the Execute skill files name `STATE.yml` for the task state. Confirm against SK `aid-execute` and TPL `task-state-template.yml`. |
 | /get-started/lite-path/, /guides/pipeline/, /guides/maintainer/, /reference/artifacts/, /concepts/methodology/ | Matches for change-history wording or internal ids ("no longer", "formerly", `feature-NNN`, `task-NNN`, `delivery-NNN`, `FR-N`, `KI-NNN`). Rule P5 bans them, but an example argument in a command (`/aid-execute work-001 task-001`) is allowed. |
 | /skills/aid-experiment/ | The `description` in `canonical/skills/aid-experiment/SKILL.md` is a folded block that breaks `/aid-` and `execute` across two lines, so the page reads "/aid- execute". A source defect in `canonical/` (out of scope, §4): record it in the page row as a finding for the owner. |
