@@ -17,11 +17,11 @@
 }
 
 /* 3. Content text: links never depend on colour alone; long strings wrap */
-.sl-markdown-content a:not(:where(.not-content *)) {
+.sl-markdown-content a:not(:where(.not-content *, .rf-button)) {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-.sl-markdown-content a:not(:where(.not-content *)):hover {
+.sl-markdown-content a:not(:where(.not-content *, .rf-button)):hover {
   text-decoration-thickness: 2px;
 }
 .sl-markdown-content :is(p, td, th, dd) {
@@ -92,6 +92,9 @@
   color: var(--aid-color-text-muted);
   font-size: var(--aid-text-sm);
 }
+.aid-report-issue a { color: var(--aid-color-accent); }
+.aid-report-issue a:hover,
+.aid-report-issue a:focus-visible { text-decoration: underline; }
 
 /* 10. Narrow screens */
 @media (max-width: 30rem) {

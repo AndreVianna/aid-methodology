@@ -8,8 +8,7 @@ export const collections = {
     loader: docsLoader(),
     schema: docsSchema({
       extend: z.object({
-        // Project-specific optional frontmatter (consumed by later features):
-        // feature-006: toggle per-page "Report an issue" link
+        // Project-specific optional frontmatter: toggles the per-page "Report an issue" link.
         reportIssue: z.boolean().default(true),
       }),
     }),
