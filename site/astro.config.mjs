@@ -122,10 +122,6 @@ export default defineConfig({
         // One-row header. See src/components/overrides/.
         Header: './src/components/overrides/Header.astro',
         Footer: './src/components/Footer.astro',
-        // feature-006: route-gated <head> additions for the interactive node
-        // panel. Composes Starlight's packaged Head rather than replacing it, so
-        // non-skill pages are byte-unchanged.
-        Head: './src/components/overrides/Head.astro',
       },
 
       // Pagefind (built-in) powers the search box; no extra config needed.
