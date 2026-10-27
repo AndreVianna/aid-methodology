@@ -45,13 +45,13 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: 'In Review'
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'per-page 0/69 pass; failing: all 69 pages W3 (script /_astro/page.*.js no purpose: Astro prefetch client script); 68 pages (all but /404.html) also W3 (inline script no purpose: starlight-lang-select, Starlight LanguageSelect); 14 pages also W3 (script /_astro/ec.*.js no purpose: Expressive Code): /concepts/faq/ /concepts/feedback-loops/ /concepts/pipeline/ /get-started/first-work/ /get-started/install/ /get-started/lite-path/ /guides/dashboard/ /guides/installation/ /guides/maintainer/ /guides/pipeline/ / /reference/artifacts/ /reference/cli/ /reference/repository-structure/; no S1-S9, U1-U7, W1, W2, W4 or A1 problem on any page; fixes belong to task-039 (cause is config/component, not this file). Console output of the AC-15 list is shown by vitest only with --reporter=verbose in this agent environment.'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
