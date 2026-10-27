@@ -912,7 +912,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   | Step | Full path | Shortcut path |
   |---|---|---|
   | Use it for | broad, new or unclear work | one known change |
-  | Start with | `/aid-describe` | a shortcut, `/aid-<verb>[-<artifact>]` |
+  | Start with | `/aid-describe` | a shortcut, `/aid-<verb> [<kind>]` |
   | Requirements | `/aid-describe`, then `/aid-define` | CAPTURE |
   | Specification | `/aid-specify` | SPEC |
   | Plan | `/aid-plan` | PLAN |
@@ -926,10 +926,10 @@ No diagram states a count that changes when the repository changes (Feature 001'
 **D3 — Propose, discuss, write, review** (`id="review-loop"`, viewBox 400 x 420)
 - Sources: `canonical/aid/templates/shortcut-engine.md` § Design Notes, the string
   "the full path's per-phase Propose/Discuss/Write/Review loops"; the text of `concepts/methodology.md` § The Iron Man Model.
-- desc: "On the full path each phase runs a four-step loop: the agent proposes, you and the agent
+- desc: "On the full path, Specify, Plan and Detail each run a four-step loop: the agent proposes, you and the agent
   discuss, the agent writes, and a reviewer grades the result. The loop repeats until the grade
   meets the project's minimum, and then you approve the next phase."
-- caption: "The loop inside every full-path phase: the AI does the work, you steer."
+- caption: "The loop inside Specify, Plan and Detail: the AI does the work, you steer."
 - Drawing: four boxes on a ring, clockwise from the top: Propose, Discuss, Write, Review. Solid arrows
   follow the ring. A dashed arrow from Review back to Propose carries the note "grade below minimum".
   A solid arrow leaves Review to a box "You approve the next phase". Each box has one 14-unit

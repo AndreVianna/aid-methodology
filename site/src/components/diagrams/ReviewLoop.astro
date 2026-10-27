@@ -1,5 +1,5 @@
 ---
-/** D3: the Propose, Discuss, Write, Review loop inside every full-path phase.
+/** D3: the Propose, Discuss, Write, Review loop inside Specify, Plan and Detail.
  *  The dashed edge from Review back to Propose is labelled "grade below minimum". */
 import Diagram from '../Diagram.astro';
 const id = 'review-loop';
@@ -7,8 +7,8 @@ const arrow = `url(#dg-${id}-arrow)`;
 ---
 <Diagram id={id} width={400} height={420}
   title="Propose, discuss, write, review"
-  desc="On the full path each phase runs a four-step loop: the agent proposes, you and the agent discuss, the agent writes, and a reviewer grades the result. The loop repeats until the grade meets the project's minimum, and then you approve the next phase."
-  caption="The loop inside every full-path phase: the AI does the work, you steer.">
+  desc="On the full path, Specify, Plan and Detail each run a four-step loop: the agent proposes, you and the agent discuss, the agent writes, and a reviewer grades the result. The loop repeats until the grade meets the project's minimum, and then you approve the next phase."
+  caption="The loop inside Specify, Plan and Detail: the AI does the work, you steer.">
   <rect class="dg-node dg-accent" x="160" y="16" width="144" height="56" rx="6" />
   <text class="dg-label" x="232" y="40" text-anchor="middle">Propose</text>
   <text class="dg-note" x="232" y="58" text-anchor="middle">agent</text>
