@@ -821,9 +821,9 @@ lives).
 | Term | Meaning here | Source |
 |------|--------------|--------|
 | VersionBadge | Astro site component rendering the current AID version | `site/src/components/VersionBadge.astro` |
-| CardGrid / Card Grid | Astro site layout component (card grid) | `site/.astro/data-store.json` |
+| CardGrid / Card Grid | Astro site layout component (card grid) | `site/src/content/docs/index.mdx`, `site/src/content/docs/guides/pipeline.mdx` |
 | LifecycleBadge / Lifecycle Badge | Dashboard/site badge component for lifecycle status | `dashboard/server/tests/test_index_html.py` |
-| PipelineDiagram | Site component rendering the pipeline diagram | `site/src/data/__tests__/ac13-version-injection.test.ts` |
+| Diagram | Site component rendering a static, accessible SVG diagram with a visible caption and a text equivalent (list or table) | `site/src/components/Diagram.astro` |
 | GitHub | The host platform: source repo, Releases, and Actions CI/CD | `release.sh`; `.github/workflows/` |
 | AndreVianna | The maintainer/owner handle; the bot push identity is `AndreVianna-AI` | `.github/workflows/release.yml` |
 | codex | The Codex CLI host tool / its render profile | `profiles/codex.toml` |

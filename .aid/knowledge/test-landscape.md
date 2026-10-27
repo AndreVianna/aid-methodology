@@ -112,7 +112,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
-| Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
+| Vitest (site) | Build and page checks | `site/tests/` | Run by `npm test` in `site/`, on its own toolchain: the build succeeds; no internal link in `dist/` is broken; `site/scripts/gen-facts.mjs --check` passes; axe-core plus structure assertions (one `h1`, heading order, one `main`, `lang`, every diagram has a title, a description and a text equivalent) pass on every built page. |
 
 **The `STATE.yml`-specific pytest suites, named.** Three are load-bearing for the state-file
 parse path and are distinct from the general "reader/server parsers + fixtures" description
@@ -215,35 +215,24 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 
 AID has five GitHub Actions workflows. The **canonical** correctness gates (`test.yml`) run on
 `master` and release tags only, so a branch with no open PR gets the installer matrix instead.
-**`docs.yml` is the exception** — it also gates pull requests to `master`, and its `build` job
-runs the site vitest suite. Read the per-lane rows below rather than generalising from this
-sentence; the exception is the whole reason KI-007 was raised against an earlier version of it.
+**`docs.yml` is the exception**: it also gates pull requests to `master`, and its `build` job runs the site's facts check and test suite. Read the per-lane rows below rather than generalising from this sentence.
 
 | Workflow | Trigger | Jobs / gates | Runs on feature branches? |
 |---|---|---|---|
 | `.github/workflows/test.yml` (CI) | push + PR to `master`; `workflow_dispatch` | `render-drift`, `canonical-tests` (full `run-all.sh`), `visual-fidelity` (Playwright), `generator-selftests`, `kb-hygiene` | No — master only |
 | `.github/workflows/installer-tests.yml` (Installer CI) | push to any branch **except** master (`branches-ignore: [master]`); `workflow_dispatch` | cross-platform installer/CLI/release matrix (ubuntu + windows) | Yes — feature branches only |
 | `.github/workflows/release.yml` (Release) | push of a `v*` tag; `workflow_dispatch` | `gate` (re-runs render-drift + version-sync + full `run-all.sh` + generator self-tests on the tagged commit), then `github-release`, `npm-publish`, `pypi-publish` | No — tag only |
-| `.github/workflows/docs.yml` (Docs) | push **and `pull_request`** to `master`, both path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION`, or the workflow; `workflow_dispatch` | `npm ci` → **`npm test` (site vitest suite)** → Astro Starlight build; then GitHub Pages deploy (`deploy` job skipped on PRs) | **Yes, as a PR to master** — the build+test job is a live PR gate; only the `deploy` job is master-only |
+| `.github/workflows/docs.yml` (Docs) | push **and `pull_request`** to `master`, both path-filtered to `site/**`, `canonical/**`, `VERSION`, or the workflow; `workflow_dispatch` | `node site/scripts/gen-facts.mjs --check` → `npm ci` → **`npm test` (site suite)** → `npm run build`; then GitHub Pages deploy (`deploy` job skipped on PRs) | **Yes, as a PR to master** — the build+test job is a live PR gate; only the `deploy` job is master-only |
 | `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
-CONFIRMED by the `on:` blocks of each workflow — re-verified 2026-07-30 against
-`.github/workflows/docs.yml`:10-29 (the whole `on:` block: `push`, `pull_request`,
-`workflow_dispatch`), which has no `release:` key.
+CONFIRMED by the `on:` blocks of each workflow; the `on:` block of `.github/workflows/docs.yml` (`push`, `pull_request`, `workflow_dispatch`) has no `release:` key.
 
 **Why this matters (gotcha).** The full canonical suite (test.yml) runs only on `master` and on
 release tags (release.yml `gate`). A branch that has **no open PR to master** sees only
 `installer-tests.yml`, so a change that breaks the canonical suite can pass all its checks and
 only fail after merge. Run `bash tests/run-all.sh` (HOME-pinned) before claiming green.
 
-**The site is the exception, and it is a PR gate.** `docs.yml` also triggers on
-`pull_request` to `master` and runs the `npm test` step there,
-so the site vitest suite **and** the Astro build do validate every PR that touches `site/**`,
-`docs/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a
-maintainer needs: a **canonical-only** commit still rebuilds the site, because the reference pages
-and skill-page anchors are derived from `canonical/`; and the site suite is what catches a
-`canonical/` edit that breaks *generated site content* — a drifted skill roster, a stale count, a
-dangling deep-link anchor.
+**The site is the exception, and it is a PR gate.** `docs.yml` also triggers on `pull_request` to `master`, so the facts check, the site suite **and** the Astro build validate every PR that touches `site/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a maintainer needs. First, a **canonical-only** commit still runs the job, because `node site/scripts/gen-facts.mjs --check` compares the committed skill, agent and settings pages under `site/src/content/docs/` with `canonical/`. Second, that check, not the build, catches a `canonical/` edit whose site pages were not regenerated. The build never reads `canonical/`, so after such an edit, run `node site/scripts/gen-facts.mjs` and commit its output in the same change.
 
 **It does NOT catch `canonical/` → `profiles/` render drift.** That is a different gate in a
 different workflow: `test.yml`'s `render-drift` job, which re-runs
@@ -325,7 +314,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
 | Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |
-| Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
+| Astro site | Moderate | the site suite (`site/tests/`); `gen-facts.mjs --check` also runs as its own `docs.yml` step; there are no unit tests of components, by design |
 | Prompt-driven skill state machines | Not machine-tested (by design) | dogfooding + human/AI review only |
 
 **Coverage target:** not defined. **Coverage enforcement:** not enforced (no `%` gate).
@@ -397,8 +386,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/Test-AidInstal
 # Python dashboard tests
 python -m pytest dashboard/reader/tests dashboard/server/tests
 
-# Astro site build (the docs.yml gate)
-cd site && npm ci && npm run build
+# Site gate, as docs.yml runs it (from the repo root)
+node site/scripts/gen-facts.mjs --check
+cd site && npm ci && npm test && npm run build
 ```
 
 > Note: when editing `canonical/` and re-checking render-drift, run the FULL

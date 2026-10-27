@@ -22,6 +22,7 @@ Its content is authored once in `canonical/`; the repo also runs AID on itself (
 
 Run from the repo root.
 - Build (render `profiles/`, resync the dogfood install): `python3 .claude/skills/generate-profile/scripts/run_generator.py`
+- Site facts (after a `canonical/` skill, agent or settings change): `node site/scripts/gen-facts.mjs`; check: `node site/scripts/gen-facts.mjs --check`; site tests: `cd site && npm ci && npm test`
 - Test, all (throwaway HOME, so no real repo is migrated): `HOME=$(mktemp -d) bash tests/run-all.sh`; one suite: `bash tests/canonical/test-<name>.sh`
 - Test, the suites a change touches: `bash tests/canonical/select-suites.sh --run`
 - Lint, KB: `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge`, then `bash .aid/runtime/scripts/kb/kb-citation-lint.sh --root .aid/knowledge`
