@@ -42,14 +42,14 @@ An agent that writes does not grade its own work. A separate reviewer agent, in 
 
 The reviewer's tier follows the work. When a task is hard, its executor and the reviewer of that output move to the higher tier together, and a reviewer of a large-tier executor's output runs on the large tier. The tier affects the quality of the findings, not the grade, because the grade comes from a script and not from the model.
 
-Two reviews work differently during `/aid-execute`:
+During `/aid-execute`, these reviews work differently:
 
 - The quick check after each task runs on the small tier. It looks for serious problems and does not grade.
 - The delivery gate reviews the whole delivery. Its tier follows a complexity score of the delivery: small for a low score, medium for a middle score and large for a high one. The score counts tasks, dependency depth, risky task types and specialist consults.
 
 ## How skills dispatch agents
 
-Every skill that uses agents has a Dispatch table. Each row is one state of the skill, and it names the worker for that state: an agent, or `inline` when the skill does the step itself. For example:
+A skill with a state machine has a Dispatch table. Each row is one state of the skill, and it names the worker for that state: an agent, or `inline` when the skill does the step itself. A simpler skill dispatches its agent in plain steps instead. `/aid-review`, for example, dispatches `aid-reviewer` once, in a clean context. Examples of Dispatch tables:
 
 - `/aid-discover` hands GENERATE, REVIEW and FIX to `aid-architect`, and runs ELICIT, Q-AND-A and APPROVAL inline.
 - `/aid-specify` hands INITIALIZE and CONTINUE to `aid-architect` and REVIEW to `aid-reviewer`.

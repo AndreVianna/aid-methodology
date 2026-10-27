@@ -24,16 +24,18 @@ It lives in `.aid/knowledge/` and outlives any one session or work. A new teamma
 
 On a project that already has code, you run `/aid-discover`. It asks you to confirm the project's domain, proposes the documents that fit that domain, and waits for you to confirm or edit the list. It then writes the documents, reviews and grades them, and fixes what the review finds. You approve the result at the end. A fresh project has no code to scan, so you start with `/aid-describe`, which updates `INDEX.md` and `README.md` as the requirements take shape.
 
-The chosen list is the [declared doc-set](/reference/glossary/#declared-doc-set). Because each document type has a fixed file name, a skill that needs schemas always reads `schemas.md`, and one that needs debt always reads `tech-debt.md`. A small project can leave some documents thin. The shape stays the same.
+The chosen list is the [declared doc-set](/reference/glossary/#declared-doc-set). Because each document type has a fixed file name, a skill that needs schemas knows to read `schemas.md`, and one that needs debt knows to read `tech-debt.md`. A small project can leave some documents thin. The shape stays the same.
 
 Discovery does not guess. When it cannot ground a fact in your files, it records a question in `STATE.md` and asks you before it approves the Knowledge Base.
 
 ## How you keep it current
 
-The Knowledge Base changes as your project does. Two skills maintain it.
+The Knowledge Base changes as your project does. Among the skills that work on it:
 
-- `/aid-update-kb` applies one targeted change that you confirm, in its own worktree.
-- `/aid-housekeep` re-syncs a Knowledge Base that has drifted from the code, then clears stale work artifacts.
+- `/aid-update-kb` applies one targeted, human-confirmed change to the Knowledge Base, in its own worktree. Use it when a fact changed and you want that edit and nothing more.
+- `/aid-housekeep` re-syncs a drifted Knowledge Base and summary and clears stale work artifacts. Use it when the project has drifted.
+
+The glossary also covers [`/aid-summarize`](/reference/glossary/#aid-summarize) builds a single-file visual tour of the Knowledge Base, and [`/aid-ask`](/reference/glossary/#aid-ask) answers a question about the project with citations.
 
 The [pipeline page](/concepts/pipeline/) shows where these sit among the phases.
 
