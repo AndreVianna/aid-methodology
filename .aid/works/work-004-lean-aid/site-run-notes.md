@@ -167,3 +167,17 @@ slightly (more complete). AID cost about 15 times as much and took about 25 time
 - What plain lacked: one render check of the built site and one claims-against-repo pass. With those two checks,
   plain would most likely have beaten both results, at perhaps 1.5 to 2 times its cost. This is DESIGN.md's
   "result against reality" checkpoint; the plan-against-request checkpoint is what would have caught the stub cut.
+
+## Re-grade with raw-table check, 2026-10-27
+
+Fresh isolated builds and the amended grader found 37 raw table separator rows on 10 plain pages and none on the AID
+pages. This automated count does not reproduce the earlier visual count of 42 tables on 11 pages. The plain copy's
+saved lockfile failed `npm ci`; its disposable copy used `npm install`. Node 23.9.0 reported engine warnings.
+
+With Playwright 1.62.1, Chrome 155.0.8059.85 and axe-core 4.14.0, the grader scanned 61 plain pages and 68 AID pages
+(five AID redirects excluded). Both showed one repeated serious `label-content-name-mismatch` on the shared search
+button: its accessible name is "Search" and its visible text includes "Ctrl K". Whether the shortcut should count as
+label text and why the earlier grade reported zero are unresolved; earlier tool versions were not recorded. The plain
+grader's three unknown-command flags match its historical JSON: two are examples expressly marked retired, and one is
+a filename example. Neither the axe finding nor those flags was suppressed. Logs and screenshots are saved locally
+under `.aid/.temp/site-regrade-004`; they are not part of the committed evidence.

@@ -788,7 +788,7 @@ _verify_checksum() {
     filename="$(basename "$tarball")"
 
     local expected
-    expected="$(grep "[[:space:]]${filename}$" "$sums_file" | awk '{print $1}')"
+    expected="$(awk -v name="$filename" '{ file = $2; if (substr(file, 1, 1) == "*") file = substr(file, 2); if (file == name) { print $1; exit } }' "$sums_file")"
     if [[ -z "$expected" ]]; then
         echo "ERROR: aid-install-core: ${filename} not found in SHA256SUMS" >&2
         return 4

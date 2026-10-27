@@ -28,7 +28,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from measure import REPLY, ROOT, asks, child_env, next_phase, run, turn  # noqa: E402
+from measure import REPLY, ROOT, asks, bash_executable, bash_path, child_env, next_phase, run, turn  # noqa: E402
 
 TASKS = {
     "site": ("Rework the product site in `site/` (published at aid.casuloailabs.com) completely. Check every page "
@@ -58,12 +58,13 @@ def strip_region(path: Path) -> None:
     path.write_text("".join(out), encoding="utf-8")
 
 
-def setup(out: Path, task: str, aid: bool, commit: str) -> tuple[Path, dict]:
+def setup(out: Path, task: str, aid: bool, commit: str, lean_bundle: Path | None = None) -> tuple[Path, dict]:
     project, home = out / "project", out / "home"
     branch = f"{task}-{'aid' if aid else 'plain'}"
     if run(["git", "clone", "--quiet", "--shared", str(ROOT), str(project)], out, os.environ).returncode:
         sys.exit("git clone failed")
-    run(["git", "checkout", "--quiet", "-b", branch, commit], project, os.environ)
+    if run(["git", "checkout", "--quiet", "-b", branch, commit], project, os.environ).returncode:
+        sys.exit("git checkout failed")
     if (ROOT / "site/node_modules").is_dir():
         shutil.copytree(ROOT / "site/node_modules", project / "site/node_modules", symlinks=True)
     if not aid:
@@ -76,10 +77,20 @@ def setup(out: Path, task: str, aid: bool, commit: str) -> tuple[Path, dict]:
         run([*git, "add", "-A"], project, os.environ)
         run([*git, "commit", "--quiet", "-m", "benchmark: remove AID for the plain run"], project, os.environ)
     (home / ".claude").mkdir(parents=True)
+    env = run_env(out)
+    if lean_bundle is not None:
+        install = (["update", "--from-bundle", bash_path(lean_bundle), "--target", bash_path(project)] if (project / ".aid").is_dir()
+                   else ["add", "claude-code", "--target", bash_path(project), "--from-bundle", bash_path(lean_bundle)])
+        result = run([bash_executable(), bash_path(ROOT / "bin/aid"), *install], project, env)
+        markers = (project / ".claude/skills/aid-change/SKILL.md", project / ".aid/runtime/scripts/change/checks.py")
+        if result.returncode or not all(path.is_file() for path in markers):
+            sys.exit("lean bundle installation failed or missing expected files: " + (result.stdout + result.stderr)[-400:])
+        if run(["git", "diff", "--quiet", commit, "--", "site"], project, env).returncode:
+            sys.exit("lean installation changed the site baseline")
     creds = Path.home() / ".claude/.credentials.json"
     if creds.is_file() and not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
         shutil.copy2(creds, home / ".claude/.credentials.json")
-    return project, run_env(out)
+    return project, env
 
 
 def run_env(out: Path) -> dict:
@@ -92,6 +103,8 @@ def main() -> int:
     ap.add_argument("--task", choices=sorted(TASKS), default="site")
     ap.add_argument("--out", required=True, help="an empty folder that keeps the copy for grading")
     ap.add_argument("--no-aid", action="store_true")
+    ap.add_argument("--lean", action="store_true", help="start the lean change skill")
+    ap.add_argument("--lean-bundle", type=Path, help="staged current AID bundle to install over the historical checkout")
     ap.add_argument("--commit", default="HEAD")
     ap.add_argument("--turns", type=int, default=80)
     ap.add_argument("--max-cost", type=float, default=150.0, help="stop after the turn that passes this (USD)")
@@ -99,6 +112,10 @@ def main() -> int:
     ap.add_argument("--resume", metavar="SESSION", help="continue this session of an earlier run in --out")
     ap.add_argument("--cwd", help="with --resume: the folder the session last ran in (default: the copy)")
     a = ap.parse_args()
+    if a.lean and a.no_aid:
+        ap.error("--lean requires AID; it cannot be combined with --no-aid")
+    if a.lean and not a.resume and (not a.lean_bundle or not a.lean_bundle.is_dir()):
+        ap.error("--lean requires --lean-bundle pointing to a staged current bundle")
     out = Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     aid = not a.no_aid
@@ -106,12 +123,13 @@ def main() -> int:
     if a.resume:
         project, env = Path(a.cwd or out / "project").resolve(), run_env(out)
     else:
-        project, env = setup(out, a.task, aid, commit)
+        project, env = setup(out, a.task, aid, commit, lean_bundle=a.lean_bundle if a.lean else None)
 
     rec = {"task": a.task, "aid": aid, "model": a.model, "commit": commit, "user_turns": 0, "agent_turns": 0,
            "cost_usd": 0.0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "tools": {},
            "dispatches": 0, "writer_calls": 0, "stopped": "turn limit"}
-    session, message, text, repeats = None, ("/aid-describe " if aid else "") + TASKS[a.task], "", 0
+    rec["mode"] = "lean" if a.lean else ("aid" if aid else "plain")
+    session, message, text, repeats = None, ("/aid-change " if a.lean else "/aid-describe " if aid else "") + TASKS[a.task], "", 0
     if a.resume:
         session, message = a.resume, "Continue the work from where you stopped. " + GO_ON
     start = time.time()

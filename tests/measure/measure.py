@@ -55,6 +55,24 @@ TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
 TIMEOUT = int(os.environ.get("AID_MEASURE_TIMEOUT", "7200"))  # seconds per claude call
 
 
+def bash_executable() -> str:
+    """Use Git Bash on Windows, not the unrelated WSL bash launcher."""
+    if os.name == "nt":
+        git = shutil.which("git")
+        if git:
+            candidate = Path(git).resolve().parent.parent / "bin" / "bash.exe"
+            if candidate.is_file():
+                return str(candidate)
+        raise RuntimeError("Git Bash is required for the Windows benchmark")
+    return "bash"
+
+
+def bash_path(value) -> str:
+    """Convert a Windows drive path to the POSIX path used by Git Bash."""
+    path = str(value).replace('\\', '/')
+    return re.sub(r'^([A-Za-z]):(?:/|$)', lambda match: '/' + match.group(1).lower() + '/', path)
+
+
 def run(cmd, cwd, env, stdin=None):
     return subprocess.run(cmd, cwd=cwd, env=env, input=stdin, capture_output=True, text=True, timeout=TIMEOUT)
 
@@ -79,8 +97,8 @@ def setup(work: Path, aid: bool, bundle: Path) -> tuple[Path, dict]:
     env = child_env(dict(os.environ, HOME=str(home), AID_HOME=str(work / "aid-state"), AID_NO_UPDATE_CHECK="1",
                          PYTHONDONTWRITEBYTECODE="1"))
     if aid:
-        out = run(["bash", str(ROOT / "bin/aid"), "add", "claude-code", "--target", str(project),
-                   "--from-bundle", str(bundle)], project, env)
+        out = run([bash_executable(), bash_path(ROOT / "bin/aid"), "add", "claude-code", "--target", bash_path(project),
+                   "--from-bundle", bash_path(bundle)], project, env)
         if out.returncode:
             sys.exit("AID install failed: " + (out.stdout + out.stderr)[-400:])
     for args in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "baseline", "--allow-empty"]):
@@ -159,13 +177,17 @@ def grade(loc: Path, scenario: str, work: Path, env: dict) -> dict:
             "hidden_detail": (check.stdout + check.stderr).strip()[-200:]}
 
 
-def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path) -> dict:
+def measure(scenario: str, aid: bool, turns: int, model: str, bundle: Path, lean: bool = False) -> dict:
     work = Path(tempfile.mkdtemp(prefix="aid-measure-"))
     project, env = setup(work, aid, bundle)
     rec = {"scenario": scenario, "aid": aid, "model": model, "user_turns": 0, "agent_turns": 0, "cost_usd": 0.0,
            "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0,
            "seconds": 0.0, "tools": {}, "dispatches": 0, "writer_calls": 0, "start_context_tokens": None}
-    session, message, text = None, SCENARIOS[scenario], ""
+    request = SCENARIOS[scenario]
+    if lean:
+        request = "/aid-change " + re.sub(r"^/aid-\S+\s+", "", request)
+    rec["mode"] = "lean" if lean else ("aid" if aid else "plain")
+    session, message, text = None, request, ""
     start = time.time()
     while rec["user_turns"] < turns:
         t = turn(project, env, model, message, session)
@@ -218,18 +240,21 @@ def report(files: list[str]) -> int:
     rows = [json.loads(line) for f in files for line in Path(f).read_text().splitlines() if line.strip()]
     groups: dict[tuple, list] = {}
     for r in rows:
-        groups.setdefault((r["scenario"], r["aid"]), []).append(r)
-    print("scenario       AID    runs  start context  cache write  cost    seconds  hidden check")
-    for (scenario, aid), g in sorted(groups.items()):
-        print(f"{scenario:<14} {'yes' if aid else 'no':<6} {len(g):<5} {median([r.get('start_context_tokens') for r in g]):>13,.0f}"
+        mode = r.get("mode", "aid" if r["aid"] else "plain")
+        groups.setdefault((r["scenario"], mode), []).append(r)
+    print("scenario       mode   runs  start context  cache write  cost    seconds  hidden check")
+    for (scenario, mode), g in sorted(groups.items()):
+        print(f"{scenario:<14} {mode:<6} {len(g):<5} {median([r.get('start_context_tokens') for r in g]):>13,.0f}"
               f"  {median([r['cache_write_tokens'] for r in g]):>11,.0f}  ${median([r['cost_usd'] for r in g]):<6.2f}"
               f" {median([r['seconds'] for r in g]):>7.0f}  {sum(bool(r.get('hidden_pass')) for r in g)}/{len(g)} pass")
     for scenario in sorted({s for s, _ in groups}):
-        aid, plain = groups.get((scenario, True)), groups.get((scenario, False))
-        if aid and plain:
-            a, p = (median([r.get("start_context_tokens") for r in x]) for x in (aid, plain))
-            if p:
-                print(f"{scenario}: AID adds {a - p:,.0f} tokens to the start context ({(a - p) / p:+.0%})")
+        plain = groups.get((scenario, "plain"))
+        for mode in ("aid", "lean"):
+            group = groups.get((scenario, mode))
+            if group and plain:
+                a, p = (median([r.get("start_context_tokens") for r in x]) for x in (group, plain))
+                if p:
+                    print(f"{scenario}: {mode} adds {a - p:,.0f} tokens to the start context ({(a - p) / p:+.0%})")
     return 0
 
 
@@ -237,24 +262,27 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--scenario", choices=sorted(SCENARIOS), default="fix")
     ap.add_argument("--no-aid", action="store_true", help="measure the same request with no AID installed")
+    ap.add_argument("--lean", action="store_true", help="start the installed lean change skill")
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--turns", type=int, default=None,
                     help="user turns before giving up (default 10; 60 for the complex scenarios)")
     ap.add_argument("--model", default=os.environ.get("AID_MEASURE_MODEL", "claude-sonnet-5-5"))
     ap.add_argument("--report", nargs="+", metavar="FILE", help="print medians from earlier runs' JSON lines")
     a = ap.parse_args()
+    if a.lean and a.no_aid:
+        ap.error("--lean requires AID; it cannot be combined with --no-aid")
     if a.report:
         return report(a.report)
     if a.turns is None:
         a.turns = 60 if a.scenario.startswith("complex") else 10
     bundle = Path(tempfile.mkdtemp(prefix="aid-bundle-"))
     if not a.no_aid:
-        out = subprocess.run(["bash", "-c", 'source tests/lib/bundle.sh && aid_test_stage_bundle "$1"', "_",
-                              str(bundle)], cwd=ROOT, capture_output=True, text=True)
+        out = subprocess.run([bash_executable(), "-c", 'source tests/lib/bundle.sh && aid_test_stage_bundle "$1"', "_",
+                              bash_path(bundle)], cwd=ROOT, capture_output=True, text=True)
         if out.returncode:
             sys.exit("staging the AID bundle failed: " + (out.stderr or out.stdout)[-400:])
     for i in range(1, a.runs + 1):
-        rec = measure(a.scenario, not a.no_aid, a.turns, a.model, bundle)
+        rec = measure(a.scenario, not a.no_aid, a.turns, a.model, bundle, lean=a.lean)
         rec["run"] = i
         print(json.dumps(rec), flush=True)
         print(f"{a.scenario} aid={not a.no_aid} run {i}: ${rec['cost_usd']:.2f}, {rec['user_turns']} user turns, "
