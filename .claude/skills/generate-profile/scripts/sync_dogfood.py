@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -46,6 +47,25 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
+def _bash_path(value: str | Path) -> str:
+    """Use Git Bash's drive paths on Windows; preserve ordinary POSIX paths."""
+    path = str(value).replace('\\', '/')
+    if path.startswith('//'):
+        raise ValueError('UNC paths are not supported for dogfood resync')
+    return re.sub(r'^([A-Za-z]):(?:/|$)', lambda match: '/' + match.group(1).lower() + '/', path)
+
+
+def _bash_prefix() -> list[str]:
+    """Select Git Bash on Windows instead of the WSL launcher."""
+    if sys.platform != 'win32':
+        return ['bash']
+    git = shutil.which('git')
+    candidate = Path(git).resolve().parent.parent / 'bin/bash.exe' if git else None
+    if candidate is None or not candidate.is_file():
+        raise RuntimeError('Git Bash is required for Windows dogfood resync')
+    return [str(candidate), '-o', 'igncr']
+
+
 def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=str(REPO_ROOT), env=env, text=True,
                           capture_output=True)
@@ -53,7 +73,7 @@ def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.Comple
 
 def _env(home: Path) -> dict[str, str]:
     env = dict(os.environ)
-    env["AID_HOME"] = str(home)
+    env["AID_HOME"] = _bash_path(home)
     env["AID_NO_UPDATE_CHECK"] = "1"
     return env
 
@@ -64,7 +84,7 @@ def resync(target: Path, scratch: Path) -> int:
     home.mkdir()
 
     print(f"sync_dogfood: staging release from {REPO_ROOT} (release.sh --stage-only)")
-    staged = _run(["bash", "release.sh", "--stage-only", "--out", str(stage)])
+    staged = _run([*_bash_prefix(), "release.sh", "--stage-only", "--out", _bash_path(stage)])
     sys.stdout.write(staged.stdout)
     if staged.returncode:
         sys.stderr.write(staged.stderr)
@@ -73,8 +93,8 @@ def resync(target: Path, scratch: Path) -> int:
 
     print(f"sync_dogfood: aid update --from-bundle -> {target}")
     updated = subprocess.run(
-        ["bash", str(REPO_ROOT / "bin" / "aid"), "update",
-         "--from-bundle", str(stage), "--target", str(target)],
+        [*_bash_prefix(), _bash_path(REPO_ROOT / "bin" / "aid"), "update",
+         "--from-bundle", _bash_path(stage), "--target", _bash_path(target)],
         cwd=str(REPO_ROOT), env=_env(home), text=True, capture_output=True)
     sys.stdout.write(updated.stdout)
     if updated.returncode:
@@ -89,7 +109,7 @@ def check(target: Path, scratch: Path) -> int:
     home = scratch / "home"
     home.mkdir()
     status = subprocess.run(
-        ["bash", str(REPO_ROOT / "bin" / "aid"), "status", "--target", str(target)],
+        [*_bash_prefix(), _bash_path(REPO_ROOT / "bin" / "aid"), "status", "--target", _bash_path(target)],
         cwd=str(REPO_ROOT), env=_env(home), text=True, capture_output=True)
     sys.stdout.write(status.stdout)
     if status.returncode:

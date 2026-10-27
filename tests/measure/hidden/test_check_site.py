@@ -66,7 +66,9 @@ class RawTableTests(unittest.TestCase):
                     patch.dict(check_site.os.environ, {"AXE_JS": ""}), redirect_stdout(output):
                 self.assertEqual(check_site.main(), 0)
             report = json.loads(output.getvalue())
-            self.assertEqual(report["raw_table_pages"], {"index.html": 1})
+            self.assertEqual(report["raw_table_static_estimate"], {"index.html": 1})
+            self.assertIsNone(report["raw_table_pages"])
+            self.assertEqual(report["raw_table_status"], "error")
             self.assertEqual(report["a11y_status"], "not_run")
             self.assertIn("AXE_JS", report["a11y_reason"])
 

@@ -29,29 +29,68 @@ const pages = JSON.parse(fs.readFileSync(pagesFile, 'utf8'));
 (async () => {
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
   const browser = await chromium.launch(executablePath ? { executablePath } : {});
-  const out = { violations: {}, shots: [], scanned: 0, redirects: [] };
+  const out = { violations: {}, shots: [], screenshot_errors: [], scanned: 0, redirects: [], raw_texts: {} };
   const page = await browser.newPage();
+  let styleErrors = [];
+  page.on('response', (response) => {
+    if (response.request().resourceType() === 'stylesheet' && response.status() >= 400)
+      styleErrors.push(response.url() + ' HTTP ' + response.status());
+  });
+  page.on('requestfailed', (request) => {
+    if (request.resourceType() === 'stylesheet') styleErrors.push(request.url() + ' failed');
+  });
   for (const p of pages) {
-    await page.goto(base + p, { waitUntil: 'load' });
+    styleErrors = [];
+    const response = await page.goto(base + p, { waitUntil: 'load' });
+    if (!response || response.status() >= 400) throw new Error('page failed to load: ' + p);
     await page.waitForTimeout(300);
     const landed = new URL(page.url()).pathname.replace(/\/?$/, '/');
-    if (landed !== p.replace(/\/?$/, '/')) { out.redirects.push(p); continue; }  // its target is scanned on its own
-    await page.addScriptTag({ path: axePath });
+    const requested = new URL(p, base).pathname.replace(/\/?$/, '/');
+    if (landed !== requested) { out.redirects.push(p); continue; }  // its target is scanned on its own
+    const missingStyles = await page.evaluate(() => Array.from(document.querySelectorAll('link[rel~="stylesheet"]'))
+      .filter((link) => !link.disabled && !link.sheet).map((link) => link.href));
+    if (missingStyles.length || styleErrors.length)
+      throw new Error('stylesheet failed to load on ' + p + ': ' + [...missingStyles, ...styleErrors].join(', '));
     out.scanned += 1;
-    const r = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations
-      .filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id + ' x' + v.nodes.length));
-    if (r.length) out.violations[p] = r;
+    // Use computed styles on the live DOM, including external stylesheets.
+    out.raw_texts[p] = await page.evaluate(() => {
+      const text = [];
+      const ignored = new Set(['PRE', 'CODE', 'SCRIPT', 'STYLE', 'TEMPLATE']);
+      const blocks = new Set(['P', 'DIV', 'SECTION', 'ARTICLE', 'BR', 'LI', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+      function visit(node, visible = true) {
+        if (node.nodeType === Node.TEXT_NODE) { if (visible) text.push(node.nodeValue); return; }
+        if (node.nodeType !== Node.ELEMENT_NODE || ignored.has(node.tagName)) return;
+        const style = getComputedStyle(node);
+        if (node.hidden || style.display === 'none' || Number(style.opacity) === 0 || style.contentVisibility === 'hidden') return;
+        const childVisible = style.visibility !== 'hidden' && style.visibility !== 'collapse';
+        if (blocks.has(node.tagName) && childVisible) text.push('\n');
+        for (const child of node.childNodes) visit(child, childVisible);
+        if (blocks.has(node.tagName) && childVisible) text.push('\n');
+      }
+      visit(document.body);
+      return text.join('');
+    });
+    if (axePath) {
+      await page.addScriptTag({ path: axePath });
+      const r = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations
+        .filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id + ' x' + v.nodes.length));
+      if (r.length) out.violations[p] = r;
+    }
   }
-  const shots = ['/', pages.find((p) => p.includes('get-started')) || pages[1],
-                 pages.find((p) => p.includes('/skills/')) || pages[2], pages.find((p) => p.includes('concepts')) || pages[3]];
+  const shots = ['/', pages.find((p) => p.includes('get-started')) || pages[1] || '/',
+                 pages.find((p) => p.includes('/skills/')) || pages[2] || '/', pages.find((p) => p.includes('concepts')) || pages[3] || '/'];
   for (const [name, w, h] of [['desktop', 1440, 900], ['phone', 390, 844]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const pg = await ctx.newPage();
     for (const [i, p] of shots.entries()) {
-      await pg.goto(base + p, { waitUntil: 'load' });
-      const file = `${shotDir}/${name}-${i}.png`;
-      await pg.screenshot({ path: file, fullPage: false });
-      out.shots.push(file);
+      try {
+        await pg.goto(base + p, { waitUntil: 'load' });
+        const file = `${shotDir}/${name}-${i}.png`;
+        await pg.screenshot({ path: file, fullPage: false });
+        out.shots.push(file);
+      } catch (error) {
+        out.screenshot_errors.push(`${name}-${i}: ${error.message}`);
+      }
     }
     await ctx.close();
   }
@@ -109,10 +148,14 @@ class PageText(HTMLParser):
 def count_raw_tables(html: str) -> int:
     parser = PageText()
     parser.feed(html)
+    return count_raw_table_text("".join(parser.text))
+
+
+def count_raw_table_text(text: str) -> int:
     # A delimiter can be rendered inside a single paragraph with the other rows.
     separator = re.compile(r"(?:\\?\|[ \t]*:?-{3,}:?[ \t]*)+\\?\||"
                            r"(?<![-:]):?-{3,}:?[ \t]*(?:\\?\|[ \t]*:?-{3,}:?[ \t]*)+(?:\\?\|)?")
-    return sum(1 for line in "".join(parser.text).splitlines() for _ in separator.finditer(line))
+    return sum(1 for line in text.splitlines() for _ in separator.finditer(line))
 
 
 def raw_table_pages(dist: Path, pages) -> dict:
@@ -127,10 +170,12 @@ def raw_table_pages(dist: Path, pages) -> dict:
 def page_urls(dist: Path, pages) -> list:
     urls = []
     for path in pages:
-        if path.name != "index.html":
-            continue
-        parent = path.relative_to(dist).parent
-        urls.append("/" if parent == Path(".") else "/" + parent.as_posix() + "/")
+        relative = path.relative_to(dist)
+        if path.name == "index.html":
+            parent = relative.parent
+            urls.append("/" if parent == Path(".") else "/" + parent.as_posix() + "/")
+        else:
+            urls.append("/" + relative.as_posix())
     return sorted(set(urls))
 
 
@@ -157,7 +202,10 @@ def main() -> int:
     html = sorted(dist.rglob("*.html")) if rep["build_ok"] else []
     rep["pages"] = len(html)
     # A failed build is unscanned, not evidence of zero broken tables.
-    rep["raw_table_pages"] = raw_table_pages(dist, html) if rep["build_ok"] else None
+    rep["raw_table_static_estimate"] = raw_table_pages(dist, html) if rep["build_ok"] else None
+    rep["raw_table_pages"] = None
+    rep["raw_table_status"] = "not_run"
+    rep["raw_table_reason"] = "no built HTML" if not html else "browser scan not yet completed"
 
     skills = {p.name for p in (project / "canonical/skills").iterdir() if p.is_dir()}
     cat = (project / "canonical/aid/templates/shortcut-catalog.yml").read_text(encoding="utf-8")
@@ -185,26 +233,45 @@ def main() -> int:
                 broken.add(href)
     rep["broken_links"] = sorted(broken)
 
-    if html and os.environ.get("AXE_JS"):
+    if html:
         server = ThreadingHTTPServer(("127.0.0.1", 0), partial(SimpleHTTPRequestHandler, directory=str(dist)))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         pages = page_urls(dist, html)
         (out / "pages.json").write_text(json.dumps(pages), encoding="utf-8")
         (out / "scan.js").write_text(NODE, encoding="utf-8")
-        scan = subprocess.run(["node", str(out / "scan.js"), f"http://127.0.0.1:{server.server_port}",
-                               str(out / "pages.json"), os.environ["AXE_JS"], str(out)], capture_output=True, text=True,
-                              env=dict(os.environ, NODE_PATH=playwright_node_modules(npm)))
-        server.shutdown()
         try:
+            scan = subprocess.run(["node", str(out / "scan.js"), f"http://127.0.0.1:{server.server_port}",
+                                   str(out / "pages.json"), os.environ.get("AXE_JS", ""), str(out)], capture_output=True, text=True,
+                                  encoding="utf-8", env=dict(os.environ, NODE_PATH=playwright_node_modules(npm)))
+            if scan.returncode:
+                raise ValueError((scan.stderr or scan.stdout)[-400:])
             s = json.loads(scan.stdout.strip().splitlines()[-1])
-            rep["a11y_pages_with_serious"] = len(s["violations"])
-            rep["a11y_status"] = "complete"
-            rep["a11y_violations"] = s["violations"]
-            rep["a11y_scanned"], rep["redirect_pages"] = s["scanned"], len(s["redirects"])
+            if s["scanned"] + len(s["redirects"]) != len(pages) or len(s["raw_texts"]) != s["scanned"]:
+                raise ValueError("browser did not scan every non-redirect page")
+            rep["raw_table_pages"] = {}
+            for url, text in s["raw_texts"].items():
+                count = count_raw_table_text(text)
+                if count:
+                    file = url.lstrip("/") + ("index.html" if url.endswith("/") else "")
+                    rep["raw_table_pages"][file] = count
+            rep["raw_table_status"] = "complete"
+            rep.pop("raw_table_reason", None)
+            if os.environ.get("AXE_JS"):
+                rep["a11y_pages_with_serious"] = len(s["violations"])
+                rep["a11y_status"] = "complete"
+                rep["a11y_violations"] = s["violations"]
+                rep["a11y_scanned"], rep["redirect_pages"] = s["scanned"], len(s["redirects"])
+            else:
+                rep["a11y_status"], rep["a11y_reason"] = "not_run", "AXE_JS not set"
             rep["screenshots"] = s["shots"]
-        except (ValueError, IndexError, KeyError):
-            rep["a11y_status"] = "error"
-            rep["a11y_error"] = (scan.stderr or scan.stdout)[-400:]
+            rep["screenshot_errors"] = s["screenshot_errors"]
+        except (OSError, ValueError, IndexError, KeyError) as exc:
+            rep["raw_table_status"], rep["raw_table_reason"] = "error", str(exc)
+            rep["a11y_status"] = "error" if os.environ.get("AXE_JS") else "not_run"
+            rep["a11y_reason"] = str(exc) if os.environ.get("AXE_JS") else "AXE_JS not set"
+        finally:
+            server.shutdown()
+            server.server_close()
     else:
         rep["a11y_status"] = "not_run"
         rep["a11y_reason"] = "no built HTML" if not html else "AXE_JS not set"

@@ -181,3 +181,8 @@ label text and why the earlier grade reported zero are unresolved; earlier tool 
 grader's three unknown-command flags match its historical JSON: two are examples expressly marked retired, and one is
 a filename example. Neither the axe finding nor those flags was suppressed. Logs and screenshots are saved locally
 under `.aid/.temp/site-regrade-004`; they are not part of the committed evidence.
+
+After the visibility correction, rendered-browser scans again found 37 separator rows on 10 plain pages and none on
+the AID pages. They scanned 62 plain and 69 AID pages, including standalone HTML pages; the shared search-button
+finding remains. Static estimates are reported separately from browser-verified results. These runs used the same
+local tool versions and carry the installation caveats above.
