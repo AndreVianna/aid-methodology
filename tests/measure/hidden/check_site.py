@@ -24,11 +24,15 @@ const [base, pagesFile, axePath, shotDir] = process.argv.slice(2);
 const pages = JSON.parse(fs.readFileSync(pagesFile, 'utf8'));
 (async () => {
   const browser = await chromium.launch();
-  const out = { violations: {}, shots: [] };
+  const out = { violations: {}, shots: [], scanned: 0, redirects: [] };
   const page = await browser.newPage();
   for (const p of pages) {
     await page.goto(base + p, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    const landed = new URL(page.url()).pathname.replace(/\/?$/, '/');
+    if (landed !== p.replace(/\/?$/, '/')) { out.redirects.push(p); continue; }  // its target is scanned on its own
     await page.addScriptTag({ path: axePath });
+    out.scanned += 1;
     const r = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations
       .filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id + ' x' + v.nodes.length));
     if (r.length) out.violations[p] = r;
@@ -73,7 +77,10 @@ def main() -> int:
     stale, unknown = set(), set()
     for f in html:
         text = re.sub(r"<[^>]+>", " ", f.read_text(encoding="utf-8", errors="replace"))
-        for cmd in re.findall(r"(?<![\w./-])/(aid-[a-z][a-z-]*[a-z])", text):
+        for tok in re.findall(r"(?<![\w./-])/(aid-[\w$-]+)", text):
+            cmd = tok.rstrip("-")
+            if not re.fullmatch(r"aid-[a-z-]*[a-z]", cmd):
+                continue  # part of a file name or template, such as aid-claude-code-vX.Y.Z
             if cmd in kind_ids:
                 stale.add(cmd)
             elif cmd not in skills:
@@ -106,11 +113,13 @@ def main() -> int:
             s = json.loads(scan.stdout.strip().splitlines()[-1])
             rep["a11y_pages_with_serious"] = len(s["violations"])
             rep["a11y_violations"] = s["violations"]
+            rep["a11y_scanned"], rep["redirect_pages"] = s["scanned"], len(s["redirects"])
             rep["screenshots"] = s["shots"]
         except (ValueError, IndexError):
             rep["a11y_error"] = (scan.stderr or scan.stdout)[-400:]
 
-    tests = [p for p in site.rglob("*") if "__tests__" in p.parts and "node_modules" not in p.parts and p.is_file()]
+    tests = [p for p in site.rglob("*") if p.is_file() and not {"node_modules", "dist"} & set(p.parts)
+             and ({"__tests__", "tests", "test"} & set(p.relative_to(site).parts) or ".test." in p.name)]
     code = [p for p in (site / "scripts").rglob("*") if p.is_file() and "__tests__" not in p.parts
             and p.suffix in (".mjs", ".js", ".ts", ".py")] if (site / "scripts").is_dir() else []
     content = [p for p in (site / "src/content").rglob("*") if p.suffix in (".md", ".mdx")]

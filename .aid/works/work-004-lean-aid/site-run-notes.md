@@ -12,7 +12,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | Time | 24.6 min, 2 user turns |
 | Cost | about $11.50 |
 | Helper agents | 7 |
-| Result (graded) | builds (62 pages); 0 stale command names, 3 invented ones (`/aid-add-api`, `/aid-change-ui`, `/aid-tool`); 0 broken links; 34 pages with serious accessibility issues (27 before); generator code 11,289 -> 278 lines, site tests 30,917 -> 0 |
+| Result (graded) | builds (62 pages); 0 stale command names, 3 invented ones (`/aid-add-api`, `/aid-change-ui`, `/aid-tool`); 0 broken links; 0 pages with serious accessibility issues (first graded 34: a grader timing error, see Grading correction); generator code 11,289 -> 278 lines, site tests 30,917 -> 0 |
 | Noticed and left alone | real bugs outside the site (chat node, stale README lines) |
 
 ## AID run: timeline
@@ -52,6 +52,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 04:56-05:13 | delivery 4: tasks 40-44 done (keyboard check and screenshots re-recorded, reduction measured, docs workflow edited, KB documents updated) | $114.40+ | 44 of 49 done. Scope creep landing: KB documents (test landscape, module map, architecture, glossary, project card) edited, which the request never asked for |
 | 05:13-05:30 | delivery 4: tasks 45-48 done (more KB documents, KB debt register, site audit completed, a commit just for state writes); task 49 in progress | $114.40+ | 48 of 49. Four of the last five tasks were KB edits or bookkeeping (task 48 exists only to commit state files) |
 | 05:30-05:47 | all 49 tasks done (task 49: delivery 4 gate checks and a final sweep of AC-1 to AC-15); the delivery 4 gate review is running | $114.40+ | 79 commits in all |
+| 05:47-06:03 | delivery 4 gated (grade A+, one gate fix); the work ended asking the user to merge or open a pull request | $134.43 reported | the closing message asked "merge or PR?"; my driver answered it 32 more times at $0.02 each before I stopped it at 06:07 |
 
 ## AID run: red tape observed so far
 
@@ -84,7 +85,38 @@ the transcripts (152 files, 4,593 messages; Sonnet, Opus and Haiku list prices) 
 Opus helpers. Calibrated against the reported total at 22:48 (reported $86.97 against $154.33 token-priced, ratio
 0.56), the best estimate of the whole run is **about $175**, with the reported $114 a floor and $310 a ceiling.
 
-## Still to record
+Final, from the one session transcript (330 files, 151 helper runs), with Opus priced at its own rate: $314 token-priced
+($186 helpers: architect $64, reviewer $64, tech writer $33, developer $25; $69 main session at Sonnet rates); the
+reported total is $135.07; calibrated, **about $176**. Active time about 10.5 h (18:15 to 06:03, less the 55-minute
+usage-limit stop), against 24.6 min plain.
 
-- Execute: per-task cost and time, review cycles per task, findings by type, fix rounds, gates.
-- End result, graded like the plain run; cohesion with the request; a blind design review of both sites.
+## AID run: execute phase
+
+- 49 tasks, 49 Done; 79 commits: 49 task commits, 15 fix commits on tasks, 8 delivery-gate fix commits, 7 state commits.
+- 13 of 49 tasks needed a fix commit after review (10 of 14 content-audit tasks). Gates: delivery 1 none, delivery 2
+  four fix cycles, delivery 3 three, delivery 4 one. Every gate fix was a real defect (wrong diagram facts, pages
+  against code, tables not rendering, code split mid-word).
+- Work folder at the end: 16,513 lines of paperwork for a site whose content is 4,132 lines.
+
+## Grading correction (both runs)
+
+The first plain grade counted 34 pages with serious accessibility issues; all were one rule, scrollable code blocks
+not focusable, and the site's own script fixes it a moment after load. The grader now waits 300 ms and skips redirect
+pages; its command scan no longer counts file names (`aid-claude-code-vX.Y.Z`, `<tool>/aid-tool.conf`); test files are
+counted in `tests/` folders too. Both sites were re-graded with the fixed grader.
+
+## Result, graded
+
+| Measure | Plain | AID |
+|---|---|---|
+| Builds | yes, 62 pages | yes, 74 pages (5 are redirects from old addresses) |
+| Command names | 2 invented (`/aid-add-api`, `/aid-change-ui`), 0 stale | 0 invented, 0 stale |
+| Broken internal links | 0 | 0 |
+| Pages with serious accessibility issues | 0 of 61 | 0 of 68 |
+| Script lines (generators) | 278 (from 11,289) | 271 |
+| Test lines | 213 | 619 (build, links, accessibility, contrast, facts) |
+| Content lines | 7,048 | 4,132 |
+| npm scripts / dependencies | 6 / 4 | 8 / 8 |
+| Files changed outside `site/` | 6 (5 docs, CI workflow), uncommitted | 11 (10 Knowledge Base, CI workflow), plus 79 work-folder files |
+| Cost | about $11.50 | about $176 (reported $135, ceiling $314) |
+| Time | 24.6 min | about 10.5 h |
