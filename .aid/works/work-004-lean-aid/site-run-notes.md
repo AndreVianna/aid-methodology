@@ -110,7 +110,7 @@ counted in `tests/` folders too. Both sites were re-graded with the fixed grader
 | Measure | Plain | AID |
 |---|---|---|
 | Builds | yes, 62 pages | yes, 74 pages (5 are redirects from old addresses) |
-| Command names | 2 invented (`/aid-add-api`, `/aid-change-ui`), 0 stale | 0 invented, 0 stale |
+| Command names | 0 invented, 0 stale (`/aid-add-api`, `/aid-change-ui` appear only as retired names, as in the README) | 0 invented, 0 stale |
 | Broken internal links | 0 | 0 |
 | Pages with serious accessibility issues | 0 of 61 | 0 of 68 |
 | Script lines (generators) | 278 (from 11,289) | 271 |
@@ -138,3 +138,32 @@ Verdict: AID slightly better as shipped (no broken rendering); plain clearly bet
 reviewer also called `/aid-triage` stale on both sites: wrong, it is a skill at the starting commit.
 Note: plain's broken tables are the same defect AID's delivery 3 gate found and fixed in its own site; my grader has no
 check for it, so the automatic grade missed it on plain.
+
+## Blind content review (independent agent; claims checked against the starting commit)
+
+| Topic | Plain: checked / wrong / stale / invented | AID |
+|---|---|---|
+| Home, install, pipeline, two skill pages, skill list, KB, FAQ | 223 / 0 / 1 / 0 | 193 / 0 / 0 / 0 |
+
+- Plain copied three stale statements from the repo's own outdated docs (impediment file name, `path:line` citation
+  rule, diagrams without a gate after every phase). AID corrected the same stale repo text: its claim-against-repo
+  reviews paid off here.
+- AID cut every skill page to header facts (about 80 words each, 3,007 words for 37 skills; the old site had 18,000
+  words and a flow diagram per skill). Plain explains each skill and its kinds. The planning analysis had already
+  flagged this cut as invented by the plan, not asked for.
+- Both cover all 37 skills; neither names a skill that does not exist. Beginner test: plain yes, AID yes but heavier.
+- Verdict: AID slightly more accurate, plain clearly more complete; overall plain slightly better.
+
+## Conclusion
+
+Quality is about a tie: the design review favours AID slightly (nothing broken), the content review favours plain
+slightly (more complete). AID cost about 15 times as much and took about 25 times as long.
+
+- What AID's extra cost bought: checks of the built result (raw tables, split code) and claims checked against the
+  repo (stale text corrected). Both are result-against-reality checks, a small part of the spend.
+- What it cost in quality: the plan invented cuts (skill pages to stubs, per-skill diagrams dropped) and the request's
+  "modern, professional look" was lost across 49 tasks: the result kept the old look. The process drifted from the
+  intent through its own plan.
+- What plain lacked: one render check of the built site and one claims-against-repo pass. With those two checks,
+  plain would most likely have beaten both results, at perhaps 1.5 to 2 times its cost. This is DESIGN.md's
+  "result against reality" checkpoint; the plan-against-request checkpoint is what would have caught the stub cut.
