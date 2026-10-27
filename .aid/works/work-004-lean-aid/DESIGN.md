@@ -72,6 +72,11 @@ Gates that can pass: every check a gate uses is run on the starting commit befor
 fails there (environment, flaky, unrelated suites) is recorded as pre-existing and never blocks; a check that cannot
 run at all is removed from the gate. A flaky check is re-run once; inconsistent results make it a Note, not a blocker.
 A finding that comes back after its fix, or a fix that makes another check fail, stops the loop and goes to the user.
+Pre-existing never means ignored. The baseline records each failure exactly (which tests fail, their messages, and how
+many tests ran), with suites run to the end rather than stopped at the first failure. After the change: the same
+failures and the same number of tests run pass; a new failing test, a changed message, or fewer tests run blocks (a
+crash that stops a suite early can hide other failures, and a drop in tests run exposes it). Every pre-existing
+failure is listed to the user at each milestone and at the result, so it is a known decision, never a silent one.
 
 The loop stops by rule: one review pass, one fix round; the second look checks only the fixes and the full test run; a
 fix that breaks a passing check is reverted; no new Notes or Decisions in the second look. Thresholds (what "cheap"
