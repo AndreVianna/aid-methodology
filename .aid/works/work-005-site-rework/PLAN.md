@@ -197,7 +197,7 @@ wave 14: task-023
 ```
 
 ### delivery-003: New look and machinery cut
-- **What it delivers:** a new token-based light and dark design with an accessible one-row header, no JavaScript beyond search, theme and navigation, a no-JavaScript contact form, a network-free version and changelog, and a site code base stripped of the old generators, node panel, Mermaid and their tests.
+- **What it delivers:** a new token-based light and dark design with an accessible one-row header, no JavaScript beyond search, theme, navigation and code-block keyboard scrolling, a no-JavaScript contact form, a network-free version and changelog, and a site code base stripped of the old generators, node panel, Mermaid and their tests.
 - **Features:** feature-004-look-and-layout (everything except its two test files), feature-005-machinery-cut (Feature Flow steps 2, 3, 4, 5 and 6)
 - **Depends on:** delivery-002
 - **Priority:** Must
@@ -347,7 +347,7 @@ Migration Plan, "Outside `site/`"), which Feature 006 records as debt row W5-24 
 - [ ] AC-6: from `site/`, after a build, `npx vitest run tests/links.test.mjs` passes, with L1 returning `[]` and L2 returning exactly the two expected broken links.
 - [ ] AC-7 and AC-10: in that run, every per-page test of `tests/a11y.test.mjs` passes (A1 axe-core and S1-S4 report nothing), and self-tests T1-T11 pass.
 - [ ] AC-8: in that run, U1-U7 pass on every page and the final test finds a `figure.diagram` total of at least the number of files in `src/components/diagrams/`.
-- [ ] AC-15: from `site/`, `find dist -name '*.html' -size +150k` prints nothing, and every line of `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u` is in the audit's "Scripts on built pages (AC-15)" table with a purpose of search, theme or navigation (W3 and W4 pass).
+- [ ] AC-15: from `site/`, `find dist -name '*.html' -size +150k` prints nothing, and every line of `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u` is in the audit's "Scripts on built pages (AC-15)" table with a purpose of search, theme, navigation or codeScroll (W3 and W4 pass).
 - [ ] Feature 004 contrast: `tests/contrast.test.mjs` cases K1-K5 pass.
 - [ ] AC-2 still holds: `node scripts/gen-facts.mjs --check` exits 0 and build case B5 passes.
 - [ ] AC-4: from `site/`, the AC-4 command and the same command with `tests` added each total at most 21577 (60% below the baseline in the audit's "Baseline figures" table), `find scripts -type f` prints exactly `scripts/gen-facts.mjs`, and the "After" column is filled.

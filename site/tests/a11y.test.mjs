@@ -14,6 +14,7 @@ const PURPOSES = {
   theme: ['starlight-theme-select', 'StarlightThemeProvider', 'starlight-theme'],
   navigation: ['starlight-menu-button', 'starlight-toc', 'mobile-starlight-toc',
     'sl-sidebar-state', 'sl-sidebar-restore', '_starlightScrollRestore'],
+  codeScroll: ['tabindex-js-module', '.expressive-code pre > code'],
 };
 /** Markers that fail a script even when it also carries an allowed marker. */
 const FORBIDDEN = ['starlight-tabs', 'mermaid', '.expressive-code .copy', 'aid-banner',

@@ -76,7 +76,7 @@ Priority key: **Must** / **Should** / **Could**.
 | ID | Requirement |
 |---|---|
 | NFR-1 | Accessibility: WCAG 2.2 AA. Text contrast at least 4.5:1 (3:1 for large text and UI parts) in both themes. |
-| NFR-2 | Performance: no client-side JavaScript on a page except search, theme toggle and navigation controls. Each built page, excluding images, is at most 150 KB transferred. |
+| NFR-2 | Performance: no client-side JavaScript on a page except search, theme toggle, navigation controls and keyboard access to scrollable code blocks (Expressive Code's own script, only on pages that have code blocks). Each built page, excluding images, is at most 150 KB transferred. |
 | NFR-3 | Maintainability: site-specific code (`scripts/`, `src/lib/`, `src/data/`, `src/scripts/`, `src/components/`, `public/*.mjs`, `public/*.css` and all tests) is smaller than today by at least 60% in lines, measured with the stated command in AC-4 before and after. |
 | NFR-4 | Reproducibility: `npm ci && npm run build` in `site/` needs the network only for `npm ci`; no step of the build fetches anything. |
 | NFR-5 | Rules of this repository still hold: ASCII-only shipped PowerShell and LF-only `.sh` are untouched; the KB names no work id; changes stay inside `site/`, `.github/workflows/docs.yml`, the KB documents named in FR-10, and this work's folder. |
@@ -118,7 +118,7 @@ Run from `site/` unless stated.
 | AC-12 | Newcomer readability. | Every page's first paragraph is one sentence stating its purpose; every term in the glossary is linked on first use on the Get Started pages (checked by a reviewer reading the Get Started section). |
 | AC-13 | Nothing deployed, nothing outside scope changed. | From the repo root: `git diff --name-only site-aid...HEAD` (the branch this work started from) lists only paths under `site/`, `.github/workflows/docs.yml`, `.aid/knowledge/` documents that the audit table lists as edited under FR-10, and `.aid/works/work-005-site-rework/`; `git tag --points-at HEAD` prints nothing; and the branch was never pushed (`git ls-remote --heads origin work-005` prints nothing). |
 | AC-14 | Repo checks still pass. | `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge`, `bash .aid/runtime/scripts/kb/kb-citation-lint.sh --root .aid/knowledge` and `bash tests/canonical/test-kb-no-work-ids.sh` exit 0. |
-| AC-15 | Light pages. | From `site/`: `find dist -name '*.html' -size +150k` prints nothing, and `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' \| sort -u` lists only the scripts of search, the theme toggle and navigation controls (the list is written into the audit table and each entry is named for its purpose). |
+| AC-15 | Light pages. | From `site/`: `find dist -name '*.html' -size +150k` prints nothing, and `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' \| sort -u` lists only the scripts of search, the theme toggle, navigation controls and keyboard scrolling of code blocks (Expressive Code's own script, only on pages with code blocks) (the list is written into the audit table and each entry is named for its purpose). |
 
 ## 10. Priority
 
@@ -1535,6 +1535,7 @@ const PURPOSES = {
   theme:      ['starlight-theme-select', 'StarlightThemeProvider', 'starlight-theme'],
   navigation: ['starlight-menu-button', 'starlight-toc', 'mobile-starlight-toc',
                'sl-sidebar-state', 'sl-sidebar-restore', '_starlightScrollRestore'],
+  codeScroll: ['tabindex-js-module', '.expressive-code pre > code'],
 };
 /** Markers that fail a script even when it also carries an allowed marker. */
 const FORBIDDEN = ['starlight-tabs', 'mermaid', '.expressive-code .copy', 'aid-banner',
@@ -1771,7 +1772,7 @@ gold is kept in dark; in light it is darkened to `#7a5814` so links pass 4.5:1 o
 | Reflow at 320 px (1.4.10) | header brand shortens, text wraps, tables and code scroll in their own box | AC-11 manual check |
 | Reduced motion (2.3.3 is AAA; FR-5 asks for it) | `site.css` rule 2 | review |
 | Theme control operable | native `<select>` with the accessible name "Select theme"; arrow keys change the value | axe `select-name`; AC-9 |
-| No JavaScript except search, theme, navigation (NFR-2) | no Tabs, no copy button, no banner, no form script | W3, AC-15 |
+| No JavaScript except search, theme, navigation, code-block keyboard scrolling (NFR-2) | no Tabs, no copy button, no banner, no form script (Expressive Code's scroll script is the one code-block script allowed) | W3, AC-15 |
 
 **AC-9, manual keyboard check** (record the result in the audit's "Keyboard check (AC-9)" table). From `site/`:
 `npm run build && npm run preview`, then open `http://localhost:4321/` and
@@ -1793,9 +1794,9 @@ scroll sideways). Record the eight results in the audit's "Screenshots (AC-11)" 
 
 **AC-15, script list.** After `npm run build`, run AC-15's `grep -rho '<script[^>]*src="[^"]*"' dist
 --include='*.html' | sort -u` from `site/` and write each line into the audit's "Scripts on built pages
-(AC-15)" table with the purpose that W3 assigned (search, theme or navigation). Expected purposes only:
+(AC-15)" table with the purpose that W3 assigned (search, theme, navigation or codeScroll). Expected purposes only:
 Starlight's search (`site-search`), theme select (`starlight-theme-select`), and navigation (menu button,
-"On this page" highlighting, sidebar state). Astro inlines small scripts, so some of these may appear only
+"On this page" highlighting, sidebar state), and Expressive Code's own script (`ec.*.js`, purpose `codeScroll`: keyboard access to scrollable code blocks, only on pages that have code blocks). Astro inlines small scripts, so some of these may appear only
 inline; W3 checks those too.
 
 ##### Migration Plan
@@ -1932,8 +1933,8 @@ The wording follows Feature 001's rules P1 and P7, and Feature 001's audit check
 Feature 001's (`slug: 'releases/changelog'`).
 
 **4. The contact form, without JavaScript.** `src/components/ReportForm.astro` is rewritten as a plain HTML
-form. Its client `<script>` is removed: NFR-2 allows no page script except search, the theme toggle and
-navigation. The audit lead "/contact/* ... form works only with JavaScript" is settled here. The `Props`
+form. Its client `<script>` is removed: NFR-2 allows no page script except search, the theme toggle,
+navigation and the code-block keyboard-scroll script. The audit lead "/contact/* ... form works only with JavaScript" is settled here. The `Props`
 interface stays (`kind: 'site' | 'bug' | 'feedback' | 'contact'`). One constant drives the markup of the three GitHub forms:
 
 | `kind` | `<form method="get" action=...>` | Hidden fields | Visible fields (each with a `<label for>`) | Submit text |

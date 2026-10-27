@@ -72,7 +72,7 @@ Run from `site/` unless stated, after `rm -rf dist && npm ci && npm run build`. 
   `ls src/components/diagrams | wc -l`.
 - [ ] AC-15: `find dist -name '*.html' -size +150k` prints nothing, and every line of
   `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u` is in the audit's "Scripts on built pages
-  (AC-15)" table with a purpose of search, theme or navigation (the `diff` of task-041 prints nothing); W3 and W4 pass.
+  (AC-15)" table with a purpose of search, theme, navigation or codeScroll (the `diff` of task-041 prints nothing); W3 and W4 pass.
 - [ ] Feature 004 contrast: K1-K5 of `tests/contrast.test.mjs` pass.
 - [ ] AC-2: `node scripts/gen-facts.mjs --check` exits 0, build case B5 passes, and
   `find dist/skills -mindepth 1 -maxdepth 1 -type d | wc -l` equals `ls ../canonical/skills | wc -l`.

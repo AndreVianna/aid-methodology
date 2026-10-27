@@ -35,7 +35,7 @@
 - Feature 004 § UI Specs, "AC-15, script list": run
   `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u` and write one row per output line into
   § Scripts on built pages (AC-15): the Script cell is that line in one code span, the Purpose cell is
-  `search`, `theme` or `navigation`, as W3 assigned it in the `console.info` list of `tests/a11y.test.mjs`. If
+  `search`, `theme`, `navigation` or `codeScroll`, as W3 assigned it in the `console.info` list of `tests/a11y.test.mjs`. If
   the command prints nothing (Astro inlined every script), the table holds the single row
   `| none (every script is inline; W3 checks them) | -- |`. The `pending` placeholder row goes.
 - A figure above target (AC-4 total over 21577, `scripts/` holding more than `gen-facts.mjs`) or a script with
@@ -66,7 +66,7 @@ copied unchanged.
 - [ ] AC-15 table equals the built pages:
   `diff <(grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u) <(sed -n '/^## Scripts on built pages (AC-15)/,/^## /p' $A | grep -oE '^\| `[^`]+`' | sed 's/^| `//; s/`$//' | sort -u)`
   prints nothing (or, when the `grep -rho` prints nothing, the table holds exactly the single `none` row); every
-  Purpose cell is `search`, `theme` or `navigation`; `grep -c '^| pending |' <(sed -n '/^## Scripts on built pages (AC-15)/,/^## /p' $A)`
+  Purpose cell is `search`, `theme`, `navigation` or `codeScroll`; `grep -c '^| pending |' <(sed -n '/^## Scripts on built pages (AC-15)/,/^## /p' $A)`
   prints `0`.
 - [ ] Accuracy verified against the current tree (DOCUMENT default): re-running each command above gives the
   same numbers as the cells.
