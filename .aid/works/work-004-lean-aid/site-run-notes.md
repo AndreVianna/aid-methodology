@@ -77,6 +77,13 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
   Scope creep: KB updates, a "safety proof" feature. Weakened: skill pages cut to facts, their diagrams deleted rather
   than redrawn. "Lean tests" re-add about 40 checks and two dependencies the requirements had listed for removal.
 
+## AID run: cost estimate
+
+The reported session total misses the two turns that were killed. Pricing every helper and main-session message from
+the transcripts (152 files, 4,593 messages; Sonnet, Opus and Haiku list prices) gives $309.52 by 05:48, half of it on
+Opus helpers. Calibrated against the reported total at 22:48 (reported $86.97 against $154.33 token-priced, ratio
+0.56), the best estimate of the whole run is **about $175**, with the reported $114 a floor and $310 a ceiling.
+
 ## Still to record
 
 - Execute: per-task cost and time, review cycles per task, findings by type, fix rounds, gates.
