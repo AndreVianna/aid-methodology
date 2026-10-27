@@ -46,6 +46,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 03:15-03:32 | delivery 3: tasks 32-34 done (contact forms, dependencies pruned and lockfile regenerated, keyboard check and responsive screenshots) | $93.27+ | task 32 needed three commits; the last fixed the contact link's subject encoding, the very defect the planning review had already flagged: knowing about it in the spec did not stop the build from getting it wrong first |
 | 03:32-03:49 | delivery 3: task 35 (gate checks) done; delivery 3 gate review running | $93.27+ | 35 of 49 done; delivery 4 ("lean tests, workflow and safety proof", 14 tasks) is next |
 | 03:49-04:06 | delivery 3 gate found two more problems, fixed in two commits: pipe tables were not rendering in the MDX pages, and the header, footer link and contact wording | $114.40 reported | the turn that ran from delivery 2's gate to here cost $21.13 with 30 helper runs, and again ended on "I'm waiting for its verdict". The table bug is a real, visible defect found only by checking the built result |
+| 04:06-04:22 | still in delivery 3's gate: a third gate fix (code broken mid-word in table cells) | $114.40+ | the gate is iterating: three fix commits so far, each a real visual defect |
 
 ## AID run: red tape observed so far
 
