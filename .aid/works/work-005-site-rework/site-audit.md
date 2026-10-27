@@ -8,11 +8,11 @@ Technical Specification. Run every command below from `site/` unless a row says 
 
 | Measure | Before | After | Target |
 |---|---|---|---|
-| AC-4 line total (command below) | 53944 lines in 138 files (commit `71b16c35f`, measured 2026-10-26) | pending | at most 21577 lines (60% below the before figure) |
-| AC-4 line total with `tests` added to the folder list (NFR-3 counts all tests; command below) | 53944 lines in 138 files (no `tests/` folder at the baseline; re-measured by Feature 005 at the same commit) | pending | at most 21577 lines |
-| AC-4 file count in `scripts/` (`find scripts -type f \| wc -l`) | 79 | pending | at most 2, each at most 300 lines |
-| Test files (`find . -name '*.test.*' -not -path './node_modules/*' \| wc -l`) | 50 | pending | only the FR-8 group files named in Feature 005 |
-| AC-2 skill pages (`ls ../canonical/skills \| wc -l`) | 37 | pending | equal to the number of `dist/skills/*/index.html` |
+| AC-4 line total (command below) | 53944 lines in 138 files (commit `71b16c35f`, measured 2026-10-26) | 1215 lines in 19 files (measured 2026-10-27) | at most 21577 lines (60% below the before figure) |
+| AC-4 line total with `tests` added to the folder list (NFR-3 counts all tests; command below) | 53944 lines in 138 files (no `tests/` folder at the baseline; re-measured by Feature 005 at the same commit) | 1834 lines in 25 files (measured 2026-10-27) | at most 21577 lines |
+| AC-4 file count in `scripts/` (`find scripts -type f \| wc -l`) | 79 | 1: `scripts/gen-facts.mjs`, 271 lines (measured 2026-10-27) | at most 2, each at most 300 lines |
+| Test files (`find . -name '*.test.*' -not -path './node_modules/*' \| wc -l`) | 50 | 5 (measured 2026-10-27) | only the FR-8 group files named in Feature 005 |
+| AC-2 skill pages (`ls ../canonical/skills \| wc -l`) | 37 | 37 folders in `dist/skills` against 37 in `ls ../canonical/skills` (measured 2026-10-27) | equal to the number of `dist/skills/*/index.html` |
 
 AC-4 command, unchanged from REQUIREMENTS.md § 9:
 
@@ -147,14 +147,14 @@ Every removed or renamed URL, as configured in `astro.config.mjs` `redirects`.
 
 | Function | How it is checked | Status |
 |---|---|---|
-| Search (Pagefind) | `dist/pagefind/pagefind.js` exists (build test) | pending |
-| Sitemap | `dist/sitemap-index.xml` exists (build test) | pending |
-| Favicon | `dist/favicon.svg` exists (build test) | pending |
-| `CNAME` | `dist/CNAME` reads `aid.casuloailabs.com` (build test) | pending |
-| `robots.txt` | `dist/robots.txt` exists (build test) | pending |
-| Version display | `dist/releases/changelog/index.html` shows `v` plus the `VERSION` value (build test) | pending |
-| Contact pages | the four `dist/contact/*/index.html` exist and each holds a `<form>` (build test) | pending |
-| Release banner | not in FR-9; removed with the release-data fetch | pending |
+| Search (Pagefind) | `dist/pagefind/pagefind.js` exists (build test B2) | kept |
+| Sitemap | `dist/sitemap-index.xml` exists (build test B2) | kept |
+| Favicon | `dist/favicon.svg` exists (build test B2) | kept |
+| `CNAME` | `dist/CNAME` reads `aid.casuloailabs.com` (build test B2) | kept |
+| `robots.txt` | `dist/robots.txt` exists and names the sitemap (build test B2) | kept |
+| Version display | `dist/releases/changelog/index.html` shows `v` plus the `VERSION` value (build test B3) | kept |
+| Contact pages | the four `dist/contact/*/index.html` exist: three hold one GET `<form>` to the GitHub new-issue page and `contact-request` holds a `mailto:` link (build test B4) | kept |
+| Release banner | not in FR-9; removed with the release-data fetch | removed |
 
 ## Scripts on built pages (AC-15)
 
@@ -162,7 +162,10 @@ Output of `grep -rho '<script[^>]*src="[^"]*"' dist --include='*.html' | sort -u
 
 | Script | Purpose |
 |---|---|
-| pending | |
+| `<script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"` | navigation |
+| `<script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.lq3t8uE2.js"` | search |
+| `<script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"` | navigation |
+| `<script type="module" src="/_astro/ec.g1fg5.js"` | codeScroll |
 
 ## Keyboard check (AC-9)
 
