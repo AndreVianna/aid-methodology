@@ -75,7 +75,7 @@ loopback only.
 | Integration | Type | Direction | Criticality | Notes |
 |-------------|------|-----------|-------------|-------|
 | git | version control | outbound (invokes) | Critical | branch isolation per delivery; release tagging; render-drift check |
-| GitHub `gh` CLI | release tooling | outbound | High | `release.sh` cuts/uploads releases; site fetches release data |
+| GitHub `gh` CLI | release tooling | outbound | High | `release.sh` cuts/uploads releases |
 | GitHub Releases | distribution | both | High | offline shared payload, per-tool agent artifacts, CLI bundle + `SHA256SUMS` |
 | GitHub Actions | CI/CD | inbound (triggers) | High | five workflows: test, installer-tests, docs, release, coverage-parity |
 | npm registry | distribution | outbound (publish) | High | `aid-installer` package; `npm i -g` channel |
@@ -112,8 +112,8 @@ and PR-only rules — direct/force pushes to `master` are blocked.
 
 **`gh` CLI (outbound).** `release.sh` uses `gh release view` (idempotency check),
 `gh release create`, and `gh release upload --clobber` to publish the release
-artifacts and `SHA256SUMS`. The site's `gen-reference.mjs` also shells out to `gh`. CONFIRMED:
-`release.sh` (`gh release create "${GH_ARGS[@]}"`); `site/scripts/gen-reference.mjs`.
+artifacts and `SHA256SUMS`. CONFIRMED:
+`release.sh` (`gh release create "${GH_ARGS[@]}"`).
 
 **GitHub Releases (distribution surface).** The shared payload (`aid-shared-v*.tar.gz`),
 the per-tool agent artifacts (`aid-<tool>-v*.tar.gz`), the CLI bundle (`aid-cli-v*.tar.gz`) and a `SHA256SUMS`
@@ -127,15 +127,14 @@ CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 |----------|---------|---------|
 | `test.yml` (CI) | push/PR to `master`, dispatch | canonical helper test suites (`tests/run-all.sh`) |
 | `installer-tests.yml` | push to non-`master` branches, dispatch | cross-platform installer tests (incl. Windows lane) |
-| `docs.yml` (Docs) | push + PR to `master` under `site/`, `docs/`, `canonical/`, `VERSION` | tests + builds the Astro site (both events); deploys on push only |
+| `docs.yml` (Docs) | push + PR to `master` under `site/`, `canonical/`, `VERSION` | checks the site facts, tests and builds the Astro site (both events); deploys on push only |
 | `release.yml` (Release) | push tag `v*`, dispatch | builds artifacts and cuts the GitHub Release |
 | `coverage-parity.yml` (Coverage Parity) | push/PR to `master` under `tests/**`, dispatch | advisory executed-assertion coverage-regression gate (`tests/coverage-parity.sh`), separate serial lane from `test.yml`'s canonical suites |
 
 CONFIRMED by the `on:` blocks of each file under `.github/workflows/`. Note: the **canonical
 suites** (`test.yml`) run only on `master` and release tags, so a branch with no open PR skips
 them. The **Astro build is not in that set** — `docs.yml` triggers on `pull_request` to `master`
-too and its `build` job runs the site vitest suite plus the build, so a PR touching `site/`,
-`docs/`, `canonical/` or `VERSION` is gated on it; only `deploy` is master-only.
+too and its `build` job runs the facts check, the site test suite and the build, so a PR touching `site/`, `canonical/` or `VERSION` is gated on it; only `deploy` is master-only.
 
 ---
 

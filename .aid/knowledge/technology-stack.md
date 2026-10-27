@@ -72,7 +72,7 @@ current value), which is why this doc asserts the lockstep and not the number.
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
-| **JavaScript (Node)** | **>=22** (npm wrapper and repository root); CI pins **24** | npm wrapper, dashboard Node server/reader (`reader.mjs`), the summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`), and the site's build-time generators. CONFIRMED `packages/npm/package.json` (search: "\"node\": \">=22\"") and the repository-root `package.json` (search: "\"node\": \">=22\"") and `.github/workflows/test.yml` (search: "node-version: '24'"). |
+| **JavaScript (Node)** | **>=22** (npm wrapper and repository root); CI pins **24** | npm wrapper, dashboard Node server/reader (`reader.mjs`), the summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`), and the site's facts script (`site/scripts/gen-facts.mjs`). CONFIRMED `packages/npm/package.json` (search: "\"node\": \">=22\"") and the repository-root `package.json` (search: "\"node\": \">=22\"") and `.github/workflows/test.yml` (search: "node-version: '24'"). |
 | **TypeScript** | **6.0.3** (site dev dep) | The Astro website only. CONFIRMED `site/package.json` (search: "typescript"). |
 
 **Node version policy (one floor, one test target -- they are different promises):** every
@@ -103,11 +103,9 @@ dual installer set and the Windows-only test lane (`tests/windows/`).
 | Tool / Framework | Version (source) | Purpose |
 |------------------|------------------|---------|
 | **hatchling** | build backend | Builds the PyPI wheel/sdist; custom vendor hook `scripts/vendor.py`. CONFIRMED `packages/pypi/pyproject.toml` (search: "hatchling"). |
-| **Astro** | **6.4.4** | The standalone product/docs website (`site/`). CONFIRMED `site/package.json`. |
+| **Astro** | **6.4.6** | The standalone product/docs website (`site/`). CONFIRMED `site/package.json`. |
 | **@astrojs/starlight** | **0.39.3** | Docs theme for the site. CONFIRMED `site/package.json`. |
-| **astro-mermaid** | **2.0.2** | Mermaid diagrams in the site. CONFIRMED `site/package.json`. |
-| **marked** | **16.4.2** | Markdown parsing in site scripts. CONFIRMED `site/package.json`. |
-| **sanitize-html** | **2.17.0** | HTML sanitization in site. CONFIRMED `site/package.json`. |
+| **axe-core** | **4.14.0** (site dev dep) | Accessibility rule engine for the site's checks on built pages. CONFIRMED `site/package.json`. |
 | **Playwright** | (npm `latest` via `npx playwright install chromium`) | Headless visual-fidelity gate for the summarize KB viewer. CONFIRMED `.github/workflows/test.yml` (search: "npx playwright install chromium") and `canonical/aid/scripts/summarize/validate-visuals.mjs`. |
 | **GitHub Actions** | n/a | CI/CD — five workflows. CONFIRMED `.github/workflows/*.yml`. |
 
@@ -147,7 +145,7 @@ python -m build            # uses hatchling backend per pyproject.toml
 npm pack                   # or: npm publish
 
 # 4. Build the Astro website — from site/
-npm ci && npm run build    # 'build' = 'astro build'; prebuild syncs docs+reference+release data
+npm ci && npm run build    # 'build' = 'astro build'; nothing is generated or fetched at build time
 
 # 5. Cut a release (maintainer) — from repo root
 bash release.sh            # packages the shared payload, the five tool artifacts and the CLI bundle, then creates the GitHub Release
@@ -210,8 +208,9 @@ pytest dashboard/reader/tests/
 # Dashboard Node server tests
 node dashboard/server/tests/test_server_node.mjs
 
-# Site data tests — from site/
-npm test                          # = 'vitest run'
+# Site suite — from site/ (build, internal links, facts check, accessibility and structure)
+npm test                          # = 'npm run build && vitest run'
+node scripts/gen-facts.mjs --check   # facts only; needs no npm ci
 
 # Windows-only installer tests (runs only on the windows-latest CI lane)
 pwsh tests/windows/Test-AidInstaller.ps1
@@ -233,8 +232,9 @@ discovered by glob (`tests/canonical/test-*.sh`), each run under `timeout 300`. 
 |---------|---------|-------|---------|
 | npm `dependencies` | `{}` (empty) | `packages/npm/package.json` | None — CLI is pure Bash/Node-stdlib. CONFIRMED. |
 | pypi `dependencies` | `[]` (empty) | `packages/pypi/pyproject.toml` | None — wrapper is stdlib-only. CONFIRMED. |
-| astro | 6.4.4 | `site/` only | Site-only; not in the shipped CLI. |
+| astro | 6.4.6 | `site/` only | Site-only; not in the shipped CLI. |
 | typescript | 6.0.3 | `site/` dev | Site-only. |
+| axe-core | 4.14.0 | `site/` dev | Site accessibility checks. |
 | vitest | ^4.1.8 | `site/` dev | Site test runner. |
 | yaml (override) | ^2.8.3 | `site/` | Pinned via `overrides` to resolve a transitive constraint. CONFIRMED `site/package.json` (search: "overrides"). |
 
