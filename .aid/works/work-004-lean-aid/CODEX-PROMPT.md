@@ -47,10 +47,10 @@ times plain cost, at most two approvals for planned work. New rules are added on
 replaces something.
 
 WHAT STAGE WE ARE AT
-Paused on question Q14 in STATE.yml, which is Pending: does the maintainer approve building this lean design (one
+Paused on Q14 in STATE.yml, which is Pending. It asks the maintainer to approve building this lean design (one
 entry skill `aid-change` with lane references, three agents: builder, test writer and reviewer, scripts for the
 mechanics, two review checkpoints with the proof rule), beside today's skills, proven on the tags and site
-benchmarks before the old phase skills retire? Q12 is superseded; do not ask it.
+benchmarks before the old phase skills retire. Q12 is superseded; do not ask it.
 
 NEXT STEPS
 1. Ask Q14 again with its recorded text, in the question form of `.aid/runtime/templates/question-protocol.md`
