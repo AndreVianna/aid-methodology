@@ -1,0 +1,1780 @@
+{
+  "aid-ask": {
+    "group": "start",
+    "order": 5,
+    "summary": "Answers a question about your project with sources, using the Knowledge Base, the code and any work in progress.",
+    "when": "Use it to learn how something works or where a piece of work stands. To change something, use /aid-triage or a work skill instead.",
+    "example": "/aid-ask where is the retry logic for payments?",
+    "steps": [
+      {
+        "title": "Read your question",
+        "text": "With no question it prints usage and stops."
+      },
+      {
+        "title": "Choose how deep to go",
+        "text": "A small question is answered from a few Knowledge Base documents or files; a broad one goes to a read-only research agent."
+      },
+      {
+        "title": "Check the tracker",
+        "text": "If you name a ticket and a tracker connector exists, it reads that ticket too."
+      },
+      {
+        "title": "Answer with sources",
+        "text": "The reply has an Answer part and a Sources part listing documents and file paths."
+      },
+      {
+        "title": "Record a gap",
+        "text": "If it cannot answer, it says so, never invents, and logs the missing knowledge as a question."
+      }
+    ],
+    "writes": [
+      "Nothing when it can answer. It only reads.",
+      "When it cannot answer: one new question entry in `.aid/knowledge/STATE.md`, or in the work's `STATE.yml` when the question is about that work."
+    ],
+    "gate": null,
+    "next": [
+      "aid-update-kb",
+      "aid-housekeep"
+    ],
+    "notes": [
+      "Each answer comes from the Knowledge Base and the code, so a missing or stale Knowledge Base gives weak answers.",
+      "It never edits Knowledge Base documents, settings or code. To close a gap it suggests /aid-update-kb."
+    ]
+  },
+  "aid-brainstorm": {
+    "group": "think",
+    "order": 1,
+    "summary": "Explore a fuzzy problem and turn it into a kept design note, without deciding anything.",
+    "when": "Use it when you do not yet have a clear question. Once it is a question, use /aid-research; once the shape is clear, use /aid-design.",
+    "example": "/aid-brainstorm how should customers manage multiple workspaces",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what you want to explore if you gave no subject. It never turns a vague subject away. Suggests a short file name for the note and asks you to confirm it."
+      },
+      {
+        "title": "Design",
+        "text": "An architect agent explores framings, angles and prior art, using your Knowledge Base and code, then narrows to the directions worth pursuing. It writes the note."
+      },
+      {
+        "title": "Verify",
+        "text": "An independent reviewer checks the note. It is reworked until clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the note and stops. You decide: run it again to refine, promote it, or drop it."
+      }
+    ],
+    "writes": [
+      "A design note at .aid/design/<name>.md.",
+      "A work folder at .aid/works/work-NNN-<short-name>/ with STATE.yml, in its own git worktree.",
+      "Never your source code and never the Knowledge Base."
+    ],
+    "gate": "You decide what to do with the note. Nothing builds from it automatically.",
+    "next": [
+      "aid-design",
+      "aid-research"
+    ],
+    "notes": [
+      "There is no create step that consumes this note. It stays in .aid/design/ until you act on it or delete it."
+    ]
+  },
+  "aid-chat": {
+    "group": "collab",
+    "order": 1,
+    "summary": "Lets this AI coding session talk to another one: ask, answer or work alongside a peer agent.",
+    "when": "Use it when two agent sessions, perhaps in different folders or tools, need to coordinate. It does not start or manage the chat server.",
+    "example": "/aid-chat ask the agent named api-work about the schema",
+    "steps": [
+      {
+        "title": "Join",
+        "text": "The session registers once and gets a two-word name, such as green-giraffe, that others use to reach it."
+      },
+      {
+        "title": "Find someone",
+        "text": "The roster shows each agent, its tool, how long it has been quiet and whether it is available."
+      },
+      {
+        "title": "Open a channel",
+        "text": "It opens a channel and pulls in a named agent right away; it can also join one that already exists."
+      },
+      {
+        "title": "Talk",
+        "text": "It sends messages, replies to a specific one, mentions someone, or whispers to one member."
+      },
+      {
+        "title": "Handle incoming messages",
+        "text": "A message wakes an idle session; it says in one line what arrived, replies if needed, then acknowledges."
+      },
+      {
+        "title": "Leave",
+        "text": "It leaves the channel; the last one out ends it and its messages are gone."
+      }
+    ],
+    "writes": [
+      "Nothing in your project files. Messages go through the chat hub."
+    ],
+    "gate": null,
+    "next": [],
+    "notes": [
+      "A session can be in one channel at a time.",
+      "Needs the `aid chat` command and a running chat hub; the person who runs the hub starts and stops it.",
+      "It does not change chat settings or remove other agents.",
+      "The person at the session cannot see the channel, so the agent says what arrived before acting on it."
+    ]
+  },
+  "aid-config": {
+    "group": "start",
+    "order": 1,
+    "summary": "Shows your AID settings, or changes one of them, such as project name, type or minimum grade.",
+    "when": "Use it first on a new project, and any time you want to see or change a setting. It only edits the settings file, nothing else.",
+    "example": "/aid-config minimum_grade",
+    "steps": [
+      {
+        "title": "Create the file if needed",
+        "text": "If `.aid/settings.yml` does not exist yet, it is copied in from the template."
+      },
+      {
+        "title": "Show or look up",
+        "text": "With no key it prints every setting in a table and flags values you have not filled in; with a key it shows that one value."
+      },
+      {
+        "title": "Ask for the new value",
+        "text": "You pick a suggestion, keep the current value, or type your own."
+      },
+      {
+        "title": "Check the value",
+        "text": "Bad values are refused and you are asked again; for example a grade must look like A, B+ or C-."
+      },
+      {
+        "title": "Save in place",
+        "text": "Only that one line changes and it prints the old and new value."
+      }
+    ],
+    "writes": [
+      "`.aid/settings.yml` (one line, or the whole file when it is first created from the template)."
+    ],
+    "gate": "You choose or type the new value for the key you asked about.",
+    "next": [
+      "aid-discover"
+    ],
+    "notes": [
+      "The words after the skill name are settings keys, not kinds of work. Any other key is refused.",
+      "type is brownfield or greenfield; source_control is none, git, svn or mercurial; heartbeat_interval is minutes (0 turns it off).",
+      "The knowledge block in the file is written by other skills and cannot be changed here.",
+      "Does not run in Plan mode, because it writes a file."
+    ]
+  },
+  "aid-create": {
+    "group": "change",
+    "order": 1,
+    "summary": "Plan something new: code such as an API, UI or job, a project document in the Knowledge Base, or a standalone document.",
+    "when": "Use it when the thing does not exist yet. To change something that exists, use /aid-update; to settle the shape first, use /aid-design.",
+    "example": "/aid-create api a read endpoint for orders with pagination",
+    "steps": [
+      {
+        "title": "Pick the route",
+        "text": "The first word of your request can be a kind. For code kinds (and no kind) it runs the planning steps below. For the Knowledge Base and document kinds it follows its own shorter path."
+      },
+      {
+        "title": "Capture and specify (code kinds)",
+        "text": "Starts a work, writes REQUIREMENTS.md and the technical specification. It asks at most one question. Which extra spec sections appear depends on the kind: an api adds API contracts, a data-model adds a migration plan."
+      },
+      {
+        "title": "Detail the tasks (code kinds)",
+        "text": "Writes task files that depend on the kind. An api gets three tasks: model, handler, integration test. A ui or cli gets a build task and a test task. A config gets one task."
+      },
+      {
+        "title": "Grading gate (code kinds)",
+        "text": "An independent reviewer grades the documents until they reach the minimum grade (A+ by default for shortcuts), or it stops after 3 rounds with no improvement."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Stops with nothing built. You run /aid-execute when ready."
+      },
+      {
+        "title": "Knowledge Base and document kinds",
+        "text": "roadmap, backlog, mvp, architecture, stack, testing-strategy and cicd turn a ready design from /aid-design into the matching document under .aid/knowledge/. document and diagram write a draft, show it with a proposed location, and place it only after you approve."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN). (code kinds)",
+      "The matching document under .aid/knowledge/ and a settings entry, for the Knowledge Base kinds. The design file in .aid/design/ is used up once it is turned into the document.",
+      "A document or diagram at a location you approve, for the document and diagram kinds. These never write to .aid/knowledge/."
+    ],
+    "gate": "Code kinds: you approve the plan by running /aid-execute. Document and diagram kinds: you approve the draft and where it goes.",
+    "next": [
+      "aid-execute",
+      "aid-update-kb"
+    ],
+    "kinds": [
+      "api",
+      "ui",
+      "theme",
+      "cli",
+      "data-model",
+      "data-pipeline",
+      "messaging",
+      "integration",
+      "job",
+      "config",
+      "infra",
+      "test",
+      "dashboard",
+      "roadmap",
+      "backlog",
+      "mvp",
+      "architecture",
+      "stack",
+      "testing-strategy",
+      "cicd",
+      "document",
+      "diagram"
+    ],
+    "notes": [
+      "api, ui, theme, cli, data-model, data-pipeline, messaging, integration, job, config, infra, test and dashboard run the planning steps. roadmap, backlog, mvp, architecture, stack, testing-strategy, cicd, document and diagram follow their own reference file instead.",
+      "The Knowledge Base kinds refuse to run while the design still lists open questions, unless you add --override-open-questions. They write the document, then show it to you, so use git to undo.",
+      "With no kind, it plans a generic code change as a single build task."
+    ]
+  },
+  "aid-create-ticket": {
+    "group": "tracker",
+    "order": 4,
+    "summary": "Files one new ticket in your issue tracker after showing you exactly what will be sent.",
+    "when": "Use it when work must be recorded where your team tracks it. Nothing is sent until you confirm.",
+    "example": "/aid-create-ticket --level story --parent PROJ-12 \"Add pagination to the /orders list\"",
+    "steps": [
+      {
+        "title": "Read the request",
+        "text": "Flags --connector, --level and --parent can come in any order; the rest of the line is the description."
+      },
+      {
+        "title": "Find the tracker",
+        "text": "It uses the matching connector, asks if several fit, or falls back to your tool's own tracker."
+      },
+      {
+        "title": "Draft",
+        "text": "A title, level and parent are worked out. Nothing is chosen silently."
+      },
+      {
+        "title": "Match the level",
+        "text": "It reads the tracker's real issue types and maps epic, story or task to the closest one."
+      },
+      {
+        "title": "You confirm",
+        "text": "You see the exact payload and choose File it, Edit or Cancel; if the level is unknown you pick it here."
+      },
+      {
+        "title": "File and report",
+        "text": "The ticket is created, a parent link is added if possible, and you get the new reference."
+      }
+    ],
+    "writes": [
+      "Nothing in your project files.",
+      "One new ticket in the tracker, only after you choose File it."
+    ],
+    "gate": "You confirm the exact ticket (and pick its level if it was not clear) before it is filed.",
+    "next": [
+      "aid-read-ticket"
+    ],
+    "notes": [
+      "The parent must be on the same tracker as the new ticket.",
+      "If the tracker has no matching type, the ticket is filed as a plain issue and says so in the preview.",
+      "Without any text it prints usage and stops.",
+      "Works with a connector of type mcp tagged issue-tracker, or your tool's own tracker integration."
+    ]
+  },
+  "aid-define": {
+    "group": "full",
+    "order": 2,
+    "summary": "Splits the approved requirements into features and checks them against the Knowledge Base and the code.",
+    "when": "Use it right after the requirements are approved. If the requirements themselves need to change, go back to /aid-describe.",
+    "example": "/aid-define work-001",
+    "steps": [
+      {
+        "title": "Check approval",
+        "text": "If the requirements are not approved yet, it stops and sends you to /aid-describe."
+      },
+      {
+        "title": "Propose features",
+        "text": "An architect agent proposes a list of features from the functional requirements; you approve it or ask for changes until it is right."
+      },
+      {
+        "title": "Write the features",
+        "text": "Each approved feature gets its own section in REQUIREMENTS.md."
+      },
+      {
+        "title": "Cross-check",
+        "text": "A reviewer agent checks the requirements and features against the Knowledge Base and codebase and grades them."
+      },
+      {
+        "title": "Resolve gaps",
+        "text": "Each finding becomes a question that you answer one at a time."
+      },
+      {
+        "title": "Close or reopen",
+        "text": "You can add information, run the cross-check again, or finish."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/REQUIREMENTS.md`: one feature section per feature.",
+      "`.aid/works/work-NNN-*/STATE.yml`: the feature list and any new questions."
+    ],
+    "gate": "You approve the feature list, and answer the questions the cross-check raises.",
+    "next": [
+      "aid-specify"
+    ],
+    "notes": [
+      "--features work-NNN redoes the feature split even if features exist.",
+      "Changes to the requirements themselves belong in /aid-describe.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-deploy": {
+    "group": "ship",
+    "order": 1,
+    "summary": "Verifies the build, packages completed deliveries into a release and writes the release notes.",
+    "when": "Use it when deliveries are complete and graded. How the release is produced comes from your Knowledge Base, so it fits PRs, containers, packages and more.",
+    "example": "/aid-deploy work-001",
+    "steps": [
+      {
+        "title": "Assess",
+        "text": "It checks which deliveries are complete and not yet shipped, and how your project packages releases; if unknown, it asks you."
+      },
+      {
+        "title": "Choose deliveries",
+        "text": "You pick which ready deliveries go in this release, plus a version tag and a package name."
+      },
+      {
+        "title": "Verify",
+        "text": "A full build, the full test suite and lint all run on the combined scope."
+      },
+      {
+        "title": "Decide on failures",
+        "text": "If anything fails you choose: fix small things here, or go back to /aid-execute."
+      },
+      {
+        "title": "Package",
+        "text": "It produces what your project calls for, such as a pull request, image, or published package."
+      },
+      {
+        "title": "Release notes and wrap up",
+        "text": "Notes are written into the package file, Knowledge Base changes are queued as questions, and deliveries are marked Shipped."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/packages/package-NNN-<name>.md`: verification, deployment record and release notes.",
+      "The work's `STATE.yml`: deploy status and Shipped marks.",
+      "Whatever your packaging produces (PR, image, published package).",
+      "`.aid/knowledge/STATE.md`: pending questions for Knowledge Base changes it spots."
+    ],
+    "gate": "You choose the deliveries to include, and decide what to do when verification fails.",
+    "next": [
+      "aid-monitor"
+    ],
+    "notes": [
+      "It never edits Knowledge Base documents directly; it queues questions for /aid-discover.",
+      "If you give a free-form description instead of a work, it sets up a small work and stops for approval without shipping anything.",
+      "Use /aid-ask or /aid-config first if packaging details are missing from the Knowledge Base."
+    ]
+  },
+  "aid-deprecate": {
+    "group": "change",
+    "order": 6,
+    "summary": "Plan a deprecation: mark something as going away and point callers to the replacement. Nothing is deleted.",
+    "when": "Use it when callers need time to move. When the time comes to delete, use /aid-remove.",
+    "example": "/aid-deprecate the v1 /orders endpoint, replaced by /v2/orders, removal planned for the next major version",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with the target, its replacement and how to move to it, and when it is expected to go away. It asks at most one question, if the target or the replacement is unclear."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Usually one task: add the deprecation warning in the form your project uses (an annotation, a log warning or a docs banner) and write the migration note that points to the replacement."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute",
+      "aid-remove"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it.",
+      "The deprecated thing keeps working. Removing it later is a separate /aid-remove."
+    ]
+  },
+  "aid-describe": {
+    "group": "full",
+    "order": 1,
+    "summary": "Interviews you one question at a time and writes REQUIREMENTS.md, the approved description of what to build.",
+    "when": "Use it to start a new piece of work when the scope, users and acceptance criteria are not pinned down. For one small, clear change try /aid-triage.",
+    "example": "/aid-describe",
+    "steps": [
+      {
+        "title": "Start or resume a work",
+        "text": "It asks for a short name, creates an isolated git worktree and the work folder; if works exist, it asks whether this is new or a continuation."
+      },
+      {
+        "title": "Interview",
+        "text": "It asks one question per turn and updates REQUIREMENTS.md after each answer."
+      },
+      {
+        "title": "Answer questions from later steps",
+        "text": "Questions that later skills left in the work are asked first when you come back."
+      },
+      {
+        "title": "Seed the Knowledge Base",
+        "text": "On an empty project it also drafts starting Knowledge Base documents, checks them for conflicts and has them reviewed."
+      },
+      {
+        "title": "Fill the Knowledge Base",
+        "text": "Facts you gave are written into Knowledge Base documents; it may ask a few extra questions and you can say skip."
+      },
+      {
+        "title": "Confirm name and summary",
+        "text": "You confirm the work name and one-sentence description, then read a summary of the requirements."
+      },
+      {
+        "title": "You approve",
+        "text": "You approve, or add something and the interview continues."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/REQUIREMENTS.md`.",
+      "`.aid/works/work-NNN-*/STATE.yml`: interview progress and questions.",
+      "A git worktree and branch for the work.",
+      "Knowledge Base documents under `.aid/knowledge/` that the interview filled in."
+    ],
+    "gate": "You approve the requirements. Nothing moves to /aid-define until you do.",
+    "next": [
+      "aid-define"
+    ],
+    "notes": [
+      "Needs the `.aid/` folder; run /aid-config first if it says the workspace is missing.",
+      "It always asks before continuing an existing work, even if only one exists.",
+      "--reset work-NNN deletes that work folder and starts over.",
+      "If a tracker connector is set up, after approval it suggests filing an epic with /aid-create-ticket. It never does it by itself.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-design": {
+    "group": "think",
+    "order": 2,
+    "summary": "Design something to be kept and later built: an API, UI, data model, architecture, roadmap and more.",
+    "when": "Use it while the shape is still open and you want it written down. To test an idea with a throwaway model use /aid-prototype; to build it use /aid-create.",
+    "example": "/aid-design api public orders API for the mobile app",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what to design if you gave no subject. Starts a work and a separate git worktree. Reads an earlier design on the same subject, so running it again improves the design instead of starting over."
+      },
+      {
+        "title": "Design",
+        "text": "An architect agent writes the design, based on your Knowledge Base and code, including accessibility notes. With a kind, it writes a design note in .aid/design/. With no kind, it writes DESIGN.md in the work folder."
+      },
+      {
+        "title": "Verify",
+        "text": "A clean-context reviewer checks that the design is grounded, complete, consistent and buildable. It is reworked until clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the design and stops. You decide whether and when to build it."
+      },
+      {
+        "title": "Hand off",
+        "text": "Prints suggestions, such as /aid-create or /aid-update to build it. It never starts them."
+      }
+    ],
+    "writes": [
+      "With a kind: a design note at .aid/design/<kind>.md.",
+      "With no kind: DESIGN.md in the work folder .aid/works/work-NNN-<short-name>/.",
+      "Never your source code and never the Knowledge Base."
+    ],
+    "gate": "You decide whether the design is ready and when to build it.",
+    "next": [
+      "aid-create",
+      "aid-update",
+      "aid-prototype"
+    ],
+    "kinds": [
+      "api",
+      "architecture",
+      "backlog",
+      "cicd",
+      "cli",
+      "config",
+      "dashboard",
+      "data-model",
+      "data-pipeline",
+      "document",
+      "infra",
+      "integration",
+      "job",
+      "messaging",
+      "mvp",
+      "roadmap",
+      "stack",
+      "test",
+      "testing-strategy",
+      "theme",
+      "ui"
+    ],
+    "notes": [
+      "Every kind follows the same steps; the kind decides which design note it writes and what that note must settle.",
+      "A later /aid-create for the Knowledge Base kinds refuses while the note still lists open questions."
+    ]
+  },
+  "aid-detail": {
+    "group": "full",
+    "order": 5,
+    "summary": "Breaks each delivery into small, typed tasks in dependency order, ready for one agent session each.",
+    "when": "Use it after the plan is approved. It only slices what the plan and specs already decided; it makes no new design choices.",
+    "example": "/aid-detail work-001",
+    "steps": [
+      {
+        "title": "Check the plan",
+        "text": "If PLAN.md is missing, it stops and sends you to /aid-plan."
+      },
+      {
+        "title": "Propose tasks",
+        "text": "For the first delivery an architect agent proposes small tasks, each with a type, scope and acceptance criteria."
+      },
+      {
+        "title": "Discuss",
+        "text": "You adjust the tasks until they look right."
+      },
+      {
+        "title": "Write and repeat",
+        "text": "Task files are written, then the same loop runs for the next delivery."
+      },
+      {
+        "title": "Build the execution graph",
+        "text": "Which tasks wait on which, and which can run in parallel, is written to PLAN.md."
+      },
+      {
+        "title": "Review",
+        "text": "A reviewer grades the whole task list against the plan and specs."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`: the task definition.",
+      "`.aid/works/work-NNN-*/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`: the task starts as Pending.",
+      "`.aid/works/work-NNN-*/PLAN.md`: the execution graph."
+    ],
+    "gate": "You agree on the tasks for each delivery.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "Every task must fit one agent session and be one reviewable unit.",
+      "Tasks are numbered across the whole work, not per delivery.",
+      "--reset clears the tasks folder.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-discover": {
+    "group": "start",
+    "order": 2,
+    "summary": "Reads your existing code and builds the Knowledge Base: architecture, conventions and patterns, graded and approved by you.",
+    "when": "Use it when the project already has code and no Knowledge Base yet. For an empty project there is nothing to read, so go to /aid-describe.",
+    "example": "/aid-discover --grade A-",
+    "steps": [
+      {
+        "title": "Ask about outside sources and tools",
+        "text": "You can list docs, specs and tools (like an issue tracker) to include; you can skip both."
+      },
+      {
+        "title": "Scan and write",
+        "text": "Helper agents read the project in parallel and write the Knowledge Base documents. An empty project stops here and points you to /aid-describe."
+      },
+      {
+        "title": "Grade",
+        "text": "A reviewer grades every document for accuracy and evidence."
+      },
+      {
+        "title": "Answer open questions",
+        "text": "Anything the agents could not prove from the code becomes a question; it answers what it can confirm and asks you the rest."
+      },
+      {
+        "title": "Fix",
+        "text": "Documents are corrected and graded again until the grade reaches your minimum."
+      },
+      {
+        "title": "You approve",
+        "text": "You read the Knowledge Base and approve it or add a consideration."
+      }
+    ],
+    "writes": [
+      "`.aid/knowledge/*.md`: the Knowledge Base documents plus `INDEX.md` and `README.md`.",
+      "`.aid/knowledge/STATE.md`: grade, open questions and review history.",
+      "`.aid/connectors/`: only if you add tools in the first step.",
+      "`.aid/settings.yml`: the knowledge block (branch and date of the last build)."
+    ],
+    "gate": "You approve the Knowledge Base once it meets the minimum grade and no questions are left.",
+    "next": [
+      "aid-summarize",
+      "aid-describe"
+    ],
+    "notes": [
+      "Each run goes as far as it can and stops when it needs you. Run it again to continue.",
+      "The minimum grade defaults to A. Use --grade to change it; --reset deletes everything in `.aid/knowledge/` and starts over.",
+      "It is built not to guess: unclear points are asked, not written down as fact.",
+      "Long steps can take many minutes; it prints progress while helper agents run.",
+      "Does not run in Plan mode, because helper agents need to write."
+    ]
+  },
+  "aid-document": {
+    "group": "think",
+    "order": 7,
+    "summary": "Write a document now: a how-to, reference, decision record, runbook, tutorial or similar, and place it where you approve.",
+    "when": "Use it for documentation about something. For project knowledge in .aid/knowledge/ use /aid-update-kb; for a design use /aid-design.",
+    "example": "/aid-document runbook what to do when the nightly import job fails",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what to document and for whom, if you gave none. Works out the format and the kind of document from your request. Starts a work and a separate git worktree. Reads a design note in .aid/design/document.md if there is one."
+      },
+      {
+        "title": "Author",
+        "text": "A tech writer agent drafts the document in the work folder, checked against your Knowledge Base and code."
+      },
+      {
+        "title": "Verify",
+        "text": "A clean-context reviewer checks accuracy and that the right parts for that kind of document are there. It is reworked until clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the draft and the place it proposes to put it, and stops for your approval."
+      },
+      {
+        "title": "Place (only if you approve)",
+        "text": "Writes the document to the approved location. For an existing file it shows a diff and never overwrites silently. If you decline, the draft stays in the work folder."
+      }
+    ],
+    "writes": [
+      "A draft in the work folder .aid/works/work-NNN-<short-name>/.",
+      "The final document at the location you approve, such as docs/, a decision-records folder or CHANGELOG.md.",
+      "Never .aid/knowledge/."
+    ],
+    "gate": "You approve the draft and where it is placed.",
+    "next": [
+      "aid-update-kb",
+      "aid-create"
+    ],
+    "kinds": [
+      "architecture",
+      "changelog",
+      "decision",
+      "guideline",
+      "runbook",
+      "standard",
+      "tutorial"
+    ],
+    "notes": [
+      "With no kind, it writes a general how-to, reference, explanation or status report in markdown.",
+      "It is the same as /aid-create document with the kind preselected."
+    ]
+  },
+  "aid-execute": {
+    "group": "full",
+    "order": 6,
+    "summary": "Carries out a planned task by its type, checks it, and runs a graded quality gate when the whole delivery is done.",
+    "when": "Use it when a delivery's tasks are detailed. Run it per task, in the order of the execution graph. For a small one-off fix, use /aid-fix instead.",
+    "example": "/aid-execute work-001 task-003",
+    "steps": [
+      {
+        "title": "Check the task",
+        "text": "It finds the task, confirms that tasks it depends on are Done and the working tree is clean, and switches to the delivery branch."
+      },
+      {
+        "title": "Do the work",
+        "text": "An agent suited to the task type (research, design, implement, test, document, migrate, refactor, configure) does only what the task's scope says."
+      },
+      {
+        "title": "Quick check",
+        "text": "A small reviewer looks for serious problems; critical ones are fixed on the spot and high ones are noted for the delivery gate."
+      },
+      {
+        "title": "Mark done",
+        "text": "The task is marked Done. Asking for a Done task again asks whether you want to reopen it."
+      },
+      {
+        "title": "Delivery gate",
+        "text": "When every task in a delivery is Done, a full review grades the whole delivery and code issues are fixed and graded again until it meets the minimum."
+      },
+      {
+        "title": "Stop when blocked",
+        "text": "If it cannot continue it marks the task Failed and writes an impediment note with options."
+      }
+    ],
+    "writes": [
+      "The task's output: code, tests, docs, configs or research, committed on branch `aid/work-NNN-delivery-NNN`.",
+      "The task's `STATE.yml`, and the delivery's `STATE.yml` (progress, review history, gate grade).",
+      "`.aid/works/work-NNN-*/delivery-NNN-issues.md`: high issues deferred to the gate.",
+      "`.aid/works/work-NNN-*/IMPEDIMENT-task-NNN.md` when it is blocked."
+    ],
+    "gate": "At the delivery gate you see every issue listed; problems that are not code (the task, the spec or the Knowledge Base) pause the run until you fix them upstream.",
+    "next": [
+      "aid-deploy"
+    ],
+    "notes": [
+      "One branch per delivery; all its tasks share it.",
+      "The per-task check is a quick one. The full graded review happens once per delivery.",
+      "The delivery gate stops with a warning if the grade does not improve after three rounds.",
+      "Giving a delivery instead of a task (for example delivery-005) runs its tasks in parallel where the graph allows; on hosts without background agents it falls back to one at a time.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-experiment": {
+    "group": "change",
+    "order": 9,
+    "summary": "Plan a controlled experiment or A/B test, with the success bar fixed before anything runs.",
+    "when": "Use it to test a hypothesis with variants and a metric. For a one-time look at data you already have use /aid-report; to try an idea cheaply use /aid-prototype.",
+    "example": "/aid-experiment does a shorter checkout form raise completed orders by 5 percent",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with the hypothesis, at least two variants, the success metric, the significance bar, sample size, guardrail metrics, duration or stopping rule, and the audience. These are fixed in the acceptance criteria before any run, so the result cannot be judged against a bar chosen afterward. It asks at most one question."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11, including an experiment design section: how groups are assigned, how metrics are computed and which statistical method is used. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Writes a chain of tasks. Task 1 designs the experiment. An optional task builds the variants, only if your description says they must be built. The last task runs the experiment, checks the result against the bar and ends with a recommendation."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it.",
+      "Analysis of data you already have, with no controlled variants, is /aid-report."
+    ]
+  },
+  "aid-fix": {
+    "group": "change",
+    "order": 3,
+    "summary": "Plan the fix for a bug, regression, incident or vulnerability, with a test that proves it is closed.",
+    "when": "Use it when something is wrong and you can describe how to see it. For new behavior use /aid-update; for cleanup with no bug use /aid-refactor; to find problems first use /aid-review or /aid-test.",
+    "example": "/aid-fix the login form rejects passwords containing a plus sign",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with the symptom, the steps to reproduce, expected versus actual behavior and the affected area. It also notes whether this is a defect, a regression, an incident or a vulnerability, guessed from your wording. It asks at most one question, usually when the reproduction steps are missing."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Writes two tasks. Task 1 reproduces the bug, finds the root cause and patches it. Task 2 adds a regression test that must fail on the old code and pass on the fixed code."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it.",
+      "For a vulnerability it fixes the one exploit path. A deep security scan belongs to /aid-test security.",
+      "For an incident it plans the code fix only. The postmortem or runbook is a separate /aid-document runbook."
+    ]
+  },
+  "aid-housekeep": {
+    "group": "kb",
+    "order": 1,
+    "summary": "Re-syncs a drifted Knowledge Base and summary and cleans up stale work files, in three gated stages on its own branch.",
+    "when": "Use it when the code has moved on and the Knowledge Base no longer matches. For one known fact that changed, /aid-update-kb is lighter.",
+    "example": "/aid-housekeep",
+    "steps": [
+      {
+        "title": "Check the setup",
+        "text": "It needs the `.aid/` folder and a git repository, then switches to a branch named `aid/housekeep-<date>`."
+      },
+      {
+        "title": "Knowledge Base check",
+        "text": "It compares each document with the current code, shows what drifted, and you confirm the scope."
+      },
+      {
+        "title": "Re-approval",
+        "text": "The fixes go through /aid-discover's review, and you approve the refreshed Knowledge Base."
+      },
+      {
+        "title": "Refresh the summary",
+        "text": "If kb.html is out of date, it is rebuilt through /aid-summarize."
+      },
+      {
+        "title": "Clean up",
+        "text": "A checklist of stale files and work folders appears; only items you confirm are deleted."
+      },
+      {
+        "title": "Finish",
+        "text": "Each stage is committed on the branch and you are told to push it and open a PR when ready."
+      }
+    ],
+    "writes": [
+      "Updated documents in `.aid/knowledge/`.",
+      "`.aid/knowledge/kb.html`, if it needed a rebuild.",
+      "Deletes the stale items you confirm.",
+      "One commit per stage on the `aid/housekeep-<date>` branch.",
+      "A temporary run file in `.aid/.temp/`, removed at the end."
+    ],
+    "gate": "You confirm the Knowledge Base scope and approve it, then tick the items to delete. Nothing is deleted without your confirmation.",
+    "next": [
+      "aid-summarize"
+    ],
+    "notes": [
+      "--cleanup-only jumps to the cleanup stage; --grade X sets the minimum grade for the summary.",
+      "If a stage stalls, run it again: it resumes there, not at the start.",
+      "It is not part of the main pipeline; run it when you need it.",
+      "Needs a git repository. Does not run in Plan mode."
+    ]
+  },
+  "aid-migrate": {
+    "group": "change",
+    "order": 7,
+    "summary": "Plan a move of data, a dependency, a framework or a platform, with a rollback plan.",
+    "when": "Use it for a move from one state to another. For a database schema change use /aid-create data-model or /aid-update data-model instead.",
+    "example": "/aid-migrate upgrade from Express 4 to Express 5, with a rollback plan",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with the current state, the target state, whether it is data, a dependency, a framework or a platform, and the rollback plan. It asks at most one question, if the from-to change or the rollback cannot be stated."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11, including a migration plan. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Writes two tasks. Task 1 is the forward migration with a matching rollback. Task 2 checks that the result matches the target state and that the rollback really reverts it."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it.",
+      "A rollback plan is always required."
+    ]
+  },
+  "aid-monitor": {
+    "group": "ship",
+    "order": 2,
+    "summary": "Looks at how a release behaves in the field, sorts what it finds, and hands bugs and change requests to the right skill.",
+    "when": "Use it after a deployment or when something looks wrong in production. It routes problems; it does not fix them itself.",
+    "example": "/aid-monitor work-001 --since 2026-03-20",
+    "steps": [
+      {
+        "title": "Observe",
+        "text": "It collects signals from your sources (errors, CI, performance, tests, support tickets) and compares them with the normal level."
+      },
+      {
+        "title": "Classify",
+        "text": "Each finding is sorted as a bug, a change request, an infrastructure problem, or no action, with a severity."
+      },
+      {
+        "title": "Find the cause",
+        "text": "For bugs it traces a one-sentence root cause, the affected files and the tests needed."
+      },
+      {
+        "title": "Propose routes",
+        "text": "It shows each finding with evidence and the suggested next skill."
+      },
+      {
+        "title": "You approve",
+        "text": "You approve all routes or change some."
+      },
+      {
+        "title": "Hand off",
+        "text": "Bugs go to /aid-fix, change requests go to /aid-triage, infrastructure issues are left to your ops team."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/known-issues.md`: new known issues, when a finding affects other features.",
+      "A printed monitor report. No other file is kept for it."
+    ],
+    "gate": "You approve or adjust where each finding is sent.",
+    "next": [
+      "aid-fix",
+      "aid-triage"
+    ],
+    "notes": [
+      "A finding is raised for: any new error type, error rate more than 200% above normal, latency more than 50% worse, a new persistent test failure, or three or more support tickets on the same issue.",
+      "Options: --since to set the start date and --package to look at one release.",
+      "If you give a free-form description instead of a work, it sets up a small work and stops for approval without observing.",
+      "Problems already in known-issues.md are filtered out."
+    ]
+  },
+  "aid-plan": {
+    "group": "full",
+    "order": 4,
+    "summary": "Groups the specified features into deliveries, each a working release on its own, and writes the plan.",
+    "when": "Use it after the features are specified. It decides order and grouping only; technical details were settled in /aid-specify.",
+    "example": "/aid-plan work-001",
+    "steps": [
+      {
+        "title": "Check the features",
+        "text": "It reads the feature specs; if some are not Ready, it offers to plan only the finished ones."
+      },
+      {
+        "title": "Propose deliveries",
+        "text": "An architect agent proposes how to group and order the features, using the Knowledge Base and known issues."
+      },
+      {
+        "title": "Negotiate",
+        "text": "You move, reorder, split, merge or defer features until you agree."
+      },
+      {
+        "title": "Write the plan",
+        "text": "Each agreed delivery is written to PLAN.md with its objective, scope and gate criteria."
+      },
+      {
+        "title": "Review",
+        "text": "A reviewer grades the plan against the specs and Knowledge Base; problems send it back to the discussion."
+      },
+      {
+        "title": "Create the delivery folders",
+        "text": "A folder and state file is created for each approved delivery."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/PLAN.md`.",
+      "`.aid/works/work-NNN-*/deliveries/delivery-NNN/STATE.yml` for each delivery."
+    ],
+    "gate": "You agree on each delivery's grouping and order.",
+    "next": [
+      "aid-detail"
+    ],
+    "notes": [
+      "Each delivery has to work on its own, and deliveries must not depend on each other in a loop.",
+      "--reset deletes PLAN.md and starts over.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-prototype": {
+    "group": "think",
+    "order": 3,
+    "summary": "Build a throwaway, low-fidelity model to test a direction before committing to a real build.",
+    "when": "Use it to see whether an idea works. To keep a design and build it, use /aid-design; to run a controlled test with real users, use /aid-experiment.",
+    "example": "/aid-prototype ui a three-step onboarding flow, low-fi",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks for the direction and what would show it works, if you gave none. Notes the fidelity (paper, low-fi, or a runnable spike, default low-fi) and what the prototype will not try to do. Starts a work and a separate git worktree."
+      },
+      {
+        "title": "Build",
+        "text": "An architect agent builds the model. A runnable spike is throwaway code, written in the work folder or its worktree and never in your real modules."
+      },
+      {
+        "title": "Check",
+        "text": "A reviewer checks once that the claim 'it worked' is honest and that nothing leaked into production code. If it fails, the build gets one fix. There is no polish loop."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the model and a short assessment: what was built, whether the success signal appeared, what you learned, and whether the idea looks viable. You decide."
+      },
+      {
+        "title": "Hand off",
+        "text": "Prints suggestions, such as /aid-design, /aid-create or /aid-experiment. It never starts them."
+      }
+    ],
+    "writes": [
+      "The model and a validation assessment in the work folder .aid/works/work-NNN-<short-name>/.",
+      "Nothing in your real code. Nothing is promoted to production."
+    ],
+    "gate": "You decide whether the idea is worth building.",
+    "next": [
+      "aid-design",
+      "aid-create",
+      "aid-experiment"
+    ],
+    "kinds": [
+      "ui"
+    ],
+    "notes": [
+      "Keep the scope small. The point is to learn, not to ship.",
+      "ui records the screens, interactions, states and navigation, and adds accessibility notes."
+    ]
+  },
+  "aid-read-ticket": {
+    "group": "tracker",
+    "order": 3,
+    "summary": "Fetches one ticket from your issue tracker and shows its fields.",
+    "when": "Use it when a ticket is named and you want its details. It never changes anything.",
+    "example": "/aid-read-ticket jira:PROJ-123",
+    "steps": [
+      {
+        "title": "Read the reference",
+        "text": "A reference like `jira:PROJ-123` splits at the first colon into connector and ticket; without a prefix the connector is found for you."
+      },
+      {
+        "title": "Find the connector",
+        "text": "It uses the one catalogued issue-tracker, asks you if there are several, or falls back to your tool's own tracker."
+      },
+      {
+        "title": "Fetch",
+        "text": "It reads the ticket through your tool's tracker integration; AID stores no credentials for this."
+      },
+      {
+        "title": "Show the fields",
+        "text": "Only the fields the tracker returned are shown, such as title, status, assignee, description and comments."
+      }
+    ],
+    "writes": [
+      "Nothing. It only reads."
+    ],
+    "gate": null,
+    "next": [
+      "aid-update-ticket"
+    ],
+    "notes": [
+      "If no tracker can be found it says: no issue-tracker connector found.",
+      "Tracker errors (not found, not allowed) are shown as they are; it does not retry or guess.",
+      "The only question it may ask is which connector to use, when more than one fits."
+    ]
+  },
+  "aid-refactor": {
+    "group": "change",
+    "order": 4,
+    "summary": "Plan a restructure that must not change behavior: a rename, a restructure, or a performance improvement.",
+    "when": "Use it when the code works and you want it cleaner or faster. If behavior should change use /aid-update; if something is broken use /aid-fix.",
+    "example": "/aid-refactor split OrderService into pricing and fulfilment modules, behavior unchanged",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with the target, the reason, and how it will be shown that behavior did not change. For a performance change it needs the measured baseline and the target number. It asks at most one question."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Depends on the kind of refactor, picked from your wording. A rename is one task that renames across code, tests and docs. A restructure adds a test task that must match the old pass and fail results. A performance change adds a benchmark task against a measured baseline."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it.",
+      "Tell it how to prove nothing changed. If existing tests are thin, it plans an extra test to pin the current behavior."
+    ]
+  },
+  "aid-remove": {
+    "group": "change",
+    "order": 5,
+    "summary": "Plan the removal of code, a feature or a dependency, including every place that uses it.",
+    "when": "Use it when you have already decided to delete something. If callers still need time to move, use /aid-deprecate first; to judge whether to remove it, use /aid-review or /aid-research.",
+    "example": "/aid-remove the unused legacy CSV export and everything that calls it",
+    "steps": [
+      {
+        "title": "Start a work",
+        "text": "Checks whether other works exist. If they do, it asks whether this is a new work or a continuation of one. For a new work it creates a separate git worktree and a work folder, so your main branch stays untouched."
+      },
+      {
+        "title": "Capture",
+        "text": "Writes REQUIREMENTS.md with what to remove, whether to delete it outright or leave a thin compatibility shim, and who depends on it. It asks at most one question, if the target or its callers cannot be identified."
+      },
+      {
+        "title": "Specify and plan",
+        "text": "Adds the technical specification to REQUIREMENTS.md, section 11. There is one feature and one delivery, so there is nothing to sequence and no separate plan file."
+      },
+      {
+        "title": "Detail the tasks",
+        "text": "Writes three tasks in order. Task 1 finds every use of the target and removes it. Task 2 updates every caller, config and wiring that pointed at it. Task 3 runs the full test suite to confirm nothing still refers to it. If nothing uses the target, the tasks are merged."
+      },
+      {
+        "title": "Grading gate",
+        "text": "An independent reviewer grades the requirements, then the task files. Anything below the minimum grade goes back to be fixed and is reviewed again. The default minimum for these shortcuts is A+, and you can lower it in settings. After 3 rounds with no improvement it stops and writes an IMPEDIMENT file."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Prints the work and its grades, then stops. Nothing has been built. You read the documents, then run /aid-execute yourself when you are happy."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN).",
+      "Nothing in your source code is touched. Code changes only happen later, in /aid-execute."
+    ],
+    "gate": "You read REQUIREMENTS.md and the task files, then decide whether to run /aid-execute. The shortcut never starts building on its own.",
+    "next": [
+      "aid-execute"
+    ],
+    "notes": [
+      "It only plans. Nothing is built until you run /aid-execute.",
+      "Each run starts a new work. To carry on with a halted one, run /aid-execute on it."
+    ]
+  },
+  "aid-report": {
+    "group": "think",
+    "order": 5,
+    "summary": "Analyse data or usage once and return a verified report, with caveats stated.",
+    "when": "Use it to find out what a dataset, logs or metrics say. For a view that refreshes, use /aid-create dashboard; for a controlled test, use /aid-experiment.",
+    "example": "/aid-report error-rate breakdown by endpoint from logs/api-2026-10.csv",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what data to look at and what question to answer, if you gave none. A vague request gets scoping questions first. Starts a work and a separate git worktree."
+      },
+      {
+        "title": "Analyze",
+        "text": "A researcher agent reads the data without changing it. Files are read directly. For a live system it uses a connector if you have one set up, or asks you for an export. It writes REPORT.md."
+      },
+      {
+        "title": "Verify",
+        "text": "A clean-context reviewer checks that findings match the data and that no metric or A/B result is stated without caveats such as sampling, significance or confounders. It is reworked until clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows findings, conclusions, caveats, conflicts and gaps, and stops."
+      },
+      {
+        "title": "Hand off",
+        "text": "Prints suggestions, such as /aid-create dashboard to make it recurring. It never starts them."
+      }
+    ],
+    "writes": [
+      "REPORT.md in the work folder .aid/works/work-NNN-<short-name>/.",
+      "Nothing in your data or your code."
+    ],
+    "gate": "You decide what to do with the findings.",
+    "next": [
+      "aid-create",
+      "aid-document"
+    ],
+    "notes": [
+      "This is a one-time analysis."
+    ]
+  },
+  "aid-research": {
+    "group": "think",
+    "order": 4,
+    "summary": "Investigate an open technical question and return a verified answer with its sources, conflicts and gaps.",
+    "when": "Use it when a decision is blocked on something nobody has established. For a question the project already answers use /aid-ask; for a fuzzy problem use /aid-brainstorm.",
+    "example": "/aid-research can we move from PostgreSQL 14 to 17 without downtime, and what breaks",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks for the question if you gave none. A broad question gets two or three scoping questions first. Starts a work and a separate git worktree."
+      },
+      {
+        "title": "Investigate",
+        "text": "A researcher agent reads your Knowledge Base and code as the main source and adds web sources as support. Each project claim cites a file or document, and each web claim cites a URL and access date."
+      },
+      {
+        "title": "Spike (only if you agree)",
+        "text": "If the gap cannot be closed on paper, it proposes a small throwaway experiment and stops to ask. It builds one only if you say yes. A spike never touches production code."
+      },
+      {
+        "title": "Verify",
+        "text": "A clean-context reviewer checks the sources and that the conclusions are not overstated. It is reworked until clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the answer with conclusions (good and bad), conflicts with reasons, and gaps. It stops and recommends nothing."
+      }
+    ],
+    "writes": [
+      "RESEARCH.md in the work folder .aid/works/work-NNN-<short-name>/.",
+      "Spike code, only if you authorized one, kept in the work folder or its worktree."
+    ],
+    "gate": "You decide what the answer means. A spike, a decision record or a ticket comment each need your say first.",
+    "next": [
+      "aid-document",
+      "aid-update-kb",
+      "aid-create"
+    ],
+    "notes": [
+      "It lays out evidence and does not tell you what to pick.",
+      "Where project documents and the web disagree, the conflict is shown with the reason, not silently resolved."
+    ]
+  },
+  "aid-review": {
+    "group": "think",
+    "order": 6,
+    "summary": "Review code, a diff, a design, a document or a ticket and return a grade with findings you can check.",
+    "when": "Use it for a second opinion before something lands. It does not fix anything; use /aid-fix or /aid-update for that.",
+    "example": "/aid-review my changes",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what to review if you gave no target. It accepts a file or folder, a PR link, a ticket id, a commit or branch, your working changes, or a work id. A clear target runs straight away. An open-ended one gets a short plan for you to confirm first."
+      },
+      {
+        "title": "Review",
+        "text": "A reviewer agent gathers evidence and writes a findings list. Every finding cites a Knowledge Base document or a file and line."
+      },
+      {
+        "title": "Verify",
+        "text": "A second reviewer in a clean context checks each finding for evidence, wrong severity and missed issues. Findings without evidence are dropped. The loop stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the grade (for information only), the findings ranked by severity, recommendations, and the exact comment it would post. It stops and waits for you."
+      },
+      {
+        "title": "Publish (only if you approve)",
+        "text": "Posts a PR comment, a ticket comment or inline notes. If it cannot, it shows the text for you to paste."
+      }
+    ],
+    "writes": [
+      "A findings list at .aid/.temp/review-pending/ that /aid-fix can read.",
+      "A work folder at .aid/works/work-NNN-<short-name>/, in its own git worktree.",
+      "A PR or ticket comment, only if you approve the text. The reviewed code is never edited."
+    ],
+    "gate": "You approve the findings and any comment before anything is posted outside your machine.",
+    "next": [
+      "aid-fix",
+      "aid-update"
+    ],
+    "notes": [
+      "The grade is information. It does not start a fix loop."
+    ]
+  },
+  "aid-set-connector": {
+    "group": "tracker",
+    "order": 1,
+    "summary": "Adds or changes the catalog entry for one external tool, such as an issue tracker.",
+    "when": "Use it to connect a new tool between discovery runs, or to change how an existing one is described. To remove one, use /aid-unset-connector.",
+    "example": "/aid-set-connector Jira mcp",
+    "steps": [
+      {
+        "title": "Check arguments",
+        "text": "It needs a tool name and a type: mcp, api, ssh or cli. Anything else is refused."
+      },
+      {
+        "title": "Look up a preset",
+        "text": "Known tools such as Jira prefill the name and tags; unknown tools are treated as custom."
+      },
+      {
+        "title": "Ask the questions",
+        "text": "You answer a short set that depends on the type, such as endpoint and how it signs in."
+      },
+      {
+        "title": "Protect secrets",
+        "text": "It makes sure the secrets folder is ignored by git before writing anything."
+      },
+      {
+        "title": "Save the entry",
+        "text": "A new entry is added, or the existing one for that tool is updated in place, even if the type changes."
+      },
+      {
+        "title": "Handle the secret",
+        "text": "A credential is stored, replaced or deleted only when the change calls for it."
+      },
+      {
+        "title": "Refresh the index",
+        "text": "The connector index is rebuilt; other connectors are not touched."
+      }
+    ],
+    "writes": [
+      "`.aid/connectors/<tool>.md`: the connector entry.",
+      "`.aid/connectors/.gitignore` (ignores `.secrets/`).",
+      "`.aid/connectors/.secrets/<tool>`: only for an api connector that needs a credential.",
+      "`.aid/connectors/INDEX.md`."
+    ],
+    "gate": "You answer the connection questions.",
+    "next": [
+      "aid-read-ticket",
+      "aid-create-ticket"
+    ],
+    "notes": [
+      "The type is the second word, after the tool name.",
+      "AID only keeps a catalog. It does not set up the tool's own MCP configuration in your editor.",
+      "--rotate-secret asks for a fresh secret on an update that would otherwise keep the old one.",
+      "Ticket skills use connectors of type mcp that are tagged issue-tracker.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-specify": {
+    "group": "full",
+    "order": 3,
+    "summary": "Works with you on the technical specification for one feature, section by section.",
+    "when": "Use it once per feature after features are defined. It acts like a tech lead: it proposes, you steer.",
+    "example": "/aid-specify work-001/feature-001",
+    "steps": [
+      {
+        "title": "Pick the feature",
+        "text": "The feature path is required; without it the skill lists what is available."
+      },
+      {
+        "title": "Load context",
+        "text": "It reads the Knowledge Base and code and decides which sections the spec needs."
+      },
+      {
+        "title": "Propose and discuss",
+        "text": "For each section the agent proposes something concrete and you refine it together."
+      },
+      {
+        "title": "Write and check",
+        "text": "Agreed text goes into the feature's Technical Specification and is graded against the Knowledge Base and code before moving on."
+      },
+      {
+        "title": "Handle blockers",
+        "text": "A knowledge gap can pause the feature for a spike, or send a question back to the requirements."
+      },
+      {
+        "title": "Final review",
+        "text": "The whole spec is reviewed once more and the feature is marked Ready when it meets the minimum grade."
+      }
+    ],
+    "writes": [
+      "`.aid/works/work-NNN-*/REQUIREMENTS.md`: the Technical Specification inside that feature's section.",
+      "`.aid/works/work-NNN-*/STATE.yml`: the feature's progress.",
+      "`.aid/works/work-NNN-*/known-issues.md`: problems it finds that matter to the work."
+    ],
+    "gate": "You agree on each section before it moves on.",
+    "next": [
+      "aid-plan"
+    ],
+    "notes": [
+      "Specifies one feature per run. Run it again for each feature.",
+      "--reset clears that feature's specification.",
+      "If a spike is needed, the skill pauses; record the results and run it again.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-summarize": {
+    "group": "start",
+    "order": 3,
+    "summary": "Builds kb.html, a single-file visual tour of the approved Knowledge Base that newcomers can open in a browser.",
+    "when": "Use it after the Knowledge Base is approved and someone needs to read it. It does not check the Knowledge Base itself; that is /aid-discover's job.",
+    "example": "/aid-summarize",
+    "steps": [
+      {
+        "title": "Check prerequisites",
+        "text": "The Knowledge Base must be approved and Node.js 22 or newer must be installed."
+      },
+      {
+        "title": "Check if it is out of date",
+        "text": "If the Knowledge Base has not changed since the last summary, nothing is rebuilt."
+      },
+      {
+        "title": "Build kb.html",
+        "text": "One section is made per Knowledge Base document, with styles and scripts inside the file."
+      },
+      {
+        "title": "Automatic checks",
+        "text": "Scripts check readability, layout, links, contrast and accessibility, and fix problems until the grade reaches your minimum."
+      },
+      {
+        "title": "Your checklist",
+        "text": "You open the page in a browser and answer a short checklist about accuracy and looks."
+      },
+      {
+        "title": "You approve",
+        "text": "You approve the result and the run is recorded."
+      }
+    ],
+    "writes": [
+      "`.aid/knowledge/kb.html`.",
+      "`.aid/knowledge/STATE.md`: summary status and history."
+    ],
+    "gate": "You answer the manual checklist and then approve the finished summary.",
+    "next": [
+      "aid-describe"
+    ],
+    "notes": [
+      "Needs an approved Knowledge Base; otherwise it stops with a message.",
+      "Needs Node.js 22 or newer. If the browser test tool is missing, the visual checks are skipped and you must judge them yourself in a real browser.",
+      "Running it again on an unchanged, approved Knowledge Base does nothing. Use --reset to force a rebuild.",
+      "Use --grade X to change the minimum and --theme to pick a color palette."
+    ]
+  },
+  "aid-test": {
+    "group": "change",
+    "order": 8,
+    "summary": "Run tests or checks (suites, security, performance, data quality) and report findings. It fixes nothing.",
+    "when": "Use it to find out whether something holds up. To write new tests use /aid-create test; to fix what it finds use /aid-fix.",
+    "example": "/aid-test security the auth module",
+    "steps": [
+      {
+        "title": "Intake",
+        "text": "Asks what to test if you gave no target. Works out the kind of check: functional, security, performance, data quality, or a model evaluation. Starts a work and a separate git worktree."
+      },
+      {
+        "title": "Run",
+        "text": "Runs the test runner, scanner or benchmark against your code without changing it, and keeps the raw output. A reviewer agent then turns the output into a list of findings, each with its evidence."
+      },
+      {
+        "title": "Verify",
+        "text": "A second reviewer in a clean context checks that each finding is real, backed by the run output, and rated fairly. The run repeats until the list is clean, or stops after 3 rounds."
+      },
+      {
+        "title": "Present",
+        "text": "Shows the findings ranked by severity, with pass or fail against any threshold. It stops here and fixes nothing."
+      },
+      {
+        "title": "Hand off",
+        "text": "Prints suggestions, such as running /aid-fix. It never starts them."
+      }
+    ],
+    "writes": [
+      "Nothing in your source code. It runs checks read-only.",
+      "A work folder at .aid/works/work-NNN-<short-name>/ with STATE.yml, in its own git worktree.",
+      "A findings ledger at .aid/.temp/review-pending/ that /aid-fix can read."
+    ],
+    "gate": "You read the findings and decide what to do. Nothing is fixed for you.",
+    "next": [
+      "aid-fix",
+      "aid-create"
+    ],
+    "kinds": [
+      "security",
+      "performance",
+      "data-quality"
+    ],
+    "notes": [
+      "Each kind follows the same steps with its own checks. security covers static scans, dynamic scans, fuzzing and dependency audits. performance needs a workload and a threshold. data-quality checks schema, freshness, completeness and uniqueness.",
+      "It runs real tools in your project, so check the target before you point it at anything with side effects."
+    ]
+  },
+  "aid-triage": {
+    "group": "start",
+    "order": 4,
+    "summary": "Reads your one-line description and suggests which AID skill to run next. It suggests only and writes nothing.",
+    "when": "Use it when you know what you want but not which skill to run. If you already know it is a big or unclear job, go straight to /aid-describe.",
+    "example": "/aid-triage fix the login crash on special characters",
+    "steps": [
+      {
+        "title": "Get your description",
+        "text": "If you did not type one, it asks for a sentence or two."
+      },
+      {
+        "title": "Check for a question",
+        "text": "If it sounds like a question about the project, it suggests /aid-ask."
+      },
+      {
+        "title": "Judge the size",
+        "text": "One clear change on one target counts as small; anything broad, mixed or vague counts as big."
+      },
+      {
+        "title": "Match a shortcut",
+        "text": "Small changes are matched against the shortcut skills, such as /aid-fix or /aid-create."
+      },
+      {
+        "title": "You confirm",
+        "text": "It proposes one entry and you accept it or ask for another."
+      },
+      {
+        "title": "Print the command",
+        "text": "It shows the command to type and stops. It never runs it for you."
+      }
+    ],
+    "writes": [
+      "Nothing. It only reads."
+    ],
+    "gate": "You accept the suggestion or pick another option.",
+    "next": [
+      "aid-describe",
+      "aid-ask"
+    ],
+    "notes": [
+      "When unsure, it sends you to the full path (/aid-describe) rather than guess a shortcut.",
+      "It creates no work folder and keeps nothing between runs."
+    ]
+  },
+  "aid-unset-connector": {
+    "group": "tracker",
+    "order": 2,
+    "summary": "Removes one connector from the catalog, together with its stored secret.",
+    "when": "Use it when a tool is no longer wanted. To add or change one, use /aid-set-connector.",
+    "example": "/aid-unset-connector Jira",
+    "steps": [
+      {
+        "title": "Check the argument",
+        "text": "It needs exactly one tool name and nothing else."
+      },
+      {
+        "title": "Delete the secret",
+        "text": "The stored secret for that tool is deleted if there is one."
+      },
+      {
+        "title": "Delete the entry",
+        "text": "The connector's file is removed."
+      },
+      {
+        "title": "Refresh the index",
+        "text": "`INDEX.md` is rebuilt without that tool; other connectors are untouched."
+      }
+    ],
+    "writes": [
+      "Deletes `.aid/connectors/<tool>.md` and `.aid/connectors/.secrets/<tool>`.",
+      "`.aid/connectors/INDEX.md` (rebuilt)."
+    ],
+    "gate": null,
+    "next": [],
+    "notes": [
+      "It does not ask for confirmation before deleting.",
+      "Safe to run twice: on a tool that is already gone it does nothing and succeeds.",
+      "It does not touch your tool's own configuration in your editor.",
+      "Does not run in Plan mode."
+    ]
+  },
+  "aid-update": {
+    "group": "change",
+    "order": 2,
+    "summary": "Plan a change to something that exists: code such as an API or job, a project document in the Knowledge Base, or a document.",
+    "when": "Use it when behavior or content should change on purpose. For a defect use /aid-fix; for cleanup that keeps behavior the same use /aid-refactor.",
+    "example": "/aid-update api add a status filter to GET /orders",
+    "steps": [
+      {
+        "title": "Pick the route",
+        "text": "The first word can be a kind. Code kinds run the planning steps below. roadmap, mvp, backlog, architecture, stack, testing-strategy, cicd and document follow their own path."
+      },
+      {
+        "title": "Capture the delta (code kinds)",
+        "text": "Starts a work and writes REQUIREMENTS.md with what the thing does today, what it should do after, and the new acceptance criteria. It asks at most one question."
+      },
+      {
+        "title": "Specify and detail (code kinds)",
+        "text": "Adds the technical specification and task files. The tasks are the same ones /aid-create would write for that kind, but each is limited to the change."
+      },
+      {
+        "title": "Grading gate (code kinds)",
+        "text": "An independent reviewer grades the documents until they reach the minimum grade (A+ by default for shortcuts), or it stops after 3 rounds with no improvement."
+      },
+      {
+        "title": "Approval stop",
+        "text": "Stops with nothing built. You run /aid-execute when ready."
+      },
+      {
+        "title": "Knowledge Base and document kinds",
+        "text": "Edits only the part of the document it owns, shows the result, and leaves the rest of the file unchanged. For document it also shows a diff before writing."
+      }
+    ],
+    "writes": [
+      "A new work folder .aid/works/work-NNN-<short-name>/ with REQUIREMENTS.md, tasks/task-NNN/DETAIL.md files and STATE.yml, inside its own git worktree (a separate checkout on a branch named work-NNN). (code kinds)",
+      "The matching document under .aid/knowledge/, for the Knowledge Base kinds. A design file in .aid/design/ is read first and used up if there is one.",
+      "The edited document at its existing location, for the document kind. It never writes to .aid/knowledge/."
+    ],
+    "gate": "Code kinds: you approve the plan by running /aid-execute. Document kind: you approve the diff.",
+    "next": [
+      "aid-execute",
+      "aid-update-kb"
+    ],
+    "kinds": [
+      "api",
+      "ui",
+      "theme",
+      "cli",
+      "data-model",
+      "data-pipeline",
+      "messaging",
+      "integration",
+      "job",
+      "config",
+      "infra",
+      "test",
+      "dashboard",
+      "roadmap",
+      "mvp",
+      "backlog",
+      "architecture",
+      "stack",
+      "testing-strategy",
+      "cicd",
+      "document"
+    ],
+    "notes": [
+      "api, ui, theme, cli, data-model, data-pipeline, messaging, integration, job, config, infra, test and dashboard run the planning steps. The rest follow their own reference file.",
+      "update has no diagram kind; use /aid-update document.",
+      "The Knowledge Base kinds change the file before they show it to you, so use git to undo."
+    ]
+  },
+  "aid-update-kb": {
+    "group": "kb",
+    "order": 2,
+    "summary": "Applies one targeted, human-confirmed change to the Knowledge Base, in its own worktree.",
+    "when": "Use it when a specific fact changed and you want that edit and nothing more. For a broad sweep of drift, use /aid-housekeep.",
+    "example": "/aid-update-kb the payments service now retries 3 times instead of 5",
+    "steps": [
+      {
+        "title": "Set up a safe copy",
+        "text": "It makes its own worktree and branch `aid/update-kb-<timestamp>` so your tree is untouched."
+      },
+      {
+        "title": "Analyze",
+        "text": "A clean-context agent works out how your instruction lands in the Knowledge Base."
+      },
+      {
+        "title": "Plan the scope",
+        "text": "It lists exactly which documents and passages it would change."
+      },
+      {
+        "title": "You confirm the scope",
+        "text": "Confirm, adjust or cancel before any edit exists."
+      },
+      {
+        "title": "Apply and review",
+        "text": "Only the confirmed changes are made, then reviewed and fixed until the grade meets the minimum."
+      },
+      {
+        "title": "You approve the edits",
+        "text": "You approve the actual changes."
+      },
+      {
+        "title": "Commit",
+        "text": "The change is checked once more and committed on the branch."
+      }
+    ],
+    "writes": [
+      "The Knowledge Base documents in `.aid/knowledge/` that you confirmed, inside the new worktree.",
+      "One commit on branch `aid/update-kb-<timestamp>`.",
+      "A temporary run file in `.aid/.temp/`, removed when done."
+    ],
+    "gate": "Two stops: you confirm the scope before any edit, and approve the edits before the commit.",
+    "next": [
+      "aid-housekeep"
+    ],
+    "notes": [
+      "Without a prompt it prints usage and stops.",
+      "Running it again with the same text resumes the paused run; different text starts a separate one.",
+      "The worktree is created from the branch named master. It stops rather than work in your own tree if it cannot make the worktree."
+    ]
+  },
+  "aid-update-ticket": {
+    "group": "tracker",
+    "order": 5,
+    "summary": "Changes one part of a ticket (description, comment or status) after you confirm the exact change.",
+    "when": "Use it to update a ticket in your tracker. It changes only the part you name, so use it for one change at a time.",
+    "example": "/aid-update-ticket status jira:PROJ-9 \"In Progress\"",
+    "steps": [
+      {
+        "title": "Check the request",
+        "text": "The first word must be description, comment or status; anything else prints usage and stops."
+      },
+      {
+        "title": "Find the connector",
+        "text": "A `jira:` prefix picks it directly; otherwise it uses the one catalogued tracker or asks."
+      },
+      {
+        "title": "Load what it needs",
+        "text": "For a status change it fetches the allowed next states; for a description it fetches the current text; a comment needs nothing."
+      },
+      {
+        "title": "Prepare the change",
+        "text": "A description replaces the old one, a comment is added, a status is set. A status that is not allowed lists the valid ones and stops."
+      },
+      {
+        "title": "You confirm",
+        "text": "You see the exact change (before and after for a description) and choose to go ahead, edit or cancel."
+      },
+      {
+        "title": "Write",
+        "text": "One call is made to the tracker and the result is reported."
+      }
+    ],
+    "writes": [
+      "Nothing in your project files.",
+      "One change to the ticket in the tracker, only after you confirm."
+    ],
+    "gate": "You confirm the exact change before it is sent.",
+    "next": [],
+    "notes": [
+      "The part is the first word, then the ticket reference, then the new content.",
+      "If the tracker cannot list valid statuses, the change is tried anyway and its error shown if it is rejected.",
+      "The confirm prompt reuses the same buttons as ticket creation, and the first one is labeled File it even when you are updating.",
+      "Everything after the ticket reference is used as typed."
+    ]
+  }
+}

@@ -1,0 +1,174 @@
+---
+title: How AID works
+description: "The whole of AID on one page: the two paths, the phases and gates, the Knowledge Base, the agents, the execute and review loop, and where the files live."
+sidebar:
+  order: 1
+---
+
+import { Aside, FileTree } from '@astrojs/starlight/components';
+import Flow from '~/components/Flow.astro';
+
+AID is a set of commands (called skills) and AI agents that follow one rule: write down what is true, plan the work in small checked steps, and never let the author grade their own work. This page gives you the whole picture. Each section links to the page that goes deeper.
+
+## Two paths, one destination
+
+Every change ends the same way: tasks are executed, reviewed and graded by `/aid-execute`. The paths differ in how much planning comes first.
+
+| | Full path | Shortcut path |
+|---|---|---|
+| Start with | `/aid-describe` | `/aid-<verb>`, such as `/aid-fix` |
+| Best for | New products, big or unclear work | One well-defined change |
+| Planning | Separate phases, each approved by you | One fast run that produces a small, graded work |
+| Ends at | `/aid-execute` | `/aid-execute` |
+
+If you are not sure which to use, `/aid-triage` suggests one. See [Choose your entry](/guides/choose-your-entry/).
+
+## The full path
+
+The full path is a sequence of phases. Each phase reads the Knowledge Base, writes one kind of file, and ends with your approval before the next begins.
+
+<Flow
+  label="The full path, phase by phase"
+  steps={[
+    { title: 'Discover', text: 'Build the Knowledge Base from existing code. Skipped for a new project.', href: '/reference/skills/aid-discover/', kind: 'optional' },
+    { title: 'Describe', text: 'An interview that writes REQUIREMENTS.md', href: '/reference/skills/aid-describe/' },
+    { title: 'You approve the requirements', kind: 'gate' },
+    { title: 'Define', text: 'Split the requirements into features', href: '/reference/skills/aid-define/' },
+    { title: 'Specify', text: 'Write one feature\'s technical specification', href: '/reference/skills/aid-specify/' },
+    { title: 'Plan', text: 'Group features into deliveries that each work on their own', href: '/reference/skills/aid-plan/' },
+    { title: 'Detail', text: 'Break a delivery into small, typed tasks', href: '/reference/skills/aid-detail/' },
+    { title: 'Execute', text: 'Build each task, review it, fix it, grade it', href: '/reference/skills/aid-execute/' },
+    { title: 'Deploy', text: 'Package finished deliveries into a release', href: '/reference/skills/aid-deploy/', kind: 'optional' },
+  ]}
+/>
+
+What each phase writes:
+
+| Phase | Writes |
+|---|---|
+| Describe | `REQUIREMENTS.md` |
+| Define | One `Feature` section per feature inside `REQUIREMENTS.md` |
+| Specify | The technical specification, inside that feature's section |
+| Plan | `PLAN.md` and one folder per delivery |
+| Detail | A `DETAIL.md` file for each task |
+| Execute | Code, tests and documents, plus the review record in the state files |
+
+`/aid-config` comes before all of this: it creates `.aid/` and your settings. `/aid-monitor` sits after it: it watches production and sends bugs to `/aid-fix` and change requests to `/aid-triage`.
+
+## The shortcut path
+
+A shortcut runs the same definition work in one go, with less asking. It does not skip the artifacts. It does not execute either.
+
+<Flow
+  label="The shortcut path, step by step"
+  steps={[
+    { title: 'Intake', text: 'Check for existing works and create a new work folder' },
+    { title: 'Capture and specify', text: 'Ask at most one important question, then write REQUIREMENTS.md with its specification' },
+    { title: 'Detail', text: 'Write the task files' },
+    { title: 'Grade', text: 'Review and grade each document until it meets the minimum', kind: 'step' },
+    { title: 'You approve', kind: 'gate' },
+    { title: 'Execute', text: 'You run /aid-execute yourself', href: '/reference/skills/aid-execute/', kind: 'end' },
+  ]}
+/>
+
+A shortcut work has one feature and one delivery, so there is nothing to sequence and no plan is written. See [Your first change](/get-started/first-change/).
+
+## The Knowledge Base
+
+The Knowledge Base (KB) is the shared memory. It is a set of short Markdown documents in `.aid/knowledge/`: architecture, conventions, modules, vocabulary, tests, debt.
+
+- Every phase reads it before acting.
+- Any phase can ask for it to be corrected, which is how it stays true.
+- Agents read it in tiers so they pay for only what they need: the project card, then the index, then one document, then the exact place in the source.
+
+For a project with code, `/aid-discover` builds it. For a new project, the `/aid-describe` interview writes a starting set. See [The Knowledge Base](/guides/knowledge-base/) and [KB documents](/reference/kb-documents/).
+
+## Agents and tiers
+
+AID work is done by nine specialist agents. A skill dispatches them; you rarely call one directly.
+
+| Agent | Role | Tier |
+|---|---|---|
+| `aid-architect` | Designs: specifications, task breakdowns, deliveries | Large |
+| `aid-developer` | The only agent that changes production code | Medium |
+| `aid-reviewer` | Finds problems; never fixes, never grades | Medium |
+| `aid-researcher` | Reads code and sources, writes KB documents and reports | Medium |
+| `aid-interviewer` | Runs the one-question-at-a-time requirements interview | Medium |
+| `aid-orchestrator` | Routes findings, enforces gates, runs work in parallel | Medium |
+| `aid-operator` | Verifies and packages releases | Medium |
+| `aid-tech-writer` | Writes user-facing documentation | Medium |
+| `aid-clerk` | One mechanical operation at a time | Small |
+
+A tier is a size class of AI model: large for the hardest reasoning, small for fast mechanical work. Each tool maps tiers to its own models. For Claude Code the tiers are Opus, Sonnet and Haiku. One rule always holds: the reviewer is never a lower tier than the agent whose work it reviews. See [Agents reference](/reference/agents/).
+
+## The execute and review loop
+
+`/aid-execute` takes one task at a time. The type of the task (research, design, implement, test, document, migrate, refactor or configure) decides how it is done.
+
+<Flow
+  label="The execute and review loop for one task"
+  steps={[
+    { title: 'Execute', text: 'The right agent does the work' },
+    { title: 'Review', text: 'A separate reviewer lists problems' },
+    { title: 'Grade', text: 'A script computes the grade' },
+    { title: 'Done', text: 'The grade meets the minimum', kind: 'end' },
+  ]}
+  loop="If the grade is below the minimum, the problems are fixed and a fresh reviewer reviews again. If the grade does not improve for three cycles in a row, AID stops."
+/>
+
+After all tasks in a delivery are done, one more review runs for the whole delivery. If an agent cannot proceed honestly, it writes an impediment and stops instead of working around the problem. See [Review and grades](/guides/review-and-grades/).
+
+## Feedback loops
+
+Real work is not a straight line, so any phase can send a problem back upstream, and the fix is recorded.
+
+- A phase that finds the KB wrong or thin asks for a targeted discovery of just that area, then carries on.
+- A plan that is too vague goes back to specify, and a task list that is too vague goes back to plan.
+- A task that hits a false assumption raises an impediment, which routes to discovery, specify or detail depending on its type.
+- Review findings are tagged by origin (code, task, spec or KB) and sent to the phase that owns them.
+- After release, `/aid-monitor` sends bugs to `/aid-fix` and change requests to `/aid-triage`.
+
+The complete list is in [The methodology](/concepts/methodology/).
+
+## Where the files live
+
+<FileTree>
+
+- AGENTS.md  the rules pointer every tool reads
+- CLAUDE.md  Claude Code import of the rules and the project card
+- .agents/
+  - skills/  the skills, one copy shared by every tool
+- .claude/
+  - skills/  a mirror of the skills, written only if Claude Code is installed
+  - agents/  Claude Code's agent definitions
+- .aid/
+  - settings.yml  your project settings
+  - knowledge/  the Knowledge Base
+  - works/  one folder per unit of change
+    - work-001-name/
+      - REQUIREMENTS.md
+      - STATE.yml
+  - connectors/  descriptors for your tools
+  - design/  design seeds from /aid-design and /aid-brainstorm
+  - runtime/  scripts, templates and rules installed by the aid CLI
+
+</FileTree>
+
+Notes on this layout:
+
+- **Skills are shared.** `aid add <tool>` installs one copy in `.agents/skills/`. Claude Code reads skills from `.claude/skills/`, so a mirror is written there while it is installed.
+- **Agents are per tool.** Each tool has its own agents folder, such as `.claude/agents/` or `.cursor/agents/`.
+- **`.aid/runtime/` is installed, not authored.** The `aid` CLI manages it. Do not edit it.
+- **Works are temporary.** A work folder tracks a unit of change while it is in flight. Nothing permanent may depend on one, and the KB never names one.
+- **State is written immediately.** Every status, phase, grade and review result goes into the work's `STATE.yml` the moment it changes.
+
+<Aside type="note">
+The folder names are the same on Windows. The `aid` CLI is a Bash script on Linux and macOS and a PowerShell script on Windows. See the [Install guide](/get-started/install/).
+</Aside>
+
+## Where to go next
+
+- [What is AID](/get-started/what-is-aid/) for the short version.
+- [The methodology](/concepts/methodology/) for the reasoning behind each choice.
+- [Work files](/reference/work-files/) for every file a work contains.
+- [Glossary](/reference/glossary/) for any term used here.

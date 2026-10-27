@@ -1,0 +1,115 @@
+---
+title: Choose your entry
+description: Pick the right way to start a piece of work in AID, from a one-line shortcut to the full requirements interview, and find the right command for a question.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Doors from '~/components/Doors.astro';
+
+You do not have to run every phase of AID for every change. AID gives you three ways to start work, and a separate command for questions. This page helps you pick one.
+
+<Doors />
+
+## The three doors, in plain words
+
+1. **A shortcut.** You know what you want to do, and it is one well-defined change. You type `/aid-<verb>` and, for some verbs, a kind: `/aid-fix`, `/aid-create api`, `/aid-refactor`. AID collapses the early phases into one fast run and gives you a small, graded work to approve.
+2. **`/aid-triage`.** You know what you want but not which command fits. You describe it in a sentence. AID suggests the right command and stops. It writes nothing and never runs the command for you.
+3. **`/aid-describe`.** The work is big, new, or fuzzy. AID interviews you, one question at a time, and writes `REQUIREMENTS.md`. You then walk the full path: define, specify, plan, detail, execute.
+
+For a plain question, use `/aid-ask`. It reads the Knowledge Base (the project's written-down facts), the code and any work in flight, and answers with sources.
+
+<Aside type="note">
+A work is one unit of change tracked under `.aid/works/`. A shortcut makes a small work with one feature and one delivery. The full path makes a bigger one. Both end at `/aid-execute`. See [How AID works](/concepts/how-it-works/).
+</Aside>
+
+## I want to... run this
+
+| I want to... | Run this |
+|---|---|
+| Fix a bug or regression | `/aid-fix` |
+| Add a new API endpoint, screen, CLI command or job | `/aid-create` with a kind, such as `/aid-create api` |
+| Change something that already exists | `/aid-update`, with a kind if it fits |
+| Clean up code without changing behavior | `/aid-refactor` |
+| Delete a feature, dependency or dead code | `/aid-remove` |
+| Mark something deprecated with a migration path | `/aid-deprecate` |
+| Move data, a dependency or a platform, with rollback | `/aid-migrate` |
+| Write or run tests, security, performance or data-quality checks | `/aid-test` |
+| Run a controlled experiment or A/B test | `/aid-experiment` |
+| Sketch a throwaway model to test a direction | `/aid-prototype` |
+| Think a design through before building it | `/aid-design` |
+| Explore a problem that is not yet a question | `/aid-brainstorm` |
+| Write a runbook, ADR, tutorial or changelog | `/aid-document` |
+| Investigate an open technical question | `/aid-research` |
+| Analyze data or usage | `/aid-report` |
+| Get a second opinion on code, a diff, a design or a ticket | `/aid-review` |
+| Ask how something works or where work stands | `/aid-ask` |
+| Package finished deliveries into a release | `/aid-deploy` |
+| Watch production and route what you find | `/aid-monitor` |
+| Start something large or new, with full requirements | `/aid-describe` |
+| I am not sure which of these fits | `/aid-triage` |
+
+<Aside type="tip">
+When in doubt, run `/aid-triage "your idea in one sentence"`. If your sentence is a question, it points you to `/aid-ask`.
+</Aside>
+
+## Shortcuts that plan, and shortcuts that act now
+
+Two different things hide behind the `/aid-<verb>` shape.
+
+**Planning shortcuts** turn your description into a small, graded work and then stop for your approval. They never build anything themselves. You build by running `/aid-execute` afterwards. These are `/aid-fix`, `/aid-create`, `/aid-update`, `/aid-refactor`, `/aid-remove`, `/aid-deprecate`, `/aid-migrate` and `/aid-experiment`.
+
+After a planning shortcut you should see a work folder under `.aid/works/`, a short `REQUIREMENTS.md`, task files, and a prompt asking you to approve. Then:
+
+```text
+/aid-execute work-001 task-001
+```
+
+**Acting-now skills** do their job in the same run and return a result: `/aid-ask`, `/aid-review`, `/aid-research`, `/aid-report`, `/aid-test`, `/aid-design`, `/aid-brainstorm`, `/aid-prototype` and `/aid-document`. Their results are answers, findings, reports or saved design seeds, not a plan to execute.
+
+See each skill's page under [Skills reference](/reference/skills/) for its exact behavior.
+
+## Shortcut kinds
+
+A kind is the word after the verb. You type it as the first word of your request: `/aid-create api a /orders endpoint`. A kind has no skill folder of its own. The family skill reads it and follows the matching guidance.
+
+The lists below come from each skill's argument hint. The skill page is the final word.
+
+| Family | Kinds |
+|---|---|
+| `/aid-create` | `api`, `ui`, `theme`, `cli`, `data-model`, `data-pipeline`, `messaging`, `integration`, `job`, `config`, `infra`, `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, `test`, `document`, `diagram`, `dashboard` |
+| `/aid-update` | the same as create, except `diagram` |
+| `/aid-design` | `api`, `architecture`, `backlog`, `cicd`, `cli`, `config`, `dashboard`, `data-model`, `data-pipeline`, `document`, `infra`, `integration`, `job`, `messaging`, `mvp`, `roadmap`, `stack`, `test`, `testing-strategy`, `theme`, `ui`; any other subject also works |
+| `/aid-document` | `architecture`, `changelog`, `decision`, `guideline`, `runbook`, `standard`, `tutorial`; a general how-to also works |
+| `/aid-test` | `data-quality`, `performance`, `security`; a suite or module also works |
+| `/aid-prototype` | `ui`; any other direction also works |
+
+These verbs take no kind. Give them a description only: `/aid-fix`, `/aid-refactor`, `/aid-remove`, `/aid-deprecate`, `/aid-migrate`, `/aid-experiment`, `/aid-brainstorm`, `/aid-report`, `/aid-research`, `/aid-review`, `/aid-deploy`, `/aid-monitor`.
+
+Some kinds write project records instead of code: `architecture`, `stack`, `testing-strategy`, `cicd`, `roadmap`, `mvp` and `backlog` turn a design seed (made with `/aid-design`) into a document in the Knowledge Base. For example, `/aid-create stack` records the chosen technology. See [The Knowledge Base](/guides/knowledge-base/).
+
+The full machine-readable list of shortcuts is `shortcut-catalog.yml`, installed under `.aid/runtime/templates/`. A name that is not a row in that file does not exist as a command.
+
+<Aside type="caution">
+Older releases accepted `add` and `change` verbs, such as `/aid-add-api` and `/aid-change-ui`. Those names are retired and do not resolve to anything. Use `/aid-create` and `/aid-update`.
+</Aside>
+
+## What happens when works already exist
+
+Before a shortcut or `/aid-describe` makes a new work, it checks `.aid/works/` in your main tree and in every git worktree. If there are none, it just starts. If there are some, it asks whether this is new work or a continuation of one of them. On "continuation" it sends you to that work's own resume command and does not create anything.
+
+## Which door should I use
+
+| Your situation | Door |
+|---|---|
+| One clear change you can state in a sentence | Shortcut |
+| A change that might touch many areas, or you are unsure of scope | `/aid-triage`, then follow its suggestion |
+| A new product, a big feature, or unclear users and acceptance criteria | `/aid-describe` |
+| You only need information | `/aid-ask` |
+
+Next steps:
+
+- [Your first change](/get-started/first-change/) walks through a shortcut end to end.
+- [Your first project](/get-started/first-project/) walks through the full path.
+- [Skills reference](/reference/skills/) lists every command.

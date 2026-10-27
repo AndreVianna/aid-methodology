@@ -1,0 +1,191 @@
+---
+title: Your first project
+description: Walk the full AID path for a new project or a big change, from the first interview to reviewed code, and learn how to resume, restart a phase and get unstuck.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+import Flow from '~/components/Flow.astro';
+
+Use the full path when the work is big, new or unclear. It takes more steps than a [shortcut](/get-started/first-change/), and you approve at each one. In return, the plan is written down, reviewed and traceable before any code is changed.
+
+You type every command below into your AI coding tool. [Install AID](/get-started/install/) in your repository first.
+
+## The path at a glance
+
+<Flow
+  label="The full path, with each place you approve"
+  steps={[
+    { title: 'Configure', text: 'Set the project name and the minimum grade', href: '/reference/skills/aid-config/' },
+    { title: 'Discover', text: 'Existing code only: build the Knowledge Base', kind: 'optional', href: '/reference/skills/aid-discover/' },
+    { title: 'You approve the Knowledge Base', kind: 'gate' },
+    { title: 'Describe', text: 'An interview that writes REQUIREMENTS.md', href: '/reference/skills/aid-describe/' },
+    { title: 'You approve the requirements', kind: 'gate' },
+    { title: 'Define', text: 'Split the requirements into features', href: '/reference/skills/aid-define/' },
+    { title: 'Specify', text: 'Write the technical spec, one feature at a time', href: '/reference/skills/aid-specify/' },
+    { title: 'You approve each spec', kind: 'gate' },
+    { title: 'Plan', text: 'Group features into deliveries and order them', href: '/reference/skills/aid-plan/' },
+    { title: 'You approve the plan', kind: 'gate' },
+    { title: 'Detail', text: 'Break each delivery into small typed tasks', href: '/reference/skills/aid-detail/' },
+    { title: 'You approve the tasks', kind: 'gate' },
+    { title: 'Execute', text: 'Do each task, then review and fix it', href: '/reference/skills/aid-execute/' },
+    { title: 'You approve the result', kind: 'gate', },
+  ]}
+  loop="In Execute, if a review grade is below the minimum, the task is fixed and reviewed again."
+/>
+
+Every skill below works from the files on disk, not from memory. You can stop after any step and come back later.
+
+## Before you start
+
+- Decide whether your project is **new** (greenfield) or **existing** (brownfield). A new project has no code to study, so it skips Discover.
+- Run `/aid-config` once. It shows your settings and lets you change them, such as `minimum_grade`. The default minimum grade is `A`.
+
+## The steps
+
+<Steps>
+
+1. **Discover (existing code only).**
+
+   ```text
+   /aid-discover
+   ```
+
+   AID reads your code, configuration and docs, and writes the Knowledge Base into `.aid/knowledge/`: a set of documents about architecture, conventions and patterns, each backed by evidence from the code. When AID is unsure, it records a question and asks you. It does not guess. A reviewer grades the documents, and you approve them at the end.
+
+   You should see AID move through its states: elicit, generate, review, questions, fix, approval, done. Each run does one step and tells you the next. Learn more in the [Knowledge Base guide](/guides/knowledge-base/).
+
+2. **Describe.**
+
+   ```text
+   /aid-describe
+   ```
+
+   AID asks for a short name for the work, creates a git worktree for it, and starts an interview. It asks one question at a time and updates `REQUIREMENTS.md` after each answer. On a new project, it also helps you seed the Knowledge Base.
+
+   At the end it checks that every requirement has a testable acceptance criterion, fills in the Knowledge Base from what you said, and shows you the requirements. You approve them. Your work is now `work-001-<name>` in `.aid/works/`.
+
+3. **Define.**
+
+   ```text
+   /aid-define work-001
+   ```
+
+   AID splits the approved requirements into features. Each feature is a section in `REQUIREMENTS.md` (section 11). A second agent then checks the split against the Knowledge Base and the code. You review the feature list and approve.
+
+4. **Specify, once per feature.**
+
+   ```text
+   /aid-specify work-001/feature-001
+   ```
+
+   AID acts as a tech lead. It proposes a design grounded in your architecture, you discuss and adjust it, AID writes the agreed text under that feature in `REQUIREMENTS.md`, and a reviewer grades it. Repeat for each feature.
+
+5. **Plan.**
+
+   ```text
+   /aid-plan work-001
+   ```
+
+   AID proposes how to group the features into deliveries. A delivery is a slice that works on its own. You negotiate the order, and AID writes `PLAN.md` and a `deliveries/delivery-001/` folder for each delivery you approve.
+
+6. **Detail.**
+
+   ```text
+   /aid-detail work-001
+   ```
+
+   AID breaks each delivery into small tasks. Each task has one type (such as implement, test or document), a scope, acceptance criteria, and a list of tasks it depends on. A reviewer grades the task list, and you approve it.
+
+7. **Execute, one task at a time.**
+
+   ```text
+   /aid-execute work-001 task-001
+   ```
+
+   AID does the task according to its type, then a reviewer agent with a clean context grades the result. If the grade is below your minimum, AID fixes the problems and reviews again. When all tasks in a delivery are done, one more review covers the whole delivery. All tasks in a delivery share one git branch, and AID needs a clean working tree before it starts.
+
+   Run the next task when this one is done. The [`/aid-execute` reference](/reference/skills/aid-execute/) also describes running a whole delivery in one go.
+
+</Steps>
+
+## What you end up with
+
+<FileTree>
+
+- .aid
+  - knowledge/ the Knowledge Base
+  - works
+    - work-001-your-feature
+      - STATE.yml progress, grades and approvals
+      - REQUIREMENTS.md requirements, features and their specs
+      - PLAN.md deliveries and their order
+      - deliveries
+        - delivery-001
+          - STATE.yml delivery progress
+          - tasks
+            - task-001
+              - DETAIL.md the task definition
+              - STATE.yml the task's state and review history
+
+</FileTree>
+
+The [work files reference](/reference/work-files/) lists every file and field. The [skills reference](/reference/skills/) describes each command.
+
+## Where you approve
+
+You approve at the end of each skill. AID never moves to the next phase by itself. A grade at or above the minimum is needed, but it does not replace your yes.
+
+- After Discover, you approve the Knowledge Base.
+- After Describe, you approve the requirements.
+- After Define, Specify, Plan and Detail, you review and approve what each wrote.
+- After each task and each delivery, the review decides if work is good enough, and you decide whether to merge it.
+
+## Resume where you left off
+
+Run the same command again. Each skill reads the files on disk to find out where it stopped, and picks up from there. It does not rely on the chat history.
+
+- Pass the work id, such as `/aid-describe work-001`, to pick the work.
+- With no work id, AID lists your works, including ones in other worktrees, and asks which one.
+- `/aid-ask where does work-001 stand?` answers from the work's files and changes nothing.
+
+## Restart a phase
+
+Every phase has a reset, and each one removes different things. Check the right row before you run it.
+
+| Phase | Command | What it clears |
+|---|---|---|
+| Discover | `/aid-discover --reset` | The whole Knowledge Base. |
+| Describe | `/aid-describe --reset work-001` | The entire work folder. |
+| Define | `/aid-define --features work-001` | Re-runs the feature split, even if features exist. |
+| Specify | `/aid-specify work-001/feature-001 --reset` | The technical spec for that feature. |
+| Plan | `/aid-plan work-001 --reset` | `PLAN.md`. |
+| Detail | `/aid-detail work-001 --reset` | The tasks under `deliveries/delivery-NNN/tasks/`. |
+
+<Aside type="caution">
+`/aid-discover --reset` deletes everything in `.aid/knowledge/`, and `/aid-describe --reset` deletes the work folder. Commit or copy anything you want to keep first.
+</Aside>
+
+## When you are stuck
+
+- **A phase says the earlier one is missing.** Run the earlier phase first. For example, `/aid-plan` stops with a message if there are no specified features.
+- **A task fails with an impediment.** AID writes `IMPEDIMENT-task-NNN.md` in the work folder. It names the cause and gives options. The cause points to the fix: a gap in the Knowledge Base means run `/aid-discover` again, a conflict with the architecture means revisit `/aid-specify`, a missing dependency means revisit `/aid-detail`, and a wrong assumption means fix the task or spec. Then delete the impediment file and run the task again.
+- **A review keeps failing.** Read the reviewer's findings. Each one names the criterion it breaks. Fix the cause, which is often an unclear requirement, then run the phase again.
+- **You do not know what to run.** `/aid-triage` suggests an entry from a description. `/aid-ask` answers questions about the project.
+- **The Knowledge Base is out of date.** Run `/aid-housekeep`, or `/aid-update-kb` for one targeted change.
+
+## Worked examples
+
+The repository has three tutorials with sample documents. They were written for an earlier version of AID, so some command details and file names differ from this page. Use this page for what to type, and the examples for how the documents read.
+
+- [Greenfield example](https://github.com/AndreVianna/aid-methodology/tree/master/examples/greenfield): a new project, with no Discover step.
+- [Brownfield full path example](https://github.com/AndreVianna/aid-methodology/tree/master/examples/brownfield-full-path): an existing codebase, starting at Discover.
+- [Brownfield lite path example](https://github.com/AndreVianna/aid-methodology/tree/master/examples/brownfield-lite-path): a small change on existing code. Today this is a shortcut, as in [your first change](/get-started/first-change/).
+
+## Next steps
+
+1. Read [how AID works](/concepts/how-it-works/) for the reasons behind each phase.
+2. Learn how [review and grades](/guides/review-and-grades/) work.
+3. Watch your works in the [dashboard](/guides/dashboard/).
+4. Look up any command in the [skills reference](/reference/skills/).

@@ -1,0 +1,149 @@
+---
+title: Work files
+description: The files a work leaves under .aid/works/ on the full path and on the shortcut ("Lite") path, and which skill writes each one.
+sidebar:
+  order: 4
+---
+
+import { Aside, FileTree } from '@astrojs/starlight/components';
+
+A **work** is one unit of change: a feature, a fix, a refactor. Every work gets its own folder, `.aid/works/work-NNN-<name>/`, where `NNN` is a running number and `<name>` is a short slug. The skills keep their notes, plans and progress in that folder.
+
+There are two shapes of work folder:
+
+- **Full path.** You start with `/aid-describe`. The work can have several deliveries, and each delivery has its own folder.
+- **Lite path.** You start with a shortcut skill such as `/aid-fix` or `/aid-refactor`. The work is a single delivery, so the folder is flat. See [Choose your entry](/guides/choose-your-entry/).
+
+<Aside type="note">
+Work folders are temporary. They are cleaned up after the work ships, and nothing permanent (code, tests, docs, the Knowledge Base) is allowed to depend on one. The durable results live in your code and in `.aid/knowledge/`.
+</Aside>
+
+Each work also gets its own git worktree, an extra checkout of your repository on its own branch. The default folder for worktrees is `.aid/.worktrees`. The `host.worktree_root` field in the [manifest](/reference/settings/) can change it.
+
+## Full path
+
+<FileTree>
+
+- .aid/works/work-NNN-name/
+  - STATE.yml The work's progress record
+  - REQUIREMENTS.md What to build, plus one section per feature
+  - PLAN.md The deliveries and the order they run in
+  - known-issues.md Problems that affect this work
+  - delivery-NNN-issues.md Issues found at a delivery's quality gate
+  - IMPEDIMENT-task-NNN.md A task that could not continue
+  - briefs/ Briefs handed to reviewers
+  - packages/ Release packages from deploy
+  - deliveries/
+    - delivery-001/
+      - STATE.yml This delivery's progress and gate result
+      - tasks/
+        - task-001/
+          - DETAIL.md The task definition (never changes)
+          - STATE.yml The task's progress
+        - task-002/
+          - DETAIL.md
+          - STATE.yml
+
+</FileTree>
+
+## Lite path
+
+On the Lite path there is no `deliveries/` folder and no `PLAN.md`. The work is its own single delivery.
+
+<FileTree>
+
+- .aid/works/work-NNN-name/
+  - STATE.yml Progress for the work, its one delivery, and its tasks
+  - REQUIREMENTS.md What to build, with one feature section
+  - known-issues.md Problems that affect this work (only if there are any)
+  - tasks/
+    - task-001/
+      - DETAIL.md The task definition (never changes)
+    - task-002/
+      - DETAIL.md
+
+</FileTree>
+
+A Lite work has no per-task `STATE.yml`. Each task's progress sits in the `tasks_lifecycle` part of the work's own `STATE.yml`. The skills read the `pipeline.path` key in `STATE.yml` to know which shape a work has: `lite` or `full`.
+
+## What each file is
+
+| File | What it holds | Written by |
+|---|---|---|
+| `STATE.yml` | Where the work stands: phase, status, grades, questions and answers, history. | The skills, as the work moves |
+| `REQUIREMENTS.md` | Ten numbered sections, from Objective to Priority. Section 11 holds one `### Feature NNN` block per feature. | `/aid-describe` (sections 1 to 10), `/aid-define` (section 11), `/aid-specify` (the technical half of each feature) |
+| `PLAN.md` | One `### delivery-NNN` block per delivery, with its objective, scope and gate criteria, plus the order tasks run in. Full path only. | `/aid-plan` |
+| `tasks/task-NNN/DETAIL.md` | One task: its title, type, source, dependencies, scope and acceptance criteria. | `/aid-detail` on the full path, the shortcut skill on the Lite path |
+| `known-issues.md` | Bugs, risky dependencies and similar problems that touch this work. | `/aid-specify` |
+| `delivery-NNN-issues.md` | The serious (`[HIGH]`) findings that quick checks postponed, gathered for the delivery gate. | `/aid-execute` |
+| `IMPEDIMENT-*.md` | A stop note that says why an agent could not continue. | `/aid-execute`, and other skills when they block |
+| `briefs/` | Short briefs given to reviewers for each review round. | The review steps of the skills |
+| `packages/` | One file per release package. | `/aid-deploy` |
+
+A feature is a section of `REQUIREMENTS.md`, not a folder. There is no `features/` folder and no `SPEC.md`. Feature numbers are never reused. A withdrawn feature keeps its number.
+
+`REQUIREMENTS.md` and `PLAN.md` carry no change log. Git already records who changed what and when.
+
+### Impediment files
+
+Impediment files are named by what stopped:
+
+| File name | Stopped |
+|---|---|
+| `IMPEDIMENT-task-NNN.md` | A task during `/aid-execute`. |
+| `IMPEDIMENT-delivery-NNN.md` | A whole delivery. |
+| `IMPEDIMENT-gate-defn.md`, `IMPEDIMENT-gate-tasks.md` | The review gate of a shortcut skill, on the definition or on the tasks. |
+| `IMPEDIMENT-review.md`, `IMPEDIMENT-research.md` | `/aid-review` or `/aid-research`. |
+
+Each one records a type (`wrong-assumption`, `missing-dependency`, `architecture-conflict` or `kb-gap`), what was found, and a status of `Open`, `Escalated`, `Resolved` or `No Action`. The work's `STATE.yml` is set to `Blocked` and points at the file.
+
+## The STATE.yml file
+
+`STATE.yml` is the one place where progress is written down. The work-level file has three kinds of content.
+
+| Key | What it holds |
+|---|---|
+| `pipeline.path`, `pipeline.initiator` | `lite` or `full`, and the skill that started the work, such as `aid-describe` or `aid-fix`. |
+| `started`, `updated` | Dates. |
+| `minimum_grade` | The grade the work must reach, copied from [your settings](/reference/settings/). |
+| `user_approved` | `'yes'` or `'no'`. |
+| `lifecycle` | `Running`, `Paused-Awaiting-Input`, `Blocked`, `Completed` or `Canceled`. |
+| `phase` | `Describe`, `Define`, `Specify`, `Plan`, `Detail` or `Execute`. |
+| `active_skill` | The skill working now, or `none`. |
+| `pause_reason`, `block_reason`, `block_artifact` | Why the work stopped, and which file explains it. `--` when not set. |
+| `ticket_ref` | An optional link to a ticket, such as `jira:PROJ-123`. See [Connectors and tickets](/guides/connectors-and-tickets/). |
+| `interview` | Progress through the ten interview sections of `/aid-describe`. |
+| `features` | One entry per feature, with its state, grade and question count. |
+| `review_history`, `lifecycle_history` | A log of review rounds, and of phase changes and approvals. The newest entry is last. |
+| `deploy` | One entry per delivery that `/aid-deploy` shipped. |
+
+Lite works add four more values to the same file: `delivery_state`, `gate_tier`, `gate_grade` and `gate_timestamp`. They also add the keys `delivery_lifecycle`, `tasks_lifecycle`, `delivery_gate` and `qa`. On the full path those live in the delivery and task files instead.
+
+### Delivery and task files
+
+| File | Keys |
+|---|---|
+| `deliveries/delivery-NNN/STATE.yml` | `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp`, `ticket_ref`, `delivery_lifecycle`, `delivery_gate`, `qa` |
+| `tasks/task-NNN/STATE.yml` (full path only) | `state`, `review`, `elapsed`, `notes`, `display_name`, `ticket_ref`, `quick_check`, `dispatch_log` |
+
+A delivery's `delivery_state` moves through `Pending-Spec`, `Specified`, `Executing`, `Gated` and `Done`, or to `Blocked`. `gate_tier` is `Small`, `Medium` or `Large`.
+
+A task's `state` is one of these, in order from most to least advanced:
+
+1. `Done`
+2. `Canceled`
+3. `In Review`
+4. `In Progress`
+5. `Blocked`
+6. `Failed`
+7. `Pending`
+
+When the same work shows different states on different branches, the dashboard shows the most advanced one. See the [Dashboard guide](/guides/dashboard/).
+
+Questions that need your answer are stored as `qa` entries. Each has a category, an impact (`High`, `Medium`, `Low` or `Required`), a state (`Pending`, `Answered` or `Skipped`), the question, a suggested answer, your answer, and where it was applied.
+
+<Aside type="tip">
+You never have to edit these files to move a work along. The skills write them. Read them when you want to know exactly where a work stands. The [dashboard](/guides/dashboard/) shows the same information in a browser.
+</Aside>
+
+The project-wide state is separate. `.aid/knowledge/STATE.md` tracks the Knowledge Base and stays Markdown. See [Knowledge base documents](/reference/kb-documents/).

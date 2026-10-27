@@ -1,0 +1,46 @@
+---
+// The three ways into AID, as a list of cards. Used on the home page and in the entry guide.
+const doors = [
+  {
+    kicker: 'I know the change',
+    title: 'Run a shortcut',
+    command: '/aid-fix the login form rejects "+" in passwords',
+    text: 'Name the kind of change with a verb. AID plans it in one fast run, then waits for your OK.',
+    href: '/guides/choose-your-entry/#shortcut-kinds',
+    link: 'How shortcuts work',
+  },
+  {
+    kicker: 'I am not sure',
+    title: 'Ask for a suggestion',
+    command: '/aid-triage add dark mode to the settings page',
+    text: 'Describe the work in a sentence. AID suggests where to start and changes nothing.',
+    href: '/reference/skills/aid-triage/',
+    link: 'About /aid-triage',
+  },
+  {
+    kicker: 'It is big or new',
+    title: 'Use the full path',
+    command: '/aid-describe',
+    text: 'AID interviews you, then takes the work through six gated phases from requirements to built code.',
+    href: '/get-started/first-project/',
+    link: 'Walk the full path',
+  },
+];
+---
+
+<ul class="doors" aria-label="Three ways into AID">
+  {
+    doors.map((d) => (
+      <li class="door">
+        <p class="door-kicker">{d.kicker}</p>
+        <p class="door-title">{d.title}</p>
+        <p class="door-text">{d.text}</p>
+        <code class="door-cmd">{d.command}</code>
+        <a class="door-link" href={d.href}>{d.link}<span aria-hidden="true"> →</span></a>
+      </li>
+    ))
+  }
+</ul>
+<p class="doors-note">
+  Only have a question, not a change? Run <code>/aid-ask</code> for a cited answer from the project's Knowledge Base and code.
+</p>

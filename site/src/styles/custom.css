@@ -1,0 +1,154 @@
+/* AID docs theme.
+ *
+ * Tokens first, then Starlight's variables, then the few components we own (Flow, Doors,
+ * footer, home). Contrast targets: body text >= 7:1, muted text and links >= 4.5:1, in both
+ * themes (tests/dist.test.mjs does not measure colour; check with a contrast tool when editing).
+ * Dark is Starlight's default scope; light lives under :root[data-theme='light'].
+ */
+
+:root {
+  --aid-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --aid-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  --aid-radius: 0.75rem;
+
+  /* dark */
+  --aid-surface: #131a2e;
+  --aid-surface-2: #1a2340;
+  --aid-border: #2c3658;
+  --aid-border-strong: #5b6a96;
+  --aid-muted: #a9b4cf;
+  --aid-accent: #e0b25a;
+  --aid-on-accent: #0b1020;
+  --aid-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+
+  --sl-font: var(--aid-font);
+  --sl-font-mono: var(--aid-mono);
+  --sl-text-base: 1.0625rem;
+  --sl-content-width: 50rem;
+
+  --sl-color-white: #f4f6fb;
+  --sl-color-gray-1: #dfe4f1;
+  --sl-color-gray-2: #bcc5db;
+  --sl-color-gray-3: #98a4c2;
+  --sl-color-gray-4: #5b6a96;
+  --sl-color-gray-5: #28314d;
+  --sl-color-gray-6: #171e35;
+  --sl-color-gray-7: #0f1527;
+  --sl-color-black: #0b1020;
+  --sl-color-accent-low: #3b2d0e;
+  --sl-color-accent: #b8892f;
+  --sl-color-accent-high: #f0c978;
+  --sl-color-text-accent: #f0c978;
+}
+
+:root[data-theme='light'] {
+  --aid-surface: #f4f6fb;
+  --aid-surface-2: #eaeef8;
+  --aid-border: #d3d9e8;
+  --aid-border-strong: #6c7799;
+  --aid-muted: #475170;
+  --aid-accent: #8a5a00;
+  --aid-on-accent: #ffffff;
+  --aid-shadow: 0 1px 2px rgb(16 24 56 / 0.08);
+
+  --sl-color-white: #0b1020;
+  --sl-color-gray-1: #1c2540;
+  --sl-color-gray-2: #38425f;
+  --sl-color-gray-3: #4a5575;
+  --sl-color-gray-4: #8a94b0;
+  --sl-color-gray-5: #d3d9e8;
+  --sl-color-gray-6: #eaeef8;
+  --sl-color-gray-7: #f4f6fb;
+  --sl-color-black: #ffffff;
+  --sl-color-accent-low: #fbefd2;
+  --sl-color-accent: #8a5a00;
+  --sl-color-accent-high: #6a4400;
+  --sl-color-text-accent: #6a4400;
+}
+
+/* ── Reading comfort ───────────────────────────────────────────────────── */
+.sl-markdown-content { line-height: 1.7; }
+.sl-markdown-content :is(h2, h3, h4) { letter-spacing: -0.01em; line-height: 1.25; }
+.sl-markdown-content h2 { margin-top: 2.5rem; }
+.sl-markdown-content :not(pre) > code { overflow-wrap: anywhere; }
+.sl-markdown-content :is(td, th) { overflow-wrap: anywhere; vertical-align: top; }
+.sl-markdown-content table { width: 100%; }
+.sl-markdown-content th { background: var(--aid-surface); }
+
+/* A visible, high-contrast focus ring everywhere. */
+:focus-visible {
+  outline: 3px solid var(--aid-accent);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.aid-footer { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--aid-border); color: var(--aid-muted); font-size: var(--sl-text-sm); }
+.aid-footer p { margin: 0.25rem 0; }
+.aid-footer a { color: var(--sl-color-text-accent); }
+
+/* ── Home page ─────────────────────────────────────────────────────────── */
+.aid-home h2 { margin-top: 3rem; }
+.aid-lead { font-size: 1.2rem; color: var(--aid-muted); max-width: 40rem; }
+.aid-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; list-style: none; padding: 0; margin: 1.25rem 0; }
+.aid-points li { background: var(--aid-surface); border: 1px solid var(--aid-border); border-radius: var(--aid-radius); padding: 1rem 1.15rem; margin: 0; }
+.aid-points strong { display: block; margin-bottom: 0.25rem; color: var(--sl-color-white); }
+.aid-points span { color: var(--aid-muted); font-size: var(--sl-text-sm); }
+
+/* ── Doors ─────────────────────────────────────────────────────────────── */
+.doors { list-style: none; padding: 0; margin: 1.25rem 0 0.75rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); }
+.door { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; margin: 0; background: var(--aid-surface); border: 1px solid var(--aid-border); border-top: 4px solid var(--aid-accent); border-radius: var(--aid-radius); box-shadow: var(--aid-shadow); }
+.door p { margin: 0; }
+.door-kicker { font-size: var(--sl-text-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--aid-muted); }
+.door-title { font-size: 1.25rem; font-weight: 700; color: var(--sl-color-white); line-height: 1.25; }
+.door-text { color: var(--sl-color-gray-2); font-size: var(--sl-text-sm); line-height: 1.55; }
+.door-cmd { display: block; margin-top: auto; padding: 0.55rem 0.7rem; font-family: var(--aid-mono); font-size: 0.82rem; line-height: 1.45; background: var(--sl-color-black); border: 1px solid var(--aid-border); border-radius: 0.5rem; overflow-wrap: anywhere; }
+.door-link { font-weight: 600; font-size: var(--sl-text-sm); color: var(--sl-color-text-accent); }
+.doors-note { color: var(--aid-muted); font-size: var(--sl-text-sm); }
+
+/* ── Flow: the diagram component ──────────────────────────────────────────
+ * One ordered list. Wide containers lay it out in rows with arrows between steps; narrow
+ * containers stack it with arrows pointing down. Meaning is carried by text and by shape
+ * (dashed = optional, rounded pill = approval), never by colour alone. */
+.flow { container-type: inline-size; margin: 1.75rem 0; padding: 0; }
+.flow > figcaption { font-weight: 600; font-size: var(--sl-text-sm); color: var(--aid-muted); margin-bottom: 0.9rem; }
+.flow-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2rem 2.25rem; counter-reset: flow; grid-template-columns: 1fr; }
+.flow-step { position: relative; margin: 0; padding: 0; display: flex; }
+.flow-card { position: relative; display: flex; flex-direction: column; gap: 0.3rem; width: 100%; padding: 0.85rem 1rem 0.9rem; background: var(--aid-surface); border: 2px solid var(--aid-border-strong); border-radius: var(--aid-radius); box-shadow: var(--aid-shadow); }
+.flow-step:not(.flow-gate) .flow-card::before { counter-increment: flow; content: counter(flow) / ''; position: absolute; top: -0.8rem; left: 0.8rem; min-width: 1.6rem; height: 1.6rem; padding: 0 0.35rem; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; color: var(--aid-on-accent); background: var(--aid-accent); border-radius: 999px; }
+.flow-title { font-weight: 700; color: var(--sl-color-white); line-height: 1.3; }
+.flow-title a { color: inherit; text-decoration-color: var(--aid-accent); text-underline-offset: 0.2em; text-decoration-thickness: 2px; }
+.flow-text { color: var(--sl-color-gray-2); font-size: var(--sl-text-sm); line-height: 1.5; }
+.flow-tag { font-size: var(--sl-text-xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--sl-color-text-accent); }
+
+.flow-optional .flow-card { border-style: dashed; background: transparent; box-shadow: none; }
+.flow-gate .flow-card { border-radius: 999px; padding: 0.55rem 1.1rem; align-items: center; text-align: center; background: var(--sl-color-accent-low); border-color: var(--aid-accent); gap: 0; }
+.flow-gate .flow-title { font-size: var(--sl-text-sm); }
+.flow-end .flow-card { border-color: var(--aid-accent); background: var(--sl-color-accent-low); }
+
+/* connectors: down-arrows when stacked */
+.flow-step:not(.flow-last)::after { content: '↓' / ''; position: absolute; left: 50%; bottom: -1.75rem; transform: translateX(-50%); width: 1.5rem; text-align: center; font-size: 1.25rem; line-height: 1.5rem; color: var(--aid-border-strong); font-weight: 700; }
+
+.flow-loop { display: flex; gap: 0.6rem; align-items: baseline; margin: 1.5rem 0 0; padding: 0.7rem 1rem; border: 2px dashed var(--aid-border-strong); border-radius: var(--aid-radius); font-size: var(--sl-text-sm); color: var(--sl-color-gray-1); }
+.flow-loop-icon { font-size: 1.2rem; color: var(--sl-color-text-accent); }
+
+/* rows with right-pointing arrows when there is room */
+@container (min-width: 44rem) {
+  .flow-steps { grid-template-columns: repeat(var(--per-row), minmax(0, 1fr)); row-gap: 2.75rem; }
+  .flow-step:not(.flow-last)::after { content: '→' / ''; left: auto; right: -1.9rem; bottom: auto; top: 50%; transform: translateY(-50%); }
+  .flow-step.flow-row-end:not(.flow-last)::after { content: '↓' / ''; right: auto; left: 50%; top: auto; bottom: -2.4rem; transform: translateX(-50%); }
+  .flow-gate { align-items: center; }
+}
+
+@media (forced-colors: active) {
+  .flow-card, .door { border-color: CanvasText; }
+  .flow-step::after { color: CanvasText; }
+  .flow-step:not(.flow-gate) .flow-card::before { border: 1px solid CanvasText; }
+}
+@media print {
+  .flow-steps { grid-template-columns: 1fr; }
+}

@@ -1,228 +1,71 @@
-// astro.config.mjs — AID docs site configuration
-//
-// Integration order matters: astro-mermaid MUST precede starlight() so it
-// transforms fenced ```mermaid blocks before Starlight processes the content.
-//
-// Sidebar contract (D8 / reconciled across all features):
-//   - Get Started / Concepts / Reference: autogenerate (siblings add pages via
-//     sidebar.order + sidebar.label in each page's frontmatter).
-//   - Guides: explicit slug items (small curated set; labels controlled here).
-//   - Releases: link: to src/pages/releases/changelog.astro (not a docs page).
-//
-// components: map is OWNED HERE. It already holds four keys (Header, PageTitle,
-// Banner, Footer) — do not rewrite the map, only add. No slot is reserved for a
-// feature of this work.
-
-import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import sitemap from '@astrojs/sitemap';
-import mermaid from 'astro-mermaid';
+import skills from './src/data/skills.json' with { type: 'json' };
+import { GROUPS } from './src/data/groups.mjs';
+
+const REPO = 'https://github.com/AndreVianna/aid-methodology';
+
+// One collapsed sidebar group per skill group; the pages themselves are written by
+// scripts/generate.mjs, which runs before every build.
+const skillGroups = GROUPS.map((g) => ({
+  label: g.title,
+  collapsed: true,
+  items: Object.entries(skills)
+    .filter(([, s]) => s.group === g.id)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .map(([name]) => ({ label: name, slug: `reference/skills/${name}` })),
+})).filter((g) => g.items.length);
 
 export default defineConfig({
-  // feature-002 owns these — set here per task-005
   site: 'https://aid.casuloailabs.com',
-  base: '/',
-
   integrations: [
-    // astro-mermaid BEFORE starlight (transforms ```mermaid fences)
-    mermaid({
-      // Fallback only. `autoTheme` (on by default) re-initializes mermaid on every
-      // `data-theme` change, mapping light -> 'default' and dark -> 'dark', so this
-      // value is used only before a theme is resolved.
-      theme: 'dark',
-
-      // A previous version of this block set `themeVariables` HERE, one level too high.
-      // The integration builds its config as `{ theme, ...mermaidConfig }` and reads
-      // nothing else, so those thirteen colours were silently dropped and every diagram
-      // on the site has always rendered with mermaid's stock palette. They are not
-      // reinstated under `mermaidConfig`: a fixed palette would override BOTH of the
-      // themes `autoTheme` switches between, so the dark colours would be pinned into
-      // light mode. Per-theme colour belongs in CSS, where `[data-theme]` can select —
-      // see the mermaid block in src/styles/casulo.css.
-      mermaidConfig: {
-        // Layout, which is theme-independent and therefore safe to fix here.
-        //
-        // This lived in a per-diagram YAML `config:` block emitted by
-        // render-mermaid.mjs. That had a side effect worth recording: a per-diagram
-        // `config:` makes mermaid re-init for that diagram, which discarded the site
-        // config entirely. Node fills survived because our charts set them through
-        // explicit `classDef` statements, so the loss showed up only in edge strokes and
-        // edge-label backgrounds — visible as near-invisible lines in dark mode.
-        // Declaring it once here keeps a single authority and lets `autoTheme` work.
-        layout: 'elk',
-        flowchart: {
-          // Mermaid's defaults are tuned for small hand-drawn diagrams. These charts are
-          // derived, so nodes carry two lines of real text and grow well past the
-          // spacing dagre assumes — shapes nearly touched and edges took long detours.
-          nodeSpacing: 55,
-          rankSpacing: 65,
-          padding: 12,
-          useMaxWidth: true,
-        },
-      },
-
-      // KI-012: astro-mermaid defaults enableLog to true, which logs
-      // "[astro-mermaid] ..." to every visitor's console on every page.
-      enableLog: false,
-    }),
-
     starlight({
-      title: 'AID — AI Integrated Development',
-
-      // Persistent social links in header/footer chrome (AC3)
-      social: [
-        {
-          icon: 'github',
-          label: 'GitHub',
-          href: 'https://github.com/AndreVianna/aid-methodology',
-        },
-        {
-          icon: 'external',
-          label: 'Casulo AI Labs',
-          href: 'https://casuloailabs.com',
-        },
-      ],
-
-      // Self-hosted Inter + casulo brand token overrides (task-002)
-      customCss: [
-        './src/styles/casulo.css',
-        './src/styles/shell.css',
-      ],
-
-      // KI-018 workaround. astro-mermaid can cache a diagram's *rendered SVG* as that
-      // diagram's source, after which switching the theme feeds an SVG stylesheet to the
-      // mermaid parser and every diagram on the page reads "Syntax error in text" until
-      // a reload. The script below claims `data-diagram` from the real source first, so
-      // the integration's `if (!hasAttribute(...))` guard never overwrites it.
-      //
-      // It must beat astro-mermaid's script, which `injectScript('page', …)` emits as a
-      // deferred module. Deferred modules run after parsing, so this — a classic inline
-      // script in <head>, with `is:inline` semantics by virtue of being a raw head tag —
-      // installs its observer while the document is still being parsed and always wins.
-      //
-      // Read from a real file rather than written as a template literal here: the logic
-      // deserves to be readable and reviewable on its own, and inlining it as a string
-      // would put JavaScript inside a config comment block where nothing checks it.
-      head: [
-        {
-          tag: 'script',
-          attrs: { 'data-aid': 'mermaid-source-cache' },
-          content: readFileSync(
-            new URL('./src/scripts/mermaid-source-cache.js', import.meta.url),
-            'utf8'
-          ),
-        },
-      ],
-
+      title: 'AID',
+      description: 'AID (AI Integrated Development): a way to build software with AI coding agents, with you approving every step.',
+      logo: { src: './src/logo.svg', alt: '' },
       favicon: '/favicon.svg',
-
+      social: [{ icon: 'github', label: 'AID on GitHub', href: REPO }],
+      editLink: { baseUrl: `${REPO}/edit/master/site/` },
+      customCss: ['./src/styles/custom.css'],
+      components: { Footer: './src/components/Footer.astro' },
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
-
-      defaultLocale: 'en',
-
-      // Reconciled sidebar contract (D8) — DO NOT restructure; siblings add pages.
-      // Note: Starlight v0.39.0+ requires autogenerate groups to be nested inside
-      // an items array (the combined label+autogenerate form was removed).
       sidebar: [
-        // Root doc page — Overview is the top item of the sidebar (points to /)
-        { label: 'Overview', slug: '' },
         {
-          label: 'Get Started',
-          items: [{ autogenerate: { directory: 'get-started' } }],
+          label: 'Get started',
+          items: ['get-started/what-is-aid', 'get-started/install', 'get-started/first-change', 'get-started/first-project'],
         },
         {
           label: 'Guides',
           items: [
-            { label: 'Installation', slug: 'guides/installation' },
-            { label: 'Working the pipeline', slug: 'guides/pipeline' },
-            { label: 'Web dashboard', slug: 'guides/dashboard' },
-            { label: 'Maintainer', slug: 'guides/maintainer' },
+            'guides/choose-your-entry',
+            'guides/knowledge-base',
+            'guides/review-and-grades',
+            'guides/connectors-and-tickets',
+            'guides/dashboard',
+            'guides/agent-chat',
           ],
         },
-        // feature-006 owns the Concepts + Reference groups (explicit item order per SPEC D1)
-        // feature-010 adds feedback.md last in the Concepts group (sidebar.order: 99)
         {
           label: 'Concepts',
-          items: [
-            { label: 'Overview',          slug: 'concepts/overview' },
-            { label: 'The methodology',   slug: 'concepts/methodology' },
-            { label: 'FAQ',               slug: 'concepts/faq' },
-          ],
+          items: ['concepts/how-it-works', 'concepts/methodology', 'concepts/faq'],
         },
         {
           label: 'Reference',
           items: [
-            { label: 'Overview',              slug: 'reference/overview' },
-            { label: 'CLI & subcommands',     slug: 'reference/cli' },
-            // Not 'Skills' — that page no longer carries a roster (delivery-006
-            // task-057 hollowed it out), and a second "Skills" entry here competed
-            // with the top-level Skills tab below for the same reader.
-            { label: 'Shortcut engine',       slug: 'reference/skills' },
-            { label: 'Agents',                slug: 'reference/agents' },
-            { label: 'Knowledge Base',        slug: 'reference/kb' },
-            { label: 'Settings keys',         slug: 'reference/settings' },
-            { label: 'Artifacts',             slug: 'reference/artifacts' },
-            { label: 'Repository structure',  slug: 'reference/repository-structure' },
-            { label: 'Glossary',              slug: 'reference/glossary' },
+            'reference/cli',
+            'reference/settings',
+            'reference/work-files',
+            'reference/kb-documents',
+            { label: 'Skills', collapsed: true, items: [{ label: 'All skills', slug: 'reference/skills' }, ...skillGroups] },
+            'reference/agents',
+            'reference/repository-structure',
+            'reference/glossary',
           ],
         },
-        // feature-002 owns the Skills group (task-016): explicit index item first
-        // (Header.astro derives the tab's href from items[0]), then an autogenerated
-        // collapsed subgroup so the tab highlights on every skill detail page. The
-        // page count is deliberately not restated: `autogenerate` enumerates whatever
-        // `src/content/docs/skills/` holds, which is the only authority for it, and
-        // this config is correct at any roster size.
-        {
-          label: 'Skills',
-          items: [
-            { label: 'All skills', slug: 'skills' },
-            {
-              label: 'Every skill',
-              collapsed: true,
-              items: [{ autogenerate: { directory: 'skills' } }],
-            },
-          ],
-        },
-        {
-          label: 'Releases',
-          items: [
-            // link: (not slug:) because this is a src/pages route, not a docs page
-            { label: 'Changelog', link: '/releases/changelog' },
-          ],
-        },
-        {
-          label: 'Contact Us',
-          items: [
-            { label: 'Site Issue',          slug: 'contact/site-issue' },
-            { label: 'Methodology Bug',     slug: 'contact/methodology-bug' },
-            { label: 'Question or Feedback', slug: 'contact/feedback' },
-            { label: 'Contact Request',     slug: 'contact/contact-request' },
-          ],
-        },
+        { label: 'Project', items: ['releases', 'contact'] },
       ],
-
-      // Component override map — OWNED HERE. Already holds four keys below;
-      // do not rewrite this map, only add. No slot is reserved for a feature
-      // of this work.
-      components: {
-        // prototype-01 shell: two-row header (brand + section tabs) and
-        // breadcrumb/eyebrow/title. See src/components/overrides/.
-        Header: './src/components/overrides/Header.astro',
-        PageTitle: './src/components/overrides/PageTitle.astro',
-        Banner: './src/components/Banner.astro',
-        Footer: './src/components/Footer.astro',
-        // feature-006: route-gated <head> additions for the interactive node
-        // panel. Composes Starlight's packaged Head rather than replacing it, so
-        // non-skill pages are byte-unchanged.
-        Head: './src/components/overrides/Head.astro',
-      },
-
-      // Pagefind (built-in) powers the search box; no extra config needed.
-      // It builds a static index at astro build time — no external SaaS request (AC8).
     }),
-
-    // @astrojs/sitemap emits sitemap-index.xml + sitemap-0.xml into dist/
     sitemap(),
   ],
 });

@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- Casulo AI Labs brand favicon for AID docs site -->
-  <!-- Dark navy background with gold accent -->
-  <rect width="48" height="48" rx="8" fill="#0a0e1a"/>
-  <!-- "A" letterform in casulo gold -->
-  <path d="M24 8 L38 38 H32 L28 28 H20 L16 38 H10 Z M24 14 L21 24 H27 Z"
-        fill="#d4a853"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#0b1020"/><path d="M24 9 38 39h-6.2l-2.6-6.3H18.8L16.2 39H10zm0 12.4-3.2 7.8h6.4z" fill="#e0b25a" fill-rule="evenodd"/></svg>

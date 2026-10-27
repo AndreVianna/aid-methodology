@@ -1,0 +1,47 @@
+---
+// An accessible diagram: a captioned, ordered list of steps with drawn connectors.
+// The text is real text (screen readers, search, zoom and translation all work) and the
+// arrows are decorative CSS. See the styles at the end of src/styles/custom.css.
+interface Step {
+  title: string;
+  text?: string;
+  href?: string;
+  /** step (default), gate = a human approves, optional = may be skipped, end = the goal. */
+  kind?: 'step' | 'gate' | 'optional' | 'end';
+}
+interface Props {
+  label: string;
+  steps: Step[];
+  /** Describes a return path ("fix and review again"). Shown as text under the list. */
+  loop?: string;
+  /** Steps per row on wide screens. Default: all of them up to 4, otherwise rows of 3 or 4. */
+  columns?: number;
+}
+const { label, steps, loop, columns } = Astro.props;
+const perRow = columns ?? (steps.length <= 4 ? steps.length : steps.length === 6 ? 3 : 4);
+const tags = { gate: 'You approve', optional: 'Optional', end: '', step: '' };
+const id = `flow-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+---
+
+<figure class="flow" aria-labelledby={id} style={`--per-row:${perRow}`}>
+  <figcaption id={id}>{label}</figcaption>
+  <ol class="flow-steps">
+    {
+      steps.map((s, i) => {
+        const kind = s.kind ?? 'step';
+        const last = i === steps.length - 1;
+        const rowEnd = (i + 1) % perRow === 0;
+        return (
+          <li class:list={['flow-step', `flow-${kind}`, { 'flow-last': last, 'flow-row-end': rowEnd }]}>
+            <div class="flow-card">
+              {tags[kind] && <span class="flow-tag">{tags[kind]}</span>}
+              <span class="flow-title">{s.href ? <a href={s.href}>{s.title}</a> : s.title}</span>
+              {s.text && <span class="flow-text">{s.text}</span>}
+            </div>
+          </li>
+        );
+      })
+    }
+  </ol>
+  {loop && <p class="flow-loop"><span class="flow-loop-icon" aria-hidden="true">↺</span>{loop}</p>}
+</figure>

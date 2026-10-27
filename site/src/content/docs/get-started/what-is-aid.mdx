@@ -1,0 +1,95 @@
+---
+title: What is AID?
+description: AID (AI Integrated Development) is a set of commands and rules that make an AI coding agent understand your project, write a spec, build, and be checked, with you approving every step.
+sidebar:
+  order: 1
+---
+
+import Flow from '~/components/Flow.astro';
+
+AID stands for AI Integrated Development. It is a method for building software with an AI coding agent, plus the files and commands that put the method to work in your repository. You can read this page in about two minutes.
+
+## The problem
+
+If you give an AI agent a vague task and a large codebase, the same things tend to go wrong:
+
+- The agent guesses how your system works, and the guess is wrong.
+- The code drifts away from what you meant, and nobody notices.
+- The agent adds things you did not ask for.
+- The agent grades its own work and calls it good.
+- It re-reads half the repository for every task, which is slow and costly.
+
+## The idea
+
+AID puts a small process around the agent. The agent works in four moves, and you approve each step before the next one starts.
+
+1. **Understand.** The agent builds a written picture of your project, called the Knowledge Base. It lives in `.aid/knowledge/`, and each claim points at the file it came from.
+2. **Spec.** Together you write down what to build and how, in plain documents you can read and edit.
+3. **Build.** The work is split into small, typed tasks. The agent does one task at a time.
+4. **Check.** A second agent, with a clean context, reviews each piece of work and gives it a grade. The agent that wrote the work never grades it. If the grade is below your minimum, the work is fixed and reviewed again.
+
+Nothing moves forward on its own. A good grade is necessary, but it is not enough: you still say "go".
+
+<Flow
+  label="The full path, with the points where you approve"
+  steps={[
+    { title: 'Understand', text: 'Existing code only: build the Knowledge Base', kind: 'optional', href: '/reference/skills/aid-discover/' },
+    { title: 'Describe', text: 'An interview that produces the requirements', href: '/reference/skills/aid-describe/' },
+    { title: 'You approve the requirements', kind: 'gate' },
+    { title: 'Define and specify', text: 'Split into features, then write each technical spec', href: '/reference/skills/aid-define/' },
+    { title: 'Plan and detail', text: 'Group features into deliveries, then break them into tasks', href: '/reference/skills/aid-plan/' },
+    { title: 'You approve the plan and the tasks', kind: 'gate' },
+    { title: 'Build and check', text: 'Each task is done, then reviewed and graded', href: '/reference/skills/aid-execute/' },
+    { title: 'You approve the result', kind: 'gate' },
+  ]}
+  loop="If a review grade is below your minimum, the work is fixed and reviewed again."
+/>
+
+Each of the named steps is a slash command you type in your AI coding tool, such as `/aid-describe` or `/aid-execute`. The [first project walkthrough](/get-started/first-project/) shows the whole path.
+
+## Three ways in
+
+You do not always need the whole path. A one-line bug fix should not start with an interview. AID gives you three ways to begin.
+
+| You know... | Start with | What happens |
+|---|---|---|
+| Exactly what the change is | A shortcut such as `/aid-fix` | AID runs the planning steps in one go, then stops for your approval. |
+| It is big or new | `/aid-describe` | The full path, one approved step at a time. |
+| Neither | `/aid-triage` | AID reads your description and suggests a shortcut or the full path. It changes nothing. |
+
+If you only have a question, run `/aid-ask`. It answers from the Knowledge Base and the code, with sources, and it does not change your project.
+
+The [choose your entry guide](/guides/choose-your-entry/) helps you pick.
+
+## Which AI tools it works with
+
+AID installs into these five AI coding tools. The tool ids below are what you pass to `aid add`.
+
+| Tool | Tool id |
+|---|---|
+| Claude Code | `claude-code` |
+| Codex CLI | `codex` |
+| Cursor | `cursor` |
+| GitHub Copilot CLI | `copilot-cli` |
+| Antigravity | `antigravity` |
+
+You can install more than one tool in the same repository. They share one copy of the skills and rules.
+
+## What it puts in your repo
+
+AID is files in your repository, plus one command on your machine. When you run `aid add <tool>`, these appear:
+
+- **Skills.** The slash commands, in `.agents/skills/`. Claude Code also gets a copy in `.claude/skills/`.
+- **Runtime.** The rules, templates and helper scripts the skills use, in `.aid/runtime/`.
+- **Agents.** The specialist agents (an interviewer, an architect, a reviewer and others), in your tool's own agents folder, for example `.claude/agents/`.
+- **Rules for the agent.** A short block in `AGENTS.md`, and in `CLAUDE.md` for Claude Code, fenced by markers. Your own text outside the markers is never touched.
+- **Settings.** `.aid/settings.yml`, where you set the project name and the minimum grade.
+
+As you work, AID adds the Knowledge Base in `.aid/knowledge/` and one folder per piece of work in `.aid/works/`. The [install guide](/get-started/install/) has the full table.
+
+## Next steps
+
+1. [Install AID](/get-started/install/) on your machine and in a repository.
+2. [Make your first small change](/get-started/first-change/) with a shortcut.
+3. [Run your first full project](/get-started/first-project/) when the work is bigger.
+4. Read [how AID works](/concepts/how-it-works/) for the reasons behind the design.

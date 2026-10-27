@@ -1,0 +1,308 @@
+{
+  "rules": [
+    "Only the Developer changes production code. Every other agent writes documents, notes or reports.",
+    "The agent that writes never grades its own work. A separate Reviewer does, and its tier is the same as or higher than the writer's."
+  ],
+  "tiers": [
+    {
+      "name": "large",
+      "meaning": "The strongest and most costly model. Used for design and decomposition, and for hard work such as security, performance or a full design review."
+    },
+    {
+      "name": "medium",
+      "meaning": "The everyday model. Most agents start here: implementing, documenting, interviewing, researching, routing and reviewing."
+    },
+    {
+      "name": "small",
+      "meaning": "The fastest and cheapest model, for mechanical jobs with a fixed output shape such as extracting, filling a template or listing files."
+    }
+  ],
+  "tools": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "tierModels": {
+        "large": "Claude Opus",
+        "medium": "Claude Sonnet",
+        "small": "Claude Haiku"
+      }
+    },
+    {
+      "id": "codex",
+      "name": "Codex CLI",
+      "tierModels": {
+        "large": "gpt-5.5 (high reasoning)",
+        "medium": "gpt-5.4 (medium reasoning)",
+        "small": "gpt-5.4-mini (low reasoning)"
+      }
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "tierModels": {
+        "large": "Claude Opus",
+        "medium": "Claude Sonnet",
+        "small": "Claude Haiku"
+      }
+    },
+    {
+      "id": "copilot-cli",
+      "name": "GitHub Copilot CLI",
+      "tierModels": {
+        "large": "claude-opus-4.8",
+        "medium": "claude-sonnet-4.6",
+        "small": "claude-haiku-4.5"
+      }
+    },
+    {
+      "id": "antigravity",
+      "name": "Google Antigravity",
+      "tierModels": {
+        "large": "gemini-3-pro (high reasoning)",
+        "medium": "gemini-3-pro (low reasoning)",
+        "small": "gemini-3-flash (low reasoning)"
+      }
+    }
+  ],
+  "agents": [
+    {
+      "name": "aid-architect",
+      "role": "Architect",
+      "tier": "large",
+      "summary": "Turns requirements and the Knowledge Base into designs, technical specifications and typed task lists.",
+      "does": [
+        "Writes the technical specification for a feature into REQUIREMENTS.md, grounded in the Knowledge Base",
+        "Writes delivery plans and splits them into task files, each declaring what it depends on",
+        "Makes design decisions: patterns, interfaces, boundaries and trade-offs",
+        "Does design tasks, including user-flow and accessibility advice",
+        "Writes design notes and throwaway prototype models",
+        "Fixes the planning documents when a reviewer finds problems in them"
+      ],
+      "doesNot": [
+        "Write production code",
+        "Grade or review its own documents",
+        "Interview stakeholders for requirements",
+        "Ship releases"
+      ],
+      "usedBy": [
+        "aid-create",
+        "aid-update",
+        "aid-fix",
+        "aid-refactor",
+        "aid-remove",
+        "aid-deprecate",
+        "aid-migrate",
+        "aid-experiment",
+        "aid-design",
+        "aid-brainstorm",
+        "aid-prototype",
+        "aid-define",
+        "aid-specify",
+        "aid-plan",
+        "aid-detail",
+        "aid-discover",
+        "aid-update-kb",
+        "aid-housekeep"
+      ]
+    },
+    {
+      "name": "aid-developer",
+      "role": "Developer",
+      "tier": "medium",
+      "summary": "The only agent that changes production code. It builds one task at a time and proves the build passes.",
+      "does": [
+        "Implements a task file, following its acceptance criteria, the specification and the Knowledge Base conventions",
+        "Does all code-type tasks: implement, test, refactor, configure and migrate",
+        "Runs the build and tests after every implementation",
+        "Writes an IMPEDIMENT.md when the spec and reality disagree, instead of working around it"
+      ],
+      "doesNot": [
+        "Design the architecture",
+        "Grade its own code",
+        "Ship to production",
+        "Investigate unfamiliar subsystems",
+        "Write user-facing documentation"
+      ],
+      "usedBy": [
+        "aid-execute"
+      ]
+    },
+    {
+      "name": "aid-reviewer",
+      "role": "Reviewer",
+      "tier": "medium",
+      "summary": "An adversarial checker. It lists problems with evidence and severity, and never fixes anything or assigns the grade.",
+      "does": [
+        "Reviews any artifact (code, specs, plans, tasks, Knowledge Base documents) against its criteria and the Knowledge Base",
+        "Writes a findings list where each row has a severity, a location and evidence",
+        "Runs the test suite and records the result for the task",
+        "Re-checks earlier findings on each round to see whether they were fixed"
+      ],
+      "doesNot": [
+        "Fix anything",
+        "Compute or assign the grade; a script does that from the findings list",
+        "Design solutions",
+        "Review with the writer's reasoning in view: it always works in a clean context"
+      ],
+      "usedBy": [
+        "aid-execute",
+        "aid-define",
+        "aid-specify",
+        "aid-plan",
+        "aid-detail",
+        "aid-discover",
+        "aid-update-kb",
+        "aid-describe",
+        "aid-review",
+        "aid-test",
+        "aid-research",
+        "aid-report",
+        "aid-design",
+        "aid-prototype",
+        "aid-deploy",
+        "every shortcut's grading gate"
+      ]
+    },
+    {
+      "name": "aid-researcher",
+      "role": "Researcher",
+      "tier": "medium",
+      "summary": "Reads code, docs, logs and web sources and writes Knowledge Base documents and analysis reports with cited evidence.",
+      "does": [
+        "Reads and analyzes code, docs, logs, configuration and APIs",
+        "Writes the Knowledge Base documents under .aid/knowledge/",
+        "Writes analysis reports, tagging each claim as confirmed, likely or uncertain",
+        "Looks at security and performance, and cites every web source with a URL and access date",
+        "Does research tasks, and the investigation behind /aid-research and /aid-report"
+      ],
+      "doesNot": [
+        "Modify production source code",
+        "Design solutions",
+        "Judge work against acceptance criteria",
+        "Fix vulnerabilities or performance problems",
+        "Write user-facing documentation such as READMEs"
+      ],
+      "usedBy": [
+        "aid-discover",
+        "aid-update-kb",
+        "aid-research",
+        "aid-report",
+        "aid-ask",
+        "aid-monitor",
+        "aid-execute (research tasks)"
+      ]
+    },
+    {
+      "name": "aid-tech-writer",
+      "role": "Tech Writer",
+      "tier": "medium",
+      "summary": "Writes and checks documentation for people who use the product: API docs, READMEs, changelogs and guides.",
+      "does": [
+        "Writes API docs, changelogs, release notes, READMEs and user guides",
+        "Reviews existing user-facing docs for accuracy and gaps",
+        "Checks that docs match what the code does, and marks examples it could not test"
+      ],
+      "doesNot": [
+        "Write application source code",
+        "Design the system",
+        "Write the Knowledge Base pipeline documents, which the Researcher owns",
+        "Review work against acceptance criteria"
+      ],
+      "usedBy": [
+        "aid-document",
+        "aid-create (document, diagram)",
+        "aid-update (document)",
+        "aid-discover",
+        "aid-deploy",
+        "aid-execute (documentation tasks)"
+      ]
+    },
+    {
+      "name": "aid-interviewer",
+      "role": "Interviewer",
+      "tier": "medium",
+      "summary": "Asks one question at a time to gather requirements and writes them up as REQUIREMENTS.md.",
+      "does": [
+        "Holds an adaptive conversation, one question per turn",
+        "Keeps track of what is confirmed, unknown and assumed",
+        "Writes REQUIREMENTS.md, tagging each requirement as stated, inferred or assumed",
+        "Interviews for less when a Knowledge Base already exists"
+      ],
+      "doesNot": [
+        "Analyze code",
+        "Design solutions",
+        "Make technical decisions for you",
+        "Review artifacts for quality",
+        "Ask several questions at once"
+      ],
+      "usedBy": [
+        "aid-describe",
+        "aid-define"
+      ]
+    },
+    {
+      "name": "aid-operator",
+      "role": "Operator",
+      "tier": "medium",
+      "summary": "Handles release actions with outside effects: final verification, pull requests, tags and release notes.",
+      "does": [
+        "Runs the full build and test suite before any release action",
+        "Opens pull requests that cite the tasks, the spec constraints met and the test results",
+        "Writes delivery summaries and tags releases",
+        "Updates the Knowledge Base after delivery with targeted edits"
+      ],
+      "doesNot": [
+        "Write production source code",
+        "Evaluate code quality",
+        "Build infrastructure from scratch",
+        "Decide scope",
+        "Write API docs or user guides"
+      ],
+      "usedBy": [
+        "aid-deploy"
+      ]
+    },
+    {
+      "name": "aid-orchestrator",
+      "role": "Orchestrator",
+      "tier": "medium",
+      "summary": "Routes findings to the right next step and enforces the human approval gates. It does no implementation.",
+      "does": [
+        "Decides which phase or skill comes next from the project state",
+        "Sends feedback to the right agent: questions to the Interviewer, Researcher or Architect, impediments to the Architect, bugs to the Developer",
+        "Prepares the context before each dispatch",
+        "Manages independent tasks that can run in parallel"
+      ],
+      "doesNot": [
+        "Write code or specs",
+        "Review or ship anything",
+        "Advance past a human gate without approval"
+      ],
+      "usedBy": [
+        "aid-monitor"
+      ]
+    },
+    {
+      "name": "aid-clerk",
+      "role": "Clerk",
+      "tier": "small",
+      "summary": "A small helper for one mechanical job per call: extract items, fill a template or list files. Other agents call it; you do not.",
+      "does": [
+        "Extracts items that match a schema, with a path and line number for each",
+        "Fills a template with values the caller supplies",
+        "Lists files that match a pattern, with size and date",
+        "Returns an empty result with a note when nothing matches, rather than guessing"
+      ],
+      "doesNot": [
+        "Interpret what it extracts",
+        "Make design or architecture decisions",
+        "Modify production source files",
+        "Run more than one operation per call"
+      ],
+      "usedBy": [
+        "aid-discover",
+        "aid-execute"
+      ]
+    }
+  ]
+}

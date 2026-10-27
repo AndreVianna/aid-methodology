@@ -1,141 +1,100 @@
 ---
-title: Overview
-description: AID (AI Integrated Development) — a methodology and toolchain that carries a work item from discovery to delivery with AI agents, with the human in control at every gate.
+title: AID, AI Integrated Development
+description: "Build software with AI coding agents the structured way. AID keeps you in charge: every phase ends at a gate you approve."
+template: splash
+hero:
+  tagline: A way to build software with AI coding agents that stays understandable, reviewable and under your control.
+  actions:
+    - text: Install AID
+      link: /get-started/install/
+      icon: right-arrow
+    - text: What is AID?
+      link: /get-started/what-is-aid/
+      variant: minimal
 ---
 
-import { Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
-import InstallCommand from '../../components/InstallCommand.astro';
-import VersionBadge from '../../components/VersionBadge.astro';
+import { Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import Doors from '~/components/Doors.astro';
+import Flow from '~/components/Flow.astro';
 
-AID — **AI Integrated Development** — is a methodology and toolchain for building software with AI
-coding agents. A structured, human-gated pipeline carries a work item from first understanding all
-the way to delivered code, without the ad-hoc drift of unstructured AI assistance. "Integrated"
-is the point: the human and the AI co-execute every phase — the AI proposes, the human steers, and
-nothing advances without an explicit OK.
+<div class="aid-home">
 
-These docs are the reference for both the **methodology** and the **tool** that ships it. If you are
-new, read on; the sections are ordered the way you will actually use AID.
+## The problem AID solves
 
-## The pipeline at a glance
+An AI coding agent is fast, but with a vague task and a big codebase it guesses. AID adds process, not prompt tricks.
 
-Every work item moves through the same phases. Each produces a reviewable artifact and ends at a
-**human gate** — you approve before the next phase begins. The flow starts at configuration and ends
-at delivered, optionally monitored, code.
+<ul class="aid-points">
+  <li><strong>It learns your code first</strong><span>A Knowledge Base records how the project really works, with a file and line for every claim.</span></li>
+  <li><strong>You approve each step</strong><span>Requirements, design, plan and tasks each stop at a gate. Nothing moves on without your OK.</span></li>
+  <li><strong>Small, checkable tasks</strong><span>Work is cut into typed tasks with acceptance criteria, so the agent cannot quietly add scope.</span></li>
+  <li><strong>A second agent checks the first</strong><span>The agent that writes never grades its own work. A reviewer with a clean context does.</span></li>
+</ul>
 
-```mermaid
-flowchart TB
-    classDef prep    fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef def     fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef map     fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef exe     fill:#166534,stroke:#166534,color:#ffffff
-    classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
-    classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
-    classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
-    classDef entry   fill:#B45309,stroke:#B45309,color:#ffffff
+## Three ways in
 
-    subgraph G0[" 0 · Choose your entry "]
-        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
-        TR["/aid-triage<br/>not sure? suggest-only"]:::entry
-    end
-    subgraph GS[" Support "]
-        Init["aid-config<br/>setup · once"]:::aux
-    end
-    subgraph G1[" Knowledge Base Maintenance "]
-        Disc["1 · aid-discover<br/>brownfield"]:::prep
-        Sum["aid-summarize<br/>optional"]:::aux
-        HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
-    end
-    subgraph G2[" Definition "]
-        Desc["2a · /aid-describe<br/>broad / new project"]:::def
-        Def["2b · aid-define<br/>decompose features"]:::def
-        Spec["3 · aid-specify<br/>full path"]:::def
-        Plan["4 · aid-plan<br/>full path"]:::map
-        Det["5 · aid-detail<br/>full path"]:::map
-    end
-    subgraph G4[" Execution "]
-        Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
-    end
+You do not have to pick a process. Pick the door that matches what you know.
 
-    Eng["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE<br/>collapsed Describe→Detail · autonomous"]:::def
-    Dep["aid-deploy<br/>shortcut path"]:::delopt
-    Mon["aid-monitor<br/>shortcut path"]:::delopt
+<Doors />
 
-    TR -. suggests .-> SC
-    TR -. suggests .-> Desc
-    Init --> Disc --> Desc
-    SC --> Eng --> Exe
-    Desc --> Def --> Spec --> Plan --> Det --> Exe
-    Exe -. "on demand" .-> Dep
-    Exe -. "on demand" .-> Mon
-    Exe -. "when finished" .-> HK
-    HK  -. "targeted KB refresh" .-> Disc
-    Mon -. "bug → /aid-fix" .-> SC
-    Mon -. "change request" .-> TR
-```
+## How a bigger piece of work moves
 
-*Three entry points (plus `/aid-ask` for a plain question) · 37 skills — 18 curated pipeline/on-demand/router skills
-(including `/aid-triage`), 11 hand-authored `repurpose` skills (including `/aid-ask` for Q&A), and 8 shortcut
-doorways; a family skill takes its kind as the first word (`/aid-create api`). Name your change with a **shortcut** and the
-shortcut engine collapses Describe through Detail into one autonomous run straight to
-Execute; ask **`/aid-triage`** when you're not sure which fits; or run **`/aid-describe`**
-for broad or new-project work through the full six-phase pipeline.*
+<Flow
+  label="The full path, from requirements to built code"
+  columns={4}
+  steps={[
+    { title: 'Describe', text: 'AID interviews you and writes the requirements.', href: '/reference/skills/aid-describe/' },
+    { title: 'Define', text: 'Splits the requirements into features.', href: '/reference/skills/aid-define/' },
+    { title: 'Specify', text: 'Writes the technical spec for each feature.', href: '/reference/skills/aid-specify/' },
+    { title: 'Plan', text: 'Groups features into shippable deliveries.', href: '/reference/skills/aid-plan/' },
+    { title: 'Detail', text: 'Breaks each delivery into small tasks.', href: '/reference/skills/aid-detail/' },
+    { title: 'Execute', text: 'Builds each task and reviews it until it meets your grade.', href: '/reference/skills/aid-execute/', kind: 'end' },
+  ]}
+/>
 
-The six core phases, in order (full path):
+You approve the output of each phase before the next begins. For an existing codebase, start with [`/aid-discover`](/reference/skills/aid-discover/) to build the Knowledge Base. See [how it works](/concepts/how-it-works/) for the whole picture.
 
-1. **Discover** — map an existing codebase into a Knowledge Base the agents can reason over. (Brownfield only; greenfield starts at Describe (Phase 2a).)
-2. **Describe → Define** — gather requirements conversationally, then decompose them into features.
-3. **Specify** — turn each feature into a technical SPEC, with an agent acting as tech lead.
-4. **Plan** — sequence SPECs into deliveries, each a functional, buildable MVP.
-5. **Detail** — break deliveries into small, typed, dependency-ordered tasks.
-6. **Execute** — run each task with a built-in adversarial review loop until it clears the grade bar.
+## Install in two steps
 
-37 skills deliver AID: 18 curated skills — the pipeline phases above, the off-pipeline on-demand
-skills that are not catalog rows (`/aid-housekeep`, `/aid-update-kb`, the connector and ticket
-skills, `/aid-config`, `/aid-summarize`), and the `/aid-triage` suggest-only router — plus the
-94-row shortcut catalog's 19 family skills: 8 shortcut doorways
-(`/aid-fix`, `/aid-create api`, …) and 11 hand-authored `repurpose` skills.
-When you already know your change, a shortcut skips straight to Execute — the same rigour,
-proportionate overhead.
+First install the `aid` command once per machine. Then add AID to a project.
 
-## Install
-
-AID installs as a global `aid` CLI; you then run `aid add <tool>` inside a repository to drop the
-skills, agents, and Knowledge Base scaffold into your project. Pick the channel for your platform:
-
-<Tabs syncKey="install-channel">
-  <TabItem label="macOS / Linux"><InstallCommand channel="curl" /></TabItem>
-  <TabItem label="Windows"><InstallCommand channel="irm" /></TabItem>
-  <TabItem label="npm"><InstallCommand channel="npm" /></TabItem>
-  <TabItem label="PyPI"><InstallCommand channel="pypi" /></TabItem>
+<Tabs syncKey="os">
+  <TabItem label="Linux / macOS">
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    ```powershell
+    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```bash
+    npm i -g aid-installer
+    ```
+  </TabItem>
+  <TabItem label="pipx">
+    ```bash
+    pipx install aid-installer
+    ```
+  </TabItem>
 </Tabs>
 
-Current release: <VersionBadge href="/releases/changelog/" />. After install, run `aid add claude-code`
-(or another tool), then `/aid-config` in your AI tool to scaffold the Knowledge Base.
-The [Installation guide](/guides/installation/) covers every channel, per-OS detail, updates, and removal.
+Open a new terminal, go to your project, and add AID for your AI coding tool:
 
-## How to navigate these docs
+```bash
+aid add claude-code
+```
 
-The docs are organized to match the order you will actually use AID.
+Other tools: `codex`, `cursor`, `copilot-cli`, `antigravity`. Then, in your AI tool, run `/aid-config`. The [install guide](/get-started/install/) has every option, offline installs included.
+
+## Where to go next
 
 <CardGrid>
-  <LinkCard
-    title="Get Started"
-    href="/get-started/overview/"
-    description="Install AID, run your first work item, and try the lite quickstart path."
-  />
-  <LinkCard
-    title="Guides"
-    href="/guides/installation/"
-    description="Task-focused walkthroughs: installation, working the pipeline, and maintaining a release."
-  />
-  <LinkCard
-    title="Concepts"
-    href="/concepts/methodology/"
-    description="The methodology in depth — the pipeline, philosophy, the Knowledge Base, and the FAQ."
-  />
-  <LinkCard
-    title="Reference"
-    href="/reference/overview/"
-    description="Exhaustive lookups: CLI, skills, agents, the KB, settings, artifacts, and the glossary."
-  />
+  <LinkCard title="Make your first change" href="/get-started/first-change/" description="A hands-on walkthrough using a shortcut." />
+  <LinkCard title="Run the full path" href="/get-started/first-project/" description="Take bigger or new work from idea to code." />
+  <LinkCard title="Browse the skills" href="/reference/skills/" description="Every slash command, grouped by purpose." />
+  <LinkCard title="Read the method" href="/concepts/methodology/" description="The full philosophy and the reasons behind it." />
 </CardGrid>
+
+</div>

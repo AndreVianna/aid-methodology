@@ -1,0 +1,311 @@
+---
+title: Install AID
+description: Install the aid command once per machine, add AID to a repository for your AI coding tool, and learn how to update, remove, pin versions and install offline.
+sidebar:
+  order: 2
+---
+
+import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+Installing AID takes two steps. First you install the `aid` command on your machine, once. Then you run `aid add <tool>` inside each repository where you want AID.
+
+## Requirements
+
+- **An AI coding tool** that AID supports: Claude Code, Codex CLI, Cursor, GitHub Copilot CLI or Antigravity.
+- **Git.** AID keeps each piece of work on its own git branch and worktree.
+- **Linux or macOS:** Bash 4 or newer. macOS ships an older Bash, so install a newer one first, for example with Homebrew.
+- **Windows:** PowerShell 5.1 or newer.
+- **For the npm route:** Node 22 or newer.
+- **For the PyPI route:** Python 3.8 or newer.
+
+## Step 1: Install the aid command
+
+Do this once per machine. You can run it from any folder.
+
+<Tabs syncKey="os">
+  <TabItem label="Linux / macOS">
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+    ```
+
+    This installs `aid` into `~/.aid/` and adds `~/.aid/bin` to your PATH through your shell profile. Set `AID_HOME` first if you want another folder. Add `--no-path` if you prefer to edit PATH yourself.
+
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --no-path
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    ```powershell
+    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+    ```
+
+    This installs `aid` into `%LOCALAPPDATA%\aid\` and adds that folder to your user PATH. You do not need administrator rights. To skip the PATH change, set `AID_NO_PATH` first.
+
+    ```powershell
+    $env:AID_NO_PATH = '1'
+    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```bash
+    npm i -g aid-installer
+    ```
+
+    To run it once without a global install:
+
+    ```bash
+    npx aid-installer add claude-code
+    ```
+  </TabItem>
+  <TabItem label="PyPI">
+    ```bash
+    pipx install aid-installer
+    ```
+
+    If you do not have `pipx`, this also works:
+
+    ```bash
+    pip install --user aid-installer
+    ```
+  </TabItem>
+</Tabs>
+
+Open a new terminal afterwards so your PATH picks up the change. Then check it:
+
+```bash
+aid version
+```
+
+You should see a version number, such as `3.1.3`.
+
+All four routes install the same `aid` command. Pick one route per machine. If `aid` is installed by two routes, the one that comes first on your PATH runs.
+
+<Aside type="tip" title="Bootstrap and add in one command">
+On Linux and macOS you can add a tool in the same line: put `add claude-code` after `bash -s --`. On Windows, set `$env:AID_TOOL = 'claude-code'` before the `irm` line.
+</Aside>
+
+## Step 2: Add AID to your repository
+
+<Steps>
+
+1. Open a terminal in the root of your repository.
+
+2. Add AID for your tool. The tool ids are `claude-code`, `codex`, `cursor`, `copilot-cli` and `antigravity`.
+
+   ```bash
+   aid add claude-code
+   ```
+
+   You can add several tools at once, separated by commas:
+
+   ```bash
+   aid add codex,cursor
+   ```
+
+   You should see a short summary of what was installed. Add `--verbose` to list every file.
+
+3. Check the result.
+
+   ```bash
+   aid status
+   ```
+
+   You should see the AID version, the tools installed in this repository, and a line saying whether the shared files are clean. If there is no AID install here, the command says so and exits with code 7.
+
+</Steps>
+
+Running `aid add` again is safe. Files that are already identical are skipped.
+
+If you run `aid add` with no tool name, AID looks for a tool folder such as `.claude/` or `.cursor/`. It uses the tool only if it finds exactly one. Otherwise it stops and asks you to name the tool.
+
+## What gets placed in your repository
+
+| Path | What it is |
+|---|---|
+| `.agents/skills/aid-*/` | The AID skills (the slash commands). One copy, shared by every tool. |
+| `.claude/skills/aid-*/` | A copy of the skills for Claude Code. Written only while Claude Code is installed. |
+| `.aid/runtime/` | Scripts, templates and `rules.md`, which the skills use. |
+| `.aid/settings.yml` | Your project settings. Created if it is missing. |
+| `.aid/.aid-manifest.json` | A record of what AID installed. Do not delete it. |
+| Agents folder for your tool | The `aid-*` agent files. See the next table. |
+| `AGENTS.md` | A block of rules, written for every tool. |
+| `CLAUDE.md` | A short block that imports the rules, written only for Claude Code. |
+| `.gitignore`, `.gitattributes` | One fenced block in each. The first ignores temporary AID folders. The second keeps AID files on LF line endings. |
+
+AID agents go in a different folder for each tool.
+
+| Tool id | Agents folder |
+|---|---|
+| `claude-code` | `.claude/agents/` |
+| `codex` | `.codex/agents/` |
+| `cursor` | `.cursor/agents/` |
+| `copilot-cli` | `.github/agents/` |
+| `antigravity` | `.agent/agents/` |
+
+AID manages only files whose names start with `aid-`. Your own files in those folders are never touched. It does not write to the rest of `.aid/`, which is where the Knowledge Base and your work folders live.
+
+### The AID block in your root files
+
+`AGENTS.md` and `CLAUDE.md` often hold your own instructions. AID owns only the text between these two markers:
+
+```text
+<!-- AID:BEGIN -->
+<!-- AID:END -->
+```
+
+Everything outside the markers is yours, and AID keeps it exactly as it is.
+
+- If the file does not exist, AID creates it with only the AID block.
+- If the file exists without the block, AID adds the block at the end.
+- If you edited text inside the markers, AID saves a copy of the whole file in `.aid/.trash/` before it rewrites the block.
+
+Do not edit between the markers. Your edits there are overwritten on the next update.
+
+## Several tools in one repository
+
+You can install more than one tool in a repository.
+
+- The shared files (skills, runtime, rules) are written once.
+- All installed tools run the same AID version. `aid update` upgrades them together.
+- Removing one tool keeps the shared files while another tool still uses them.
+- `aid status` reports any shared file that changed since the install. The next `aid add` or `aid update` restores it, and moves your changed copy to `.aid/.trash/` first.
+
+## Update
+
+| Command | What it does |
+|---|---|
+| `aid update` | Inside a project: updates the `aid` command first, then every installed tool to one version. Outside a project: updates the `aid` command only. |
+| `aid update self` | Updates only the `aid` command, using the route you installed it with (the bootstrap script, npm or pipx). |
+| `aid update all` | Updates every project registered on your machine to one version. Use `aid projects list` to see them. |
+| `aid update --dry-run` | Prints the plan and changes nothing. |
+
+When a newer `aid` is published, the command prints a one-line notice. It checks at most once a day and never blocks a command. Set `AID_NO_UPDATE_CHECK=1` to turn the notice off.
+
+A repository installed with an older layout (version 3) is upgraded by `aid update`. Old AID files move to `.aid/.trash/`, and you can delete that folder once you have checked it. Until then, `aid add` refuses to run.
+
+## Remove
+
+| Command | What it does |
+|---|---|
+| `aid remove codex` | Removes one tool from this repository. |
+| `aid remove` | Removes all AID from this repository. It asks you to confirm first. |
+| `aid remove self` | Removes the `aid` command from your machine. It asks you to confirm and leaves your projects alone. |
+
+Removal only deletes files that `aid add` wrote. A file you edited is moved to `.aid/.trash/` instead of deleted. Your Knowledge Base and work folders in `.aid/` stay.
+
+Add `--force` to skip the confirmation. Add `--dry-run` to `aid remove self` to see the commands without running them.
+
+If `aid` is not on your PATH, use the bootstrap script instead: `bash install.sh --uninstall-cli` on Linux and macOS, or `.\install.ps1 -UninstallCli` on Windows.
+
+## Pin a version
+
+Pinning gives every machine and every CI run the same AID version.
+
+<Tabs syncKey="os">
+  <TabItem label="Linux / macOS">
+    Pin the command when you install it. Replace `X.Y.Z` with the release you want.
+
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version X.Y.Z
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    Pin the command when you install it. Replace `X.Y.Z` with the release you want.
+
+    ```powershell
+    $env:AID_VERSION = 'X.Y.Z'
+    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+    ```
+  </TabItem>
+</Tabs>
+
+Pin the tools inside a repository with `--version`, on any OS:
+
+```bash
+aid add claude-code --version X.Y.Z
+aid update --version X.Y.Z
+```
+
+The [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases) lists every version.
+
+## Install offline
+
+Use this when a machine cannot reach GitHub. You download the release files on a machine that can, check them, copy them over, and install from that folder.
+
+<Steps>
+
+1. On a machine with network access, create an empty folder and download these files from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), all for the same version:
+
+   - `aid-shared-vX.Y.Z.tar.gz`
+   - `aid-<tool>-vX.Y.Z.tar.gz` for each tool you want
+   - `SHA256SUMS`
+
+2. Check the files against `SHA256SUMS`.
+
+   <Tabs syncKey="os">
+     <TabItem label="Linux">
+       ```bash
+       sha256sum --check --ignore-missing SHA256SUMS
+       ```
+     </TabItem>
+     <TabItem label="macOS">
+       ```bash
+       shasum -a 256 -c SHA256SUMS
+       ```
+     </TabItem>
+     <TabItem label="Windows">
+       ```powershell
+       Get-FileHash .\aid-shared-vX.Y.Z.tar.gz -Algorithm SHA256
+       ```
+
+       Compare the hash it prints with the matching line in `SHA256SUMS`. Repeat for each file.
+     </TabItem>
+   </Tabs>
+
+3. Copy the folder to the offline machine. With the `aid` command already installed there, run:
+
+   ```bash
+   aid add claude-code --from-bundle ./aid-bundle
+   ```
+
+   The folder must hold exactly one shared file and one file for each tool you name. `--from-bundle` cannot be combined with `--version`. If the folder has a `SHA256SUMS` file, AID checks every file it uses and stops on a mismatch.
+
+</Steps>
+
+## Trust and checksums
+
+When you run the bootstrap with `curl | bash` or `irm | iex`, AID protects the install library it downloads:
+
+- The library comes from a fixed release tag, never from a moving branch.
+- AID downloads `SHA256SUMS` from the same release and checks the library's hash before it uses it.
+- If the hash does not match, or `SHA256SUMS` cannot be fetched, the install stops and runs nothing from the download. A mismatch exits with code 4 and a fetch problem exits with code 3.
+
+Installing from a bundle you verified yourself is the strongest route. It uses no network at all.
+
+## Rate limits and tokens
+
+Without `--version`, `aid add` asks the GitHub API for the latest release. GitHub limits unauthenticated requests to about 60 an hour per IP address, and a shared office or CI network can use that up. If you hit the limit, use one of these:
+
+1. Pin a version with `--version`. This skips the lookup.
+2. Set `GITHUB_TOKEN` or `GH_TOKEN` in your environment. AID sends it as a bearer token.
+3. Install from a bundle with `--from-bundle`.
+
+## Command reference
+
+These are the flags that matter here. The [CLI reference](/reference/cli/) covers every command.
+
+| Flag | Applies to | What it does |
+|---|---|---|
+| `--version <v>` | `add`, `update`, `remove` | Pins a release. |
+| `--from-bundle <path>` | `add`, `update` | Installs from local release files. |
+| `--force` | `add`, `update`, `remove` | Skips confirmation prompts. |
+| `--dry-run` | `update`, `remove self` | Shows the plan and changes nothing. |
+| `--verbose` | `add`, `remove`, `status` | Lists every file. |
+| `--target <dir>` | `add`, `update`, `remove`, `status` | Uses another folder as the project root. |
+
+## Next steps
+
+1. [Make your first small change](/get-started/first-change/) with a shortcut.
+2. [Run your first full project](/get-started/first-project/) for bigger work.
+3. Read the [CLI reference](/reference/cli/) for every command and flag.
+4. See the [repository structure](/reference/repository-structure/) for what each folder is for.

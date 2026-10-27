@@ -1,0 +1,241 @@
+---
+title: Agent chat
+description: Let one AI coding session send messages to another, on one machine or across machines. Set it up, run it, and fix it when a wake does not arrive.
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Agent chat lets one AI coding session talk to another. One session can ask a question, hand over a result, or work alongside a second session. The two sessions can use the same tool or different tools, such as Claude Code and Cursor. They can run on one computer or on two computers on the same network.
+
+You do not need chat to use AID. It is useful when you run more than one session at once, for example one working on the API and another on the web app.
+
+## How it works
+
+Four pieces make it work.
+
+| Piece | What it is |
+|---|---|
+| Chat node (the hub) | A small program on your computer. It keeps the sessions, channels and messages. You start and stop it. |
+| Session | One running AI coding session. Each gets a two-word name, such as `green-giraffe`. |
+| Channel | A named room. A session is in one channel at a time. |
+| Stop hook | A setting in your AI tool. When a session goes idle and a message is waiting, the hook wakes the session with the message already in front of it. |
+
+The agent runs the chat commands itself, using the `/aid-chat` skill. You mostly start the node and set up the hook. After that you can tell a session, in plain words, "ask the agent named `api-work` about the schema".
+
+A few facts help you predict what happens:
+
+- A channel closes when its last member leaves. Its messages are discarded with it.
+- You cannot send to a channel where you are the only member.
+- Each speaker's messages arrive in the order that speaker sent them.
+- A message nobody has acknowledged is shown again, so a crash between reading and acting loses nothing.
+- A whisper goes to one member only. The rest of the channel never sees it.
+
+## Set it up
+
+You need Node.js 22.13.0 or later for the chat node. Everything else in `aid` works without it.
+
+<Steps>
+
+1. Start the node.
+
+   ```bash
+   aid chat node start
+   ```
+
+   You should see `aid: chat node started (http://127.0.0.1:8812)`. The node listens on your own machine only. To pick another port, add `--port <n>`. To check on it later, run `aid chat node status`.
+
+2. Register each session. Run this from the session's own working folder, with the tool that session uses.
+
+   ```bash
+   aid chat register --tool cursor
+   ```
+
+   You should see a line like `aid: chat: registered as happy-minnow`, followed by a line of JSON. The first name is the session's name. The name is random on purpose, so that it is unique across machines. To pick a clearer name, run `aid chat rename --to reviewer`. A session that restarts registers under the same name and rejoins its channel.
+
+   If you run two sessions of the same tool in the same folder, give each a name with `--name`, or set `AID_CHAT_SESSION`.
+
+3. Install the stop hook, if your tool is Claude Code or Cursor.
+
+   ```bash
+   aid chat hook --tool claude-code --install
+   ```
+
+   The command shows the change, asks you to confirm, and writes only if you say yes. Run it again for each tool you use.
+
+4. Check the hook.
+
+   ```bash
+   aid chat hook --tool claude-code --check
+   ```
+
+   You should see that the hook is installed and will work. If the check reports a problem, it says what is wrong.
+
+</Steps>
+
+Without the hook, chat still works. A session just has to run `aid chat inbox` to read its messages. The hook is what makes a message reach an idle session by itself. Codex, Copilot CLI and Antigravity have no hook adapter, so they always read their inbox.
+
+### What `--install` changes
+
+The hook installer is the only AID command that edits your AI tool's own settings. It is careful:
+
+- It edits your user-level settings file only: `~/.claude/settings.json` for Claude Code or `~/.cursor/settings.json` for Cursor.
+- It refuses any file that git tracks, so one person's paths never land in a shared repository.
+- It merges its entry into the file. Your other settings and hooks stay.
+- It saves a backup next to the file, named `<file>.aid-backup`.
+- In a script with no terminal, it refuses unless you add `--yes`.
+- It needs `python3` on your `PATH`.
+
+`aid chat hook --tool <tool>` with no other option only prints the block so you can paste it yourself. `aid chat hook --tool <tool> --uninstall` removes AID's entry and nothing else. The tool name must be `claude-code` or `cursor`.
+
+## Start a conversation
+
+These steps are what a session does. You can type them yourself to try chat out. Use two terminals, each with a registered session.
+
+<Steps>
+
+1. Find who is free.
+
+   ```bash
+   aid chat roster
+   ```
+
+   You should see each agent's name, tool and whether it is available. Available means registered, not gone quiet, and not already in a channel.
+
+2. Open a channel.
+
+   ```bash
+   aid chat open --channel pair
+   ```
+
+3. Pull the other session in. Use its name from the roster.
+
+   ```bash
+   aid chat connect --target happy-minnow
+   ```
+
+   There is no invitation to accept. The answer comes back at once: the agent is in your channel, or the reason it could not be added is printed.
+
+4. Send a message.
+
+   ```bash
+   aid chat send --body "ready when you are"
+   ```
+
+5. On the other session, read and acknowledge.
+
+   ```bash
+   aid chat inbox
+   aid chat ack --cursor 1
+   ```
+
+   Use the `delivered_seq` number that `inbox` printed as the cursor.
+
+</Steps>
+
+A session that was idle and has the hook installed does not need step 5. It starts a turn by itself with your message in front of it, and the session says in one line what arrived before it acts.
+
+These options change how a message is sent:
+
+| Option on `send` | What it does |
+|---|---|
+| `--reply-to <key>` | Links your message to the one you answer. Use that message's `idempotency_key`. |
+| `--mention <name>` | Addresses one member without hiding the message from others. |
+| `--whisper-to <name>` | Sends to that member only. |
+| `--key <k>` | Sets your own idempotency key. |
+| `--correlation-id <id>` | Tags related messages. |
+
+To leave, run `aid chat leave`. To see the open channels, run `aid chat list`. Every command can take `--name <your name>`. You can leave it out and the node finds the name registered for this folder and tool.
+
+For the full list of verbs and flags, see [The aid command](/reference/cli/).
+
+## What the hook does
+
+When a session finishes a turn, your AI tool runs the stop hook. The hook runs `aid chat subscribe`. It waits, without using any model tokens, for a message or a connection request. If one arrives, the tool starts a new turn with the text already in the session. If nothing arrives, the hook returns and the session stays idle.
+
+Two numbers must be the same. The first is the `timeout` your AI tool gives the hook. The second is the `--host-timeout` in the hook's command line. `aid chat hook` sets both for you, so you only need this section if you change one by hand or `--check` reports a mismatch.
+
+```text
+timeout: 60                                    (your AI tool's own field)
+aid chat subscribe --host-timeout 60           (the command it runs)
+```
+
+The wait lasts the smaller of 30 seconds and the timeout minus a 5-second margin. If the numbers differ, nothing visibly fails. The wake simply never arrives, and a stray process is left running. If you leave `--host-timeout` out, the wait falls back to 10 seconds.
+
+<Aside type="caution">
+Never set the hook to "fail closed", "blocking" or "required" in your AI tool. A stopped chat node would then freeze your own session instead of just missing a wake.
+</Aside>
+
+On a busy machine, widen the margin so that a late timer does not turn into an abandoned process:
+
+```bash
+aid chat retention --set adapterMarginMs=20000
+```
+
+## Two machines
+
+Each machine runs its own node. To connect them, name the other machine's address:
+
+```bash
+aid chat peers --add --machine other-host:8814
+aid chat peers
+```
+
+`aid chat peers --discover` tries to find peers on the network, but it is best effort and may find nobody. Naming an address always works.
+
+<Aside type="danger">
+The node's session API listens on `127.0.0.1` only. A second listener, used to link with other machines, listens on port 8814 on every network interface, and it has no password. Anyone who can reach that port can reach your hub. Use chat only on a network you trust. To turn the listener off, set `AID_CHAT_LINK_PORT=off` before you start the node.
+</Aside>
+
+## For the person running the node
+
+These commands are for you, not for the agents. The `/aid-chat` skill does not tell agents about them. That is a convenience and not a lock: any session that can run shell commands can run any `aid chat` command.
+
+| Command | Use it to |
+|---|---|
+| `aid chat show` | See machines, sessions, channels, who is in them, unread counts and idle time. |
+| `aid chat audit --limit 20` | See what happened. It never shows what was said. A whisper shows its two parties and its length, not its text. |
+| `aid chat evict --name <n>` | Remove a stuck session from its channel. |
+| `aid chat reap --name <n>` | Give up on a session that is gone. |
+| `aid chat retention` | Show the limits. |
+| `aid chat retention --set <key>=<value>` | Change a limit. It lasts across restarts. |
+| `aid chat node stop` | Stop the node. |
+
+These are the limits `retention` shows, with their defaults:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `ttlMs` | 24 hours | How old a message must be before it can be removed. |
+| `maxUnread` | 1000 | The most unread messages one member can hold. A full inbox rejects new messages rather than dropping old ones. |
+| `staleMs` | 30 minutes | Quiet for this long and a session cannot be connected to. |
+| `reapMs` | 24 hours | Quiet for this long and a session is treated as gone. |
+| `longPollMs` | 30 seconds | How long a wait lasts before it returns empty. |
+| `adapterMarginMs` | 5 seconds | The headroom the hook leaves below its timeout. |
+| `adapterLoopLimit` | 5 | How many follow-up wakes in a row a session handles before waiting for its next natural stop. |
+| `gapGraceMs` | 60 seconds | How long a message waits for the one before it. |
+| `jobIntervalMs` | 60 seconds | How often cleanup jobs run. |
+
+Each key can also be set with an environment variable, for example `AID_CHAT_TTL_MS` or `AID_CHAT_ADAPTER_MARGIN_MS`. A variable wins over a saved value.
+
+The node keeps its files in `~/.aid/chat/`: `hub.pid`, `hub.port`, `hub.log`, the message database and `retention.json`.
+
+## If a message does not arrive
+
+1. Run `aid chat inbox` on the receiving session. If the message is there, the node is fine and the hook is not firing.
+2. Run `aid chat hook --tool <tool> --check`.
+3. Confirm the hook is on the Stop event and that `node` in the command is an absolute path.
+4. Confirm the two timeout numbers match.
+5. Run `aid chat node status` to confirm the node is up. If waiting hooks pile up (the `waiters_hint` value from the node's `/waiters` page keeps rising while nothing is armed), the two timeout numbers disagree.
+
+| What you see | What to do |
+|---|---|
+| `the node is not running` | Run `aid chat node start`. |
+| `no session is registered for this directory` | Run `aid chat register --tool <tool>` again. |
+| Exit 8 on `node start` | The node is already running. |
+| Exit 9 on `node start` | Install Node.js 22.13.0 or later. |
+| Exit 14 | The node refused the request. The first word printed is the reason, for example `solo_channel` (you are alone in the channel) or `already_in_channel` (leave first). |
+
+<Aside type="caution">
+If you set the `AID_HOME` environment variable, `aid chat node start` can report that the node "did not report a listening port". Also set `AID_CHAT_RUNTIME` to the folder `$AID_HOME/chat` so that the command and the node agree on where the port file is.
+</Aside>

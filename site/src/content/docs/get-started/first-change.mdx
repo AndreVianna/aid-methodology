@@ -1,0 +1,139 @@
+---
+title: Your first change
+description: Fix a small bug with the /aid-fix shortcut, from setup to a reviewed change, and see which files AID creates and where you approve.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+This walkthrough fixes one small bug with a shortcut. A shortcut is a slash command named for a kind of change, such as `/aid-fix`. It plans the change for you in one run, then stops so you can approve before any code is written.
+
+You will type the commands below into your AI coding tool, not into a terminal. Before you start, [install AID](/get-started/install/) in your repository.
+
+## What happens, in short
+
+1. You describe the bug in one sentence.
+2. AID writes a short requirements file and a task list, and grades them.
+3. AID stops. You read the plan and approve it.
+4. You run `/aid-execute`. AID makes the change, reviews it, and fixes what the review finds.
+
+## The steps
+
+<Steps>
+
+1. **Set up the project once.** Run:
+
+   ```text
+   /aid-config
+   ```
+
+   You should see a table of your settings: `name`, `description`, `type`, `source_control`, `minimum_grade` and `heartbeat_interval`. Values that are still placeholders are marked as unset, and AID prints a command to fix each one. Set the ones that matter:
+
+   ```text
+   /aid-config name
+   /aid-config description
+   ```
+
+   You can skip this step for a quick try. The settings are written to `.aid/settings.yml`.
+
+2. **Optional: let AID learn your code.** If your repository already has code, run:
+
+   ```text
+   /aid-discover
+   ```
+
+   AID reads the project and writes the Knowledge Base into `.aid/knowledge/`. It asks you questions where it is unsure, grades its own documents, and stops for your approval. This can take a while, and you do it once.
+
+   A shortcut works without it. With a Knowledge Base, though, the plan fits your code and conventions better. The [Knowledge Base guide](/guides/knowledge-base/) explains why.
+
+3. **Run the shortcut.** Describe the bug in one sentence:
+
+   ```text
+   /aid-fix the order status endpoint returns stale data after an order is updated
+   ```
+
+   AID prints a line each time it enters a stage, such as `[State: INTAKE]`. The stages run one after another without asking you anything:
+
+   - **Intake.** AID opens a new work. A work is one piece of change, kept in its own folder and its own git worktree. If other works already exist, AID first asks whether this is new work or a continuation.
+   - **Capture.** An architect agent writes `REQUIREMENTS.md` from your sentence. AID asks you at most one question, and only if something essential is missing.
+   - **Spec, plan, detail.** The same file gains a technical specification, and AID breaks the work into tasks. A fix usually gets an implement task followed by a test task.
+   - **Gate.** A separate reviewer agent grades the documents, and AID fixes and re-grades until they reach the minimum grade. For shortcuts the default minimum is `A+`.
+
+   You can use `/aid-triage` if you are unsure whether a shortcut fits, and `/aid-ask` if you only have a question about the code.
+
+4. **Read the plan and approve.** When the gate passes, AID stops and prints a summary like this:
+
+   ```text
+   [State: APPROVAL-HALT] -- flattened work ready for approval; nothing has executed.
+
+   work-001-order-status-stale  (/aid-fix)
+     REQUIREMENTS.md
+     tasks/
+       task-001  IMPLEMENT  Invalidate the cache on order update
+       task-002  TEST       Add a regression test
+
+   GATE: Pass 1 (definition docs) A+  ·  Pass 2 (task set) A+  ·  floor A+
+
+   Nothing has executed. Review the documents above, then run
+   /aid-execute <work> when ready.
+   ```
+
+   Open the files and read them. The approval is your decision to run the next command. Nothing is built until you do.
+
+5. **Build it.** Run `/aid-execute` with the work and the task:
+
+   ```text
+   /aid-execute work-001 task-001
+   ```
+
+   AID needs a clean git working tree before it starts. It creates a branch for the work, writes the change, and records `In Progress`, `In Review` and `Done` in the work's state file as each happens. Then you run the next task:
+
+   ```text
+   /aid-execute work-001 task-002
+   ```
+
+6. **Watch the review loop.** For every task, a reviewer agent with a clean context checks the result against the task's acceptance criteria. If it finds problems, AID fixes them and sends the work back for review. The loop ends when the grade reaches your minimum. The default minimum for `/aid-execute` is `A`. Change it with `/aid-config minimum_grade`.
+
+7. **Finish.** When every task is done, AID runs one more review over the whole change. After that, look at the branch AID made, run your own tests, and merge it as you normally would.
+
+</Steps>
+
+## The files AID created
+
+After step 3, your work folder looks like this:
+
+<FileTree>
+
+- .aid
+  - settings.yml
+  - knowledge/ only if you ran /aid-discover
+  - works
+    - work-001-order-status-stale
+      - STATE.yml progress, grades and task states
+      - REQUIREMENTS.md what to build, with the technical spec in section 11
+      - tasks
+        - task-001
+          - DETAIL.md type, scope, acceptance criteria
+        - task-002
+          - DETAIL.md
+
+</FileTree>
+
+A shortcut writes no separate plan file. Because it has one feature and one delivery, the order of work comes from the `Depends on` line in each task. See [work files](/reference/work-files/) for every field.
+
+## If something goes wrong
+
+- **A task stops with an impediment.** AID writes `IMPEDIMENT-task-NNN.md` in the work folder and marks the task failed. The file names the cause and the options. Follow the fix it recommends, delete the file, and run the task again.
+- **You closed the session during planning.** Planning has no resume of its own. Run the shortcut again. AID sees the unfinished work and asks whether this is new work or a continuation. If you choose continuation, it points you to the command that fits the work's state.
+
+<Aside type="note">
+Shortcuts are for work you can describe in a sentence or two. If the change grows, or you keep answering "it depends", switch to the [full path](/get-started/first-project/).
+</Aside>
+
+## Next steps
+
+1. Pick the right entry for the next change with the [choose your entry guide](/guides/choose-your-entry/).
+2. See every shortcut in the [skills reference](/reference/skills/), starting with [`/aid-fix`](/reference/skills/aid-fix/).
+3. Learn how grades and reviews work in [review and grades](/guides/review-and-grades/).
+4. Try the [full path](/get-started/first-project/) on something bigger.

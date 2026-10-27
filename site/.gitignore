@@ -2,6 +2,12 @@ node_modules/
 dist/
 .astro/
 
-# Build-time release data fetched by scripts/fetch-release-data.mjs (prebuild).
-# Re-generated each build; never committed.
-.release-data.json
+# Written by scripts/generate.mjs on every build from ../docs and ../canonical.
+src/generated/
+src/content/docs/concepts/methodology.md
+src/content/docs/concepts/faq.md
+src/content/docs/reference/glossary.md
+src/content/docs/reference/repository-structure.md
+src/content/docs/reference/agents.mdx
+src/content/docs/reference/skills/
+public/images/

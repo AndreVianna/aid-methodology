@@ -2,7 +2,7 @@
 
 **A Complete Methodology for AI Integrated Software Development**
 
-*Version 3.2 — June 2026*
+*The current release number is in the `VERSION` file and on the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases).*
 
 ---
 
@@ -42,7 +42,7 @@ flowchart TB
     TR -. suggests .-> SC
 
     subgraph GS[" Support "]
-        Init["aid-config<br/>setup · once"]:::aux
+        Init["aid-config<br/>settings · once"]:::aux
     end
     subgraph G1[" Knowledge Base Maintenance "]
         Disc["1 · aid-discover<br/>brownfield"]:::prep
@@ -75,7 +75,15 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*37 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb> [<kind>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional shortcut paths in the Definition group. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-ask` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+**Text version of the diagram:**
+
+1. Entry, three doors. A shortcut (`aid-<verb> [<kind>]`) is for when you know your change. `aid-triage` is for when you are not sure: it only suggests, and points either to a shortcut or to `aid-describe`.
+2. Full path, in order: `aid-config` (settings, once) → 1 `aid-discover` (brownfield) → 2a `aid-describe` → 2b `aid-define` → 3 `aid-specify` → 4 `aid-plan` → 5 `aid-detail` → 6 `aid-execute`. You approve each step before the next one starts.
+3. Shortcut path: a shortcut goes into the shortcut engine (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT), which collapses Describe through Detail into one mostly autonomous run. You approve at the halt, then it hands off to `aid-execute`.
+4. Optional, on demand, after Execute: `aid-deploy` and `aid-monitor`. `aid-monitor` sends a bug to a shortcut and a change request to `aid-triage`.
+5. Optional: `aid-summarize` (KB viewer). `aid-housekeep` runs on demand when work is finished; its targeted KB refresh feeds back into `aid-discover`.
+
+*37 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb> [<kind>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional, on-demand skills outside the numbered phases. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-ask` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -87,7 +95,7 @@ Greenfield projects skip Discover (no existing system to understand) and enter a
 
 AID does not make you weigh the cost of the full pipeline against the size of a change — that weighing is automated across three entry points:
 
-- **A direct-entry shortcut** (`/aid-fix`, `/aid-create api`, `/aid-update cli`, …) — you already know what kind of change this is. 34 verb-first shortcuts, from a 94-row catalog, each run through a thin doorway into a shared **shortcut engine** that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run and produces the full flattened Lite artifact set. Each shortcut binds to one fixed `{verb, artifact}` pair, so the engine already knows the shape of the work before CAPTURE even starts. (The catalog's other 60 rows are hand-authored `repurpose` skills and their kinds — review, research, report, document, test, prototype, design, and the re-registered `aid-deploy` / `aid-monitor` / `aid-ask` — not thin engine doorways.)
+- **A direct-entry shortcut** (`/aid-fix`, `/aid-create api`, `/aid-update cli`, …) — you already know what kind of change this is. 34 verb-first shortcuts (catalog rows that run the engine), from a 94-row catalog, each run through a thin doorway into a shared **shortcut engine** that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run and produces the full flattened Lite artifact set. Each shortcut binds to one fixed `{verb, artifact}` pair, so the engine already knows the shape of the work before CAPTURE even starts. (The catalog's other 60 rows are hand-authored `repurpose` skills and their kinds — review, research, report, document, test, prototype, design, and the re-registered `aid-deploy` / `aid-monitor` / `aid-ask` — not thin engine doorways.)
 - **`/aid-triage`** — you don't know which door fits. A stateless, write-free, suggest-only router: describe the work in one sentence and it suggests either the matching shortcut, the full path (`/aid-describe`), or — when your input reads as a question rather than a change — `/aid-ask`. It never runs anything on your behalf.
 - **`/aid-describe`** — broad, multi-activity, or new-project work. Enters the full path directly; it no longer triages or produces lite work itself.
 
@@ -97,13 +105,13 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*37 skill directories in total — 18 curated pipeline / on-demand / router skills plus the 19 skills that own a row of the 94-row shortcut catalog (8 generated shortcut doorways + 11 hand-authored `repurpose` skills). The catalog's other 75 rows are kinds, invoked through their family as `/aid-<verb> <kind>`. Unchanged: 9 agents, 14 KB doc types.*
+*37 skill directories in total (`canonical/skills/`): 18 curated pipeline / on-demand / router skills plus the 19 skills that own a row of the 94-row shortcut catalog (8 generated shortcut doorways + 11 hand-authored `repurpose` skills). The catalog's other 75 rows are kinds, invoked through their family as `/aid-<verb> <kind>`. There are 9 agents and a default KB seed of 14 documents.*
 
 **A. The 18 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
-| `aid-config` | Support | — (bootstrap) | Run once before pipeline; not a numbered phase |
+| `aid-config` | Support | — (settings) | View or change `.aid/settings.yml`; creates it on first run; not a numbered phase |
 | `aid-discover` | Knowledge Base Maintenance | 1 | Mandatory for brownfield; skipped for greenfield |
 | `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | On demand; not a numbered phase |
 | `aid-describe` | Definition | 2a | Yes — full path only; no longer triages or produces lite work |
@@ -120,33 +128,30 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | `aid-create-ticket` | Support | — | On demand; preview + confirm before filing a new ticket via the connector-resolution ladder |
 | `aid-update-ticket` | Support | — | On demand; preview + confirm before mutating one part (description/comment/status) of an existing ticket |
 | `aid-triage` | Definition | — (router) | On demand; stateless suggest-only router — writes nothing |
+| `aid-chat` | Support | — | On demand; talk to another AI coding session through `aid chat` (see §10) |
 
-**B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at a shortcut, the full path, or — when the input reads as a question rather than a change — `/aid-ask` (below). It writes nothing — no interview, no scaffold, no work folder, no `STATE.md`.
+**B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at a shortcut, the full path, or — when the input reads as a question rather than a change — `/aid-ask` (below). It writes nothing — no interview, no scaffold, no work folder, no state file.
 
 **C. `/aid-ask`** — the project's read-only Q&A skill. A first-class `repurpose` row in the shortcut catalog (table D below; `verb: query`, `alias_of: null`, `group: G11`): cited, gap-capturing answers to a question about the project — reachable directly, or suggested by `/aid-triage` when your input reads as a question rather than a change. Hand-authored, not generated by the shortcut build helper.
 
-**D. The 94 shortcut-catalog rows**, by family. The catalog (`canonical/aid/templates/shortcut-catalog.yml`) has 94 rows, one canonical name each — there is no alias mechanism, no synonym data, and no redirect; a name that is not a row is not invocable at all. 19 rows own a `canonical/skills/<name>/` directory: 8 thin doorways the build helper (`build-shortcut-skills.py`) generates, and 11 `repurpose: true` hand-authored skills the helper never generates or overwrites. The other 75 rows are kinds (`kind_of: <family>`): you type `/aid-create api`, and the family runs the engine for an engine-run kind or follows `references/<kind>.md` for a hand-authored one. 34 rows run the shortcut engine; 60 are `repurpose`.
+**D. The 94 shortcut-catalog rows**, by family. The catalog (`canonical/aid/templates/shortcut-catalog.yml`) has 94 rows, one canonical name each — there is no alias mechanism, no synonym data, and no redirect; a name that is not a row is not invocable at all. 19 rows own a `canonical/skills/<name>/` directory: 8 thin doorways (`aid-fix`, `aid-create`, `aid-update`, `aid-refactor`, `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment`) that the build helper (`build-shortcut-skills.py`) generates, and 11 `repurpose: true` hand-authored skills the helper never generates or overwrites. The other 75 rows are kinds (`kind_of: <family>`): you type `/aid-create api`, and the family runs the engine for an engine-run kind or follows `references/<kind>.md` for a hand-authored one. 34 rows run the shortcut engine; 60 are `repurpose`.
 
 | **Family** | **Rows** | **Count** |
 |-----------|---------------|-----------|
-| create | `aid-create`; kinds `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, `api`, `cli`, `config`, `data-model`, `data-pipeline`, `infra`, `integration`, `job`, `messaging`, `theme`, `ui` | 19 |
-| update | `aid-update`; the same 18 kinds | 19 |
-| fix | `aid-fix` | 1 |
-| refactor | `aid-refactor` | 1 |
-| remove | `aid-remove` | 1 |
-| deprecate | `aid-deprecate` | 1 |
-| migrate | `aid-migrate` | 1 |
-| test + experiment | `aid-create test` / `aid-update test`; `aid-test` (+ kinds `security` / `performance` / `data-quality`, `repurpose`); `aid-experiment` | 7 |
-| prototype | `aid-prototype`, `aid-prototype ui` (both `repurpose`) | 2 |
-| design | `aid-design` (catch-all) + kinds `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, and the 14 grid artifacts `api`, `ui`, `theme`, `cli`, `data-model`, `data-pipeline`, `messaging`, `integration`, `job`, `config`, `infra`, `test`, `document`, `dashboard` (all `repurpose`) | 22 |
+| create | `aid-create`; kinds `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, `api`, `ui`, `theme`, `cli`, `data-model`, `data-pipeline`, `messaging`, `integration`, `job`, `config`, `infra`, `test`, `document`, `diagram`, `dashboard` | 23 |
+| update | `aid-update`; the same kinds except `diagram` | 22 |
+| fix, refactor, remove, deprecate, migrate, experiment | one row each (`aid-fix`, `aid-refactor`, `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment`) | 6 |
+| test | `aid-test` (+ kinds `security`, `performance`, `data-quality`) — all `repurpose` | 4 |
+| prototype | `aid-prototype`, `aid-prototype ui` — both `repurpose` | 2 |
+| design | `aid-design` (catch-all) + 21 kinds: `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, `api`, `ui`, `theme`, `cli`, `data-model`, `data-pipeline`, `messaging`, `integration`, `job`, `config`, `infra`, `test`, `document`, `dashboard` — all `repurpose` | 22 |
 | brainstorm | `aid-brainstorm` (`repurpose`) | 1 |
-| document | `aid-create document` / `aid-update document`; `aid-create diagram`; `aid-document` (+ 7 genre kinds: `decision`, `architecture`, `guideline`, `standard`, `runbook`, `tutorial`, `changelog`) — all `repurpose` | 11 |
-| report + dashboard | `aid-report` (`repurpose`); `aid-create dashboard`, `aid-update dashboard` | 3 |
-| review | `aid-review` (`repurpose`) | 1 |
-| research | `aid-research` (`repurpose`) | 1 |
-| deploy + monitor | `aid-deploy`, `aid-monitor` (both `repurpose`) | 2 |
+| document | `aid-document` (+ 7 genre kinds: `decision`, `architecture`, `guideline`, `standard`, `runbook`, `tutorial`, `changelog`) — all `repurpose` | 8 |
+| report, review, research | `aid-report`, `aid-review`, `aid-research` (all `repurpose`) | 3 |
+| deploy, monitor | `aid-deploy`, `aid-monitor` (both `repurpose`) | 2 |
 | query | `aid-ask` (`repurpose`) | 1 |
 | **Total** | | **94** |
+
+In `create` and `update`, the kinds `roadmap`, `backlog`, `mvp`, `architecture`, `stack`, `testing-strategy`, `cicd`, `document` and `diagram` are hand-authored (`repurpose`); every other kind there runs the engine. The 34 engine-run rows are the 8 doorway families plus the 26 engine-run `create` / `update` kinds.
 
 ---
 
@@ -173,7 +178,7 @@ This is not anti-Agile. Sprints, backlogs, and retrospectives can coexist with A
 
 ### The Iron Man Model: Human-in-the-Middle
 
-![The Iron Man Model — the universal Propose → Discuss → Write → Review loop, with human as pilot and AI as suit](images/3-ironman.png)
+![The Iron Man Model, titled "AI amplifies. Human drives. Every phase." Four steps sit in a circle called the Universal Loop: 1 Propose (the AI suggests a solution grounded in the KB and codebase), 2 Discuss (human and AI refine together), 3 Write (the agent writes to file immediately), 4 Review (deterministic grade A to F; the human approves or adjusts). A dashed arrow from Review back to Propose reads "Repeat until grade met". Below, two boxes: the AI Agent proposes, grounds, writes, self-reviews and handles 8 task types; the Human Pilot sets direction, makes judgment calls, approves phase transitions and never leaves the cockpit.](images/3-ironman.png)
 
 *The Iron Man Model. Every design phase on the full path follows the same loop: AI proposes (grounded in KB and codebase), human and AI discuss, AI writes, AI reviews — and the loop repeats until the output meets the bar. Human approves advancement. Human never leaves the cockpit.*
 
@@ -252,10 +257,19 @@ flowchart TD
     STD --> S1["architecture · tech-stack<br/>coding-standards · module-map"]:::std
     STD --> S2["schemas · pipeline-contracts<br/>integration-map · infrastructure"]:::std
     STD --> S3["test-landscape · tech-debt<br/>domain-glossary · …"]:::std
-    DISC["aid-discover<br/>5 discovery sub-agents"]:::gen
+    DISC["aid-discover<br/>aid-researcher sub-agents"]:::gen
     DISC -. "populate" .-> STD
     DISC -. "populate" .-> GEN
 ```
+
+**Text version of the diagram:**
+
+- The Knowledge Base lives in `.aid/knowledge/` and has four parts:
+  1. 14 standard documents (the default seed), for example architecture, tech-stack, coding-standards, module-map, schemas, pipeline-contracts, integration-map, infrastructure, test-landscape, tech-debt and domain-glossary.
+  2. 3 meta-documents: STATE, INDEX and README.
+  3. 1 generated pre-pass file, `project-index.md` (kept in `.aid/generated/`).
+  4. Optional project-specific extensions, declared through `knowledge.doc_set`.
+- `aid-discover` (with its `aid-researcher` sub-agents) populates the standard documents and the generated pre-pass file.
 
 *The Knowledge Base is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.*
 
@@ -263,13 +277,13 @@ The Knowledge Base (`.aid/knowledge/`) is institutional memory — it outlives a
 
 ### Structure
 
-The Knowledge Base is divided into four categories: **standard** documents (the 14-document default seed), **meta** documents (INDEX, STATE, README — navigation and tracking), a **generated** pre-pass artifact (`project-index.md` in `.aid/generated/`), and optional **extensions** declared via `discovery.doc_set` in `.aid/settings.yml`. The diagram below shows these relationships.
+The Knowledge Base is divided into four categories: **standard** documents (the 14-document default seed), **meta** documents (INDEX, STATE, README — navigation and tracking), a **generated** pre-pass artifact (`project-index.md` in `.aid/generated/`), and optional **extensions** declared via `knowledge.doc_set` in `.aid/settings.yml`. The diagram above shows these relationships.
 
 ### The Declared Doc-Set
 
-The 14-document standard set is the **configurable default seed** — the set synthesized from `canonical/aid/templates/knowledge-base/` when no project-specific override is configured. The doc-set is **project-configurable** via `discovery.doc_set` in `.aid/settings.yml`.
+The 14-document standard set is the **configurable default seed** — the set synthesized from `canonical/aid/templates/knowledge-base/` when no project-specific override is configured. The doc-set is **project-configurable** via `knowledge.doc_set` in `.aid/settings.yml`.
 
-Before dispatching discovery sub-agents, the GENERATE state runs a **propose→confirm checkpoint** (Step 0d): the orchestrator infers a proposed doc-set from the project's file inventory (as a diff against the default seed) and presents it to the user for confirmation or editing. Custom documents can be added; irrelevant standard ones can be dropped. The confirmed set is written to `.aid/settings.yml` and drives all subsequent discovery dispatches.
+Before dispatching discovery sub-agents, the GENERATE state runs a **propose→confirm checkpoint** (Step 0d, after you confirm the project's domain): the orchestrator infers a proposed doc-set from the project's file inventory and domain (as a diff against the default seed) and presents it to the user for confirmation or editing. Custom documents can be added; irrelevant standard ones can be dropped. The confirmed set is written to `.aid/settings.yml` and drives all subsequent discovery dispatches.
 
 In practice: a simple CLI tool needs a handful of documents at depth; the rest stay thin. An enterprise monorepo fills all 14 and adds custom extensions. A greenfield project populates `technology-stack.md`, `coding-standards.md`, and `domain-glossary.md` from the interview and leaves the rest to grow. The shape is fixed even when a document is sparse, so the index and navigation remain consistent.
 
@@ -281,7 +295,7 @@ In practice: a simple CLI tool needs a handful of documents at depth; the rest s
 ├── INDEX.md               # Meta: 2-3 line summary of every KB document (the navigation map)
 ├── README.md              # Meta: completeness status per document
 ├── STATE.md               # Meta: discovery-area state — grade, Q&A entries, review & summarization history
-├── project-index.md       # Generated: a file-inventory pre-pass for the discovery sub-agents
+│                          # (the generated pre-pass project-index.md lives in .aid/generated/)
 │
 ├── project-structure.md   # Repository layout and file inventory
 ├── external-sources.md    # Vendor docs and references registered for discovery
@@ -328,7 +342,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-`aid-config` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-describe` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+`aid-discover` generates `.aid/knowledge/INDEX.md` with real content as its final step (and on the greenfield path, which skips Discovery, `aid-describe` seeds and updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -366,6 +380,14 @@ flowchart TB
     D -- "agent cites the precise location" --> L
 ```
 
+**Text version of the diagram:**
+
+1. Tier 1, `INDEX.md`: a one-line intent for every KB document. Always loaded.
+2. The agent picks the relevant document from the index.
+3. Tier 2, one KB document: loaded on demand, only when its intent matches the task.
+4. The agent cites the precise location.
+5. Tier 3, an exact `path:line`: cited inline in the task prompt.
+
 1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries the index (~200–500 tokens total). The agent always knows *what knowledge exists and which file holds it*, at negligible context cost.
 2. **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads the single document a task needs. The fixed-shape directory makes this deterministic — `schemas.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
 3. **Tier 3 — an exact repository location, via citation.** Every factual claim in a KB document carries an inline `path:line` citation. From a KB doc the agent jumps straight to the precise file and line — never globbing, never bulk-loading unrelated source.
@@ -374,7 +396,7 @@ The agent pays a few hundred tokens to know where everything is, then spends its
 
 **Why not a vector database?** Because the KB is small enough (14 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck is not retrieval speed — it is knowing what exists. The INDEX solves that at a fraction of the operational complexity.
 
-**When does the INDEX update?** `aid-config` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-describe` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
+**When does the INDEX update?** It is regenerated every time Discovery runs (full or targeted), and `aid-describe` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
 ### The KB Outlives the Project
 
@@ -390,40 +412,44 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 
 | **Skill** | Group | Phase | Output |
 |-----------|-------|-------|--------|
-| `aid-config` | Support | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
-| `aid-discover` | Knowledge Base Maintenance | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
-| `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
+| `aid-config` | Support | — (settings) | `.aid/settings.yml` (created from the template on first run) — project name, type, minimum grade, and so on |
+| `aid-discover` | Knowledge Base Maintenance | 1 | Knowledge Base (default seed of 14 documents) · `project-index.md` pre-pass · discovery `STATE.md` grade/Q&A |
+| `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | `.aid/knowledge/kb.html` — offline KB viewer |
 | `aid-describe` | Definition | 2a | `REQUIREMENTS.md` — full path only |
 | `aid-define` | Definition | 2b | Feature decomposition into `REQUIREMENTS.md § 11` sections (full path only) |
 | `aid-specify` | Definition | 3 | Technical spec added to each feature's `§ 11` section |
 | `aid-plan` | Definition | 4 | `PLAN.md` (one `### delivery-NNN` stanza per delivery) + `STATE.yml` |
 | `aid-detail` | Definition | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
 | `aid-execute` | Execution | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
-| `aid-deploy` | Definition (shortcut path) | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Definition (shortcut path) | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
+| `aid-deploy` | On demand (catalog row) | — (optional) | Release package · `package-NNN-{slug}.md` · `deploy` state in the work's `STATE.yml` |
+| `aid-monitor` | On demand (catalog row) | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Knowledge Base Maintenance | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 | `aid-triage` | Definition | — | A suggested next command (shortcut, `/aid-describe`, or `/aid-ask` for a plain question); writes nothing |
+| `aid-update-kb` | Knowledge Base Maintenance | — | One targeted, human-confirmed KB edit through the review gate |
+| `aid-ask` | On demand (catalog row) | — | A cited answer to a project question; writes only a gap entry when context is missing |
+| `aid-chat` | Support | — | A channel to another AI coding session (`aid chat`) |
+| `aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket` | Support | — | Connector descriptors and ticket access for external tools |
 | `aid-<verb> [<kind>]` (34 shortcuts) | Definition | — | The flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
-AID organizes its skills into four groups — **Support**, **Knowledge Base Maintenance**, **Definition**, and **Execution**. Groups are a non-sequential way to organize the skills, not a running order. The six numbered development phases (Discover through Execute) still form the mandatory sequential pipeline: Discover sits in Knowledge Base Maintenance, Describe through Detail sit in Definition, and Execute is the sole Execution skill. `aid-deploy` and `aid-monitor` are **optional** shortcut paths in the Definition group, invoked on demand rather than as required phases. The pipeline is linear with feedback loops.
+AID organizes its skills into four groups — **Support**, **Knowledge Base Maintenance**, **Definition**, and **Execution**. Groups are a non-sequential way to organize the skills, not a running order. The six numbered development phases (Discover through Execute) still form the mandatory sequential pipeline: Discover sits in Knowledge Base Maintenance, Describe through Detail sit in Definition, and Execute is the sole Execution skill. `aid-deploy` and `aid-monitor` are **optional**, on-demand skills (catalog `repurpose` rows), not required phases. The pipeline is linear with feedback loops.
 
-`aid-config` (bootstrap, run once) is the sole **Support** skill. **Knowledge Base Maintenance** additionally holds the on-demand KB skills: `aid-summarize` (optional KB viewer), `aid-housekeep` (KB drift maintenance between discovery cycles), `aid-update-kb` (targeted KB updates through the review gate), and `aid-ask` (Q&A). None of these are numbered phases; they do not participate in phase gates. `/aid-triage` — a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask` — and the 34 direct-entry shortcuts belong to the **Definition** group; each shortcut is a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
+**Support** holds `aid-config` (project settings), `aid-chat` (talk to another AI session), and the connector and ticket skills (`aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`). **Knowledge Base Maintenance** additionally holds the on-demand KB skills: `aid-summarize` (optional KB viewer), `aid-housekeep` (KB drift maintenance between discovery cycles), `aid-update-kb` (targeted KB updates through the review gate), and `aid-ask` (Q&A). None of these are numbered phases; they do not participate in phase gates. `/aid-triage` — a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask` — and the 34 direct-entry shortcuts belong to the **Definition** group; each shortcut is a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
 
 ---
 
 ### Support
 
-*Set up the workspace, once, before the pipeline begins.*
+*Settings, connectors, tickets and agent chat.*
 
 ---
 
-#### `aid-config` — Bootstrap (not a numbered phase)
+#### `aid-config` — Project Settings (not a numbered phase)
 
-**Purpose:** Initialize the AID workspace. Run once per project before the pipeline begins.
+**Purpose:** View or change the project's AID settings. Run it once at the start of a project, and any time later.
 
-`aid-config` collects project metadata (greenfield or brownfield, project name, description, minimum grade threshold), scaffolds `.aid/knowledge/` with the KB document templates (14 standard templates from the default seed plus the meta-documents), and asks whether the `.aid/` workspace should be committed to Git.
+`/aid-config` with no argument shows every setting in `.aid/settings.yml` (`name`, `description`, `type` greenfield or brownfield, `source_control`, `minimum_grade`, `heartbeat_interval`). On the first run it copies the settings template into place first. `/aid-config <key>` shows one setting and lets you change it. It does not create the Knowledge Base: `aid-discover` (brownfield) or `aid-describe` (greenfield) does that.
 
-The scaffold is the blank canvas. After `aid-config`, the KB directory exists with empty placeholders; Discovery fills it.
+The other Support skills: `aid-chat` lets agent sessions talk to each other (see §10); `aid-set-connector` and `aid-unset-connector` manage connector descriptors for external tools; `aid-read-ticket`, `aid-create-ticket` and `aid-update-ticket` read and change tickets through those connectors (the last two preview and ask you to confirm first).
 
 ---
 
@@ -431,7 +457,7 @@ The scaffold is the blank canvas. After `aid-config`, the KB directory exists wi
 
 *Build and keep current the team's understanding of the existing system.*
 
-This group's deep-dives below cover Discover (Phase 1), and `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
+This group's deep-dives below cover Discover (Phase 1) and `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
 
 ---
 
@@ -439,7 +465,7 @@ This group's deep-dives below cover Discover (Phase 1), and `aid-summarize`. `ai
 
 **Purpose:** Understand the existing system. Produce the Knowledge Base.
 
-**When to skip:** Pure greenfield projects with no existing code. Describe and Specify populate a minimal KB instead.
+**When to skip:** Pure greenfield projects with no existing code. `aid-describe` seeds a minimal KB instead.
 
 **When to re-enter:** Any downstream phase finds the KB wrong or incomplete. Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
 
@@ -459,7 +485,7 @@ Before dispatching sub-agents, Discover runs the **declared doc-set propose→co
 Discover then dispatches its sub-agents:
 
 - **`aid-researcher`** (pre-scan, alone, sequential): Writes `project-structure.md` and `external-sources.md` from the project index.
-- **`aid-researcher` instances** (in parallel, one per confirmed doc-set scope): Cover the remaining KB documents. Each instance's target list is drawn from the confirmed doc-set; an instance is not dispatched if its target list is empty. This pool of `aid-researcher` instances replaces the former five separate discovery-* agents (discovery-scout, discovery-architect, discovery-analyst, discovery-integrator, discovery-quality).
+- **`aid-researcher` instances** (in parallel, one per confirmed doc-set scope): Cover the remaining KB documents. Each instance's target list is drawn from the confirmed doc-set; an instance is not dispatched if its target list is empty.
 - **`aid-reviewer`** (after generation): Grades the result adversarially against the universal rubric. KB-doc review is a dispatch parameter — the generation agents never grade their own work.
 
 Across the run, discovery covers:
@@ -482,9 +508,9 @@ Across the run, discovery covers:
 
 #### `aid-summarize` — Optional KB Viewer (not a numbered phase)
 
-**Purpose:** Generate a single self-contained `knowledge-summary.html` from the approved Knowledge Base.
+**Purpose:** Generate a single self-contained `kb.html` (in `.aid/knowledge/`) from the approved Knowledge Base.
 
-`aid-summarize` is an optional, read-only skill that produces an offline HTML viewer of the KB — light/dark theme, WCAG-AA accessible, with Mermaid diagrams rendered inline. It is idempotent: re-running it on an unchanged KB is a no-op. Run it after Discovery approval when you want a portable, shareable view of the project's understanding.
+`aid-summarize` is an optional, read-only skill that produces an offline HTML viewer of the KB — light/dark theme, accessibility-checked, with its diagrams drawn directly in the page (no Mermaid engine). It is idempotent: re-running it on an unchanged KB is a no-op. Run it after Discovery approval when you want a portable, shareable view of the project's understanding.
 
 ---
 
@@ -519,10 +545,10 @@ Across the run, discovery covers:
           tasks/
             task-001/
               DETAIL.md             ← task definition (from Detail)
-              STATE.md              ← task lifecycle
+              STATE.yml             ← task lifecycle
 ```
 
-Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB.
+Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB. Before a work-starting skill allocates a new `work-NNN`, the Work Initiation Gate lists the works that already exist (across every git worktree) and asks whether you are continuing one or starting a new one; a new work gets its own isolated git worktree and branch.
 
 **Full-path process (seven states):**
 
@@ -548,7 +574,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 The lite path is no longer produced by `aid-describe` — it has its own entry. A direct-entry shortcut (`/aid-fix`, `/aid-create api`, `/aid-update cli`, …) is one of 34 verb-first shortcuts in a 94-row catalog (`canonical/aid/templates/shortcut-catalog.yml`), grouped into families: create, update, fix, refactor, remove, deprecate, migrate, test + experiment, prototype, design, document, report + dashboard, review, research. Binding a shortcut to one fixed `{verb, artifact}` pair pre-shapes CAPTURE, SPEC, and DETAIL for that specific shape of change, so the engine skips the generic elicitation a from-scratch interview would need — that specialization is what makes the lite path fast, not merely short. See §1, *Skill Inventory*, for the full family breakdown.
 
-**Not sure which shortcut fits — or whether this needs the full path at all?** Run `/aid-triage` first. It is a stateless, write-free, suggest-only router (`INTAKE → CLASSIFY → SUGGEST → HALT`): describe the work in one sentence, and it infers the work-type and scope, then suggests exactly one next step — a matching canonical shortcut for a known, single-target change, or the full path (`/aid-describe`) for anything broad, multi-activity, or ambiguous — and stops. It writes nothing: no interview, no scaffold, no work folder, no `STATE.md`. The conservative default routes anything short of a confident single match to the full path.
+**Not sure which shortcut fits — or whether this needs the full path at all?** Run `/aid-triage` first. It is a stateless, write-free, suggest-only router (`INTAKE → CLASSIFY → SUGGEST → HALT`): describe the work in one sentence, and it infers the work-type and scope, then suggests exactly one next step — a matching canonical shortcut for a known, single-target change, or the full path (`/aid-describe`) for anything broad, multi-activity, or ambiguous — and stops. It writes nothing: no interview, no scaffold, no work folder, no state file. The conservative default routes anything short of a confident single match to the full path.
 
 ```mermaid
 flowchart LR
@@ -560,7 +586,7 @@ flowchart LR
 
     subgraph FullPath[" Full path "]
         direction LR
-        F1["/aid-describe + /aid-define<br/>REQUIREMENTS + feature SPEC stubs"]:::def
+        F1["/aid-describe + /aid-define<br/>REQUIREMENTS + feature sections"]:::def
         F2["/aid-specify"]:::def
         F3["/aid-plan"]:::def
         F4["/aid-detail"]:::def
@@ -581,7 +607,15 @@ flowchart LR
     L1 --> L2 --> L3 --> L4 --> L5 -- "APPROVAL-HALT" --> Exec
 ```
 
-*The three doors from §1, focused on what happens after you choose one. `/aid-triage` only ever suggests one of the two branches below — it never runs anything itself; you type the suggested command. A direct-entry shortcut skips both `/aid-triage` and `/aid-describe`, going straight into the shortcut engine's own INTAKE. Every engine state maps to one or more collapsed full-path phases; GATE is the sole quality checkpoint before the human approval halt — there is no per-phase Propose/Discuss/Write/Review loop on this side, and no recipe matching anywhere.*
+**Text version of the diagram:**
+
+1. `/aid-triage`: you describe the work in one sentence. It suggests one door and stops; you type the suggested command.
+2. If the work is broad, multi-target or ambiguous, the suggestion is the full path: `/aid-describe` + `/aid-define` (requirements and feature sections) → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`. You approve each step.
+3. If it is a known, single-target change, the suggestion is a shortcut, which runs the shortcut engine: CAPTURE (Describe) → SPEC (Define + Specify) → PLAN → DETAIL → GATE (mechanical grading).
+4. After GATE, the engine stops at APPROVAL-HALT. You approve, then run `/aid-execute`.
+5. You can skip `/aid-triage` and type a shortcut directly; it enters the engine at its own INTAKE.
+
+*The three doors from §1, focused on what happens after you choose one. `/aid-triage` only ever suggests one of the two branches below — it never runs anything itself; you type the suggested command. A direct-entry shortcut skips both `/aid-triage` and `/aid-describe`, going straight into the shortcut engine's own INTAKE. Every engine state maps to one or more collapsed full-path phases; GATE is the sole quality checkpoint before the human approval halt — there is no per-phase Propose/Discuss/Write/Review loop on this side.*
 
 **The shortcut engine.** Every shortcut is a thin doorway into one shared engine (`canonical/aid/templates/shortcut-engine.md`), which runs the state machine:
 
@@ -677,9 +711,9 @@ The eight task types are:
 - **REFACTOR** — restructure code without changing behavior
 - **CONFIGURE** — config files, CI/CD, environment setup
 
-**Output:** `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files — each with its own sibling `STATE.md` for task lifecycle — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md` under the corresponding delivery.
+**Output:** `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files — each with its own sibling `STATE.yml` for task lifecycle — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md` under the corresponding delivery.
 
-**Full path only:** Detail is skipped on the lite path — the shortcut engine's DETAIL state decides the task breakdown directly and emits `tasks/task-NNN/DETAIL.md` at the work root, with no per-task `STATE.md` (task mutable state lives in the work-root `STATE.md § ### Tasks lifecycle` table instead).
+**Full path only:** Detail is skipped on the lite path — the shortcut engine's DETAIL state decides the task breakdown directly and emits `tasks/task-NNN/DETAIL.md` at the work root, with no per-task `STATE.yml` (task mutable state lives in the work-root `STATE.yml` `tasks_lifecycle` mapping instead).
 
 ---
 
@@ -710,13 +744,13 @@ The eight task types are:
 
 **The two-tier review design:** Execute uses a two-tier review model. Within each task, a **quick-check** reviewer (Small tier) catches obvious issues without triggering a full grade loop. At the end of each delivery, a **delivery-gate** reviewer (tier matched to delivery complexity) runs a full review-fix-review loop with `grade.sh`. High findings from quick-checks accumulate for the delivery gate. The design means fast tasks stay fast while complex deliveries get the scrutiny they need.
 
-**Parallel pool dispatch:** In delivery mode, Execute uses a continuous parallel pool (PD model) rather than a serial task loop. Up to `max_parallel_tasks` tasks (default 5, configured in `.aid/settings.yml`) run simultaneously. The pool is replenished as tasks complete; failed tasks block their transitive dependents (computed by `compute-block-radius.sh` via BFS). If the host does not support background dispatch, the pool degrades gracefully to sequential execution with a user-visible notice.
+**Parallel pool dispatch:** In delivery mode, Execute uses a continuous parallel pool (PD model) rather than a serial task loop. Up to `execution.max_parallel_tasks` tasks (default 5; an optional key you can add to `.aid/settings.yml`) run simultaneously. The pool is replenished as tasks complete; failed tasks block their transitive dependents (computed by `compute-block-radius.sh` via BFS). If the host does not support background dispatch, the pool degrades gracefully to sequential execution with a user-visible notice.
 
 **Branch isolation:** One branch per delivery (`aid/{work}-delivery-NNN`). All tasks in a delivery share the branch. RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
 **Impediment protocol:** When the agent discovers assumptions don't hold, it generates an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem. The impediment is typed (`kb-gap | architecture-conflict | missing-dependency | wrong-assumption`) and presented to the human with options and a recommendation. The human decides.
 
-**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. Full path: the grade and full review history are recorded in the task's own `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section, and the delivery's `deliveries/delivery-NNN/STATE.md` `## Delivery Lifecycle` advances (Executing → Gated → Done, or Blocked). Lite path: both live in the work-root `STATE.md` — the `### Tasks lifecycle` row for the task, and the promoted `## Delivery Lifecycle` section for the sole delivery.
+**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. Full path: the grade and full review history are recorded in the task's own `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`, and the delivery's `deliveries/delivery-NNN/STATE.yml` delivery lifecycle advances (Executing → Gated → Done, or Blocked). Lite path: both live in the work-root `STATE.yml` — the task's entry under `tasks_lifecycle`, and the promoted `delivery_lifecycle` for the sole delivery.
 
 ---
 
@@ -724,7 +758,7 @@ The eight task types are:
 
 *Optionally ship, monitor, and classify issues.*
 
-`aid-deploy` and `aid-monitor` are not their own group — they are **optional shortcut paths in the Definition group**, invoked on demand rather than as required phases. Both are **optional, on-demand skills, not numbered pipeline phases.** The numbered pipeline ends at Execute; each is a **separate, independently-invoked path** (`/aid-deploy` and `/aid-monitor` each have their own direct entry), not a continuation of the sequence — neither is required to complete a development cycle and neither runs as a step after Execute. A project may ship by other means, may run monitoring without using `aid-deploy`, or may skip both entirely. Run them when the project's delivery model calls for them.
+`aid-deploy` and `aid-monitor` are catalog `repurpose` skills, invoked on demand rather than as required phases. Both are **optional, on-demand skills, not numbered pipeline phases.** The numbered pipeline ends at Execute; each is a **separate, independently-invoked path** (`/aid-deploy` and `/aid-monitor` each have their own direct entry), not a continuation of the sequence — neither is required to complete a development cycle and neither runs as a step after Execute. A project may ship by other means, may run monitoring without using `aid-deploy`, or may skip both entirely. Run them when the project's delivery model calls for them.
 
 This mirrors `aid-summarize` — an optional skill in the Knowledge Base Maintenance group — and `aid-housekeep`, the optional off-pipeline maintenance skill described below. The feedback loops they participate in (§6, Loops 8–10) apply only when these skills are run.
 
@@ -743,7 +777,7 @@ This mirrors `aid-summarize` — an optional skill in the Knowledge Base Mainten
 5. **Documentation routing:** Route any KB-affecting discoveries to Discovery as Q&A entries in the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`). Deploy never edits KB documents directly.
 6. **Artifact status update:** Mark the package's deliveries and their tasks `Shipped`.
 
-**Output:** `package-NNN-{slug}.md` + `DEPLOYMENT-STATE.md` + the release artifact prescribed by `infrastructure.md`.
+**Output:** `package-NNN-{slug}.md` (in `.aid/works/{work}/packages/`) + the `deploy` state recorded in the work's `STATE.yml` + the release artifact prescribed by `infrastructure.md`. Deploy runs as IDLE → SELECTING → VERIFYING → PACKAGING → DONE.
 
 ---
 
@@ -780,7 +814,7 @@ As a project evolves, the codebase drifts from the KB. New dependencies appear. 
 - **PREFLIGHT** — checks preconditions (branch, workspace, settings).
 - **KB-DELTA** — re-discovers KB docs that have drifted from the repo since the last KB approval. For brownfield docs, synthesizes an `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery. For greenfield forward-authored design docs (stamped `source: forward-authored`), runs a **Conformance Lane** instead: it checks whether as-built code diverges from the forward-authored design, classifies any divergence (`placeholder-resolved`, `code-ahead`, or `contradiction`), and surfaces the findings for human reconciliation. It never silently overwrites the design with as-built — authority stays design-to-code until the human explicitly chooses otherwise.
 - **SUMMARY-DELTA** — regenerates the visual summary via `/aid-summarize` if the KB changed.
-- **CLEANUP** — sweeps stale `.aid/` work-area artifacts (old work directories, resolved impediments, completed task state files).
+- **CLEANUP** — sweeps stale `.aid/` work-area artifacts (old work directories, resolved impediments, completed task state files) and offers, with a confirmation checklist, to remove finished works' git worktrees and branches.
 - **DONE** — terminal state.
 
 The skill is re-entrant: a stalled run resumes at the stalled stage.
@@ -818,6 +852,13 @@ flowchart TB
     L -. "reviewer tier ≥ executor tier" .-> M -.-> S
 ```
 
+**Text version of the diagram:**
+
+- Large tier (1 agent by default; highest-stakes reasoning): `aid-architect`.
+- Medium tier (7 agents by default; the workhorses): `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`.
+- Small tier (1 agent; mechanical work): `aid-clerk`.
+- Rule across tiers: the reviewer's tier is at least the executor's tier.
+
 *9 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
 
 AID dispatches 9 specialist agents across three model tiers. The key design invariant: **the reviewer's tier is always ≥ the executor's tier.** The agent that writes never grades its own work.
@@ -830,17 +871,15 @@ These are **default** tiers, not fixed ceilings. Each dispatch site picks the mo
 - **Medium (7 default):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, route, document, interview, research/KB-author, and review. `aid-interviewer`, `aid-researcher`, and `aid-reviewer` default to Medium rather than Large; each escalates back to Large for genuinely hard work (complex requirement synthesis, deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
 - **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where larger-tier reasoning is unnecessary overhead.
 
-The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses the Knowledge Base Maintenance navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses the teal (`#0F766E`) shared by Plan and Detail in the Definition group because Medium agents handle operational execution (like Plan, Detail, and Execute). This is semantic overlap by design.
-
 ### Tier Mapping per Tool
 
 All five host tools map the same three tiers to their respective models:
 
 | **Tier** | Claude Code | Codex CLI | Cursor | Copilot CLI | Antigravity |
 |---------|------------|-----------|--------|-------------|-------------|
-| **Large** | Claude Opus | GPT-5.5 high reasoning | Claude Opus (alias) | Large slug | Gemini-3 Pro high reasoning |
-| **Medium** | Claude Sonnet | GPT-5.4 medium reasoning | Claude Sonnet (alias) | Medium slug | Gemini-3 Pro low reasoning |
-| **Small** | Claude Haiku | GPT-5.4-mini low reasoning | Claude Haiku (alias) | Small slug | Gemini-3 Flash |
+| **Large** | Claude Opus | GPT-5.5 high reasoning | Claude Opus (alias) | `claude-opus-4.8` | Gemini-3 Pro high reasoning |
+| **Medium** | Claude Sonnet | GPT-5.4 medium reasoning | Claude Sonnet (alias) | `claude-sonnet-4.6` | Gemini-3 Pro low reasoning |
+| **Small** | Claude Haiku | GPT-5.4-mini low reasoning | Claude Haiku (alias) | `claude-haiku-4.5` | Gemini-3 Flash |
 
 The tier→model mapping is declared per tool in `profiles/{tool}.toml` and rendered into that tool's agents folder. The skills are not rendered per tool: one shared copy serves every tool. Only the agents differ per tool, in model names and file format.
 
@@ -904,7 +943,7 @@ copies against `canonical/`.
 tool's agents, and the root instruction regions. Several tools can share one repo, and they all run
 one AID version. AID changes only the text between its `AID:BEGIN` and `AID:END` markers in
 `AGENTS.md` and `CLAUDE.md`, so text you wrote outside those markers is kept. See the
-[install guide](install.md) for the file list and the offline artifact set.
+[AID install guide](install.md) for the file list and the offline artifact set.
 
 ### Skill → Agent Dispatch
 
@@ -952,6 +991,14 @@ flowchart TB
     Any -. "targeted re-discovery" .-> D
 ```
 
+**Text version of the diagram:**
+
+1. Main sequence: 1 Discover → 2 Describe → Define → 3 Specify → 4 Plan → 5 Detail → 6 Execute.
+2. Optional after Execute, on demand: Deploy and Monitor.
+3. Loops back (each a formal protocol): L1 Describe/Define → Discover; L2 Specify → Discover; L3 Plan → Discover; L4 Plan → Specify; L5 Detail → Plan; L6 Execute → Discover (an impediment); L7 Execute → Specify (a review finding; it can also route to Detail or Discover, see below); L8 Deploy → Execute (verification failed).
+4. Out of production: L9 Monitor → `/aid-fix` (a bug); L10 Monitor → `/aid-triage` (a change request).
+5. L11, from any phase → Discover: targeted re-discovery when the KB is wrong, incomplete or stale.
+
 *Eleven formal feedback loops — eight within development, two from production out to the shortcut/triage entry layer, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
 
 The development pipeline (Discover through Execute) is sequential by default; the optional Deploy and Monitor shortcut paths (Definition group) are separate, on-demand paths, not a continuation of it. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
@@ -980,7 +1027,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 **Loop 3: Plan → Discovery.** Planning reveals the codebase is more complex than the KB captured. Plan writes a Q&A entry → targeted discovery → KB updated → planning resumes.
 
-**Loop 4: Plan → Specify.** The KB is complete, but the SPEC is ambiguous or contradictory. Plan writes a Q&A entry to the feature's `STATE.md` → spec revision (possibly with a targeted interview) → planning resumes.
+**Loop 4: Plan → Specify.** The KB is complete, but the SPEC is ambiguous or contradictory. Plan writes a Q&A entry to the work's `STATE.yml` → spec revision (possibly with a targeted interview) → planning resumes.
 
 **Loop 5: Detail → Plan.** The plan is too vague to decompose into tasks. Deliverables are too broad, module boundaries unclear, or test scenarios don't map to features. Detail flags the under-specified deliverable → Plan revises it → Detail resumes.
 
@@ -1019,7 +1066,7 @@ The revision trail still matters for the same reason it always did — when a sp
 
 ### Feedback Loop Artifacts
 
-The design-phase loops record the gap as a **Q&A entry appended to the relevant area's `STATE.md`** — the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) for a KB gap, the work-area `STATE.md` for a requirements gap. The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
+The design-phase loops record the gap as a **Q&A entry appended to the relevant area's state file** — the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) for a KB gap, the work's `STATE.yml` for a requirements gap. The entry below is shown in the discovery-area (markdown) format: The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
 
 ```markdown
 ### Q{N}
@@ -1058,26 +1105,27 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 
 | **Artifact** | Location | Produced By | Consumed By | Lifecycle |
 |-------------|----------|------------|-------------|-----------|
-| Knowledge Base (14 standard docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
-| INDEX.md | `.aid/knowledge/` | Init, Discover, Describe | All phases | Seeded at init; regenerated by Discovery; maintained by Describe |
-| STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
+| Knowledge Base (default seed of 14 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
+| INDEX.md | `.aid/knowledge/` | Discover, Describe | All phases | Regenerated by Discovery; maintained by Describe |
+| STATE.md (discovery area) | `.aid/knowledge/` | Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
 | REQUIREMENTS.md | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
-| STATE.md (work area) | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
+| STATE.yml (work area) | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
 | Feature section | `REQUIREMENTS.md § 11` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes the requirements side, Specify adds the technical spec |
 | known-issues.md | `.aid/works/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
 | PLAN.md | `.aid/works/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | Delivery stanza (delivery definition) | A `### delivery-NNN` section of `PLAN.md` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
-| STATE.md (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.md § Delivery Lifecycle` | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
+| STATE.yml (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.yml` (`delivery_lifecycle`) | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
 | DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/works/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
-| STATE.md (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.md § Tasks lifecycle` | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
+| STATE.yml (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.yml` (`tasks_lifecycle`) | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
 | IMPEDIMENT-task-NNN.md | `.aid/works/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/works/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
-| DEPLOYMENT-STATE.md | `.aid/works/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
+| Deploy state (`deploy` key) | Work-root `STATE.yml` | Deploy | Deploy (resume) | Living — operation status + history |
+| kb.html | `.aid/knowledge/` | Summarize | People who want to read the KB | Regenerated when the KB changes |
 | MONITOR-STATE.md _(deferred)_ | `.aid/works/{work}/` | Monitor | `/aid-fix` (bugs), `/aid-triage` (change requests) | Planned — currently an in-memory observation log across runs |
 | KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
 
-Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own `STATE.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: the work-root `STATE.md § Tasks lifecycle` row). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
+Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own state (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`; lite path: the task's entry in the work-root `STATE.yml` `tasks_lifecycle`). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
 
 ### Templates Reference
 
@@ -1102,34 +1150,21 @@ Within Execute, the reviewer produces a structured issue list that `canonical/ai
 
 **Feature section template:**
 
-Each feature gets a `### Feature NNN` section under `REQUIREMENTS.md § 11` on the full path. Describe writes the top half (requirements side). Specify adds the bottom half (technical specification).
+Each feature is a `### Feature NNN` section under `## 11. Features` of `REQUIREMENTS.md` (the skeleton is in `canonical/aid/templates/requirements/requirements-template.md`). `/aid-define` creates the section with its requirements side. `/aid-specify` adds the `#### Technical Specification` subsection. Features have no folders or files of their own.
 
 ```markdown
-# {Feature Title}
+### Feature NNN — {Feature Title}
 
-## Source
-- REQUIREMENTS.md §5.{n}
+(requirements side, from Define: priority, the requirements and acceptance
+criteria it implements — cited from §5 and §9 — description, user stories)
 
-## Description
-{Stakeholder perspective — what the feature does, not how.}
+#### Technical Specification
 
-## User Stories
-- As a {user}, I want to {action} so that {benefit}
-
-## Priority
-{Must / Should / Could}
-
-## Acceptance Criteria
-- [ ] Given {precondition}, when {action}, then {expected result}
-
----
-
-## Technical Specification
 {Added by /aid-specify — sections determined by KB, codebase, and developer discussion.}
 
-### Data Model
-### Feature Flow
-### Layers & Components
+##### Data Model
+##### Feature Flow
+##### Layers & Components
 {Plus conditional sections as activated}
 ```
 
@@ -1197,14 +1232,14 @@ tasks it came from.
 
 **Task DETAIL.md template:**
 
-Detail produces one `DETAIL.md` per task — the task's immutable definition — and appends the execution graph (waves, precedence) to `PLAN.md` under the corresponding delivery. Each task also gets its own sibling `STATE.md` for lifecycle (full path only; the lite path rolls task state into the work-root `STATE.md § Tasks lifecycle` table instead). Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`. Lite path: `tasks/task-NNN/DETAIL.md` at the work root.
+Detail produces one `DETAIL.md` per task — the task's immutable definition — and appends the execution graph (waves, precedence) to `PLAN.md` under the corresponding delivery. Each task also gets its own sibling `STATE.yml` for lifecycle (full path only; the lite path rolls task state into the work-root `STATE.yml` `tasks_lifecycle` mapping instead). Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`. Lite path: `tasks/task-NNN/DETAIL.md` at the work root.
 
 ```markdown
 # task-NNN: {Title}
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} → delivery-NNN
+**Source:** feature-NNN-{name} → delivery-NNN → AC-N (the lite path cites the work instead: work-NNN-{name} → delivery-001 → AC-N)
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
@@ -1219,7 +1254,7 @@ Detail produces one `DETAIL.md` per task — the task's immutable definition —
 
 **Review record format:**
 
-Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `canonical/aid/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `canonical/aid/templates/grading-rubric.md` for the full table.
+Inside Execute, the reviewer produces a structured issue list. It is stored as fields in the task's `STATE.yml`; the markdown below shows its shape. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `canonical/aid/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `canonical/aid/templates/grading-rubric.md` for the full table.
 
 ```markdown
 ## Current Review
@@ -1353,7 +1388,7 @@ flowchart TB
         S3 -. "re-spec from scratch" .-> S1
     end
 
-    subgraph AID["AI-Assisted Development"]
+    subgraph AID["AI Integrated Development"]
         direction TB
         A0["aid-config<br/>(one-time setup)"]:::kb
         A1["1 · aid-discover<br/>(brownfield)"]:::aid_prep
@@ -1383,12 +1418,19 @@ flowchart TB
     end
 ```
 
-*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and the optional Deploy/Monitor shortcut paths that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
+**Text version of the diagram:**
+
+- Spec-Driven Development (SDD): 1. Write a spec. 2. An AI agent implements the code. 3. A human reviews. 4. Ship. If the review fails, you re-spec from scratch and go back to step 1.
+- AID: `aid-config` (one-time setup) → 1 `aid-discover` (brownfield) → 2 `aid-describe` + `aid-define` (requirements) → 3 `aid-specify` → 4 `aid-plan` (roadmap) → 5 `aid-detail` (task breakdown) → 6 `aid-execute` (build + review loop).
+- Every numbered AID phase reads from and writes to the Knowledge Base, which persists across sessions.
+- Optional, on demand after Execute: `aid-deploy` and `aid-monitor`. `aid-monitor` sends a bug to `aid-fix` (a shortcut) and a change request to `aid-triage`.
+
+*SDD starts from a written spec and loops back to re-spec from scratch on changes. AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and the optional Deploy/Monitor shortcut paths that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
 
 | **Dimension** | SDD | AID |
 |--------------|-----|-----|
 | **Starting point** | A spec | Understanding (Discovery) |
-| **Brownfield support** | Gap acknowledged | First-class Discovery phase with a 14-document KB (project-configurable) |
+| **Brownfield support** | Gap acknowledged | First-class Discovery phase with a project-configurable KB (default seed of 14 documents) |
 | **Spec philosophy** | Spec is source of truth | Spec is hypothesis — revised by formal protocol |
 | **Requirements** | Assumed to exist | Gathered through adaptive interview |
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
@@ -1440,7 +1482,7 @@ network required after the initial download. All channels deliver the same persi
 
 ### Starting with an Existing Project (Brownfield)
 
-1. Run `/aid-config` to initialize the workspace (once per project).
+1. Run `/aid-config` to review the project settings (name, type, minimum grade) — once per project; it creates `.aid/settings.yml` on first run.
 2. Run `/aid-discover` on the codebase. This produces your Knowledge Base.
 3. Review the KB. Fill gaps with human knowledge during the Q&A state.
 4. For the next piece of work: if you know what kind of change it is, run the matching direct-entry shortcut (`/aid-fix`, `/aid-create api`, …). Not sure? Run `/aid-triage` and describe it in a sentence — it suggests the right door. Broad or multi-feature work: run `/aid-describe` directly. Just have a question, not a change? Run `/aid-ask`.
@@ -1451,11 +1493,20 @@ network required after the initial download. All channels deliver the same persi
 
 ### Starting a New Project (Greenfield)
 
-1. Run `/aid-config`, then `/aid-describe` for the initial, broad requirements gathering — greenfield projects with multiple features start on the full path.
+1. Run `/aid-config` to set the project type to greenfield and review the settings, then `/aid-describe` for the initial, broad requirements gathering — greenfield projects with multiple features start on the full path.
 2. On the full path, `aid-describe` runs its DESCRIBE-SEED state: it forward-authors a five-element KB seed (domain language, intended architecture, conventions, technology stack, and key decisions) from intent before any code exists. The seed is stamped `source: forward-authored` — the design is the source of truth, and code is built to conform to it.
 3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
 4. **Lite path (small greenfield change):** run the matching direct-entry shortcut (or `/aid-triage` first if unsure); the shortcut engine halts for approval, then run `/aid-execute`.
 5. As the codebase develops, run `/aid-housekeep` periodically. Its conformance lane will check whether as-built code diverges from the forward-authored design and surface any gaps for your decision — it never overwrites the design automatically.
+
+### Working Across Projects and Sessions
+
+Besides the in-session skills, the `aid` command-line tool has a few commands for managing AID itself:
+
+- `aid status` shows the AID state of the current project.
+- `aid projects [list|add|remove|scan]` lists, registers, unregisters, or scans for AID projects in a machine-level registry. `aid update all` bulk-updates every registered project.
+- `aid dashboard start` / `aid dashboard stop` start and stop the local dashboard, which serves all registered projects.
+- `aid chat <verb>` lets one AI coding session talk to another. Inside a session, the `/aid-chat` skill drives it: you tell the agent what you want ("ask the agent named api-work about the schema") and it runs the `aid chat` commands.
 
 ### Using the Direct-Entry Shortcuts
 
@@ -1468,7 +1519,7 @@ For small, well-scoped changes — bug fixes, doc updates, refactors, small new 
 
 ### Adopting Incrementally
 
-You do not need to use all six phases from day one — though `/aid-config` always runs once first:
+You do not need to use all six phases from day one — though it helps to run `/aid-config` once first:
 
 | **Starting point** | Add-on | What you gain |
 |-------------------|--------|---------------|
@@ -1492,5 +1543,4 @@ You do not need to use all six phases from day one — though `/aid-config` alwa
 
 ---
 
-*AID V3.2 — June 2026*
 *Built from practice, not theory. Every phase, every template, every feedback loop was born from real projects.*

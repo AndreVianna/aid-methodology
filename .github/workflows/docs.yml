@@ -17,11 +17,9 @@ on:
     branches: [master]
     paths:                      # only rebuild when site inputs change
       - 'site/**'
-      - 'docs/**'               # migrated content source (feature-005)
-      - 'canonical/**'          # generator input: reference pages and skill-page
-                                # deep-link anchors are derived from it, so a
-                                # canonical-only commit must still rebuild
-      - 'VERSION'               # version injection input (feature-008)
+      - 'docs/**'               # imported into the site at build time
+      - 'canonical/**'          # skill and agent pages are generated from it
+      - 'VERSION'               # shown in the page footer
       - '.github/workflows/docs.yml'
   pull_request:                 # M2: gate PRs to master — build-validate site inputs before merge
     branches: [master]          # (the `deploy` job is skipped on PRs; build only)
@@ -61,45 +59,21 @@ jobs:
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      # Build-time data-fetch (feature-002 OWNS this; features 008/009 consume it).
-      # Reads VERSION + the GitHub Releases API via the workflow GITHUB_TOKEN
-      # and exports the contract env vars into $GITHUB_ENV for the build step.
-      # Degrades gracefully: exits 0 on any API failure; build never blocked.
-      - name: Fetch build-time release data (VERSION + Releases API)
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node site/scripts/fetch-release-data.mjs >> "$GITHUB_ENV"
-
       - name: Install deps (reproducible)
         working-directory: site
         run: npm ci
 
-      # Gate the pull request on the site suite. After `npm ci` because vitest is
-      # a devDependency; before `npm run build` to fail fast, so a red suite never
-      # produces a Pages artifact.
-      #
-      # Deliberately NO `env:` block. Note what that does and does not achieve:
-      # the "Fetch build-time release data" step above writes AID_VERSION /
-      # AID_LATEST_RELEASE_JSON / AID_RELEASES_JSON into $GITHUB_ENV, so they are
-      # in this step's environment regardless — omitting `env:` does not hide
-      # them. It simply avoids re-declaring them here. Determinism comes from the
-      # suite itself: every test that reads one of those keys saves it, sets the
-      # value it needs, and restores it (see the saveEnv/restoreEnv pairs in
-      # src/data/__tests__/, src/lib/__tests__/). Verified by running the whole
-      # suite with all three set — 248 tests, all green, same as with none set.
-      - name: Test (site vitest suite)
-        working-directory: site
-        run: npm test
-
+      # `npm run build` first runs scripts/generate.mjs (pages from docs/ and canonical/).
       - name: Build Astro Starlight site
         working-directory: site
-        env:
-          # Surface the build-time data-fetch contract to the Astro SSG build
-          AID_VERSION: ${{ env.AID_VERSION }}
-          AID_LATEST_RELEASE_JSON: ${{ env.AID_LATEST_RELEASE_JSON }}
-          AID_RELEASES_JSON: ${{ env.AID_RELEASES_JSON }}
         run: npm run build
+
+      # Checks the built pages: links, page structure, basic accessibility, and that the
+      # hand-written skill and agent data still matches canonical/. A red suite never
+      # reaches the Pages artifact below.
+      - name: Test (node:test)
+        working-directory: site
+        run: npm test
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
