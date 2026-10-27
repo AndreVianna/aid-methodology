@@ -11,7 +11,7 @@ This page introduces the ideas behind AID and links to each Concepts page, so yo
 [AID](/reference/glossary/#aid), short for AI Integrated Development, is a way to build software in which you and AI agents work through every phase together. You are the pilot and the AI is the suit. Each Concepts page answers one question. For lists of commands, settings and files, see the [Reference](/reference/overview/) section.
 
 - [The pipeline](/concepts/pipeline/): the phases, the three ways in, and what each phase produces.
-- [Knowledge Base](/concepts/knowledge-base/): the written record of your project that every later task reads.
+- [Knowledge Base](/concepts/knowledge-base/): the documents that record your project and that agents consult before they work.
 - [Agents](/concepts/agents/): the agent model, its tiers, and how skills dispatch agents.
 - [Feedback loops](/concepts/feedback-loops/): the formal ways a finding goes back to an earlier phase.
 - [Case studies](/concepts/case-studies/): real projects and the path each took through the pipeline.
@@ -28,18 +28,16 @@ Understand → Specify → Plan → Build → Verify → Ship.
 
 This is the Waterfall sequence, and AID follows it on purpose.
 
-AID's argument is that Waterfall did not fail because its sequence was wrong. It failed because people could not run the sequence fast enough to afford iteration. When discovery takes weeks and specs take days, going back to fix a wrong assumption costs a sprint. Teams learned to skip ahead and call it "agile".
+AID keeps the sequence and has AI agents do the heavy work in each phase. That changes what going back costs:
 
-AI changes that cost:
+- **Discovery is done by an agent.** `/aid-discover` maps an existing codebase and drafts a structured Knowledge Base, which you review.
+- **Specification is grounded.** `/aid-specify` proposes a design from the Knowledge Base and the code, and you decide.
+- **Going back is a defined step.** A feedback loop sends a finding to an earlier phase, so filling a knowledge gap does not mean starting over.
+- **Documents can be kept current.** `/aid-housekeep` checks the Knowledge Base against the code when the project has drifted.
 
-- **Discovery is faster.** An agent can scan a codebase, map its architecture and conventions, and draft a structured Knowledge Base in one session.
-- **Specification is faster.** With a Knowledge Base as context, an agent can draft a grounded spec in minutes.
-- **Iteration is cheaper.** A feedback loop costs tokens, not a sprint. Going back to fill a knowledge gap is a small step.
-- **Documents stay current.** The agents that write code can also update the Knowledge Base and the specs.
+AID adds formal feedback loops to the sequence. You set the direction, and the agents do the work in between.
 
-Agile answered Waterfall's execution problem. AID keeps the Waterfall sequence, runs it with AI, and adds formal feedback loops. The slow part used to be the people doing the work. Now the people set the direction.
-
-AID does not replace Agile. Sprints, backlogs and retrospectives can sit alongside AID phases. What AID adds is the structure that is often missing inside an iteration: understanding and specification before implementation.
+AID does not replace sprints, backlogs or retrospectives, which can sit alongside AID phases. What AID adds is understanding and specification before implementation.
 
 ### The Iron Man Model: Human-in-the-Middle
 
@@ -57,7 +55,7 @@ A shortcut works differently. It runs the shared shortcut engine without a stop 
 
 **1. Knowledge before specification**
 
-Most methods tell you to write good specs. Few tell you how to understand a system well enough to write them. In AID, the Discover phase produces a [Knowledge Base](/reference/glossary/#knowledge-base): documents on architecture, conventions, data models, integrations, tech debt and domain language. You write the spec against that knowledge, not from imagination.
+AID puts understanding before specification. The Discover phase produces a [Knowledge Base](/reference/glossary/#knowledge-base): documents on architecture, conventions, data models, integrations, tech debt and domain language. You write the spec against that knowledge, not from imagination.
 
 A [greenfield](/reference/glossary/#greenfield) project has no existing system to discover, but understanding still comes before specification. `/aid-describe` writes a first set of design documents from your intent: domain language, intended architecture, conventions, technology stack and, when you make rationale-bearing choices, decisions. This reverses the direction used for existing code. The design documents are the source of truth, they carry `source: forward-authored`, and the code is built to match them. Once code exists, `/aid-housekeep` checks it against the design and reports any divergence for you to resolve. It never overwrites the design automatically.
 
@@ -65,7 +63,7 @@ A [greenfield](/reference/glossary/#greenfield) project has no existing system t
 
 A spec written before implementation is a hypothesis. A spec revised after implementation is knowledge. AID treats specs as living artifacts that change through defined paths, so each revision leaves a record.
 
-This matters most on existing code. The people who built it may have left, the requirements may have changed, and the patterns may be dated. Any spec you write will be partly wrong. The question is whether you revise it formally, with a trail, or informally, with silent workarounds.
+This matters most on existing code. The people who built it may have left, the requirements may have changed, and the patterns may be dated. A spec you write may be partly wrong. The question is whether you revise it formally, with a trail, or informally, with silent workarounds.
 
 **3. Feedback over forward-only**
 
@@ -73,12 +71,12 @@ The pipeline is sequential by default, but a later phase can send a finding back
 
 ### What AID removes
 
-Give a capable coding agent a vague task and a large repository, and the same failures appear. AID addresses each one through process, not prompt tuning.
+Give a capable coding agent a vague task and a large repository, and failures like these can appear. AID addresses each one through process, not prompt tuning.
 
 | **Failure mode** | What it looks like | How AID addresses it |
 |------------------|--------------------|----------------------|
 | **Knowledge gaps** | The agent does not understand the existing system and invents how it works. | Discover builds the Knowledge Base before any spec is written. |
-| **Hallucination** | The agent states things about the code that are not true. | Every factual claim in a Knowledge Base document carries an inline `path:line` citation, so claims are anchored to source. |
+| **Hallucination** | The agent states things about the code that are not true. | Knowledge Base documents cite their sources with a durable anchor: a file path plus a heading or a searchable string, never a bare line number. A lint checks the citations. See the [Knowledge Base](/concepts/knowledge-base/) page. |
 | **Drift** | The implementation quietly diverges from intent, and the spec goes stale. | Specs are revised through feedback loops, and each revision leaves a record. |
 | **Overengineering** | The agent adds abstractions, options and scope nobody asked for. | Tasks are typed and small, with explicit acceptance criteria. The reviewer grades against those criteria and against the [declared review criteria](/reference/glossary/#declared-review-criteria) of the file. |
 | **Oversights** | Bugs, missed edge cases and untested paths slip through. | A separate reviewer agent grades the work, and the agent that writes does not grade its own work. The loop repeats until the grade meets the bar. |
