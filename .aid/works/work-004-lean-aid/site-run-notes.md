@@ -29,6 +29,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 23:00-23:16 | delivery 1 gate passed (grade A); delivery 2 started, task 5 done | n/a mid-turn | the gate's recorded timestamp is 2026-10-27T01:00:00Z, two hours in the future: an invented value in the state file |
 | 23:16-23:32 | delivery 2: tasks 6-8 done (page cut-over with redirects, a shared diagram component, three pipeline diagrams) | n/a mid-turn | pace about 3 tasks per 15 min; 8 of 49 done |
 | 23:32-23:50 | delivery 2: tasks 9-10 done (diagrams D3-D9) | n/a mid-turn | task 9's review caught two wrong facts in the diagrams and they were fixed in a second commit: a real, result-changing finding. Task 9 also removed an image ("Iron Man") the request did not mention |
+| 23:50-00:08 | delivery 2: tasks 11-14 done (glossary anchors and audit, Home / What is AID / Install / first-work pages audited and rewritten) | n/a mid-turn | task 13 needed a second, fix commit (the home page's full path must start at discover for existing code): another review catch on content. Task 12 added an "audit-checks helper": more test machinery |
 
 ## AID run: red tape observed so far
 
