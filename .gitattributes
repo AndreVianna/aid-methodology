@@ -22,10 +22,9 @@ dashboard/MANIFEST text eol=lf
 # endings, so a Windows autocrlf checkout that stages a release made every `aid add`
 # from that stage fail.
 profiles/*/aid-tool.conf text eol=lf
-# Two registered files that sit outside every root above and that no extension rule
-# reaches: the settings template (verbatim class) and the generated-file registry
-# (transformed class).
-canonical/aid/templates/settings.yml         text eol=lf
+# Root YAML templates are copied verbatim and their manifest hashes must match
+# across checkouts. The generated-file registry is also parsed verbatim.
+canonical/aid/templates/*.yml                text eol=lf
 canonical/aid/templates/generated-files.txt  text eol=lf
 # The install manifest is LF-only in history but had no rule, so a Windows tool that
 # rewrote it (Python's default newline translation) silently committed CRLF —
