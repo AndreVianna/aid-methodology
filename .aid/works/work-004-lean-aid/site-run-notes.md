@@ -38,6 +38,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 01:17-01:34 | delivery 2: tasks 20-21 done, task 22 in review (CLI, artifacts, repository structure, Contact) | n/a mid-turn | tasks 20 and 21 each needed a fix commit after review; content tasks with a fix commit so far: 10 of 14 |
 | 01:38 | the cloud container restarted and killed the run (22 tasks done, task 23 in progress); resumed in the same session | unknown | a second killed turn whose cost must be estimated from the transcript |
 | 01:38-01:50 | after the restart the first turn only reported progress (22 of 49) and ended; the driver said go on | $87.19 reported | the reported session total does not include the two killed turns (tasks 5-22): the real spend is higher and will be estimated from tokens |
+| 01:50-02:10 | stuck on task 23: each turn the main agent resumed the task's helper by message, then ended its turn, and the helper was stopped with it (cut off 3 times, nothing committed). Driver restarted at 02:10 telling it to wait for its helpers | $87.57 reported | design point: AID hands work to background helpers and ends the turn; whenever the session ends (headless run, closed window, restart), the helpers die and their work is redone. Same cause as the 11 helpers lost in planning |
 
 ## AID run: red tape observed so far
 
