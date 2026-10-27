@@ -1,22 +1,18 @@
 ---
-// site/src/components/Footer.astro — Starlight Footer override.
-// Per-page "Report an issue" → opens the Contact Us › Site Issue form with the current
-// page pre-captured (?page=&title=). That form builds a prefilled GitHub issue (label
-// "site issue") and opens it in a new tab. No backend, no fetch.
+// Footer override: Starlight's footer, then a per-page "report a problem" link to a prefilled GitHub issue.
 import Default from '@astrojs/starlight/components/Footer.astro';
 
-const { entry } = Astro.locals.starlightRoute;        // current page (title + frontmatter)
-const reportIssue = entry.data.reportIssue ?? true;   // schema field; default true
+const { entry } = Astro.locals.starlightRoute;
+const reportIssue = entry.data.reportIssue ?? true;
 const pageTitle = entry.data.title ?? '';
 const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
-
-const feedbackUrl =
-  `/contact/site-issue/?page=${encodeURIComponent(pageUrl)}` +
-  `&title=${encodeURIComponent(pageTitle)}`;
+const issueUrl = 'https://github.com/AndreVianna/aid-methodology/issues/new?' + new URLSearchParams({
+  labels: 'site issue',
+  title: `[Site] ${pageTitle}`,
+  body: `**Page:** ${pageUrl}\n\n**Problem:**\n`,
+}).toString();
 ---
 <Default {...Astro.props}><slot /></Default>
 {reportIssue && (
-  <p class="aid-report-issue">
-    <a href={feedbackUrl}>Report an issue with this page &rarr;</a>
-  </p>
+  <p class="aid-report-issue"><a href={issueUrl}>Report a problem with this page on GitHub</a></p>
 )}
