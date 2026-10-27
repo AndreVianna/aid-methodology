@@ -120,3 +120,21 @@ counted in `tests/` folders too. Both sites were re-graded with the fixed grader
 | Files changed outside `site/` | 6 (5 docs, CI workflow), uncommitted | 11 (10 Knowledge Base, CI workflow), plus 79 work-folder files |
 | Cost | about $11.50 | about $176 (reported $135, ceiling $314) |
 | Time | 24.6 min | about 10.5 h |
+
+## Blind design review (independent agent; A = plain, B = AID)
+
+| Criterion | Plain | AID | Reason, short |
+|---|---|---|---|
+| Modern look and polish | 8 | 6 | plain made a new hero home, cards and logo; AID mostly kept the old theme |
+| Diagrams | 6 | 7 | plain drew steps as HTML cards (sequence only); AID drew 10 real diagrams, each with a text version, some dense |
+| Layout and navigation | 7 | 7 | plain reorganised; AID kept the old structure |
+| Readability | 5 | 7 | plain's raw tables break key pages; AID's skill pages became fact stubs |
+| Phone | 7 | 7 | |
+| Keyboard and screen reader | 8 | 8 | both: skip link, focus outline, contrast 5.7:1 or better |
+| Visible defects | 3 | 8 | plain: 42 tables render as raw `\| --- \|` text on 11 pages; AID: minor diagram crowding |
+| Rework compared with the old site | 9 | 5 | plain is a redesign; AID is the old site cleaned up |
+
+Verdict: AID slightly better as shipped (no broken rendering); plain clearly better once its tables are fixed. The
+reviewer also called `/aid-triage` stale on both sites: wrong, it is a skill at the starting commit.
+Note: plain's broken tables are the same defect AID's delivery 3 gate found and fixed in its own site; my grader has no
+check for it, so the automatic grade missed it on plain.
