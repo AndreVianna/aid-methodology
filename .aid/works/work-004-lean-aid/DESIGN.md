@@ -68,6 +68,11 @@ were checked against the request, the repo or the result; the 93 others compared
 - Risky actions get a fixed rule, not a review (for example: move before delete).
 - Every finding records whether it changed the result; a review type that keeps changing nothing is dropped.
 
+Gates that can pass: every check a gate uses is run on the starting commit before work begins. A check that already
+fails there (environment, flaky, unrelated suites) is recorded as pre-existing and never blocks; a check that cannot
+run at all is removed from the gate. A flaky check is re-run once; inconsistent results make it a Note, not a blocker.
+A finding that comes back after its fix, or a fix that makes another check fail, stops the loop and goes to the user.
+
 The loop stops by rule: one review pass, one fix round; the second look checks only the fixes and the full test run; a
 fix that breaks a passing check is reverted; no new Notes or Decisions in the second look. Thresholds (what "cheap"
 means, the size budget) are tuned on the benchmark by counting escaped defects against cost.
