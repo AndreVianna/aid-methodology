@@ -23,6 +23,18 @@
           "sha256": "10cd063e9e6d1465182bf46c61a77ad6e96ffe772a5040259a26b05b7b8323f9"
         },
         {
+          "path": "aid-change/SKILL.md",
+          "sha256": "025f5b6bcfed11b98baaa71cbcc66408a5741e0cd960c3210e92415d110f43bd"
+        },
+        {
+          "path": "aid-change/references/planned.md",
+          "sha256": "db86a5bbf647f33e6f996e08f75db177b69e0ae1b12db2c6f2fb5ee8845f7ca0"
+        },
+        {
+          "path": "aid-change/references/review.md",
+          "sha256": "f4ef8d8d8aa24065874ef19bf2c59ffaebcef8eca9c7921d15e13bdb4e0dbd2b"
+        },
+        {
           "path": "aid-chat/SKILL.md",
           "sha256": "ba47c3abe4ad61eba8bba27082395a5e2d9fdbf0195e4bb476c956a42c055338"
         },
@@ -767,6 +779,26 @@
         {
           "path": "rules.md",
           "sha256": "fb2f32db31a69cac1e5fae1236cb2ab0fee246acd917ae98ffbe70162bed0781"
+        },
+        {
+          "path": "scripts/change/checks.py",
+          "sha256": "c9eaf51ee5f58e571ae71822dc9a7c3e760a9920b0c3739c861bfacdb90d79a4"
+        },
+        {
+          "path": "scripts/change/red-first.py",
+          "sha256": "4088cab928de9267b1954b1b586239ddfec679ae9e9d82a4aad22b2f59d2ebb4"
+        },
+        {
+          "path": "scripts/change/safeguard.py",
+          "sha256": "b8cccb08a4ccc8a3325f99b0d2d5166c0cf607e11cb72eabbd0fcc2a0ed317fb"
+        },
+        {
+          "path": "scripts/change/state.py",
+          "sha256": "0d5ba492ca2458e87f2131dcc22f5e210315044ff0b1dcfd6a1242b846696cb3"
+        },
+        {
+          "path": "scripts/change/trace.py",
+          "sha256": "26500e3978ca48ad7f68243902c59e3f2e0e848448f89dacf95bb539131e30d4"
         },
         {
           "path": "scripts/config/read-setting.sh",
