@@ -21,6 +21,9 @@ export default defineConfig({
   site: 'https://aid.casuloailabs.com',
   base: '/',
 
+  // Astro's link prefetch ships a script on every page and has none of the purposes AC-15 allows.
+  prefetch: false,
+
   redirects: {
     '/get-started': '/get-started/overview/',
     '/concepts': '/concepts/methodology/',
@@ -123,6 +126,8 @@ export default defineConfig({
       components: {
         // One-row header. See src/components/overrides/.
         Header: './src/components/overrides/Header.astro',
+        // Single-language site: nothing to select, and the picker's script goes with it.
+        LanguageSelect: './src/components/overrides/LanguageSelect.astro',
         Footer: './src/components/Footer.astro',
       },
 
