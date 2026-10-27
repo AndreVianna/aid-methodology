@@ -1,49 +1,35 @@
 ---
 title: 'AID and spec-driven development'
-description: 'How AID compares with spec-driven development: where they overlap and where they diverge.'
+description: 'This page shows you how AID relates to spec-driven development, so you can see what AID adds around the spec.'
 ---
 
 import AidVsSdd from '../../../components/diagrams/AidVsSdd.astro';
 
-## 9. Comparison with SDD
+This page shows you how AID relates to spec-driven development, so you can see what AID adds around the spec.
 
-### Where We Overlap
-
-Both AID and SDD:
-- Use specifications as the central development artifact.
-- Employ AI agents for code implementation.
-- Rely on tests as contracts between spec and code.
-- Require human review of agent output.
-- Use markdown as the specification format.
-
-### Where We Diverge
+[Spec-driven development](/reference/glossary/#sdd) (SDD) is a method where specifications drive code generation. AID (AI Integrated Development) includes it: the spec-and-build part of the pipeline does the same job. AID adds the work that comes before and after that span.
 
 <AidVsSdd />
 
-*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and the optional Deploy/Monitor shortcut paths that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
+## Where they meet
 
-| **Dimension** | SDD | AID |
-|--------------|-----|-----|
-| **Starting point** | A spec | Understanding (Discovery) |
-| **Brownfield support** | Gap acknowledged | First-class Discovery phase with a 14-document KB (project-configurable) |
-| **Spec philosophy** | Spec is source of truth | Spec is hypothesis — revised by formal protocol |
-| **Requirements** | Assumed to exist | Gathered through adaptive interview |
-| **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
-| **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
-| **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
-| **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic — computed, not judged) plus project-defined quality checks |
-| **Agent model** | One agent per spec | 9 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
-| **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
-| **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Monitor routes bugs to `/aid-fix`, change requests to `/aid-triage` |
-| **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
-| **Human role** | Spec writer, reviewer | Co-pilot across all phases |
-| **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 34 direct-entry shortcuts, with `/aid-triage` to route when unsure, or `/aid-ask` for a plain question |
+Both put a written specification at the centre of the build. In AID, `/aid-specify` writes the technical specification for each feature, and `/aid-execute` builds from the tasks that come out of it.
 
-### The Core Argument
+## Where AID goes further
 
-SDD says: "Write better specs, get better code."
+SDD starts from a spec. AID rejects that starting point as incomplete, because it assumes you already understand the system. AID starts from understanding, then adds the following.
 
-AID says: "Understand the system first. Then write specs grounded in that understanding. Then plan the roadmap. Then detail the execution. Then build, review, and test it inside Execute's graded loop. Then ship when the delivery model requires it. And when any of that reveals you were wrong — revise formally, don't hack around it."
+| Question | SDD | AID |
+|----------|-----|-----|
+| Where does the work start? | With a written spec. | On existing code, with `/aid-discover`, which builds the [Knowledge Base](/concepts/knowledge-base/). On a new project, with `/aid-describe`. |
+| What happens when the spec turns out to be wrong? | You write the spec again from scratch. | A [feedback loop](/concepts/feedback-loops/) sends the finding to the phase that owns it. |
 
-SDD is not wrong. It is incomplete. AID is SDD + Discovery + Feedback Loops + Two-Level Planning + a Built-in Review Loop + Institutional Memory + Production Lifecycle + a Lite Path for small work.
+Beyond those two answers, AID adds these parts around the spec:
+
+- **Requirements.** `/aid-describe` gathers them through an adaptive interview, and `/aid-define` splits them into features.
+- **Planning in two levels.** `/aid-plan` groups features into deliveries. `/aid-detail` then breaks a delivery into tasks.
+- **Graded review.** A reviewer grades the specification, the plan and the task list against a minimum grade. `/aid-execute` reviews each task and then the whole delivery. The [pipeline page](/concepts/pipeline/#execute-and-review) explains how.
+- **Shipping and monitoring.** `/aid-deploy` and `/aid-monitor` are optional. Monitor routes bugs to `/aid-fix` and change requests to `/aid-triage`.
+- **Small changes.** A [shortcut](/get-started/lite-path/) runs a lighter path for work whose kind you already know, and `/aid-triage` suggests the right entry when you are not sure.
+
+The [pipeline page](/concepts/pipeline/) gives the order of the phases. The [agents page](/concepts/agents/) explains who does the work in each one.

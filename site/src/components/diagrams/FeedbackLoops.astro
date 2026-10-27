@@ -76,17 +76,17 @@ const arrow = `url(#dg-${id}-arrow)`;
   <table slot="text">
     <thead><tr><th scope="col">Loop</th><th scope="col">From</th><th scope="col">To</th><th scope="col">When</th></tr></thead>
     <tbody>
-      <tr><th scope="row">L1</th><td>Describe/Define</td><td>Discover</td><td>A human's answer reveals the KB is wrong or incomplete</td></tr>
+      <tr><th scope="row">L1</th><td>Describe/Define</td><td>Discover</td><td>An answer or the requirements review shows the KB is wrong or incomplete</td></tr>
       <tr><th scope="row">L2</th><td>Specify</td><td>Discover</td><td>Writing the spec exposes insufficient understanding of a subsystem</td></tr>
-      <tr><th scope="row">L3</th><td>Plan</td><td>Discover</td><td>Planning reveals the codebase is more complex than the KB captured</td></tr>
-      <tr><th scope="row">L4</th><td>Plan</td><td>Specify</td><td>The KB is complete, but a SPEC is ambiguous or contradictory</td></tr>
+      <tr><th scope="row">L3</th><td>Plan</td><td>Discover</td><td>The KB is not enough to plan from</td></tr>
+      <tr><th scope="row">L4</th><td>Plan</td><td>Specify</td><td>A SPEC is ambiguous</td></tr>
       <tr><th scope="row">L5</th><td>Detail</td><td>Plan</td><td>The plan is too vague to decompose into tasks</td></tr>
-      <tr><th scope="row">L6</th><td>Execute</td><td>Discover / Specify / Detail</td><td>Agent discovers an assumption doesn't hold (<code>IMPEDIMENT-task-NNN.md</code>)</td></tr>
-      <tr><th scope="row">L7</th><td>Execute Review</td><td>Any upstream phase</td><td>Reviewer finds issues traced to the task, spec, or KB, not just code quality</td></tr>
-      <tr><th scope="row">L8</th><td>Deploy</td><td>Execute</td><td>Final verification (build + tests + lint) fails before the delivery ships</td></tr>
+      <tr><th scope="row">L6</th><td>Execute</td><td>Discover, Specify or Detail, by impediment type; or an update to the task or SPEC</td><td>Agent discovers an assumption doesn't hold (<code>IMPEDIMENT-task-NNN.md</code>)</td></tr>
+      <tr><th scope="row">L7</th><td>Execute Review</td><td>Task update, Specify or Discover</td><td>The gate reviewer finds issues that trace to the task, SPEC or KB, not only to the code</td></tr>
+      <tr><th scope="row">L8</th><td>Deploy</td><td>Execute</td><td>Final verification (build + tests + lint) fails and the fix is not minor</td></tr>
       <tr><th scope="row">L9</th><td>Monitor</td><td><code>/aid-fix</code> (shortcut)</td><td>Monitor classifies a finding as BUG</td></tr>
       <tr><th scope="row">L10</th><td>Monitor</td><td><code>/aid-triage</code></td><td>Monitor classifies a finding as Change Request</td></tr>
-      <tr><th scope="row">L11</th><td>Any phase</td><td>Discover</td><td>Any phase finds the KB wrong, incomplete, or stale</td></tr>
+      <tr><th scope="row">L11</th><td>Any phase that reads the KB</td><td>Discover</td><td>The phase finds the KB wrong, incomplete or stale</td></tr>
     </tbody>
   </table>
 </Diagram>

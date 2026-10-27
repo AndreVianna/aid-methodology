@@ -371,3 +371,37 @@ qa:
     suggested: >
       Reword the cell to "the phases that find a Knowledge Base gap add their questions to STATE.md".
       The component is not edited by task-017.
+  - id: Q&A-004
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >
+      Diagram D7 (FeedbackLoops, Feature 003) draws one target arc for L6 (Execute, to Discover / Specify /
+      Detail) and for L7 (Execute Review, to any upstream phase), while the table lists more than one
+      target: SK aid-execute (IMPEDIMENT resolution by type: kb-gap to /aid-discover, architecture-conflict
+      to /aid-specify, missing-dependency to /aid-detail, wrong-assumption to a task or SPEC update) and
+      `state-delivery-gate.md` Step 4 (TASK update, SPEC to /aid-specify, KB to /aid-discover). The table
+      cells were reworded to match the sources; the arcs are drawing and were not changed by task-018.
+    suggested: >
+      Let Feature 003 decide whether L6 and L7 get one arc per target or keep one arc with the targets
+      named in the table. No edit to the drawing is needed if the table stays the owner of the targets.
+  - id: Q&A-005
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >
+      Diagram D8 (AidVsSdd, Feature 003) states what spec-driven development does: `desc` "goes from a spec
+      straight to AI-written code and a human review"; text-equivalent rows "Planning: none", "Review: a
+      person reviews the result", "Memory between sessions: the spec", "After shipping: nothing". The repo
+      sources for SDD say only that specifications drive code generation (reference/glossary.md SDD,
+      docs/faq.md) and that SDD starts spec-first and re-specs from scratch on change
+      (.aid/knowledge/decisions.md D2, D3). The human review, no planning, spec-as-memory and
+      nothing-after-shipping statements have no source in the repo. The AID side checks out against SK and
+      rules.md Workflow (phase names and order, optional /aid-deploy and /aid-monitor, Knowledge Base built
+      by /aid-discover). `desc` also says "your approval at each phase of the full path"; SK aid-describe
+      and aid-discover have an approval step, aid-define has none named in its states.
+    suggested: >
+      Reword the SDD column and `desc` to the sourced statements (a written spec drives code generation; a
+      change means writing the spec again), and reword the AID review row to "a reviewer grades the
+      specification, plan and task list; you approve the requirements and specification". The component is
+      not edited by task-018.

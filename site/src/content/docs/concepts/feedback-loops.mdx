@@ -1,94 +1,98 @@
 ---
 title: 'Feedback loops'
-description: 'The formal pathways that send a finding back to an earlier AID phase.'
+description: 'This page explains how AID sends a finding back to an earlier phase and what each feedback loop leaves for you to resolve.'
 ---
 
 import FeedbackLoops from '../../../components/diagrams/FeedbackLoops.astro';
 
-## 6. Feedback Loops
+This page explains how AID sends a finding back to an earlier phase and what each feedback loop leaves for you to resolve.
+
+The pipeline runs forward from `/aid-discover` to `/aid-execute`, but real work is not linear. An assumption breaks, or a gap shows up in a document you trusted. A [feedback loop](/reference/glossary/#feedback-loop) is the formal way for a later phase to send that finding back to the phase that owns it, instead of working around it.
 
 <FeedbackLoops />
 
-*Eleven formal feedback loops — eight within development, two from production out to the shortcut/triage entry layer, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
+The drawing and its table list every loop: which phase sends the work back, where it goes, and what triggers it. The sections below explain how the loops work. Deploy and Monitor are optional, so their loops apply only when you run those skills.
 
-The development pipeline (Discover through Execute) is sequential by default; the optional Deploy and Monitor shortcut paths (Definition group) are separate, on-demand paths, not a continuation of it. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
+## Loops leave a record
 
-### The Eleven Loops
+A loop does not change anything silently. It leaves a record you can read, so you can see what was found and who has to act. The three main records are:
 
-#### Development Loops (1–8)
+- **A Q&A entry** in a state file. This is the usual record.
+- **An `IMPEDIMENT-task-NNN.md` file**, written only by `/aid-execute`.
+- **A Monitor finding**, which `/aid-monitor` shows you before it routes anything.
 
-**Loop 1: Describe/Define → Discovery.** During the interview, a human's answer reveals the KB is wrong or incomplete. Describe/Define writes a Q&A entry to the discovery-area `STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
+## Q&A entries
 
-**Loop 2: Specify → Discovery.** Writing the spec exposes insufficient understanding of a subsystem. Specify pauses → writes a Q&A entry to the discovery-area `STATE.md` → targeted discovery → KB updated → Specify resumes.
+A phase that finds a gap in an earlier artifact records a [Q&A entry](/reference/glossary/#qa-entry) in the state file of the area that owns the question:
 
-**Loop 3: Plan → Discovery.** Planning reveals the codebase is more complex than the KB captured. Plan writes a Q&A entry → targeted discovery → KB updated → planning resumes.
+- A gap in the [Knowledge Base](/reference/glossary/#knowledge-base) goes to `.aid/knowledge/STATE.md`, under `## Q&A (Pending)`.
+- A gap in the requirements or a feature goes to the `qa` list in the work's `STATE.yml`.
+- When the delivery gate finds a problem in a specification, it records the entry in the delivery's own `STATE.yml`.
 
-**Loop 4: Plan → Specify.** The KB is complete, but the SPEC is ambiguous or contradictory. Plan writes a Q&A entry to the feature's `STATE.md` → spec revision (possibly with a targeted interview) → planning resumes.
+The owning phase finds the pending entry the next time you run it and resolves it with you. `/aid-discover` goes to its question state while any entry is pending, and `/aid-describe` does the same for entries in the work's state file. For a Knowledge Base gap, `/aid-discover` re-runs only the agent that owns the affected document, so it never starts a full discovery again.
 
-**Loop 5: Detail → Plan.** The plan is too vague to decompose into tasks. Deliverables are too broad, module boundaries unclear, or test scenarios don't map to features. Detail flags the under-specified deliverable → Plan revises it → Detail resumes.
+An entry records the gap, how much it matters, and why the calling phase raised it:
 
-**Loop 6: Execute → Discovery / Specify / Detail.** While executing a task, the agent discovers an assumption doesn't hold in the actual codebase. `IMPEDIMENT-task-NNN.md` is written, then routed by type — `kb-gap` → targeted discovery; `architecture-conflict` → Specify; `missing-dependency` → Detail; `wrong-assumption` → update the task or SPEC. The agent never silently works around the problem.
+```markdown
+### Q{N}
 
-**Loop 7: Execute Review → Any Upstream Phase.** The reviewer step inside Execute finds issues that trace to the task, the spec, or the KB — not just code quality. Issues are tagged by source (CODE / TASK / SPEC / KB). CODE issues are auto-fixed inside the Execute loop with the user's approval. A TASK issue routes to a task update; SPEC and KB issues escalate to Specify and Discovery respectively.
+- **Category:** {category, for example Architecture, Requirements or Security}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending
+- **Context:** {why this matters, what was found, and which phase raised it}
+- **Suggested:** {an answer if one can be inferred, or a dash}
+```
 
-**Loop 8: Deploy → Execute.** (Applies only when Deploy is run.) Deploy's final verification — a full build, the complete test suite, and the lint/format check — fails before the delivery ships. Failures are documented → routed back to `/aid-execute` for the fix → Deploy's verification re-runs.
+## Impediments
 
-#### Post-Production Loops (9–10)
+`/aid-execute` uses a file instead of a Q&A entry when a task meets a contradiction it cannot resolve inside its scope. It marks the task `Failed` and writes `IMPEDIMENT-task-NNN.md` into the work folder. The file holds the type, a description, the options and a recommendation. You decide which option to take.
 
-These loops apply only when Monitor is run.
+The type tells you where the work goes next:
 
-**Loop 9: Monitor → `/aid-fix` (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `/aid-fix`, the direct-entry shortcut that scaffolds and implements the fix through the shortcut engine → `/aid-execute` (→ optional `/aid-deploy`). The short path.
+| Type | What it means | What happens |
+|------|---------------|--------------|
+| `kb-gap` | The Knowledge Base is wrong or missing something the agent relied on. | A targeted `/aid-discover` updates it, then the task retries. |
+| `architecture-conflict` | The task would break the existing architecture. | You go back to `/aid-specify` for the feature. |
+| `missing-dependency` | A dependency the task needs does not exist yet. | You go back to `/aid-detail`, which may add another task first. |
+| `wrong-assumption` | An assumption in the task or spec does not hold in the code. | You update the task or the spec, then the task retries. |
 
-**Loop 10: Monitor → `/aid-triage` (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `/aid-triage`, which suggests the right entry — a matching shortcut for a well-scoped change, or the full path (`/aid-describe`) as new/changed requirements for anything broad; a large-enough CR spins up a new work.
+After the cause is fixed, the impediment file is deleted and the task starts again. The template is [`IMPEDIMENT.md` in the template folder](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/feedback-artifacts/IMPEDIMENT.md), and the [Artifacts reference](/reference/artifacts/) shows where it sits among the other work files.
 
-#### Cross-Cutting Loop (11)
+## Review findings in Execute
 
-**Loop 11: Any Phase → Discovery (Targeted Re-Discovery).** Any phase finds the Knowledge Base wrong, incomplete, or stale for the work at hand. A targeted discovery run updates the specific KB document(s) — never a full re-discovery — and the calling phase resumes with corrected understanding. This is the loop that makes the Knowledge Base the gravitational center in practice, not just in principle.
+After all the tasks of a delivery are done, a reviewer in a clean context grades the delivery. It tags each issue with where it comes from: `CODE`, `TASK`, `SPEC` or `KB`.
 
-### The Revision Trail
+- A `CODE` issue is fixed automatically by the executor agent, and the reviewer checks again.
+- A `TASK` issue is shown to you with a suggestion. You update the task.
+- A `SPEC` issue is recorded as a Q&A entry, and `/aid-specify` is suggested.
+- A `KB` issue is recorded as a Q&A entry, and `/aid-discover` is suggested.
 
-No artifact carries an in-document history section. There is no `## Change Log` and no `## Revision History` table: git already records every edit with author, date and diff, and a hand-maintained table drifts from it the moment someone forgets a row.
+If only issues from the last three kinds remain, the gate stops and tells you what must change upstream, because the problem is not in the code. See [Execute and review](/concepts/pipeline/#execute-and-review) for the rest of the review loop.
 
-To understand *why* an artifact changed, read its history where that history is authoritative:
+## Verification in Deploy
+
+`/aid-deploy` runs a full build, the full test suite and the lint check before it packages a delivery. If something fails, it asks whether you want to fix a minor problem on the spot or go back to `/aid-execute` for a larger one. After three fix attempts in Deploy you must go back to `/aid-execute`.
+
+## Routing from Monitor
+
+`/aid-monitor` classifies each finding as a bug, a change request, an infrastructure issue or no action. It shows you the proposed route and acts only on the routes you approve.
+
+- A bug goes to `/aid-fix`. The specification is already right and only the code is wrong, so the fix skips Specify, Plan and Detail.
+- A change request goes to `/aid-triage`, which suggests the right entry: a shortcut for a known single change, or `/aid-describe` for anything broad or ambiguous.
+- Infrastructure problems are outside AID. You handle them yourself.
+
+## Keeping the history of a change
+
+The requirements template and the Knowledge Base documents carry no change-log section. Git already records every edit with its author, date and diff, and a hand-kept table drifts from the file it describes. To see why a document changed, ask git:
 
 ```bash
 git log --follow -p .aid/works/work-001-example/REQUIREMENTS.md
 ```
 
-What git cannot answer — where the work stands in the pipeline — lives in the area's `STATE` file, which is why that file exists and an in-document history table does not.
-Git gives author, timestamp, and the exact diff for every change, and it cannot drift from the file it describes — a hand-maintained table can, and does. The commit message carries the *why*: which loop fired, and what it corrected.
-The revision trail still matters for the same reason it always did — when a spec contradicts the Knowledge Base, you need to know which revision introduced the divergence. `git log -S'<the contradicting claim>'` answers that directly, and answers it for content a summary table would never have mentioned.
+To find which revision introduced a claim, search by its text:
 
-
-### Feedback Loop Artifacts
-
-The design-phase loops record the gap as a **Q&A entry appended to the relevant area's `STATE.md`** — the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) for a KB gap, the work-area `STATE.md` for a requirements gap. The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
-
-```markdown
-### Q{N}
-
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** {High|Medium|Low|Required}
-- **Status:** Pending
-- **Context:** {why — what the calling phase found; surfaced by {calling phase, e.g. /aid-plan work-001}}
-- **Suggested:** {answer if inferrable, or —}
+```bash
+git log -S'the contradicting claim'
 ```
 
-The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/works/{work}/` when a task hits a contradiction it cannot resolve within scope:
-
-```markdown
-# Impediment — task-NNN
-> Generated by: aid-execute · Status: Open
-
-## Summary
-{one sentence — what the agent found that contradicts its instructions}
-
-## Type
-wrong-assumption | missing-dependency | architecture-conflict | kb-gap
-
-## Options
-{Option A / B / C — each with approach, effort, and risk}
-
-## Recommendation
-{which option the agent recommends, and why — the human decides}
-```
+What git cannot tell you, such as where a work stands in the pipeline, lives in the area's state file.
