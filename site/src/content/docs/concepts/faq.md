@@ -18,7 +18,7 @@ AI Integrated Development. You and the AI work through the phases together, as d
 
 ### Is this just Waterfall rebranded?
 
-AID follows the Waterfall sequence on purpose and has AI agents do the heavy work in each phase. It adds [feedback loops](/concepts/feedback-loops/), so going back to an earlier phase is a defined step. It does not replace sprints, backlogs or retrospectives. See [Waterfall plus AI](/concepts/methodology/#waterfall-plus-ai).
+AID follows the Waterfall sequence on purpose and has AI agents do the heavy work in each phase. AID's design rationale is that Waterfall failed because humans could not execute it fast enough to afford iteration, and that AI changes the economics of going back. AID adds [feedback loops](/concepts/feedback-loops/), so going back to an earlier phase is a defined step. It does not replace sprints, backlogs or retrospectives. See [Waterfall plus AI](/concepts/methodology/#waterfall-plus-ai).
 
 ### Do I need every phase?
 
@@ -129,7 +129,7 @@ Each shortcut is a row of the shortcut catalog, `shortcut-catalog.yml`. A shortc
 
 ### What is the Knowledge Base?
 
-The Knowledge Base is a set of Markdown documents in `.aid/knowledge/` that records what your project is and how it works. `/aid-discover` builds it. [The Knowledge Base page](/concepts/knowledge-base/) explains it, and the [Knowledge Base documents reference](/reference/kb/) lists the standard documents. You declare the set of documents in `.aid/settings.yml` under `discovery.doc_set`.
+The Knowledge Base is a set of Markdown documents in `.aid/knowledge/` that records what your project is and how it works. `/aid-discover` builds it. [The Knowledge Base page](/concepts/knowledge-base/) explains it, and the [Knowledge Base documents reference](/reference/kb/) lists the standard documents. `/aid-discover` proposes the set of documents for your project and you confirm or edit it. The glossary explains the [declared doc-set](/reference/glossary/#declared-doc-set).
 
 ### What are feedback loops?
 
@@ -137,7 +137,7 @@ A [feedback loop](/reference/glossary/#feedback-loop) is the formal way for a la
 
 ### What is the minimum grade?
 
-Reviews grade work on a scale from A+ to F, as the [glossary](/reference/glossary/#grading) explains. A script computes the grade from the issues a reviewer finds. The reviewer does not set it. Work must reach the minimum grade before a skill finishes. The default is A. Run `/aid-config minimum_grade` to change it. See the [settings reference](/reference/settings/).
+Reviews grade work on a scale from A+ to F, as the [glossary](/reference/glossary/#grading) explains. A script computes the grade from the issues a reviewer finds. The reviewer does not set it. The setting applies to skills that review their output: each of them exits only when its grade is at or above the minimum. The default is A. Run `/aid-config minimum_grade` to change it. See the [settings reference](/reference/settings/).
 
 ### What if the spec turns out to be wrong?
 
@@ -169,7 +169,7 @@ These habits work against AID.
 - **Treating the spec as sacred.** It is a hypothesis. Revise it when implementation proves it wrong, and do it through a feedback loop so the change is recorded.
 - **Ignoring impediments.** When an agent reports an impediment, stop and decide. Do not let it work around the problem. The file is the agent telling you it found a contradiction.
 - **Bypassing the review loop in Execute.** "The tests pass" is not enough. A separate reviewer agent checks the work against the specification, the architecture and the conventions, and a script turns its findings into a grade. Do not lower the minimum grade to get past it.
-- **Letting the Knowledge Base go stale.** A Knowledge Base that differs from the code misleads every agent that reads it. Run `/aid-housekeep` when the project has drifted.
+- **Letting the Knowledge Base go stale.** A Knowledge Base that differs from the code misleads the agents that read it. Run `/aid-housekeep` when the project has drifted.
 - **Sending agents in blind.** An agent that does not read the Knowledge Base cannot know what context exists, so it guesses. It should read `PROJECT.md` first, when the project has one, and open `INDEX.md` to find a specific document.
-- **Moving between phases without reading the result.** AID never starts the next phase by itself. The phase gate is the point where you read the output and approve it, so keep it.
+- **Moving between phases without reading the result.** On the full path, each phase ends and waits for you, and that [phase gate](/reference/glossary/#phase-gate) is where you read the output and approve it. A shortcut runs its planning states in one run and stops once for your approval. Read the result at each stop.
 - **Using the full path for every change.** A two-line bug fix does not need Specify, Plan and Detail. Use a shortcut, or run `/aid-triage` if you are unsure which one.
