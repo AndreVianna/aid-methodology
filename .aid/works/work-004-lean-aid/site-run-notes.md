@@ -43,6 +43,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 02:26-02:43 | delivery 2 gate review found more mismatches after all the per-task reviews; two gate fix commits (diagrams against the skills, pages against the code) | $93.27+ | the per-task reviews did not catch everything: cross-page consistency only shows when the delivery is checked as a whole. This turn kept working instead of ending |
 | 02:43-02:59 | delivery 2 gate passed; delivery 3 (new look and machinery cut) started: tasks 24-26 done (design tokens and stylesheet, header, social links and copy buttons) | $93.27+ | it wrote "executor brief lessons" between deliveries: more process text. Pace back to 3 tasks per 15 min while it works in one turn |
 | 02:59-03:15 | delivery 3: tasks 27-32 done (version from VERSION, network-free changelog, old generators, flow data and legacy tests deleted, generated pages made hand-written, no-JavaScript contact form) | $93.27+ | the machinery cut happened here; fastest stretch so far, 5-6 tasks in 15 min |
+| 03:15-03:32 | delivery 3: tasks 32-34 done (contact forms, dependencies pruned and lockfile regenerated, keyboard check and responsive screenshots) | $93.27+ | task 32 needed three commits; the last fixed the contact link's subject encoding, the very defect the planning review had already flagged: knowing about it in the spec did not stop the build from getting it wrong first |
 
 ## AID run: red tape observed so far
 
