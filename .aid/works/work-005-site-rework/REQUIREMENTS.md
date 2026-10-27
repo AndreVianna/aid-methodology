@@ -877,9 +877,11 @@ No diagram states a count that changes when the repository changes (Feature 001'
 - Drawing: a top-down column. `/aid-config` above `/aid-discover`, above a fork. The left branch
   holds the five full-path phases in accent boxes, stacked. The right branch holds one box,
   "Shortcut engine", entered from a box `/aid-<verb>`, with a dashed `/aid-triage` box above both
-  branches and the note "suggests". Both branches join into `/aid-execute`. Below it, two dashed boxes
-  "/aid-deploy (optional)" and "/aid-monitor (optional)". A dashed arrow runs from Monitor back to
-  the fork with the note "bugs, change requests". A dashed box "/aid-housekeep (when drifted)" sits
+  branches and the note "suggests". `/aid-discover` is a dashed box with the note "(existing code
+  only)", and a dashed arrow bypasses it from `/aid-config` to the fork. Both branches join into
+  `/aid-execute`. Below it, two dashed boxes "/aid-deploy (optional)" and "/aid-monitor (optional)".
+  Two dashed arrows run from Monitor back, one to `/aid-triage` and one to the shortcut box
+  `/aid-<verb>` (where `/aid-fix` lives), with the note "bugs, change requests". A dashed box "/aid-housekeep (when drifted)" sits
   beside `/aid-discover`, with a dashed arrow into it.
 - Text equivalent (`<ol>`):
   1. Set AID up once with `/aid-config`.
@@ -889,7 +891,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
        `/aid-specify`, `/aid-plan` and `/aid-detail`, in that order. You approve each phase before
        the next one starts.
      - Shortcut path, for one known change: a shortcut such as `/aid-fix` runs the shortcut engine,
-       which writes the same plan in one run and stops once for your approval.
+       which writes the same plan in one run and stops for your approval.
   4. Build and review the planned tasks with `/aid-execute`.
   5. Optional: package a release with `/aid-deploy`, and watch production with `/aid-monitor`.
      Monitor sends bugs to `/aid-fix` and change requests to `/aid-triage`.
@@ -900,7 +902,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   Machine; `canonical/skills/aid-triage/references/state-suggest.md`.
 - desc: "Both paths end at /aid-execute. The full path runs Describe, Define, Specify, Plan and Detail
   as separate phases with your approval after each. The shortcut engine runs CAPTURE, SPEC, PLAN and
-  DETAIL in one run, grades every document at GATE, and stops once for your approval."
+  DETAIL in one run, grades the documents it writes at GATE, and stops for your approval at the end."
 - caption: "The two ways from an idea to /aid-execute."
 - Drawing: two columns under a shared `/aid-triage` box (dashed, "suggests one"). Left column, titled
   "Full path": `/aid-describe` → `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail`, each
@@ -917,8 +919,8 @@ No diagram states a count that changes when the repository changes (Feature 001'
   | Specification | `/aid-specify` | SPEC |
   | Plan | `/aid-plan` | PLAN |
   | Tasks | `/aid-detail` | DETAIL |
-  | Quality check | each phase is reviewed and graded | GATE grades every document |
-  | Your approval | after every phase | once, at APPROVAL-HALT |
+  | Quality check | each phase is reviewed and graded | GATE grades the documents it writes |
+  | Your approval | after each phase | one approval, at APPROVAL-HALT, after any question it asked |
   | Then | `/aid-execute` | `/aid-execute` |
 
   Below the table: `<p>` "Not sure which path fits? `/aid-triage` suggests one and writes nothing."
@@ -953,7 +955,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
 - desc: "The Knowledge Base is the folder .aid/knowledge/. It holds a project card, the documents
   chosen at discovery, and three meta-documents that index and track them. The generated file
   inventory lives outside it, in .aid/generated/."
-- caption: "The parts of the Knowledge Base and who writes each one."
+- caption: "The parts of the Knowledge Base and who writes them."
 - Drawing: a root box `.aid/knowledge/` at the top, with tree lines to four boxes below it: "Project
   card", "Documents", "Meta-documents", and a dashed "Extensions (optional)". A separate "File
   inventory" box (note "in .aid/generated/") sits below the tree, outside the root's tree lines. A
@@ -965,7 +967,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
   |---|---|---|
   | Project card | `PROJECT.md`, optional, read first in every session | you, from the project card template |
   | Documents | one file per topic, such as `architecture.md`, `coding-standards.md` and `test-landscape.md`; the full list is on the Knowledge Base documents page | `/aid-discover`, from the standard templates |
-  | Meta-documents | `INDEX.md` (one line per document), `README.md` (completeness), `STATE.md` (grade and open questions) | `/aid-discover`; every phase adds its questions to `STATE.md` |
+  | Meta-documents | `INDEX.md` (one line per document), `README.md` (completeness), `STATE.md` (grade and open questions) | `/aid-discover`; `/aid-plan` and `/aid-detail` also add a question to `STATE.md` when the Knowledge Base is not enough |
   | File inventory | `project-index.md`, kept in `.aid/generated/`, outside the knowledge folder | `/aid-discover`, before its writers start |
   | Extensions (optional) | documents only your project needs | added to the document set when you confirm it at discovery |
 
@@ -1026,14 +1028,16 @@ No diagram states a count that changes when the repository changes (Feature 001'
   of that section. The audit row for `concepts/feedback-loops.mdx` records the check.
 - desc: "Development runs forward from Discover to Execute, but each phase can send work back to an
   earlier one when it finds a gap. Monitor sends production findings to /aid-fix or /aid-triage, and
-  any phase can ask for a targeted re-discovery."
+  any phase that reads the Knowledge Base can send work back to Discover. The arcs for Execute and
+  its review (L6, L7) reach an earlier phase chosen by the finding; the table lists the targets."
 - caption: "Where each feedback loop sends work back to."
 - Drawing: the phases in a left column, top to bottom: Discover, Describe and Define, Specify, Plan,
   Detail, Execute, then dashed Deploy and Monitor. `/aid-fix` and `/aid-triage` boxes sit at the
   bottom right. Each loop is one dashed arc on the right side, from its source phase up to its
   target, with a badge `L1` … `L11` on the arc. L11 starts from a dashed bracket spanning every
   phase. Arcs are spaced 16 units apart so that no two badges overlap. Only the badge is drawn: the
-  meaning is in the table.
+  meaning is in the table. L6 and L7 each draw one arc to one phase, so a note beside them reads
+  "L6 and L7 go to earlier phases (targets in the table)"; the table is the full list.
 - Text equivalent: the loop table itself (`<table>`, header row Loop | From | To | When). It moves
   out of the page Markdown into this slot, so the facts are written once. The page keeps its prose
   explanation of the loops.
@@ -1042,17 +1046,19 @@ No diagram states a count that changes when the repository changes (Feature 001'
 - Sources: `canonical/aid/rules.md` § Workflow; the skill descriptions cited for D1.
 - Sources for the SDD column (only these): the SDD entry in `reference/glossary.md`, `docs/faq.md`,
   `.aid/knowledge/decisions.md` D2 and D3. They support: specifications drive code generation; SDD
-  starts spec-first; on change it re-specs from scratch.
+  starts spec-first; on change it re-specs from scratch. The page does not state that as a fact about the method: it
+  attributes it to AID's decision record (`decisions.md` D3, "Re-spec-from-scratch on change (SDD's model)").
 - viewBox 400 x 480.
 - desc: "Spec-driven development starts with a spec, and specifications drive code generation. A change
-  means re-specifying from scratch. AID starts with knowledge: /aid-discover builds the Knowledge Base
+  AID's decision record describes spec-driven development as re-specifying from scratch on change.
+  AID starts with knowledge: /aid-discover builds the Knowledge Base
   for an existing project. Then come Describe, Define, Specify, Plan, Detail and Execute, with your
   approval at each phase of the full path. A change goes back through the phases that need it. AID
-  includes a spec-and-build layer."
+  also includes a spec-and-build layer."
 - caption: "Spec-driven development and AID, side by side."
 - Drawing: two columns. The left column is titled "Spec-driven development": Start with a spec →
-  Specifications drive code generation → A change means re-specifying from scratch, with a dashed
-  arrow from the last box back to the first. The right column is titled "AID (AI Integrated
+  Specifications drive code generation → A change means re-specifying from scratch, with the note
+  "(as AID's decision record describes it)" and a dashed arrow from the last box back to the first. The right column is titled "AID (AI Integrated
   Development)": Knowledge first (`/aid-discover` builds the Knowledge Base, existing project) →
   Describe, Define, Specify, Plan, Detail, Execute → You approve each phase (full path) → A change
   goes back through the phases that need it, and a note "Includes a spec-and-build layer".
@@ -1061,9 +1067,8 @@ No diagram states a count that changes when the repository changes (Feature 001'
   | Topic | Spec-driven development | AID |
   |---|---|---|
   | Where it starts | with a spec | with knowledge: `/aid-discover` builds the Knowledge Base for an existing project |
-  | How the work proceeds | specifications drive code generation | Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path |
-  | When something changes | re-specify from scratch | the work goes back through the phases that need it |
-  | Spec-and-build | specifications drive code generation | AID includes a spec-and-build layer |
+  | How the work proceeds | specifications drive code generation | Describe, Define, Specify, Plan, Detail and Execute, with your approval at each phase of the full path; AID also includes a spec-and-build layer |
+  | When something changes | re-specifying from scratch, as AID's decision record describes spec-driven development | the work goes back through the phases that need it |
 
 - Today's diagram titles the AID column "AI-Assisted Development". The product name is "AI
   Integrated Development" (`.aid/knowledge/PROJECT.md`). Feature 001 records the correction.
@@ -1080,7 +1085,7 @@ No diagram states a count that changes when the repository changes (Feature 001'
 - caption: "From a pushed tag to published packages."
 - Drawing: a top-down chain of boxes. "Maintainer pushes tag v<VERSION>" → "release.yml starts" →
   "gate" → "github-release (release.sh)", then a fork into two dashed boxes "npm-publish (if
-  NPM_ENABLED)" and "pypi-publish (if PYPI_ENABLED)".
+  NPM_ENABLED and not a pre-release)" and "pypi-publish (if PYPI_ENABLED)".
 - Text equivalent (`<ol>`):
   1. The maintainer pushes a version tag: `git push origin v$(cat VERSION)`.
   2. The tag starts the `release.yml` workflow.
@@ -1093,23 +1098,32 @@ No diagram states a count that changes when the repository changes (Feature 001'
   6. The `pypi-publish` job publishes to PyPI, only when the repository variable `PYPI_ENABLED` is
      `true`.
 
-**D10 — The task loop in /aid-execute** (`id="task-loop"`, viewBox 400 x 420)
-- Source: `canonical/skills/aid-execute/SKILL.md`, the table under § State Detection and the
-  state table under § Dispatch; `references/state-delivery-gate.md`, the opening paragraph under
-  `# State: DELIVERY-GATE` ("runs **once per delivery**").
-- desc: "Each task is built, then reviewed. If the review lists issues, the task is fixed and
-  reviewed again. When every task of a delivery is done, a delivery gate grades the whole delivery."
-- caption: "How /aid-execute builds and checks each task."
-- Drawing: EXECUTE → REVIEW → DONE in a column, a FIX box to the right of REVIEW with arrows REVIEW →
-  FIX ("issues found") and FIX → REVIEW. Below DONE, "DELIVERY-GATE (after all tasks)", with a dashed
-  arrow back to FIX labelled "grade below minimum".
+**D10 — The task loop in /aid-execute** (`id="task-loop"`, viewBox 400 x 480)
+- Source: `canonical/skills/aid-execute/SKILL.md`, the state table under § Dispatch (REVIEW: "quick-check
+  only"; Advance "DONE"); `references/state-review.md` § Step 1.5 (quick-check triage: CRITICAL fixed on
+  the spot with one attempt, HIGH deferred to the gate); `references/state-delivery-gate.md` (the gate
+  state machine: review, grade with `grade.sh`, FIX and review again; circuit breaker after 3 cycles
+  with no improvement).
+- desc: "Each task is built, then given a quick check that goes straight to done. A critical finding
+  is fixed on the spot, once; a high finding waits for the delivery gate. When every task of a
+  delivery is done, the delivery gate runs the full review and grades the delivery. Below the minimum
+  grade, the work is fixed and reviewed again, until the grade is reached or three cycles bring no
+  improvement."
+- caption: "How /aid-execute builds each task, and where the fix loop runs."
+- Drawing: EXECUTE → REVIEW ("quick check only") → DONE in a column, with the note "HIGH issues wait for
+  the gate" beside the REVIEW → DONE arrow. A "Fix on the spot" box ("one attempt") to the right of
+  REVIEW, with arrows REVIEW → box ("CRITICAL") and box → REVIEW. Below DONE, "DELIVERY-GATE" ("full
+  review, graded"), with a dashed arrow to a FIX box ("then review again") labelled "below minimum" and a
+  dashed arrow back. A dashed arrow from the gate leads to "STOP" ("3 cycles, no gain").
 - Text equivalent (`<ol>`):
   1. EXECUTE: the agent for the task's type does the work.
-  2. REVIEW: a reviewer checks the result.
-  3. FIX: if the review lists issues, they are fixed and the task goes back to REVIEW.
-  4. DONE: the task is complete.
-  5. DELIVERY-GATE: when every task of the delivery is done, a reviewer grades the whole delivery.
-     Below the minimum grade, the work goes back to FIX.
+  2. REVIEW: a quick check, with no grade. A critical finding is fixed on the spot, with one attempt.
+     A high finding is deferred to the delivery gate. The task then goes to DONE.
+  3. DONE: the task is complete.
+  4. DELIVERY-GATE: when every task of the delivery is done, a reviewer runs the full review and the
+     grade is computed. Below the minimum grade, the work goes to FIX and back to a fresh review.
+  5. STOP: if three cycles bring no improvement, the gate stops and raises an impediment instead of
+     looping on.
 
 ##### Feature Flow
 

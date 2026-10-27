@@ -6,7 +6,7 @@ const arrow = `url(#dg-${id}-arrow)`;
 ---
 <Diagram id={id} width={400} height={560}
   title="Full path and shortcut path"
-  desc="Both paths end at /aid-execute. The full path runs Describe, Define, Specify, Plan and Detail as separate phases with your approval after each. The shortcut engine runs CAPTURE, SPEC, PLAN and DETAIL in one run, grades every document at GATE, and stops once for your approval."
+  desc="Both paths end at /aid-execute. The full path runs Describe, Define, Specify, Plan and Detail as separate phases with your approval after each. The shortcut engine runs CAPTURE, SPEC, PLAN and DETAIL in one run, grades the documents it writes at GATE, and stops for your approval at the end."
   caption="The two ways from an idea to /aid-execute.">
   <rect class="dg-node dg-optional" x="96" y="8" width="208" height="32" rx="6" />
   <text class="dg-label" x="200" y="29" text-anchor="middle">/aid-triage (optional)</text>
@@ -19,7 +19,7 @@ const arrow = `url(#dg-${id}-arrow)`;
   <text class="dg-note" x="100" y="110" text-anchor="middle">you approve each phase</text>
   <rect class="dg-group" x="208" y="72" width="184" height="424" rx="6" />
   <text class="dg-label" x="300" y="92" text-anchor="middle">Shortcut path</text>
-  <text class="dg-note" x="300" y="110" text-anchor="middle">you approve once</text>
+  <text class="dg-note" x="300" y="110" text-anchor="middle">you approve at the end</text>
 
   <rect class="dg-node dg-accent" x="24" y="120" width="152" height="32" rx="6" />
   <text class="dg-label" x="100" y="141" text-anchor="middle">/aid-describe</text>
@@ -70,8 +70,8 @@ const arrow = `url(#dg-${id}-arrow)`;
       <tr><th scope="row">Specification</th><td><code>/aid-specify</code></td><td>SPEC</td></tr>
       <tr><th scope="row">Plan</th><td><code>/aid-plan</code></td><td>PLAN</td></tr>
       <tr><th scope="row">Tasks</th><td><code>/aid-detail</code></td><td>DETAIL</td></tr>
-      <tr><th scope="row">Quality check</th><td>each phase is reviewed and graded</td><td>GATE grades every document</td></tr>
-      <tr><th scope="row">Your approval</th><td>after every phase</td><td>once, at APPROVAL-HALT</td></tr>
+      <tr><th scope="row">Quality check</th><td>each phase is reviewed and graded</td><td>GATE grades the documents it writes</td></tr>
+      <tr><th scope="row">Your approval</th><td>after each phase</td><td>one approval, at APPROVAL-HALT, after any question it asked</td></tr>
       <tr><th scope="row">Then</th><td><code>/aid-execute</code></td><td><code>/aid-execute</code></td></tr>
     </tbody>
   </table>

@@ -6,7 +6,7 @@ const arrow = `url(#dg-${id}-arrow)`;
 ---
 <Diagram id={id} width={480} height={640}
   title="The eleven feedback loops"
-  desc="Development runs forward from Discover to Execute, but each phase can send work back to an earlier one when it finds a gap. Monitor sends production findings to /aid-fix or /aid-triage, and any phase can ask for a targeted re-discovery."
+  desc="Development runs forward from Discover to Execute, but each phase can send work back to an earlier one when it finds a gap. Monitor sends production findings to /aid-fix or /aid-triage, and any phase that reads the Knowledge Base can send work back to Discover. The arcs for Execute and its review (L6, L7) reach an earlier phase chosen by the finding; the table lists the targets."
   caption="Where each feedback loop sends work back to.">
   <rect class="dg-node dg-accent" x="40" y="16" width="160" height="40" rx="6" />
   <text class="dg-label" x="120" y="41" text-anchor="middle">Discover</text>
@@ -70,6 +70,7 @@ const arrow = `url(#dg-${id}-arrow)`;
   <text class="dg-note" x="272" y="533" text-anchor="middle">L9</text>
   <rect class="dg-node dg-accent" x="260" y="552" width="24" height="16" rx="6" />
   <text class="dg-note" x="272" y="565" text-anchor="middle">L10</text>
+  <text class="dg-note" x="348" y="244">L6 and L7 go to<tspan x="348" dy="1.25em">earlier phases</tspan><tspan x="348" dy="1.25em">(targets in the table)</tspan></text>
   <rect class="dg-node dg-accent" x="4" y="284" width="24" height="16" rx="6" />
   <text class="dg-note" x="16" y="297" text-anchor="middle">L11</text>
 

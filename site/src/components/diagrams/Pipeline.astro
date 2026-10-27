@@ -10,11 +10,13 @@ const arrow = `url(#dg-${id}-arrow)`;
   caption="How a piece of work moves through AID, from setup to delivery.">
   <rect class="dg-node dg-accent" x="72" y="16" width="160" height="40" rx="6" />
   <text class="dg-label" x="152" y="41" text-anchor="middle">/aid-config</text>
-  <path class="dg-edge" d="M152 56 V80" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M152 56 V72" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M72 36 H40 V136 H64" />
 
-  <rect class="dg-node dg-accent" x="72" y="80" width="160" height="40" rx="6" />
-  <text class="dg-label" x="152" y="105" text-anchor="middle">/aid-discover</text>
-  <path class="dg-edge dg-optional" d="M232 104 H256" marker-end={arrow} />
+  <rect class="dg-node dg-optional" x="72" y="72" width="160" height="48" rx="6" />
+  <text class="dg-label" x="152" y="92" text-anchor="middle">/aid-discover</text>
+  <text class="dg-note" x="152" y="110" text-anchor="middle">(existing code only)</text>
+  <path class="dg-edge dg-optional" d="M232 96 H256" marker-end={arrow} />
   <rect class="dg-node dg-optional" x="256" y="72" width="136" height="48" rx="6" />
   <text class="dg-label" x="324" y="92" text-anchor="middle">/aid-housekeep</text>
   <text class="dg-note" x="324" y="110" text-anchor="middle">(when drifted)</text>
@@ -64,7 +66,8 @@ const arrow = `url(#dg-${id}-arrow)`;
   <text class="dg-label" x="300" y="648" text-anchor="middle">/aid-monitor</text>
   <text class="dg-note" x="300" y="666" text-anchor="middle">(optional)</text>
 
-  <path class="dg-edge dg-optional" d="M376 652 H392 V136 H328" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M376 652 H392 V192 H280" marker-end={arrow} />
+  <path class="dg-edge dg-optional" d="M392 236 H384" marker-end={arrow} />
   <rect class="dg-label-bg" x="296" y="556" width="92" height="40" />
   <text class="dg-note" x="384" y="572" text-anchor="end">bugs, change<tspan x="384" dy="1.25em">requests</tspan></text>
 
@@ -74,7 +77,7 @@ const arrow = `url(#dg-${id}-arrow)`;
     <li>Choose a path. If you are not sure, <code>/aid-triage</code> suggests one; it writes nothing.
       <ul>
         <li>Full path, for broad, new or unclear work: run <code>/aid-describe</code>, <code>/aid-define</code>, <code>/aid-specify</code>, <code>/aid-plan</code> and <code>/aid-detail</code>, in that order. You approve each phase before the next one starts.</li>
-        <li>Shortcut path, for one known change: a shortcut such as <code>/aid-fix</code> runs the shortcut engine, which writes the same plan in one run and stops once for your approval.</li>
+        <li>Shortcut path, for one known change: a shortcut such as <code>/aid-fix</code> runs the shortcut engine, which writes the same plan in one run and stops for your approval.</li>
       </ul>
     </li>
     <li>Build and review the planned tasks with <code>/aid-execute</code>.</li>

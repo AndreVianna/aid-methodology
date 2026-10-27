@@ -4,10 +4,10 @@ import Diagram from '../Diagram.astro';
 const id = 'task-loop';
 const arrow = `url(#dg-${id}-arrow)`;
 ---
-<Diagram id={id} width={400} height={420}
+<Diagram id={id} width={400} height={480}
   title="The task loop in /aid-execute"
-  desc="Each task is built, then reviewed. If the review lists issues, the task is fixed and reviewed again. When every task of a delivery is done, a delivery gate grades the whole delivery."
-  caption="How /aid-execute builds and checks each task.">
+  desc="Each task is built, then given a quick check that goes straight to done. A critical finding is fixed on the spot, once; a high finding waits for the delivery gate. When every task of a delivery is done, the delivery gate runs the full review and grades the delivery. Below the minimum grade, the work is fixed and reviewed again, until the grade is reached or three cycles bring no improvement."
+  caption="How /aid-execute builds each task, and where the fix loop runs.">
   <rect class="dg-node dg-accent" x="16" y="16" width="144" height="56" rx="6" />
   <text class="dg-label" x="88" y="40" text-anchor="middle">EXECUTE</text>
   <text class="dg-note" x="88" y="58" text-anchor="middle">agent does the work</text>
@@ -15,34 +15,45 @@ const arrow = `url(#dg-${id}-arrow)`;
 
   <rect class="dg-node dg-accent" x="16" y="112" width="144" height="56" rx="6" />
   <text class="dg-label" x="88" y="136" text-anchor="middle">REVIEW</text>
-  <text class="dg-note" x="88" y="154" text-anchor="middle">reviewer checks</text>
+  <text class="dg-note" x="88" y="154" text-anchor="middle">quick check only</text>
   <path class="dg-edge" d="M88 168 V208" marker-end={arrow} />
+  <text class="dg-note" x="100" y="184">HIGH issues wait</text>
+  <text class="dg-note" x="100" y="200">for the gate</text>
 
-  <path class="dg-edge" d="M160 128 H288" marker-end={arrow} />
-  <rect class="dg-label-bg" x="176" y="98" width="96" height="22" />
-  <text class="dg-note" x="224" y="116" text-anchor="middle">issues found</text>
-  <path class="dg-edge" d="M288 152 H160" marker-end={arrow} />
-  <rect class="dg-node" x="288" y="112" width="96" height="56" rx="6" />
-  <text class="dg-label" x="336" y="136" text-anchor="middle">FIX</text>
-  <text class="dg-note" x="336" y="154" text-anchor="middle">fix issues</text>
+  <path class="dg-edge" d="M160 128 H240" marker-end={arrow} />
+  <rect class="dg-label-bg" x="164" y="98" width="72" height="22" />
+  <text class="dg-note" x="200" y="114" text-anchor="middle">CRITICAL</text>
+  <path class="dg-edge" d="M240 152 H160" marker-end={arrow} />
+  <rect class="dg-node" x="240" y="112" width="144" height="56" rx="6" />
+  <text class="dg-label" x="312" y="136" text-anchor="middle">Fix on the spot</text>
+  <text class="dg-note" x="312" y="154" text-anchor="middle">one attempt</text>
 
   <rect class="dg-node dg-accent" x="16" y="208" width="144" height="56" rx="6" />
   <text class="dg-label" x="88" y="240" text-anchor="middle">DONE</text>
   <path class="dg-edge" d="M88 264 V328" marker-end={arrow} />
 
-  <rect class="dg-node" x="16" y="328" width="144" height="56" rx="6" />
+  <rect class="dg-node dg-accent" x="16" y="328" width="144" height="56" rx="6" />
   <text class="dg-label" x="88" y="352" text-anchor="middle">DELIVERY-GATE</text>
-  <text class="dg-note" x="88" y="370" text-anchor="middle">after all tasks</text>
+  <text class="dg-note" x="88" y="370" text-anchor="middle">full review, graded</text>
 
-  <path class="dg-edge dg-optional" d="M160 356 H336 V168" marker-end={arrow} />
-  <rect class="dg-label-bg" x="240" y="236" width="92" height="44" />
-  <text class="dg-note" x="328" y="254" text-anchor="end">grade below<tspan x="328" dy="1.25em">minimum</tspan></text>
+  <path class="dg-edge dg-optional" d="M160 344 H240" marker-end={arrow} />
+  <rect class="dg-label-bg" x="164" y="296" width="72" height="40" />
+  <text class="dg-note" x="200" y="312" text-anchor="middle">below<tspan x="200" dy="1.25em">minimum</tspan></text>
+  <path class="dg-edge dg-optional" d="M240 368 H160" marker-end={arrow} />
+  <rect class="dg-node" x="240" y="328" width="144" height="56" rx="6" />
+  <text class="dg-label" x="312" y="352" text-anchor="middle">FIX</text>
+  <text class="dg-note" x="312" y="370" text-anchor="middle">then review again</text>
+
+  <path class="dg-edge dg-optional" d="M88 384 V416" marker-end={arrow} />
+  <rect class="dg-node dg-optional" x="16" y="416" width="144" height="48" rx="6" />
+  <text class="dg-label" x="88" y="438" text-anchor="middle">STOP</text>
+  <text class="dg-note" x="88" y="456" text-anchor="middle">3 cycles, no gain</text>
 
   <ol slot="text">
     <li>EXECUTE: the agent for the task's type does the work.</li>
-    <li>REVIEW: a reviewer checks the result.</li>
-    <li>FIX: if the review lists issues, they are fixed and the task goes back to REVIEW.</li>
+    <li>REVIEW: a quick check, with no grade. A critical finding is fixed on the spot, with one attempt. A high finding is deferred to the delivery gate. The task then goes to DONE.</li>
     <li>DONE: the task is complete.</li>
-    <li>DELIVERY-GATE: when every task of the delivery is done, a reviewer grades the whole delivery. Below the minimum grade, the work goes back to FIX.</li>
+    <li>DELIVERY-GATE: when every task of the delivery is done, a reviewer runs the full review and the grade is computed. Below the minimum grade, the work goes to FIX and back to a fresh review.</li>
+    <li>STOP: if three cycles bring no improvement, the gate stops and raises an impediment instead of looping on.</li>
   </ol>
 </Diagram>

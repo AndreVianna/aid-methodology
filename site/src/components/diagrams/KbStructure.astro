@@ -7,7 +7,7 @@ const arrow = `url(#dg-${id}-arrow)`;
 <Diagram id={id} width={400} height={440}
   title="What the Knowledge Base holds"
   desc="The Knowledge Base is the folder .aid/knowledge/. It holds a project card, the documents chosen at discovery, and three meta-documents that index and track them. The generated file inventory lives outside it, in .aid/generated/."
-  caption="The parts of the Knowledge Base and who writes each one.">
+  caption="The parts of the Knowledge Base and who writes them.">
   <rect class="dg-node dg-accent" x="16" y="16" width="160" height="40" rx="6" />
   <text class="dg-label" x="96" y="42" text-anchor="middle">.aid/knowledge/</text>
   <line class="dg-edge" x1="32" y1="56" x2="32" y2="304" />
@@ -51,7 +51,7 @@ const arrow = `url(#dg-${id}-arrow)`;
     <tbody>
       <tr><th scope="row">Project card</th><td><code>PROJECT.md</code>, optional, read first in every session</td><td>you, from the project card template</td></tr>
       <tr><th scope="row">Documents</th><td>one file per topic, such as <code>architecture.md</code>, <code>coding-standards.md</code> and <code>test-landscape.md</code>; the full list is on <a href="/reference/kb/">the Knowledge Base documents page</a></td><td><code>/aid-discover</code>, from the standard templates</td></tr>
-      <tr><th scope="row">Meta-documents</th><td><code>INDEX.md</code> (one line per document), <code>README.md</code> (completeness), <code>STATE.md</code> (grade and open questions)</td><td><code>/aid-discover</code>; every phase adds its questions to <code>STATE.md</code></td></tr>
+      <tr><th scope="row">Meta-documents</th><td><code>INDEX.md</code> (one line per document), <code>README.md</code> (completeness), <code>STATE.md</code> (grade and open questions)</td><td><code>/aid-discover</code>; <code>/aid-plan</code> and <code>/aid-detail</code> also add a question to <code>STATE.md</code> when the Knowledge Base is not enough</td></tr>
       <tr><th scope="row">File inventory</th><td><code>project-index.md</code>, kept in <code>.aid/generated/</code>, outside the knowledge folder</td><td><code>/aid-discover</code>, before its writers start</td></tr>
       <tr><th scope="row">Extensions (optional)</th><td>documents only your project needs</td><td>added to the document set when you confirm it at discovery</td></tr>
     </tbody>

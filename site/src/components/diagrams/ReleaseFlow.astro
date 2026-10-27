@@ -28,10 +28,10 @@ const arrow = `url(#dg-${id}-arrow)`;
   <path class="dg-edge dg-optional" d="M200 296 V328 H96 V360" marker-end={arrow} />
   <path class="dg-edge dg-optional" d="M200 328 H304 V360" marker-end={arrow} />
 
-  <rect class="dg-node dg-optional" x="16" y="360" width="160" height="48" rx="6" />
+  <rect class="dg-node dg-optional" x="16" y="360" width="160" height="60" rx="6" />
   <text class="dg-label" x="96" y="382" text-anchor="middle">npm-publish</text>
-  <text class="dg-note" x="96" y="400" text-anchor="middle">(if NPM_ENABLED)</text>
-  <rect class="dg-node dg-optional" x="224" y="360" width="160" height="48" rx="6" />
+  <text class="dg-note" x="96" y="400" text-anchor="middle">(if NPM_ENABLED and<tspan x="96" dy="1.25em">not a pre-release)</tspan></text>
+  <rect class="dg-node dg-optional" x="224" y="360" width="160" height="60" rx="6" />
   <text class="dg-label" x="304" y="382" text-anchor="middle">pypi-publish</text>
   <text class="dg-note" x="304" y="400" text-anchor="middle">(if PYPI_ENABLED)</text>
 
