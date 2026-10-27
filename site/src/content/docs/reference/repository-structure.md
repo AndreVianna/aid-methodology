@@ -1,7 +1,6 @@
 ---
 title: 'Repository Structure'
 description: 'This page maps the AID repository folder by folder, so you know where things live and where to make a change.'
-sourceDoc: 'docs/repository-structure.md'
 ---
 
 This page maps the AID repository folder by folder, so you know where things live and where to make a change.

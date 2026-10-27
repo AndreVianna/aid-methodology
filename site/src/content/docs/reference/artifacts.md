@@ -76,15 +76,6 @@ These artifacts live under `.aid/knowledge/`. They hold the living understanding
 
 `aid-monitor` has no state file of its own. It keeps its findings in the context of the run.
 
-## Generator artifacts (manifests)
-
-These files are committed derived output, outside the content collection root.
-
-| Artifact | Path | Produced by | Description |
-|----------|------|-------------|-------------|
-| Sync manifest | `site/scripts/.synced-manifest.json` | `sync-docs.mjs` | Lists the four doc-migration outputs owned by the sync script. Used by CI drift-check. |
-| Reference manifest | `site/scripts/.reference-manifest.json` | `gen-reference.mjs` | Lists the four generated reference pages owned by the reference generator. Used by CI drift-check. |
-
 ## Install artifacts
 
 The `aid add` command writes these files into your project. See [the Installation guide](/guides/installation/) for the steps.
@@ -98,7 +89,7 @@ The `aid add` command writes these files into your project. See [the Installatio
 
 ## Templates
 
-Artifacts that have a template link to it below, so you can see their exact shape. The others have no template and are produced by the writer named in the tables above. That covers the delivery branch, the pull request, the deploy record, `README.md`, `INDEX.md`, `kb.html`, the question entry, `project-index.md`, the AID manifest, the root instruction regions and the two generator manifests.
+Artifacts that have a template link to it below, so you can see their exact shape. The others have no template and are produced by the writer named in the tables above. That covers the delivery branch, the pull request, the deploy record, `README.md`, `INDEX.md`, `kb.html`, the question entry, `project-index.md`, the AID manifest and the root instruction regions.
 
 - [requirements/requirements-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/requirements/requirements-template.md): the template for `REQUIREMENTS.md`.
 - [specs/technical-specification-template.md](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/specs/technical-specification-template.md): the template for the Technical Specification body of a feature section.

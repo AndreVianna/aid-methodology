@@ -1,12 +1,9 @@
 ---
 title: 'Knowledge Base documents'
 description: 'This page lists the standard document types of the Knowledge Base, so you can see what each one captures and which template it comes from.'
-generatedFrom: 'canonical/aid/templates/knowledge-base/*.md'
 ---
 
 This page lists the standard document types of the [Knowledge Base](/reference/glossary/#knowledge-base), so you can see what each one captures and which template it comes from.
-
-<!-- generated — do not edit; source: canonical/aid/templates/knowledge-base/*.md -->
 
 `/aid-discover` populates these documents in the `.aid/knowledge/` folder of your project. `INDEX.md`, `README.md` and `STATE.md` sit beside them as generated or process files. Your project can change the set: see [Declared doc-set](/reference/glossary/#declared-doc-set). To learn how the Knowledge Base works, read [the Knowledge Base concept page](/concepts/knowledge-base/).
 

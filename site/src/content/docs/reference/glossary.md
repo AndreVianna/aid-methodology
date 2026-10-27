@@ -1,7 +1,6 @@
 ---
 title: 'Glossary'
 description: 'This page defines the terms you meet in AID, so you can look up a word you do not know.'
-sourceDoc: 'docs/glossary.md'
 tableOfContents: { maxHeadingLevel: 2 }
 ---
 

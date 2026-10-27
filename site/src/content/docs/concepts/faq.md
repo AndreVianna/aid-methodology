@@ -1,7 +1,6 @@
 ---
 title: 'FAQ'
 description: 'This page answers the questions newcomers ask most about what AID is, how to install it and how to use it.'
-sourceDoc: 'docs/faq.md'
 ---
 
 This page answers the questions newcomers ask most about what AID is, how to install it and how to use it.
