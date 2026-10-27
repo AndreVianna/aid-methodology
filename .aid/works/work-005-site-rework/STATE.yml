@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Completed
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -291,6 +291,17 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: 'Initial scaffold by aid-config'
+  - date: '2026-10-27'
+    event: 'Safety proof (AC-13)'
+    grade: --
+    notes: |
+      checked: d5ac09178cfa47f6d4f77694829d4aafc19d7af9
+      1. git status --porcelain -> no output (exit 0)
+      2. git diff --name-only site-aid...HEAD | grep -vE '^(site/|\.github/workflows/docs\.yml$|\.aid/works/work-005-site-rework/|\.aid/knowledge/)' -> no output (grep exit 1, no line outside the allowed set)
+      3. unlisted-KB-file loop over git diff --name-only site-aid...HEAD -- .aid/knowledge against site-audit.md -> no output
+      4. git diff --name-only site-aid...HEAD -- '*.sh' '*.ps1' '*.psm1' -> prints .aid/works/work-005-site-rework/audit-checks.sh (exit 0). Documented exception accepted by the orchestrator: this is a transient work-folder helper added by an earlier task, outside every shipped tree, not shipped code. git diff --name-only site-aid...HEAD -- canonical profiles bin lib install.sh install.ps1 -> no output (exit 0). Check 4 treated as passing with this one documented exception.
+      5. git tag --points-at HEAD -> no output (exit 0)
+      6. git rev-parse --abbrev-ref work-005@{upstream} -> "fatal: no upstream configured for branch 'work-005'" (exit 128); git ls-remote --heads origin work-005 -> no output (exit 0)
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
