@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: none
 # [W]
 updated: '2026-10-27T12:45:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Automatic approval review rejected external Claude safeguard probe; awaiting Q18 before benchmarks.'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -326,6 +326,10 @@ lifecycle_history:
     event: 'Rendered site scans repeated'
     grade: Pending
     notes: 'Rendered scan found 37 separator rows on 10 plain pages and none on AID pages; both repeat the shared search-button axe finding. Screenshot errors are reported separately; actual visual review and benchmark acceptance remain pending.'
+  - date: '2026-10-27'
+    event: 'Managed files resynced; host probe blocked'
+    grade: Pending
+    notes: 'Windows generator and real local resync succeeded; bytecode from the prior compile was removed from the source payload and the installer pruned it. Four YAML templates now have byte-identical committed, canonical and installed contents; no changed hashes for those entries. Claude host invocation remains unproven because automatic approval review rejected the external test prompt with copied credentials. No model call or cost occurred.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -369,6 +373,14 @@ delivery_gate:
 #     state: Pending | Answered | Skipped /
 #     context / suggested / answer / applied_to
 qa:
+  - id: Q18
+    category: Approval
+    impact: High
+    state: Pending
+    context: 'May I send one small test prompt to Anthropic using a temporary private copy of your Claude credentials to verify the safeguard in a disposable project?'
+    suggested: 'Yes: test the safeguard with a fake Git command before running the cheaper benchmarks; the probe may consume Claude usage'
+    answer: ''
+    applied_to: 'STEP-2.md C8; actual Claude hook verification'
   - id: Q17
     category: Approval
     impact: High
