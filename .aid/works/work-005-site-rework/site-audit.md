@@ -189,7 +189,16 @@ Taken with `checks/ac9-ac11.mjs` (viewport 800 px high, theme set through `local
 
 | Document | Statement made true | Status |
 |---|---|---|
-| pending | | |
+| `test-landscape.md` | The site suite, its CI lane and its commands describe the facts check plus the four test groups, with no generators, no fetch and no `docs/**` filter. | done |
+| `module-map.md` | The site depends on `canonical/` through `gen-facts.mjs`, checked by `--check`, not through build-time generators. | done |
+| `architecture.md` | The website entry point and the CI gotcha name the facts script and the PR-gated site job. | done |
+| `project-structure.md` | The site's tree, purpose, entry point, test folders and structure note match the simplified site. | done |
+| `technology-stack.md` | The site's languages, frameworks, commands and dependencies match `site/package.json`. | done |
+| `infrastructure.md` | The Docs workflow row and the site section describe a build with no network step. | done |
+| `integration-map.md` | The site no longer uses `gh` or GitHub release data, and the Docs workflow row matches its filters. | done |
+| `tech-debt.md` | Debt rows about removed site code are deleted, L9 is updated, and stale pointers outside `site/` are recorded as W5-24. | done |
+| `domain-glossary.md` | The site component terms name components that exist. | done |
+| `PROJECT.md` | The card gives the site facts and test commands and the regeneration rule. | done |
 
 ## Leads found at Specify
 
