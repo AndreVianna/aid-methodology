@@ -78,7 +78,7 @@
   - `printf '%s' "$H" | grep -oE '<desc [^>]*id="dg-probe-ok-desc"[^>]*>D</desc>' | wc -l`;
   - `printf '%s' "$H" | grep -o 'id="dg-probe-ok-arrow"' | wc -l`;
   - the text block, lead line, then the list:
-    `printf '%s' "$H" | grep -oE 'class="diagram-text"[^>]*>\s*<p [^>]*>The same information as text:</p>\s*<ol' | wc -l`.
+    `printf '%s' "$H" | grep -oE 'class="diagram-text[ "][^>]*>\s*<p [^>]*>The same information as text:</p>\s*<ol' | wc -l`.
 - [ ] Bad props fail the build with the spec's message. Four probe variants, one at a time. For each,
   from `site/`, `npm run build` exits non-zero and its output contains the stated text:
   - `id="Bad_Id"` gives `Diagram: bad id "Bad_Id"`;

@@ -82,7 +82,7 @@ Run from `site/` unless stated, after `rm -rf dist && npm run build`. Set
   one per line in that order; and
   `grep -rho '<figure class="diagram' dist --include='*.html' | wc -l` prints `11`.
 - [ ] AC-8, a text equivalent per diagram (U1 by command): for every built page,
-  `for f in $(grep -rl '<figure class="diagram' dist --include='*.html'); do a=$(grep -o '<figure class="diagram' "$f" | wc -l); b=$(grep -o 'class="diagram-text"' "$f" | wc -l); [ "$a" = "$b" ] || echo "$f: $a figures, $b text equivalents"; done`
+  `for f in $(grep -rl '<figure class="diagram' dist --include='*.html'); do a=$(grep -o '<figure class="diagram' "$f" | wc -l); b=$(grep -oE 'class="diagram-text[ "]' "$f" | wc -l); [ "$a" = "$b" ] || echo "$f: $a figures, $b text equivalents"; done`
   prints nothing; and `ls src/components/diagrams/*.astro | wc -l` prints `10`.
 - [ ] Raster removed: from the repo root, `grep -rn '3-ironman' site/src` prints nothing and
   `test -e site/src/assets/3-ironman.png` exits 1.
