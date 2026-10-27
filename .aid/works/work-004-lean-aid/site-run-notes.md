@@ -51,6 +51,7 @@ static site needs; no deploy. Model `claude-sonnet-5-5`; AID's helpers use the m
 | 04:39-04:56 | delivery 4: tasks 38-39 done (build and link tests; page and component fixes for what the new suite found) | $114.40+ | the new accessibility and link tests found real defects in pages that delivery gates had graded A and A+: the automated checks caught what the reviews missed |
 | 04:56-05:13 | delivery 4: tasks 40-44 done (keyboard check and screenshots re-recorded, reduction measured, docs workflow edited, KB documents updated) | $114.40+ | 44 of 49 done. Scope creep landing: KB documents (test landscape, module map, architecture, glossary, project card) edited, which the request never asked for |
 | 05:13-05:30 | delivery 4: tasks 45-48 done (more KB documents, KB debt register, site audit completed, a commit just for state writes); task 49 in progress | $114.40+ | 48 of 49. Four of the last five tasks were KB edits or bookkeeping (task 48 exists only to commit state files) |
+| 05:30-05:47 | all 49 tasks done (task 49: delivery 4 gate checks and a final sweep of AC-1 to AC-15); the delivery 4 gate review is running | $114.40+ | 79 commits in all |
 
 ## AID run: red tape observed so far
 
