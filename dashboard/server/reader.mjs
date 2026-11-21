@@ -3224,13 +3224,14 @@ function readWork(workDir, workId) {
   }
 
   // Pillar 6: hierarchy detection (per-work, presence-based)
-  if (_detectHierarchy(workDir)) {
+  const isDirect = _declaredWorkPath(workDir) === 'direct';
+  if (!isDirect && _detectHierarchy(workDir)) {
     return _readWorkHierarchical(workDir, workId);
   }
 
   // feature-001: flattened single-delivery layout (per-work, presence-based;
   // mutually exclusive with the deliveries/ wrapper checked above)
-  if (_detectFlat(workDir)) {
+  if (!isDirect && _detectFlat(workDir)) {
     return _readWorkFlat(workDir, workId);
   }
 
@@ -3256,6 +3257,18 @@ function readWork(workDir, workId) {
 
   const pw = parseStateMd(text, workId, workDir);
   parseWarnings.push(...pw.parseWarnings);
+  let directData = {};
+  if (isDirect) {
+    [directData] = parseStateDocument(text, { fileLabel: 'STATE.yml' });
+    const keys = ['interview', 'delivery_state', 'delivery_gate', 'tasks_lifecycle', 'features', 'deliverables'];
+    let artifacts = false;
+    for (const name of ['deliveries', 'tasks']) {
+      try { statSync(join(workDir, name)); artifacts = true; } catch (_) { /* absent */ }
+    }
+    if (artifacts || keys.some(key => Object.hasOwn(directData, key))) {
+      parseWarnings.push(workId + ': direct work conflicts with task or delivery artifacts.');
+    }
+  }
 
   const name = slugFromWorkId(workId);
 
@@ -3265,6 +3278,7 @@ function readWork(workDir, workId) {
   // Prototype: parse REQUIREMENTS.md for identity fields
   const reqPath = join(workDir, "REQUIREMENTS.md");
   let [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  if (isDirect) reqObjective = typeof directData.goal === 'string' ? directData.goal : null;
   bytesRead += reqBytes;
 
   // PF-8: SPEC.md fallback source for Lite-path works (no REQUIREMENTS.md)
@@ -3295,7 +3309,7 @@ function readWork(workDir, workId) {
   // PF-3 + PF-5c: enrich each task with short_name, delivery, lane
   const tasksDir = join(workDir, "tasks");
   const RE_DELIVERY = /^delivery-(\d+)$/i;
-  const enrichedTasks = pw.tasks.map(task => {
+  const enrichedTasks = (isDirect ? [] : pw.tasks).map(task => {
     // PF-5c: delivery from STATE Wave column ("delivery-NNN")
     let delivery = null;
     if (task.wave) {
@@ -3342,8 +3356,8 @@ function readWork(workDir, workId) {
     objective: reqObjective,
     work_path: pw.workPath,
     recipe: pw.recipe,
-    features: pw.features,
-    deliverables: pw.deliverables,
+    features: isDirect ? [] : pw.features,
+    deliverables: isDirect ? [] : pw.deliverables,
     kind: pw.kind,
     started: pw.started,
     minimum_grade: pw.minimumGrade,

@@ -41,6 +41,7 @@ class LeanScripts(unittest.TestCase):
         return subprocess.run(
             [sys.executable, str(SCRIPTS / (name + ".py")), *map(str, args)],
             cwd=str(cwd or self.dir), text=True, capture_output=True,
+            env=getattr(self, "script_env", None),
         )
 
     def write_json(self, name, data):
@@ -255,12 +256,442 @@ class LeanScripts(unittest.TestCase):
         hidden.write_text('{"rule":"changed"}', encoding="utf-8")
         self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
 
+    def compatibility_fixture(self):
+        spec = self.check_spec([{"name": "one"}])
+        site = self.dir / "site"
+        site.mkdir()
+        lock = site / "package-lock.json"
+        lock.write_text('{"lockfileVersion":3}', encoding="utf-8")
+        self.track(lock)
+        work = self.dir / ".aid/works/work-001-example"
+        work.mkdir(parents=True)
+        state = work / "STATE.yml"
+        state.write_text("lifecycle: Running\n", encoding="utf-8")
+        tmp = tempfile.TemporaryDirectory(prefix="aid-lean-dependencies-")
+        self.addCleanup(tmp.cleanup)
+        dependency = Path(tmp.name)
+        (dependency / "package.js").write_text("module.exports = 1;\n", encoding="utf-8")
+        link = site / "node_modules"
+        try:
+            link.symlink_to(dependency, target_is_directory=True)
+        except OSError:
+            self.skipTest("creating directory symlinks is unavailable")
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["work_states"] = [".aid/works/work-001-example/STATE.yml"]
+        data["dependency_links"] = [{"path": "site/node_modules", "target": str(dependency.resolve()),
+                                     "lockfile": "site/package-lock.json"}]
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        self.script_env = dict(os.environ, AID_STATE_FILE=str(state), AID_WORK_DIR=str(work))
+        return spec, state, link, dependency, lock
+
+    def test_checks_accepts_declared_mutable_state_and_pinned_dependency(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        evidence = json.loads(baseline.read_text(encoding="utf-8"))
+        self.assertEqual(evidence["work_states"][".aid/works/work-001-example/STATE.yml"],
+                         hashlib.sha256(state.read_bytes()).hexdigest())
+        self.assertIn("site/node_modules", evidence["dependency_links"])
+        state.write_text("lifecycle: Running\nupdated: later\n", encoding="utf-8")
+        same = self.run_script("checks", "compare", *args)
+        self.assertEqual(same.returncode, 0, same.stdout + same.stderr)
+        self.assertIn(hashlib.sha256(state.read_bytes()).hexdigest(), same.stdout)
+        self.write_json("cases.json", [{"name": "one", "failure": "new"}])
+        changed = self.run_script("checks", "compare", *args)
+        self.assertNotEqual(changed.returncode, 0, changed.stdout + changed.stderr)
+        self.assertIn("new or changed failure", changed.stderr)
+
+    def test_checks_rejects_changed_or_missing_declared_state_and_policy(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        contents = state.read_text(encoding="utf-8")
+        state.unlink()
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        state.write_text(contents, encoding="utf-8")
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["work_states"] = []
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        data["work_states"] = ["tracked.txt"]
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_rejects_mutated_dependencies_and_lockfile(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        package = dependency / "package.js"
+        original = package.read_bytes()
+        package.write_text("module.exports = 2;\n", encoding="utf-8")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        package.write_bytes(original)
+        (dependency / "unexpected.js").write_text("new", encoding="utf-8")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        (dependency / "unexpected.js").unlink()
+        lock.write_text('{"lockfileVersion":4}', encoding="utf-8")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_rejects_retargeted_and_escaping_dependency_links(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        link.unlink()
+        link.symlink_to(self.dir, target_is_directory=True)
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        link.unlink()
+        link.symlink_to(dependency, target_is_directory=True)
+        nested = dependency / "escape"
+        nested.symlink_to(self.dir / "tracked.txt")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_cannot_unlink_declared_work_state_as_a_report(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["commands"][0]["junit"] = ".aid/works/work-001-example/STATE.yml"
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        before = state.read_bytes()
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(state.read_bytes(), before)
+
+    def test_checks_rejects_unrelated_inputs_and_untracked_lockfile(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        extra = self.dir / "unrelated.txt"
+        extra.write_text("do not hide me", encoding="utf-8")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unrelated.txt", result.stderr)
+        extra.unlink()
+        subprocess.run(["git", "-C", str(self.dir), "rm", "--cached", "--", "site/package-lock.json"],
+                       check=True, capture_output=True)
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lockfile must be tracked", result.stderr)
+
+    def test_checks_rejects_a_dependency_changed_during_baseline(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["commands"][0]["argv"] = [sys.executable, "-c",
+            "from pathlib import Path; Path('site/node_modules/package.js').write_text('changed'); "
+            "Path('result.xml').write_text('<testsuite><testcase name=\"one\"/></testsuite>')"]
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        baseline = self.dir / "baseline.json"
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(baseline.exists())
+        self.assertIn("stable inputs changed", result.stderr)
+
+    def test_checks_rejects_tracked_changes_during_baseline(self):
+        spec = self.check_spec([{"name": "one"}])
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["commands"][0]["argv"] = [sys.executable, "-c",
+            "from pathlib import Path; Path('tracked.txt').write_text('changed'); "
+            "Path('result.xml').write_text('<testsuite><testcase name=\"one\"/></testsuite>')"]
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        baseline = self.dir / "baseline.json"
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(baseline.exists())
+        self.assertIn("tracked changes", result.stderr)
+
+    def test_checks_accepts_safe_internal_dependency_symlinks(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        (dependency / ".bin").mkdir()
+        internal = dependency / ".bin/tool"
+        try:
+            internal.symlink_to("../package.js")
+        except OSError:
+            self.skipTest("creating file symlinks is unavailable")
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertEqual(self.run_script("checks", "compare", *args).returncode, 0)
+        internal.unlink()
+        internal.symlink_to("../missing.js")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_rejects_indirect_directory_symlink_cycles(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        left, right = dependency / "left", dependency / "right"
+        left.mkdir()
+        right.mkdir()
+        try:
+            (left / "to-right").symlink_to("../right", target_is_directory=True)
+            (right / "to-left").symlink_to("../left", target_is_directory=True)
+        except OSError:
+            self.skipTest("creating directory symlinks is unavailable")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cycle", result.stderr)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction test")
+    def test_checks_rejects_windows_junction_without_is_junction(self):
+        spec = importlib.util.spec_from_file_location("baseline_checks", SCRIPTS / "checks.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        target, junction = self.dir / "junction-target", self.dir / "junction"
+        target.mkdir()
+        made = subprocess.run(["cmd", "/c", "mklink", "/J", str(junction), str(target)],
+                              capture_output=True, text=True)
+        if made.returncode:
+            self.skipTest("junction creation unavailable: " + made.stderr.strip())
+        try:
+            with mock.patch.object(Path, "is_junction", return_value=False, create=True):
+                with self.assertRaisesRegex(ValueError, "may not contain links"):
+                    module.unlinked_path(self.dir, "junction/file")
+        finally:
+            os.rmdir(junction)
+
+    def test_checks_accepts_dirty_tracked_active_state_only(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        subprocess.run(["git", "add", "-f", str(state.relative_to(self.dir))], cwd=self.dir, check=True)
+        subprocess.run(["git", "commit", "-qm", "track state"], cwd=self.dir, check=True)
+        state.write_text("status: Running\n", encoding="utf-8")
+        baseline = self.dir / "baseline.json"
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(baseline.read_text())["work_states"][state.relative_to(self.dir).as_posix()],
+                         hashlib.sha256(state.read_bytes()).hexdigest())
+
+    def test_checks_accepts_multiple_links_sharing_a_lockfile(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        second = self.dir / "second/node_modules"
+        second.parent.mkdir()
+        try:
+            second.symlink_to(dependency, target_is_directory=True)
+        except OSError:
+            self.skipTest("creating directory symlinks is unavailable")
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["dependency_links"].append({"path": "second/node_modules", "target": str(dependency),
+                                         "lockfile": "site/package-lock.json"})
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_checks_requires_the_literal_declared_lockfile_to_be_tracked(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        tracked = self.dir / "site/a.lock"
+        tracked.write_text("tracked", encoding="utf-8")
+        subprocess.run(["git", "add", "site/a.lock"], cwd=self.dir, check=True)
+        subprocess.run(["git", "commit", "-qm", "add lock"], cwd=self.dir, check=True)
+        literal = self.dir / "site/[abc].lock"
+        literal.write_text("untracked", encoding="utf-8")
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["dependency_links"][0]["lockfile"] = "site/[abc].lock"
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lockfile must be tracked", result.stderr)
+
+    def test_checks_rejects_dependency_pointing_into_worktree_git_metadata(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        worktree = self.dir.parent / (self.dir.name + "-linked-worktree")
+        subprocess.run(["git", "worktree", "add", "--detach", str(worktree)], cwd=self.dir,
+                       check=True, capture_output=True)
+        try:
+            git_dir = Path(subprocess.run(["git", "rev-parse", "--absolute-git-dir"], cwd=worktree,
+                                          check=True, capture_output=True, text=True).stdout.strip())
+            data = json.loads(spec.read_text(encoding="utf-8"))
+            worktree_spec = worktree / "spec.json"
+            link_path = worktree / "site/node_modules"
+            link_path.symlink_to(git_dir, target_is_directory=True)
+            data["work_states"] = []
+            data["dependency_links"][0]["target"] = str(git_dir)
+            worktree_spec.write_text(json.dumps(data), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPTS / "checks.py"), "baseline", "--spec",
+                                     str(worktree_spec), "--baseline", str(worktree / "baseline.json")],
+                                    cwd=worktree, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Git metadata", result.stderr)
+        finally:
+            subprocess.run(["git", "worktree", "remove", "--force", str(worktree)], cwd=self.dir,
+                           check=True, capture_output=True)
+
+    def test_checks_preserves_unknown_or_tampered_report_receipts(self):
+        spec = self.check_spec([{"name": "one"}])
+        baseline = self.dir / "baseline.json"
+        receipt = Path(str(baseline) + ".reports.json")
+        receipt.write_text("user data", encoding="utf-8")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(receipt.read_text(encoding="utf-8"), "user data")
+        receipt.unlink()
+        first = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        report = self.dir / "result.xml"
+        before = report.read_bytes()
+        receipt.write_text("tampered", encoding="utf-8")
+        result = self.run_script("checks", "compare", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(receipt.read_text(encoding="utf-8"), "tampered")
+        self.assertEqual(report.read_bytes(), before)
+
+    def test_checks_rejects_report_alias_to_declared_state_before_unlink(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        alias = self.dir / "alias.xml"
+        try:
+            alias.symlink_to(state)
+        except OSError:
+            self.skipTest("creating file symlinks is unavailable")
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["commands"][0]["junit"] = "alias.xml"
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        before = state.read_bytes()
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(state.read_bytes(), before)
+        self.assertTrue(alias.is_symlink())
+
+    def test_checks_compares_legacy_baselines_without_new_declarations(self):
+        spec = self.check_spec([{"name": "one"}])
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        old = json.loads(baseline.read_text(encoding="utf-8"))
+        old.pop("work_states")
+        old.pop("dependency_links")
+        baseline.write_text(json.dumps(old), encoding="utf-8")
+        Path(str(baseline) + ".reports.json").unlink()
+        report = self.dir / "result.xml"
+        before = report.read_bytes()
+        refused = self.run_script("checks", "compare", *args)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertEqual(report.read_bytes(), before)
+        report.rename(self.dir / "preserved-old-result.xml")
+        result = self.run_script("checks", "compare", *args)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_checks_binds_declared_state_to_the_active_work_environment(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        self.script_env.pop("AID_STATE_FILE")
+        self.assertNotEqual(self.run_script("checks", "baseline", *args).returncode, 0)
+        self.script_env["AID_STATE_FILE"] = str(state)
+        self.script_env["AID_WORK_DIR"] = str(state.parent.parent)
+        self.assertNotEqual(self.run_script("checks", "baseline", *args).returncode, 0)
+        self.script_env["AID_WORK_DIR"] = str(state.parent)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.script_env["AID_STATE_FILE"] = str(self.dir / "tracked.txt")
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_records_dependency_root_mode(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        if os.name == "nt":
+            self.skipTest("POSIX dependency mode semantics unavailable")
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        original = dependency.stat().st_mode
+        dependency.chmod(original ^ 0o100)
+        self.addCleanup(dependency.chmod, original)
+        self.assertNotEqual(self.run_script("checks", "compare", *args).returncode, 0)
+
+    def test_checks_rejects_a_different_checkout_revision(self):
+        spec = self.check_spec([{"name": "one"}])
+        baseline = self.dir / "baseline.json"
+        args = ("--spec", spec, "--baseline", baseline)
+        first = self.run_script("checks", "baseline", *args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        (self.dir / "tracked.txt").write_text("new commit", encoding="utf-8")
+        self.track("tracked.txt")
+        result = self.run_script("checks", "compare", *args)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("checkout revision", result.stderr)
+
+    def test_checks_preserves_existing_untracked_or_git_report_paths(self):
+        spec = self.check_spec([{"name": "one"}])
+        baseline = self.dir / "baseline.json"
+        report = self.dir / "result.xml"
+        report.write_text("user data", encoding="utf-8")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(report.read_text(encoding="utf-8"), "user data")
+        report.unlink()
+        data = json.loads(spec.read_text(encoding="utf-8"))
+        data["commands"][0]["junit"] = ".git/config"
+        spec.write_text(json.dumps(data), encoding="utf-8")
+        config = self.dir / ".git/config"
+        before = config.read_bytes()
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(config.read_bytes(), before)
+
+    def test_checks_preserves_tracked_or_replaced_junit_reports(self):
+        spec = self.check_spec([{"name": "one"}])
+        baseline = self.dir / "baseline.json"
+        report = self.dir / "result.xml"
+        report.write_text("tracked user data", encoding="utf-8")
+        self.track(report)
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(report.read_text(encoding="utf-8"), "tracked user data")
+        subprocess.run(["git", "-C", str(self.dir), "rm", "-q", "--", "result.xml"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(self.dir), "commit", "-qm", "remove report"], check=True, capture_output=True)
+        first = self.run_script("checks", "baseline", "--spec", spec, "--baseline", baseline)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        report.write_text("user changed report", encoding="utf-8")
+        result = self.run_script("checks", "compare", "--spec", spec, "--baseline", baseline)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(report.read_text(encoding="utf-8"), "user changed report")
+
+    def test_checks_rejects_hardlinked_work_state(self):
+        spec, state, link, dependency, lock = self.compatibility_fixture()
+        state.unlink()
+        try:
+            os.link(self.dir / "tracked.txt", state)
+        except OSError:
+            self.skipTest("creating hard links is unavailable")
+        result = self.run_script("checks", "baseline", "--spec", spec, "--baseline", self.dir / "baseline.json")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.dir / "tracked.txt").read_text(encoding="utf-8"), "starting content")
+
     def test_instruction_line_budgets(self):
         skill = ROOT / "canonical" / "skills" / "aid-change"
         for path, limit in ((skill / "SKILL.md", 100), (skill / "references" / "review.md", 60)):
             with self.subTest(path=path):
                 lines = len(path.read_text(encoding="utf-8").splitlines())
                 self.assertLessEqual(lines, limit, f"{path} has {lines} lines; budget is {limit}")
+
+    def test_site_review_requires_rendered_and_content_evidence(self):
+        review = (ROOT / "canonical/skills/aid-change/references/review.md").read_text(encoding="utf-8")
+        for required in ("visible raw Markdown table separators", "code examples",
+                         "changed documentation pages", "before and after",
+                         "explain how to", "unverified"):
+            with self.subTest(required=required):
+                self.assertIn(required, review)
+
+    def test_change_requires_relevant_facts_to_become_outcome_checks(self):
+        skill = (ROOT / "canonical/skills/aid-change/SKILL.md").read_text(encoding="utf-8")
+        planned = (ROOT / "canonical/skills/aid-change/references/planned.md").read_text(encoding="utf-8")
+        review = (ROOT / "canonical/skills/aid-change/references/review.md").read_text(encoding="utf-8")
+        for text, required in (
+            (skill, "relevant KB facts and project rules"),
+            (skill, "verify them against current source"),
+            (skill, "required outcome without evidence as unverified"),
+            (skill, "do not report the task complete"),
+            (planned, "user-visible outcomes"),
+            (planned, "plausible incomplete result"),
+            (planned, "removed or replaced behavior"),
+            (review, "relevant KB facts and project rules"),
+            (review, "positive outcome evidence"),
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
 
     def test_claude_shell_safeguard_decisions_and_invalid_input(self):
         # Direct invocations only: shell aliases, indirection, bypasses, other
@@ -511,7 +942,7 @@ class MeasurementModes(unittest.TestCase):
         for aid, mode, cost in ((True, "lean", 0.20), (True, "aid", 4.00),
                                 (True, None, 6.00), (False, "plain", 0.10),
                                 (False, None, 0.30)):
-            row = {"scenario": "fix", "aid": aid, "start_context_tokens": 100,
+            row = {"scenario": "fix", "aid": aid, "model": "known-model", "start_context_tokens": 100,
                    "cache_write_tokens": 100, "cost_usd": cost, "seconds": 1,
                    "hidden_pass": True}
             if mode is not None:

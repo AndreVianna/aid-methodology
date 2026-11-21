@@ -1624,6 +1624,9 @@ mode_pipeline() {
         "user approved")    canonical_field="User Approved";      fm_key="user_approved" ;;
         "pipeline path")    canonical_field="Pipeline Path";      fm_key="pipeline.path" ;;
         "pipeline initiator") canonical_field="Pipeline Initiator"; fm_key="pipeline.initiator" ;;
+        "direct goal")      canonical_field="Direct Goal";        fm_key="goal" ;;
+        "direct next step") canonical_field="Direct Next Step";   fm_key="next_step" ;;
+        "direct evidence")  canonical_field="Direct Evidence";    fm_key="evidence" ;;
         *) die "unknown --pipeline field '$FIELD'; allowed: Lifecycle Phase \"Active Skill\" Updated \"Pause Reason\" \"Block Reason\" \"Block Artifact\" Started \"Minimum Grade\" \"User Approved\" \"Pipeline Path\" \"Pipeline Initiator\"" 4 ;;
     esac
 
@@ -1658,12 +1661,20 @@ mode_pipeline() {
             ;;
         "Pipeline Path")
             case "$FIELD_VALUE" in
-                lite|full) ;;
-                *) die "invalid Pipeline Path value '$FIELD_VALUE'; must be one of: lite | full" 4 ;;
+                direct|lite|full) ;;
+                *) die "invalid Pipeline Path value '$FIELD_VALUE'; must be one of: direct | lite | full" 4 ;;
             esac
+            local prior_path
+            prior_path="$(wb_get_pipeline_path)"
+            if [[ "$prior_path" != "$FIELD_VALUE" && ( "$prior_path" == direct || "$FIELD_VALUE" == direct ) ]]; then
+                die "changing to or from direct requires a reviewed migration" 4
+            fi
             ;;
         "Pipeline Initiator")
             [[ "$FIELD_VALUE" =~ ^aid-[a-zA-Z0-9_-]+$ ]] || die "invalid Pipeline Initiator value '$FIELD_VALUE'; must match aid-{skill}" 4
+            ;;
+        "Direct Goal"|"Direct Next Step"|"Direct Evidence")
+            [[ "$(wb_get_pipeline_path)" == direct ]] || die "direct fields require a direct work state" 4
             ;;
     esac
 
@@ -1707,6 +1718,9 @@ mode_pipeline() {
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
+if [[ "$MODE" != pipeline && "$(wb_get_pipeline_path)" == direct ]]; then
+    die "task and delivery operations do not apply to direct work" 4
+fi
 case "$MODE" in
     pipeline)            mode_pipeline ;;
     field)               mode_field ;;

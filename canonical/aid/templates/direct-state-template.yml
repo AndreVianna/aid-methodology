@@ -1,0 +1,16 @@
+pipeline:
+  path: direct
+  initiator: aid-change
+started: '--'
+minimum_grade: A
+user_approved: 'no'
+lifecycle: Running
+phase: Execute
+active_skill: aid-change
+updated: '--'
+pause_reason: '--'
+block_reason: '--'
+block_artifact: '--'
+goal: '--'
+next_step: 'Inspect the request and establish checks.'
+evidence: '--'

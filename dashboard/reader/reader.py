@@ -864,12 +864,13 @@ def _read_work(
         return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0, "", state_label
 
     # Pillar 6: hierarchy detection (per-work, presence-based)
-    if _detect_hierarchy(work_dir):
+    is_direct = _declared_work_path(work_dir) == 'direct'
+    if not is_direct and _detect_hierarchy(work_dir):
         return _read_work_hierarchical(work_dir, work_id)
 
     # feature-001: flattened single-delivery layout (per-work, presence-based;
     # mutually exclusive with the deliveries/ wrapper checked above)
-    if _detect_flat(work_dir):
+    if not is_direct and _detect_flat(work_dir):
         return _read_work_flat(work_dir, work_id)
 
     # --- Legacy monolithic path (preserved behavior) ---
@@ -897,6 +898,11 @@ def _read_work(
     # work_dir is passed for the LC-3 fallback IMPEDIMENT scan (KI-003).
     pw: ParsedWork = parse_state_md(text, work_id=work_id, work_dir=work_dir)
     parse_warnings.extend(pw.parse_warnings)
+    if is_direct:
+        data, _ = parse_state_document(text, file_label=STATE_FILENAME)
+        conflicts = ('interview', 'delivery_state', 'delivery_gate', 'tasks_lifecycle', 'features', 'deliverables')
+        if any(key in data for key in conflicts) or (work_dir / 'deliveries').exists() or (work_dir / 'tasks').exists():
+            parse_warnings.append(f'{work_id}: direct work conflicts with task or delivery artifacts.')
 
     # Extract display name from work_id slug (strip leading "work-NNN-")
     name = _slug_from_work_id(work_id)
@@ -907,6 +913,8 @@ def _read_work(
     # Prototype: parse REQUIREMENTS.md for identity fields
     req_path = work_dir / "REQUIREMENTS.md"
     req_title, req_description, req_objective, req_bytes = parse_requirements_md(req_path)
+    if is_direct:
+        req_objective = data.get('goal') if isinstance(data.get('goal'), str) else None
     bytes_read += req_bytes
 
     # PF-8: SPEC.md fallback source for Lite-path works (no REQUIREMENTS.md)
@@ -935,7 +943,7 @@ def _read_work(
     enriched_tasks = []
     import re as _re
     _re_delivery = _re.compile(r"^delivery-(\d+)$", _re.IGNORECASE)
-    for task in pw.tasks:
+    for task in ([] if is_direct else pw.tasks):
         # PF-5c: delivery from STATE Wave column ("delivery-NNN")
         delivery: Optional[int] = None
         if task.wave:
@@ -990,8 +998,8 @@ def _read_work(
         objective=req_objective,
         work_path=pw.work_path,
         recipe=pw.recipe,
-        features=pw.features,
-        deliverables=pw.deliverables,
+        features=[] if is_direct else pw.features,
+        deliverables=[] if is_direct else pw.deliverables,
         kind=pw.kind,
         started=pw.started,
         minimum_grade=pw.minimum_grade,

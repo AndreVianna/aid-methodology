@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-10-27T12:45:00Z'
+updated: '2026-10-28T23:20:39Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Automatic approval review rejected external Claude safeguard probe; awaiting Q18 before benchmarks.'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -330,6 +330,243 @@ lifecycle_history:
     event: 'Managed files resynced; host probe blocked'
     grade: Pending
     notes: 'Windows generator and real local resync succeeded; bytecode from the prior compile was removed from the source payload and the installer pruned it. Four YAML templates now have byte-identical committed, canonical and installed contents; no changed hashes for those entries. Claude host invocation remains unproven because automatic approval review rejected the external test prompt with copied credentials. No model call or cost occurred.'
+  - date: '2026-10-27'
+    event: 'Codex requested for current checks'
+    grade: Pending
+    notes: 'Q18 answered: Claude usage is depleted. The existing measurement drivers invoke Claude only, and the installed hook is Claude-specific; Codex measurements require a separate adapter and cannot prove Claude hook behavior. No model runs started.'
+  - date: '2026-10-27'
+    event: 'Codex adapter under review'
+    grade: Pending
+    notes: 'Codex JSONL adapter and host-separated reporting added; offline tests cover resume, failures, no Claude credential access and nullable costs. Codex-specific handler has offline tests only; hook registration, trusted native enforcement, authentication isolation and actual CLI execution remain unproven. No benchmarks run.'
+  - date: '2026-10-27'
+    event: 'Isolated Codex sign-in requested'
+    grade: Pending
+    notes: 'A separate project-local Codex home and fake-command fixture were prepared without copying credentials. Device sign-in needs the maintainer; a successful login and trusted native hook are not yet established.'
+
+  - date: '2026-10-27'
+    event: 'WSL native hook fixture verified'
+    grade: Pending
+    notes: 'Isolated Codex 0.164.0 on ARGUS executed the fake status command and blocked separate fake push and merge tool calls; push and merge sentinels were absent. This verifies the trusted fixture only; production hook registration, driver isolation and benchmark readiness remain pending. No benchmark run.'
+
+  - date: '2026-10-27'
+    event: 'Codex integration in progress'
+    grade: Pending
+    notes: 'Private project-local Codex home selection implemented for both drivers and resume; 15 offline adapter tests passed. Actual integration, independent review and benchmark execution remain pending.'
+
+  - date: '2026-10-27'
+    event: 'Codex integration remains under review'
+    grade: Pending
+    notes: 'Offline adapter 18/18, hook configuration 7/7 and lean regression 22/22 passed. The staged WSL installer shipped the handler and registration helper, but does not automatically register or trust the hook. Independent review found remaining configuration concurrency, host portability and benchmark isolation issues. Installed-workflow native enforcement and benchmarks remain unverified; no benchmark was run.'
+
+  - date: '2026-10-27'
+    event: 'Codex integration fix round resumed'
+    grade: Pending
+    notes: 'Maintainer requested resolution of all remaining findings, installed-workflow enforcement verification, and cheaper benchmarks; test-first and independent review are in progress. No benchmark has run.'
+
+  - date: '2026-10-27'
+    event: 'Noninteractive hook trust defect reproduced'
+    grade: Pending
+    notes: 'In a trusted isolated WSL fixture, Codex exec with --ignore-user-config ran the inert push; without that flag the same hook blocked it. The ignored-config sentinel and both transcripts are preserved. Lean benchmark execution remains blocked until exact per-fixture native enforcement and trust are proven; no benchmark run.'
+
+  - date: '2026-10-27'
+    event: 'Codex benchmark trust check remains pending'
+    grade: Pending
+    notes: 'Fresh installed WSL fixture blocked inert push and merge after manual activation and trust; noninteractive exec ignored trust when --ignore-user-config was used, then blocked with isolated config loaded. Adapter now loads isolated config, enables hooks, and fails closed until an exact-fixture native enforcement verifier exists. Offline adapter 30/30 and WSL registration 13/13 with one native-Windows-only skip. No benchmark run.'
+
+  - date: '2026-10-27'
+    event: 'Exact-fixture trust verifier requested'
+    grade: Pending
+    notes: 'Maintainer requested per-fixture native enforcement verification before cheaper benchmarks. Test-first verifier and reusable prepared fixtures are in design; no benchmark has run.'
+
+  - date: '2026-10-27'
+    event: 'Benchmark fixture trust authorized'
+    grade: Pending
+    notes: 'Maintainer explicitly approved trusting the nine prepared fix, feature and complex benchmark project folders and their single reviewed AID hook in the isolated Codex home. Each fixture still requires native verification before a benchmark; no benchmark run yet.'
+
+  - date: '2026-10-27'
+    event: 'First Codex fix comparison completed'
+    grade: Pending
+    notes: 'The exact lean fixture native hook probe passed, but its task stopped asking for trust and the hidden check failed. The plain fix completed and passed its hidden check. Both raw results are retained; review of the trust discovery gap is in progress.'
+
+  - date: '2026-10-27'
+    event: 'Trust discovery correction in progress'
+    grade: Pending
+    notes: 'The observed imperative trust request reproduced a false finished status. A bounded follow-up is under review: only a verified Codex lean fixture receives one factual native-preflight result, with guard identity rechecked before continuation. Original benchmark results are preserved; no new model run yet.'
+
+  - date: '2026-10-27'
+    event: 'Trust continuation offline checks reviewed'
+    grade: Pending
+    notes: 'The observed request is detected as unfinished. A single factual continuation is allowed only after exact-fixture native verification and before-turn identity validation; unfamiliar or mixed requests stop. Independent review accepted the bounded fix. Windows 66 tests passed with one platform skip; WSL 66 passed. A fresh fix-02 benchmark is running; actual workflow remains unproved until its result.'
+
+  - date: '2026-10-27'
+    event: 'Second lean fix run exposed trust wording gap'
+    grade: Pending
+    notes: 'Fix-02 native preflight passed, but a differently worded imperative trust request was missed and the hidden fix check failed. Raw evidence and failed result retained. A factual preflight context for verified lean Codex runs and broader request recognition are under independent review; this changes the benchmark protocol and is not proof of an installed-workflow pass.'
+
+  - date: '2026-10-27'
+    event: 'Verified preflight context benchmark started'
+    grade: Pending
+    notes: 'Independent review accepted reporting the exact native preflight result in the lean Codex task prompt; this is a disclosed benchmark protocol change. Updated detector recognizes the second observed trust wording. Windows 67 tests passed with one platform skip; WSL 67 passed. Fresh fix-03 benchmark is running; prior failed results remain unchanged.'
+
+  - date: '2026-10-27'
+    event: 'Verified-context lean fix passed hidden check'
+    grade: Pending
+    notes: 'Fix-03 native probe and hidden fix check passed after the verified preflight result was included in the task prompt. Codex reported 775170 input tokens including 724096 cached, plus 105125 probe input tokens including 90112 cached. The earlier plain fix passed with 76921 input tokens including 70016 cached. One sample each, no USD cost. Earlier stopped lean attempts remain recorded; project card unavailable and independent review evidence being audited.'
+
+  - date: '2026-10-27'
+    event: 'Lean feature benchmark completed'
+    grade: Pending
+    notes: 'Feature-01 exact-fixture native safeguard preflight and hidden feature check passed under the disclosed verified-context protocol. Task reported 1012055 input tokens including 940544 cached, plus probe 105102 input including 90112 cached. Seven tests passed. One sample; plain feature comparison is running. No USD cost supplied.'
+
+  - date: '2026-10-27'
+    event: 'Directional Codex comparisons completed'
+    grade: Pending
+    notes: 'One plain and one verified-context lean run for fix, feature and complex passed hidden checks; original two stopped lean fix attempts retained. Plain input totals 76921, 79279, 92265; lean totals 775170, 1012055, 1929486, all including cached input, with separate approximately 105000-input native probes each. Complex lean used two simulated-user turns. No USD costs and no final-grade claim; missing project card, protocol change, one-sample uncertainty and site approval remain.'
+
+  - date: '2026-10-27'
+    event: 'Directional benchmark evidence reviewed'
+    grade: Pending
+    notes: 'Independent review confirmed each of the three successful lean fixtures had a native preflight and hidden pass. Feature and complex private sessions show independent reviewer completion; complex plan approval was simulated and its first plan reviewer failed on an unsupported model before retry. All fixtures lacked the project card. Reviewer transcripts were not fully audited. Results use an explicit benchmark-only preflight context and one sample per arm; full repetitions, site benchmark, broader platform support and final acceptance remain pending.'
+
+  - date: '2026-10-27'
+    event: 'Lean overhead reduction authorized'
+    grade: Pending
+    notes: 'Maintainer approved profiling saved runs, correcting the missing project card, reducing evidenced overhead while preserving protections, and running minimal paired fix and complex trials. Site spend is not authorized. Existing benchmark results and unrelated edits are preserved; analysis and test-first investigation are in progress.'
+
+  - date: '2026-10-27'
+    event: 'Complex Codex usage overcount discovered'
+    grade: Pending
+    notes: 'The second turn.completed usage was cumulative: raw turns report 459840 then 1469646 input tokens, while summing per-request rollout usage gives 1469646. Prior reported 1929486 double-counted the first turn; corrected cached input is 1376384 and output is 7725. Original result remains unchanged. Both drivers and resume accounting require test-first correction; no new model run.'
+
+  - date: '2026-10-27'
+    event: 'Lean profiling and accounting fix under review'
+    grade: Pending
+    notes: 'Saved-session profile records 5 versus 18/28/36 main model calls and large avoidable inventory/template reads. Added truthful notes project card and bounded discovery guidance without removing checks, state, review or safeguard. Fixed cumulative Codex counters in both drivers with unknown CLI versions rejected before model calls and external resumes labeled. Windows usage 8/8, fixture 4/4 and adapter 67 tests with one platform skip; real WSL installation and independent final review remain pending.'
+
+  - date: '2026-10-27'
+    event: 'Fresh benchmark staging defect found'
+    grade: Pending
+    notes: 'The first real WSL prepare-only installation stopped before model execution: release.sh requires an empty output directory, but Codex stage environment created home/tmp inside it. Failed log and bundle preserved; test-first correction moves staging environment outside the output bundle. No trial started.'
+
+  - date: '2026-10-27'
+    event: 'Lean overhead trial fixtures prepared'
+    grade: Pending
+    notes: 'Real WSL staged install has exact canonical skill and notes card bytes. Offline WSL suites passed 68, 8 and 4 tests. Two unused previously authorized fixture paths were preserved and updated only with the card and skill, then locally committed in their disposable repositories. Their application and test Git trees match the original plain baseline; overall commits differ. Fix uses the feature-02 folder with scenario explicitly relabeled; original metadata/index and per-fixture proofs are retained. Fresh native hook probes and paired trials remain.'
+
+  - date: '2026-10-27'
+    event: 'Updated fix comparison completed'
+    grade: Pending
+    notes: 'After exact-fixture native preflight, updated lean fix passed the hidden check and four tests with 650316 cumulative input tokens including cached; fresh plain fix passed with 61415. Lean preflight was 105111 input separately. Application source/test Git trees and hidden grader match, while lean card, skill context and fixture commit differ; one sample per arm. Lean disclosed missing authoring criteria and connector registry. Complex lean trial is running.'
+
+  - date: '2026-10-27'
+    event: 'Updated complex comparison completed'
+    grade: Pending
+    notes: 'Updated lean complex native preflight passed; hidden check and ten tests passed at 1623820 session-cumulative input tokens including cached, plus 105100 probe input. Fresh plain complex passed its hidden check and eight tests at 96881 input. Lean used two turns; plan approval was simulated and finished result remains awaiting approval. Both have one sample; changed lean card/instruction context and fixture commit are disclosed. Earlier lean complex corrected to 1469646, retained original overcounted JSON. Independent audit confirms raw usage and safeguard evidence.'
+
+  - date: '2026-10-27'
+    event: 'Targeted overhead experiment reviewed'
+    grade: Pending
+    notes: 'Real WSL staged install and both approved exact-fixture probes passed. One updated plain/lean pair each for fix and complex passed hidden checks; lean complex awaits final result approval. Updated fix inputs 61415/650316, complex 96881/1623820; all include cached and exclude separate probes. Raw session totals independently match corrected driver accounting. Card and targeted reads reduced output in one fix sample but main model calls remained 18; updated complex used 40 calls versus 36 previously. User intent of substantial simplification and final delivery remain pending. Narrow unsupported-reviewer-model fallback added after trials and reviewed as source only. WSL offline 68/8/5 passed; Windows 68 tests with one platform skip, 8/8, 5/5 and elevated lean 22/22 passed.'
+
+  - date: '2026-10-27'
+    event: 'Final trial source installed in scratch'
+    grade: Pending
+    notes: 'Fresh no-model WSL staged installation succeeded after the reviewed staging fix. Installed aid-change skill, reviewer fallback and notes project card matched canonical/fixture source bytes. The fallback was added after the paired trials and has no new live proof. WSL final offline suites passed 68/8/5; elevated Windows lean suite passed 22. Substantive workflow simplification and final acceptance remain pending.'
+
+  - date: '2026-10-27'
+    event: 'Overhead profile reviewed'
+    grade: Pending
+    notes: 'Independent audit confirmed both paired results, identical application/test source trees, native safeguard evidence, cumulative usage and missing final complex approval. CODEX-PROFILE.md now includes both earlier stopped and failed fix attempts; changed context and unmeasured fallback are disclosed. Current measurements show workflow-call overhead remains; no claim that the lean target or overall work is complete.'
+
+  - date: '2026-10-27'
+    event: 'Architecture evolution ledger and direct-lane simplification started'
+    grade: Pending
+    notes: 'Maintainer asked to continue reducing direct-lane workflow overhead and to keep an understandable project and architecture change ledger. Draft durable ledger created in docs/aid-evolution-ledger.md; no final approval is implied. Existing state, safeguard, tests-first and independent whole-result review remain requirements. Direct-state initialization design is under investigation before implementation.'
+
+  - date: '2026-10-27'
+    event: 'Direct-state semantics under review'
+    grade: Pending
+    notes: 'Independent review found the existing full-work template asserts interview In Progress and delivery Pending-Spec even for a direct change that uses neither. The writer only accepts existing closed enums; copying the template unchanged would mislead. Test-first initializer cases remain red as unimplemented evidence; no initializer or new schema has been shipped. Direct-lane representation and resume compatibility require resolution before a truthful implementation.'
+
+  - date: '2026-10-27'
+    event: 'Direct continuation avoids duplicate work'
+    grade: Pending
+    notes: 'Source guidance now reuses only a genuinely related active work STATE for direct continuations, never unrelated, completed or canceled work. Static test failed before and passed after; independent review found no conflict, with no live agent proof. New-direct-work initialization remains unresolved because the current schema and resume route cannot truthfully represent skipped interview and specification. Draft initializer tests preserved in temporary evidence, not installed as a failing suite. Architecture ledger updated.'
+
+  - date: '2026-10-27'
+    event: 'Direct continuation reviewed and staged'
+    grade: Pending
+    notes: 'Independent review accepted related-active-work reuse without changing pause/block or writer rules. WSL offline suites 6/8/68 passed; fresh no-model staged installation contains exact canonical skill and reviewer bytes plus notes card. This is not a live behavior or token-saving proof. New direct-work schema/resume remains unresolved; unimplemented initializer tests preserved in temporary evidence. Durable project and architecture ledger is docs/aid-evolution-ledger.md.'
+
+  - date: '2026-10-27'
+    event: 'Direct-state design documented'
+    grade: Pending
+    notes: 'Short direct-state options document records the observed template/resume conflict and a proposed compact state plus direct resume route. Independent source review found the proposal accurately bounded; no schema, reader, writer or initializer has been changed. Existing active-work reuse guidance is source-tested and staged but not live behavior proven. Architecture ledger records the status.'
+
+  - date: '2026-10-27'
+    event: 'Direct cold-start architecture choice presented'
+    grade: Pending
+    notes: 'Maintainer-facing choice is pending between a compact direct state with coordinated reader/writer/resume compatibility and deferring new direct-work cold starts. Related active work reuse was independently reviewed and staged; no direct-state schema or initializer has been applied. Concrete alternatives and preservation boundaries are in DIRECT-STATE-OPTIONS.md.'
+
+  - date: '2026-10-27'
+    event: 'Compact direct-state preference pending'
+    grade: Pending
+    notes: 'Presented two concrete choices: add a compact direct state with compatible writer, readers and resume, or limit simplification to reuse of related active work and defer cold starts. Existing schema cannot truthfully represent a direct work with no interview/specification, and an initializer alone would misroute it. Updated durable architecture ledger; related-work reuse is independently reviewed, offline tested and staged only. No new model calls; draft initializer tests preserved as temporary evidence.'
+
+  - date: '2026-10-27'
+    event: 'Compact direct state selected'
+    grade: Pending
+    notes: 'Maintainer selected option 1: add compact direct state, keep the architecture ledger current and verify compatibility while minimizing token usage. Independent plan review requires truthful state, guarded initialization, explicit resume and direct-aware writer/readers/UI while preserving lite/full. Acceptance tests are being written; no implementation or pass is claimed.'
+
+  - date: '2026-10-28'
+    event: 'Lean design and cost audit recorded'
+    grade: Pending
+    notes: 'Audited existing benchmark evidence and source without model runs; docs/aid-lean-design-cost-audit.md and docs/aid-evolution-ledger.md record observed costs, potential value, compatibility issues and proposed next steps. No product changes, gate acceptance or savings claim.'
+
+  - date: '2026-10-28'
+    event: 'Baseline compatibility source changes reviewed'
+    grade: Pending
+    notes: 'Explicit active state and linked-dependency evidence, same-commit comparison and report ownership were added; 47 WSL tests and focused Windows tests passed with independent review. Large original dependency tree fingerprint and installed-runtime resync remain unverified; no savings or overall work completion claimed.'
+
+  - date: '2026-10-28'
+    event: 'Plain-first prototype started'
+    grade: Pending
+    notes: 'Reuse contract and an experimental existing-work outcome prototype were added outside the release payload. Eight coverage checks, 19 grader checks and 23 KB citation checks passed. Independent review retains a pending finding for new-work initialization and resume compatibility; no installed or live-agent behavior, complete milestone or cost benefit is claimed.'
+
+  - date: '2026-10-28'
+    event: 'Plain-first trial installed in a disposable project'
+    grade: Pending
+    notes: 'Offline release install and explicit trial install, outcome direct-state initialization, exclusive requirements creation, change detection and quarantine deactivation passed in a disposable project. Existing gate and direct-state tests passed; independent review verified fixes and retains actual host selection and resume as pending. The fixture was reinstalled and its hook configured but not trusted; no live agent, host enforcement or cost claim.'
+
+  - date: '2026-10-28'
+    event: 'One plain-first host-resume diagnostic'
+    grade: Pending
+    notes: 'User authorized trust for the exact disposable fixture and one test. Codex selected aid-outcome, read and preserved requirements and updated state; independent review confirmed the narrow result. The fixture lacked a KB, one command failed, hook execution was not visible and full live acceptance remains pending. Usage: 198206 input including 150016 cached, 997 output tokens; no benchmark or cost advantage is claimed.'
+
+  - date: '2026-10-28'
+    event: 'Source-backed KB trial prepared'
+    grade: Pending
+    notes: 'Analyzed the diagnostic reads, added targeted-read guidance and a tested writer example, and prepared a disposable notes fixture with corrected hand-authored KB and a red/green bounded oracle. Independent review verified fixes; baseline path inventory excludes Git metadata and other stated metadata and is not atomic. New fixture hook is configured but untrusted; no new model task or benchmark has run.'
+
+  - date: '2026-10-28'
+    event: 'Source-backed notes diagnostic incomplete'
+    grade: Pending
+    notes: 'After user authorization, ran one installed trial on the prepared fixture. The agent created requirements, fixed listing, added tests and updated fixture KB; six unit and three separate acceptance tests passed. Its independent reviewer could not start due to a Codex thread-store error, so the task remains unverified. Usage was 346191 input tokens including 304640 cached and 3170 output; no comparative cost or quality claim.'
+
+  - date: '2026-10-28'
+    event: 'Reviewer startup workaround probed'
+    grade: Pending
+    notes: 'The failed trial used ephemeral Codex mode, which does not persist rollouts. A bounded WSL probe without that flag started an actual subagent and received its reply; parent and child session records were inspected. The experiment README documents saved-session use and its data persistence. The earlier notes result still lacks independent review and this does not establish the cause of other failures.'
+
+  - date: '2026-10-28'
+    event: 'Notes result independently reviewed'
+    grade: Pending
+    notes: 'A saved-session WSL Codex run started one independent reviewer with no inherited turn history. Reviewer inspected requirements, implementation, tests and affected KB and returned no findings; it did not run tests under the read-only restriction. Separate six-unit and three-acceptance test passes apply to the same unchanged application, test and KB files. This is not a full benchmark or release approval.'
+
+  - date: '2026-10-28'
+    event: 'Compact independent review paired probe'
+    grade: Pending
+    notes: 'Added an opt-in compact review reference and installer inclusion; host still supplies direct-session dispatch. One seeded notes case was reviewed by an independent child via coordinator and by a direct fresh reviewer; both found all three seeded behavior and KB issues. Actual failing test output was visible to both. Baseline parent reported 126174 input tokens, child 137202; direct reported 139456. Parent and child overlap is unknown, so no total or percentage savings claimed. Direct reviewer still read full schema/rubric. Independent source reviewer found one overstatement, corrected and verified Fixed. Final focused suite ran 18 tests with one platform skip. Broader quality and cost remain unverified.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -373,14 +610,38 @@ delivery_gate:
 #     state: Pending | Answered | Skipped /
 #     context / suggested / answer / applied_to
 qa:
+  - id: Q21
+    category: Architecture
+    impact: High
+    state: Answered
+    context: 'How should AID represent new direct work when the existing state implies an interview and specification?'
+    suggested: 'Add a compact direct state with compatible writer, readers and resume.'
+    answer: 'Option 1: add compact direct state, keep the architecture ledger updated, and verify compatibility while minimizing token usage.'
+    applied_to: 'Direct-work state and compatibility implementation'
+  - id: Q20
+    category: Setup
+    impact: Medium
+    state: Pending
+    context: 'The isolated Codex CLI is still waiting. Did you enter the device code and approve the device after signing in?'
+    suggested: 'Confirm the device approval on the sign-in page.'
+    answer: ''
+    applied_to: 'Codex native safeguard probe'
+  - id: Q19
+    category: Setup
+    impact: High
+    state: Answered
+    context: 'Have you signed in to the isolated Codex test using the one-time device code?'
+    suggested: 'Sign in to the isolated test so the native safeguard can be verified without copying credentials.'
+    answer: 'Signed in'
+    applied_to: 'Codex native safeguard probe; cheaper benchmarks remain pending'
   - id: Q18
     category: Approval
     impact: High
-    state: Pending
+    state: Answered
     context: 'May I send one small test prompt to Anthropic using a temporary private copy of your Claude credentials to verify the safeguard in a disposable project?'
     suggested: 'Yes: test the safeguard with a fake Git command before running the cheaper benchmarks; the probe may consume Claude usage'
-    answer: ''
-    applied_to: 'STEP-2.md C8; actual Claude hook verification'
+    answer: 'Use Codex now; Claude usage is depleted this week.'
+    applied_to: 'Use Codex for current verification and cheaper benchmarks; Claude credential use and Claude host verification remain unapproved and unproven.'
   - id: Q17
     category: Approval
     impact: High

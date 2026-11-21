@@ -24,15 +24,15 @@
         },
         {
           "path": "aid-change/SKILL.md",
-          "sha256": "025f5b6bcfed11b98baaa71cbcc66408a5741e0cd960c3210e92415d110f43bd"
+          "sha256": "2227df8daecda777ff789307f1c2be0906e64f85e41e84ad0bdd9f4b32a0318c"
         },
         {
           "path": "aid-change/references/planned.md",
-          "sha256": "db86a5bbf647f33e6f996e08f75db177b69e0ae1b12db2c6f2fb5ee8845f7ca0"
+          "sha256": "9551450b1f173c8cda71f1c61ad7d2a774b1db4953f288abb9d372fcaf790973"
         },
         {
           "path": "aid-change/references/review.md",
-          "sha256": "f4ef8d8d8aa24065874ef19bf2c59ffaebcef8eca9c7921d15e13bdb4e0dbd2b"
+          "sha256": "9d878e9f76a624d9a446bb0588ee7c4b07bdf4869314070049da865cfafc1439"
         },
         {
           "path": "aid-chat/SKILL.md",
@@ -785,6 +785,14 @@
           "sha256": "c9eaf51ee5f58e571ae71822dc9a7c3e760a9920b0c3739c861bfacdb90d79a4"
         },
         {
+          "path": "scripts/change/codex_hook_config.py",
+          "sha256": "4a139376d3c177fe9cb17facdf41cd0aecf83e503d08ac98adba9fb147737dfd"
+        },
+        {
+          "path": "scripts/change/codex_safeguard.py",
+          "sha256": "dab0949e145902965a0dc90e611226caacef203fcbd43f09d89895d4965548b7"
+        },
+        {
           "path": "scripts/change/red-first.py",
           "sha256": "4088cab928de9267b1954b1b586239ddfec679ae9e9d82a4aad22b2f59d2ebb4"
         },
@@ -794,7 +802,7 @@
         },
         {
           "path": "scripts/change/state.py",
-          "sha256": "0d5ba492ca2458e87f2131dcc22f5e210315044ff0b1dcfd6a1242b846696cb3"
+          "sha256": "f6f5e3e85bd30c208df56f13b004d84d695dbb53ee1c659a6b14fed5c9689806"
         },
         {
           "path": "scripts/change/trace.py",
@@ -854,7 +862,7 @@
         },
         {
           "path": "scripts/execute/writeback-state.sh",
-          "sha256": "56db99a2f4705ff803813920fa73cfbd6eea1ed4ff6ac208d0cc258f9868f3d9"
+          "sha256": "73145a3498bca4429d0a2f8a5abb72e7ce7c6ab4690b215a73f04f22dd57a4c1"
         },
         {
           "path": "scripts/grade.sh",
@@ -1063,6 +1071,10 @@
         {
           "path": "templates/design-seed.md",
           "sha256": "32740aa79f035e7c7ff334f39ddfe9a61faeda451d653167e59bc714c13b0ee0"
+        },
+        {
+          "path": "templates/direct-state-template.yml",
+          "sha256": "579f52eb07efa2001f3918524b86e4c417ad10a3a82900e247fddec7e3d8178c"
         },
         {
           "path": "templates/discovery-state-template.md",
@@ -1338,7 +1350,7 @@
         },
         {
           "path": "templates/work-initiation-gate.md",
-          "sha256": "027eed85a8714d99392c82207f6cd9a38b4717167b169288d95a3bddf0c6110f"
+          "sha256": "ce95edf3eb01537380c3b9946a99cae6cf938e0d37b221218256b4ae4aeaa831"
         },
         {
           "path": "templates/work-state-template.yml",

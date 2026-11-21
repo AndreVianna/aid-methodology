@@ -2006,6 +2006,7 @@ footer {
     var nd = (work.deliverables || []).length;
     var nt = (work.tasks || []).length;
     function tasks(n) { return n + ' Task' + (n === 1 ? '' : 's'); }
+    if (wp === 'direct') return 'Direct work';
     if (wp === 'full') {
       if (nf === 0) return 'Full path: [defining features]';
       var s = 'Full path: ' + nf + ' feature' + (nf === 1 ? '' : 's');

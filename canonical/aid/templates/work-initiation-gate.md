@@ -118,8 +118,9 @@ The gate hands back to the starter, which now performs, in this order:
 3. **Only now**, inside the entered worktree, allocate and scaffold: create
    `.aid/works/<work-id>-<name>/` (reusing the `<work-id>` resolved in step 1
    above -- do **not** re-derive it from the fresh worktree's own, still-empty
-   `.aid/works/`) and scaffold `STATE.yml`, exactly as the starter did before
-   this worktree automation existed.
+   `.aid/works/`). For direct `/aid-change` work, the direct-state initializer
+   creates `STATE.yml` in that allocated directory; do not scaffold a different
+   state first. Other starters scaffold `STATE.yml` as before.
 
 The gate changed nothing about the allocation mechanics; it only gated the
 decision to allocate, and now also gates *where* that allocation lands.
@@ -127,12 +128,18 @@ decision to allocate, and now also gates *where* that allocation lands.
 ### 3b. CONTINUATION -> route to the chosen work's resume entry point, then STOP
 
 The gate allocates **nothing**. It reads the chosen work's `STATE.yml`
-frontmatter (`pipeline.path`, `phase`, `lifecycle`, and -- for flattened works --
+frontmatter (`pipeline.path`, `pipeline.initiator`, `phase`, `lifecycle`, and -- for flattened works --
 `delivery_state`) and routes the user to that work's correct existing resume
 door, per this decision (first match wins):
 
 | Chosen work's state | Resume entry point |
 |---|---|
+| Direct work already `Completed` / `Canceled` | Tell the user the work is finished and stop; start a new work for a new request. |
+| Direct work `Blocked` | Explain the recorded blocker; continue only when it is resolved. |
+| Direct work `Paused-Awaiting-Input` | Explain the pending input; continue only after the user resolves it. |
+| Direct work `Running` with `pipeline.initiator: aid-outcome` | If the explicitly installed `aid-outcome` trial is available, route to `/aid-outcome <work>`; otherwise stop and explain that its opt-in entry is unavailable. Do not fall back to a different workflow. |
+| Other direct work `Running` | `/aid-change <work>`; read its goal, next step and existing evidence before acting. |
+| Any other direct work lifecycle, including missing or invalid values | Stop and inspect the recorded state; do not route it to another workflow. |
 | Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) | `/aid-execute <work>` |
 | Deploy in progress (`active_skill: aid-deploy` -- an interrupted `/aid-deploy`; Deploy is a separate path, no longer a `phase:`) | `/aid-deploy <work>` |
 | Mid-Execute or beyond (`phase: Execute`, or `delivery_state` is `Executing`/`Gated`/`Done`) | `/aid-execute <work>` |
